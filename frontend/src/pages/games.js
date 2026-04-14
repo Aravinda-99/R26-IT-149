@@ -5,13 +5,58 @@
  */
 
 import { GamificationAPI } from "../api/api.js";
+import { mountGame, destroyGame } from "../game/main.js";
+
+function showGameContainer() {
+    const el = document.getElementById("phaser-container");
+    if (!el) return null;
+    el.classList.remove("hidden");
+    el.innerHTML = "";
+    return el;
+}
+
+function hideGameContainer() {
+    const el = document.getElementById("phaser-container");
+    if (!el) return;
+    el.classList.add("hidden");
+    el.innerHTML = "";
+}
+
+function launchIntegerGame() {
+    showGameContainer();
+    mountGame({ parent: "phaser-container" });
+
+    // Keep focus on the canvas area when launching.
+    document.getElementById("phaser-container")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export async function renderGames(container) {
     container.innerHTML = `
         <h1>Learning Games</h1>
         <p style="color: var(--text-secondary); margin-bottom: 2rem;">Master concepts through interactive challenges</p>
+        <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem;">
+            <div>
+                <h3 style="color: var(--text-primary); font-size: 1.05rem; margin-bottom: 0.35rem;">Space Cargo Loader</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                    Concept: <b>Integer (int)</b> — crates must be whole numbers.
+                </p>
+            </div>
+            <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="btn btn-primary" id="launch-int-game-btn">Launch</button>
+                <button class="btn" id="close-game-btn" style="background: var(--border-color); color: var(--text-primary);">Close Game</button>
+            </div>
+        </div>
         <div class="grid-3" id="games-grid"><p style="color: var(--text-secondary)">Loading...</p></div>
     `;
+
+    // Wire launch/close controls (independent of API list).
+    document.getElementById("launch-int-game-btn")?.addEventListener("click", () => {
+        launchIntegerGame();
+    });
+    document.getElementById("close-game-btn")?.addEventListener("click", () => {
+        destroyGame();
+        hideGameContainer();
+    });
 
     try {
         const data = await GamificationAPI.getGames();
@@ -20,7 +65,7 @@ export async function renderGames(container) {
         grid.innerHTML = data.games
             .map(
                 (game) => `
-            <div class="card" style="cursor: pointer;" onclick="alert('TODO: Launch ${game.title} with PhaserJS')">
+            <div class="card game-card" style="cursor: pointer;" data-game-concept="${game.concept}">
                 <h3 style="color: var(--text-primary); font-size: 1.1rem;">${game.title}</h3>
                 <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0.5rem 0;">Concept: ${game.concept}</p>
                 <div style="display: flex; justify-content: space-between; color: var(--text-secondary); font-size: 0.8rem;">
@@ -31,6 +76,14 @@ export async function renderGames(container) {
         `
             )
             .join("");
+
+        // Option A: clicking a card launches the int game (for now).
+        // Later you can map `data-game-concept` -> scene/module.
+        grid.querySelectorAll(".game-card").forEach((card) => {
+            card.addEventListener("click", () => {
+                launchIntegerGame();
+            });
+        });
     } catch (e) {
         document.getElementById("games-grid").innerHTML = `<p style="color: var(--accent-orange)">Could not load games</p>`;
     }
