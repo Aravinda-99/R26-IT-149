@@ -8,7 +8,7 @@ import { AdaptiveAPI } from "../api/api.js";
 
 export async function renderLearningPath(container) {
     container.innerHTML = `
-        <h1>Learning Path</h1>
+        <h1>Learning Path Generator</h1>
         <p style="color: var(--text-secondary); margin-bottom: 2rem;">Your personalized programming journey</p>
         <div id="path-list"><p style="color: var(--text-secondary)">Loading...</p></div>
     `;
