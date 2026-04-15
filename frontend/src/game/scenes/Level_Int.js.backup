@@ -1,0 +1,1024 @@
+import Phaser from "phaser";
+
+export class Level_Int extends Phaser.Scene {
+  constructor() {
+    super({ key: "Level_Int" });
+  }
+
+  preload() {
+    // Preload custom assets required by the Game Flow
+    this.load.image("robot", "/assets/images/robot.png");
+    this.load.image("crate_whole", "/assets/images/crate_whole.png");
+    this.load.image("crate_broken", "/assets/images/crate_broken.png");
+  }
+
+  create() {
+    // 1. GAME STATE ENGINE
+    this.gameState = {
+      currentLevel: 1,
+      score: 0,
+      lives: 3,
+      progress: 0,
+      isMastered: false,
+      collectedL1: 0 // Secondary tracking metric for Level 1 constraint
+    };
+
+    this.isTransitioning = false;
+    this.isInstructionShowing = false;
+
+    // Background
+    this.cameras.main.setBackgroundColor("#1a1a2e");
+
+    // Physics Groups
+    this.wholeCrates = this.physics.add.group();
+    this.brokenCrates = this.physics.add.group();
+
+    // Setup World Bounds (Responsive: 1000x600)
+    this.physics.world.setBounds(0, 0, 1000, 600);
+
+    // Player (Robot)
+    this.player = this.physics.add.sprite(500, 550, "robot"); // Center X, near bottom
+    this._fitSpriteToHeight(this.player, 72);
+    this.player.setCollideWorldBounds(true);
+    this.player.body.setAllowGravity(false);
+    this.player.setImmovable(true);
+
+    // Input Controls
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    // 2. UI & HUD ELEMENTS (Always Visible)
+    this._createHUD();
+
+    // Particles for success (fallback generated texture if absent)
+    this._generateSparkTexture();
+    this.successParticles = this.add.particles(0, 0, 'spark', {
+      speed: { min: 50, max: 200 },
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 800,
+      blendMode: 'ADD',
+      emitting: false
+    });
+
+    // Boot Level 1 immediately
+    this._startLevel(1);
+
+    // Core Physics Collisions/Overlaps
+    this.physics.add.overlap(this.player, this.wholeCrates, this._catchWholeCrate, null, this);
+    this.physics.add.overlap(this.player, this.brokenCrates, this._catchBrokenCrate, null, this);
+  }
+
+  update(time, delta) {
+    if (this.isTransitioning || this.isInstructionShowing || this.gameState.lives <= 0 || this.gameState.isMastered) {
+      if (this.player.body) this.player.setVelocityX(0); // Stop sliding during UI blocking
+      return;
+    }
+
+    // Level-specific movement
+    if (this.gameState.currentLevel === 2) {
+      this._updateRunnerLevel2(delta);
+    } else {
+      // Smooth movement logic (falling-crate levels)
+      if (this.cursors.left.isDown) {
+        this.player.setVelocityX(-450);
+      } else if (this.cursors.right.isDown) {
+        this.player.setVelocityX(450);
+      } else {
+        this.player.setVelocityX(0);
+      }
+    }
+
+    // Clean up fallen rigidbodies off-screen
+    this.wholeCrates.getChildren().forEach(crate => {
+      if (crate.y > 650) crate.destroy();
+    });
+    this.brokenCrates.getChildren().forEach(crate => {
+      if (crate.y > 650) crate.destroy();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // INSTRUCTION UI OVERLAY
+  // ---------------------------------------------------------------------------
+
+  showLevelInstruction(title, description, buttonText, onStartAction, codeSnippet = null, subDescription = null) {
+    this.isInstructionShowing = true;
+
+    // Dim Background Overlay (1000x600 bounds)
+    const overlayBg = this.add.rectangle(500, 300, 1000, 600, 0x000000, 0.85).setDepth(200);
+
+    // Futuristic Panel
+    const panelHeight = codeSnippet ? 540 : 400;
+    const panel = this.add.rectangle(500, 300, 650, panelHeight, 0x111122, 1).setDepth(201);
+    panel.setStrokeStyle(4, 0x38bdf8);
+
+    // Glowing Title
+    const titleY = codeSnippet ? 90 : 160;
+    const titleText = this.add.text(500, titleY, title, {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "36px",
+      color: "#38bdf8",
+      fontStyle: "bold",
+      align: "center",
+      shadow: { blur: 15, color: "#38bdf8", fill: true }
+    }).setOrigin(0.5).setDepth(202);
+
+    // Description text
+    const descY = codeSnippet ? 160 : 260;
+    const descText = this.add.text(500, descY, description, {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "24px",
+      color: "#cbd5e1",
+      align: "center",
+      wordWrap: { width: 550, useAdvancedWrap: true },
+      lineSpacing: 10
+    }).setOrigin(0.5).setDepth(202);
+
+    const elementsToDestroy = [overlayBg, panel, titleText, descText];
+
+    if (codeSnippet) {
+      const codeBg = this.add.rectangle(500, 275, 520, 110, 0x0f172a, 1).setDepth(202);
+      codeBg.setStrokeStyle(2, 0x4ade80);
+      const codeText = this.add.text(500, 275, codeSnippet, {
+        fontFamily: "monospace",
+        fontSize: "20px",
+        color: "#4ade80",
+        align: "left",
+        lineSpacing: 8
+      }).setOrigin(0.5).setDepth(203);
+      elementsToDestroy.push(codeBg, codeText);
+    }
+
+    if (subDescription) {
+      const subText = this.add.text(500, 400, subDescription, {
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "22px",
+        color: "#fbbf24",
+        align: "center",
+        wordWrap: { width: 550, useAdvancedWrap: true },
+        fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(202);
+      elementsToDestroy.push(subText);
+    }
+
+    // Start Button
+    const btnY = codeSnippet ? 500 : 420;
+    const startBtn = this._createInteractiveButton(500, btnY, buttonText, () => {
+      // Clean up overlay elements
+      elementsToDestroy.forEach(e => e.destroy());
+      startBtn.destroy();
+
+      // Unpause game
+      this.isInstructionShowing = false;
+      onStartAction();
+    }, 202);
+  }
+
+  // ---------------------------------------------------------------------------
+  // THE 3-PHASE SCHEMA THEORY FLOW
+  // ---------------------------------------------------------------------------
+
+  _startLevel(level) {
+    this.gameState.currentLevel = level;
+    this.isTransitioning = false;
+
+    // Erase old artifacts to ensure clean starts
+    this._clearCrates();
+
+    // Purge old spawn loops
+    if (this.spawnTimer) this.spawnTimer.remove();
+    // (Level 2 forks are scheduled via delayedCall in runner state)
+    if (this.forkTimer) this.forkTimer.remove();
+
+    // Teardown runner-only objects when leaving Level 2
+    if (this.runner) this._teardownRunnerLevel2();
+
+    if (level === 1) {
+      this.showLevelInstruction(
+        "MISSION 1: ACCRETION",
+        "Integers (int) are whole numbers used for counting items like cargo crates. Catch 5 whole crates to initialize your knowledge.",
+        "I'm Ready!",
+        () => {
+          this.levelText.setText("Level 1: Accretion - Meet the Integers (int)");
+          this.spawnTimer = this.time.addEvent({ delay: 1500, callback: this._spawnCrateL1, callbackScope: this, loop: true });
+        }
+      );
+    }
+    else if (level === 2) {
+      this.showLevelInstruction(
+        "MISSION 2: TUNING",
+        "Path Runner Mode: Your variable type is 'int'. Stay on the INT lane and collect whole crates.\nAvoid the DOUBLE lane and its decimal crates!",
+        "Start Mission",
+        () => {
+          this.levelText.setText("Level 2: Tuning - Current Type: int. Collect only whole numbers!");
+          this._setupRunnerLevel2();
+
+          // Spawn runner crates frequently (only while fork is active)
+          this.spawnTimer = this.time.addEvent({
+            delay: 650,
+            callback: this._spawnRunnerCratesLevel2,
+            callbackScope: this,
+            loop: true
+          });
+        }
+      );
+    }
+    else if (level === 3) {
+      this.showLevelInstruction(
+        "FINAL MISSION: LOGIC RESTRUCTURING",
+        "To unlock the final gate, you must solve this integer logic:",
+        "I solved it! Start Mission",
+        () => {
+          this.levelText.setText("Level 3: Restructuring - Logic Application\nint goal = 10; int held = 6; int pick = ?;");
+          this.spawnTimer = this.time.addEvent({ delay: 1200, callback: this._spawnCrateL3, callbackScope: this, loop: true });
+        },
+        "int target_cargo = 10;\nint current_cargo = 6;\nint missing_crates = target_cargo - current_cargo;",
+        "Your Mission: Catch ONLY the crate that represents the value of 'missing_crates'.\n(Hint: 10 - 6 = ?)"
+      );
+    }
+  }
+
+  _levelComplete(level) {
+    this.isTransitioning = true;
+    if (this.spawnTimer) this.spawnTimer.remove();
+    this.player.setVelocityX(0);
+    this._clearCrates();
+
+    if (level === 1) {
+      this._updateProgress(33);
+      this._showTransitionPopup("LEVEL 1 COMPLETE: CONCEPT LEARNED!", "PLAY LEVEL 2", () => {
+        this._startLevel(2);
+      });
+    }
+    else if (level === 2) {
+      this._updateProgress(66);
+      this._showTransitionPopup("LEVEL 2 COMPLETE: SCHEMA REFINED!", "FINAL CHALLENGE", () => {
+        this._startLevel(3);
+      });
+    }
+  }
+
+  _gameMastered() {
+    this.gameState.isMastered = true;
+    this.isTransitioning = true;
+    if (this.spawnTimer) this.spawnTimer.remove();
+    this.player.setVelocityX(0);
+    this._clearCrates();
+    this._updateProgress(100);
+
+    // Massive particle explosion at center
+    this.successParticles.emitParticleAt(500, 300, 200);
+    this.cameras.main.flash(600, 255, 255, 255);
+
+    // Final Screen Overlay
+    this.overlayBg = this.add.rectangle(500, 300, 1000, 600, 0x000000, 0.85).setDepth(300);
+
+    // Master of Integers High-Quality Badge (Generated Graphic rendering Gold)
+    const badge = this.add.graphics().setDepth(301);
+    badge.fillStyle(0xffd700, 1);
+    badge.fillCircle(500, 200, 65);
+    badge.lineStyle(6, 0xffaa00, 1);
+    badge.strokeCircle(500, 200, 65);
+    this.add.text(500, 200, "★", { fontSize: "68px", color: "#ffffff" }).setOrigin(0.5).setDepth(301);
+
+    this.add.text(500, 320, "MASTER OF INTEGERS", {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "48px",
+      color: "#ffd700",
+      fontStyle: "bold",
+      align: "center",
+      shadow: { blur: 15, color: "#ffaa00", fill: true }
+    }).setOrigin(0.5).setDepth(301);
+
+    this.add.text(500, 380, "CONGRATULATIONS: MASTERED", {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "28px",
+      color: "#4ade80",
+      align: "center"
+    }).setOrigin(0.5).setDepth(301);
+
+    this._createInteractiveButton(500, 480, "RESTART MODULE", () => {
+      this.scene.restart();
+    }, 301);
+  }
+
+  _gameOver() {
+    this.isTransitioning = true;
+    if (this.spawnTimer) this.spawnTimer.remove();
+    this.player.setVelocityX(0);
+    this._clearCrates();
+
+    this._showTransitionPopup("GAME OVER\nZero Lives Remaining.", "RETRY LEVEL", () => {
+      this.scene.restart(); // Restart entirely back to level 1 for penalty compliance
+    }, "#ef4444");
+  }
+
+  // ---------------------------------------------------------------------------
+  // COLLISION LOGIC DETAILED
+  // ---------------------------------------------------------------------------
+
+  _catchWholeCrate(player, crate) {
+    if (this.isTransitioning || this.isInstructionShowing) return;
+
+    this.successParticles.emitParticleAt(crate.x, crate.y, 25);
+    const value = crate.getData('val');
+    crate.destroy();
+
+    // Action branches based on active Phase
+    if (this.gameState.currentLevel === 1) {
+      // ACCRETION: Goal collect 5 crates. Only Whole spawn.
+      this.gameState.collectedL1++;
+      this._flashText(this.scoreText, "#4ade80");
+      if (this.gameState.collectedL1 >= 5) {
+        this._levelComplete(1);
+      }
+    }
+    else if (this.gameState.currentLevel === 2) {
+      // TUNING: Catching Whole yields 50 pts
+      if (this.runner?.wrongLock) {
+        this._showRunnerToast("Robot systems locked! Switch back to INT path.", "#fbbf24");
+        return;
+      }
+      this.gameState.score += 50;
+      this.scoreText.setText(`Score: ${this.gameState.score}`);
+      this._flashText(this.scoreText, "#4ade80");
+      this._flashText(this.levelText, "#4ade80");
+      this._showRunnerToast("Correct Type! +50", "#34d399");
+
+      if (this.gameState.score >= 300) {
+        this._levelComplete(2);
+      }
+    }
+    else if (this.gameState.currentLevel === 3) {
+      // RESTRUCTURING: Exact match logic puzzle
+      if (value === 4) {
+        this._gameMastered();
+      } else {
+        this._handleError(`Logic Error: You caught int ${value}, but needed int 4!`);
+      }
+    }
+  }
+
+  _catchBrokenCrate(player, crate) {
+    if (this.isTransitioning || this.isInstructionShowing) return;
+    crate.destroy();
+
+    // Catching float ALWAYS triggers penalty
+    if (this.gameState.currentLevel === 3) {
+      this._handleError("ERROR: Cannot pick double/float in an int operation!");
+    } else {
+      // Level 2 runner-specific message
+      if (this.gameState.currentLevel === 2) {
+        if (this.runner) this.runner.wrongLock = true;
+        this._handleError("Type Mismatch Error! Decimal cannot be assigned to an 'int' path!");
+      } else {
+        this._handleError("ERROR: cannot assign float to int!");
+      }
+    }
+  }
+
+  _handleError(msg) {
+    this.cameras.main.shake(250, 0.015);
+    this.cameras.main.flash(200, 255, 0, 0);
+
+    this.errorText.setText(msg);
+    this.errorText.setAlpha(1);
+    this.tweens.add({ targets: this.errorText, alpha: 0, duration: 2500, delay: 600 });
+
+    this.gameState.lives--;
+    this.livesText.setText(`Lives: ${this.gameState.lives}`);
+    this._flashText(this.livesText, "#ef4444");
+
+    if (this.gameState.lives <= 0) {
+      this._gameOver();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // SPAWNER MECHANICS
+  // ---------------------------------------------------------------------------
+
+  _spawnCrateL1() {
+    this._spawnDetailedCrate(true); // Only whole objects
+  }
+
+  _spawnCrateL2() {
+    const isWhole = Phaser.Math.Between(0, 1) === 0;
+    this._spawnDetailedCrate(isWhole);
+  }
+
+  _spawnCrateL3() {
+    // Array predefined logic constraints: '4' is the answer block.
+    const pool = [2, 4, 8, 1.5];
+    const val = Phaser.Utils.Array.GetRandom(pool);
+    const isWhole = Number.isInteger(val);
+    this._spawnDetailedCrate(isWhole, val);
+  }
+
+  _spawnDetailedCrate(isWhole, specificValue = null) {
+    const x = Phaser.Math.Between(50, 950); // Wider drop zone for 1000 resolution
+    let crate, valText;
+
+    if (isWhole) {
+      crate = this.wholeCrates.create(x, -60, "crate_whole");
+      this._fitSpriteToHeight(crate, 56);
+      const val = specificValue !== null ? specificValue : Phaser.Math.Between(1, 99);
+      crate.setData('val', val);
+      valText = val.toString();
+    } else {
+      crate = this.brokenCrates.create(x, -60, "crate_broken");
+      this._fitSpriteToHeight(crate, 56);
+      const val = specificValue !== null ? specificValue : parseFloat((Phaser.Math.FloatBetween(1.1, 9.9)).toFixed(2));
+      crate.setData('val', val);
+      valText = val.toString();
+    }
+
+    // Falling mechanics for Level 1 and 3
+    // (Level 2 uses runner mechanics and does not call this method.)
+    crate.body.setAllowGravity(true);
+    crate.setVelocityX(Phaser.Math.Between(-25, 25));
+    crate.setAngularVelocity(Phaser.Math.Between(-30, 30));
+
+    // Dynamic Text Anchor tied to physics object 
+    const textObj = this.add.text(x, -60, valText, {
+      fontFamily: "monospace", fontSize: "18px", color: "#ffffff", fontStyle: "bold",
+      backgroundColor: "rgba(0,0,0,0.4)"
+    }).setOrigin(0.5).setDepth(5);
+
+    crate.setData('textObj', textObj);
+
+    const syncText = () => {
+      if (crate && crate.active) {
+        textObj.setPosition(crate.x, crate.y);
+        textObj.setRotation(crate.rotation);
+      }
+    };
+    this.events.on('update', syncText);
+
+    // Proper GC handler
+    crate.on('destroy', () => {
+      textObj.destroy();
+      this.events.off('update', syncText);
+    });
+  }
+
+  _clearCrates() {
+    this.wholeCrates.clear(true, true);
+    this.brokenCrates.clear(true, true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // INTERFACE ENGINE (HUD, UI, Buttons)
+  // ---------------------------------------------------------------------------
+
+  _createHUD() {
+    // Info Container Background (Spanning 1000px width)
+    this.add.rectangle(500, 30, 1000, 60, 0x111122, 0.9).setDepth(9);
+
+    // Glowing Progress Bar
+    this.progressBg = this.add.rectangle(500, 5, 1000, 10, 0x333333).setOrigin(0.5, 0).setDepth(10);
+    this.progressFg = this.add.rectangle(0, 5, 0, 10, 0x4ade80).setOrigin(0, 0).setDepth(11);
+
+    // Dynamic HUD Phase Tracker
+    this.levelText = this.add.text(500, 32, "", {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "18px",
+      color: "#38bdf8",
+      align: "center",
+      fontStyle: "bold",
+      lineSpacing: 4
+    }).setOrigin(0.5).setDepth(10);
+
+    // Real-Time Score Engine
+    this.scoreText = this.add.text(20, 20, `Score: ${this.gameState.score}`, {
+      fontFamily: "monospace",
+      fontSize: "24px",
+      color: "#fbbf24",
+      stroke: "#d97706",
+      strokeThickness: 3,
+      shadow: { blur: 10, color: "#fbbf24", fill: true }
+    }).setDepth(10);
+
+    // Real-Time Lives Engine (Shifted Right)
+    this.livesText = this.add.text(850, 20, `Lives: ${this.gameState.lives}`, {
+      fontFamily: "monospace",
+      fontSize: "24px",
+      color: "#f87171",
+      stroke: "#b91c1c",
+      strokeThickness: 3,
+      shadow: { blur: 10, color: "#f87171", fill: true }
+    }).setDepth(10);
+
+    // Error Feedback
+    this.errorText = this.add.text(500, 450, "", {
+      fontFamily: "monospace",
+      fontSize: "28px",
+      color: "#ffffff",
+      backgroundColor: "#dc2626",
+      padding: { x: 20, y: 10 },
+      shadow: { blur: 10, color: "#dc2626", fill: true }
+    }).setOrigin(0.5).setAlpha(0).setDepth(15);
+  }
+
+  _updateProgress(targetPercentage) {
+    this.gameState.progress = targetPercentage;
+    const targetWidth = (targetPercentage / 100) * 1000; // Calibrated to new width
+    this.tweens.add({
+      targets: this.progressFg,
+      width: targetWidth,
+      duration: 800,
+      ease: 'Cubic.out'
+    });
+  }
+
+  _showTransitionPopup(title, btnText, btnCallback, titleColor = "#4ade80") {
+    // Create Blocking Overlay (1000x600 responsive)
+    this.overlayBg = this.add.rectangle(500, 300, 1000, 600, 0x000000, 0.85).setDepth(100);
+
+    this.overlayTitle = this.add.text(500, 250, title, {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "36px",
+      color: titleColor,
+      align: "center",
+      fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(101);
+
+    this.overlayBtn = this._createInteractiveButton(500, 380, btnText, () => {
+      this.overlayBg.destroy();
+      this.overlayTitle.destroy();
+      this.overlayBtn.destroy();
+      btnCallback();
+    }, 101);
+  }
+
+  _createInteractiveButton(x, y, text, onClick, depth = 10) {
+    // Custom DOM-less Interactive API usage mapping directly to canvas clicks
+    const btnText = this.add.text(x, y, text, {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "28px",
+      color: "#ffffff",
+      backgroundColor: "#3b82f6",
+      padding: { x: 25, y: 15 },
+      fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(depth).setInteractive({ useHandCursor: true });
+
+    btnText.on('pointerover', () => { btnText.setBackgroundColor("#2563eb").setTint(0xdddddd); });
+    btnText.on('pointerout', () => { btnText.setBackgroundColor("#3b82f6").clearTint(); });
+    btnText.on('pointerdown', () => { btnText.y += 3; });
+
+    btnText.on('pointerup', () => {
+      btnText.y -= 3;
+      // Force minor execution delay to allow the visual 'click' bounce to render 100%
+      this.time.delayedCall(60, onClick);
+    });
+
+    return btnText;
+  }
+
+  _flashText(textObj, colorHex) {
+    const originalColor = textObj.style.color;
+    textObj.setColor(colorHex);
+    this.time.delayedCall(400, () => {
+      if (textObj.active) textObj.setColor(originalColor);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // GRAPHICS FALLBACKS
+  // ---------------------------------------------------------------------------
+
+  _fitSpriteToHeight(sprite, targetHeightPx) {
+    const h = sprite.frame?.height;
+    if (!h || h <= 0) return;
+    sprite.setScale(targetHeightPx / h);
+  }
+
+  _generateSparkTexture() {
+    if (!this.textures.exists("spark")) {
+      const g = this.add.graphics();
+      g.fillStyle(0x4ade80, 1);
+      g.fillCircle(4, 4, 4);
+      g.generateTexture("spark", 8, 8);
+      g.destroy();
+    }
+  }
+
+  _showRunnerToast(message, color = "#e8e8ff") {
+    // Lightweight toast near top center (used in Level 2)
+    if (!this.runnerToast) {
+      this.runnerToast = this.add.text(500, 92, "", {
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "18px",
+        color,
+        fontStyle: "bold",
+        shadow: { blur: 12, color, fill: true }
+      }).setOrigin(0.5).setAlpha(0).setDepth(20);
+    }
+
+    this.runnerToast.setText(message);
+    this.runnerToast.setColor(color);
+    this.runnerToast.setAlpha(1);
+
+    this.tweens.add({
+      targets: this.runnerToast,
+      alpha: 0,
+      y: 82,
+      duration: 900,
+      ease: "Sine.out",
+      onComplete: () => {
+        if (this.runnerToast) this.runnerToast.setY(92);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // LEVEL 2 (TUNING) — PATH RUNNER MECHANIC
+  // ---------------------------------------------------------------------------
+
+  _setupRunnerLevel2() {
+    /**
+     * Runner Level 2 design:
+     * - Single continuous road scrolling down (tileSprite floor)
+     * - Every 5-7 seconds: a *physical fork* appears at top and scrolls down
+     * - Fork defines two lanes: INT (safe) and DOUBLE (unsafe)
+     * - Player must commit to a lane before fork reaches the player
+     * - Spawn lane-specific crates during the fork window
+     */
+    this.runner = {
+      speed: 360, // challenging but fair; tweakable
+      forkActive: false,
+      forkContainer: null,
+      forkGraphics: null,
+      forkY: -140,
+      forkResolved: false,
+      // Lane geometry (fixed X centers; fork is visual + decision timing)
+      laneX: [350, 650], // left/right lane centers
+      laneIndex: 0, // current lane index inferred by sensors
+      safeLaneIndex: 0, // set per fork (INT lane)
+      wrongLock: false, // if true, whole crates don't count until player returns to safe lane
+      choiceLocked: false,
+      choiceDeadlineY: 440, // when fork crosses this, we lock a choice
+      forkObjects: [],
+      floor: null,
+      laneLines: null,
+      hudHint: null,
+      sensors: {
+        left: null,
+        right: null,
+      },
+      nextForkEvent: null,
+    };
+
+    // Visual theme for Level 2
+    this.cameras.main.setBackgroundColor("#0f0f1b");
+
+    // Reset score target behavior for Level 2 (points-based)
+    this.gameState.score = 0;
+    this.scoreText.setText(`Score: ${this.gameState.score}`);
+
+    // Place robot in center road initially (single lane)
+    this.player.setPosition(500, 520);
+    this.player.setVelocity(0, 0);
+
+    // Runner floor (scrolling tile)
+    this._ensureRunnerFloorTexture();
+    this.runner.floor = this.add.tileSprite(500, 330, 1000, 540, "runner_floor").setDepth(0);
+
+    // Road edges / guides
+    this.runner.laneLines = this.add.graphics().setDepth(2);
+    this._drawSingleRoadGuides();
+
+    // HUD hint (under level text)
+    this.runner.hudHint = this.add.text(500, 54, "Current Type: int. Only 'int' path is safe!", {
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "16px",
+      color: "#e8e8ff",
+      align: "center",
+      shadow: { blur: 10, color: "#22d3ee", fill: true }
+    }).setOrigin(0.5).setDepth(12);
+
+    // Lane sensors (physics) used for lane detection + “must be fully in lane”
+    this.runner.sensors.left = this.add.zone(this.runner.laneX[0], 520, 360, 200);
+    this.runner.sensors.right = this.add.zone(this.runner.laneX[1], 520, 360, 200);
+    this.physics.add.existing(this.runner.sensors.left, true);
+    this.physics.add.existing(this.runner.sensors.right, true);
+
+    this.physics.add.overlap(this.player, this.runner.sensors.left, () => {
+      if (this.runner) this.runner.laneIndex = 0;
+      // Unlock wrong-lock when returning to safe lane
+      if (this.runner && this.runner.wrongLock && this.runner.laneIndex === this.runner.safeLaneIndex) {
+        this.runner.wrongLock = false;
+        this._showRunnerToast("Back on INT path. Collect whole crates!", "#34d399");
+      }
+    });
+    this.physics.add.overlap(this.player, this.runner.sensors.right, () => {
+      if (this.runner) this.runner.laneIndex = 1;
+      if (this.runner && this.runner.wrongLock && this.runner.laneIndex === this.runner.safeLaneIndex) {
+        this.runner.wrongLock = false;
+        this._showRunnerToast("Back on INT path. Collect whole crates!", "#34d399");
+      }
+    });
+
+    // Schedule the first fork (5-7 seconds)
+    this._scheduleNextForkLevel2();
+  }
+
+  _teardownRunnerLevel2() {
+    // Remove fork visuals
+    if (this.runner?.forkObjects) {
+      this.runner.forkObjects.forEach(o => o.destroy());
+    }
+    if (this.runner?.floor) this.runner.floor.destroy();
+    if (this.runner?.laneLines) this.runner.laneLines.destroy();
+    if (this.runner?.hudHint) this.runner.hudHint.destroy();
+    if (this.runner?.forkContainer) this.runner.forkContainer.destroy();
+    if (this.runner?.nextForkEvent) this.runner.nextForkEvent.remove();
+    if (this.runner?.sensors?.left) this.runner.sensors.left.destroy();
+    if (this.runner?.sensors?.right) this.runner.sensors.right.destroy();
+    this.runner = null;
+
+    // Restore background for other levels
+    this.cameras.main.setBackgroundColor("#1a1a2e");
+  }
+
+  _ensureRunnerFloorTexture() {
+    if (this.textures.exists("runner_floor")) return;
+
+    const g = this.add.graphics();
+    g.clear();
+    g.fillStyle(0x0b1020, 1);
+    g.fillRect(0, 0, 256, 256);
+
+    // Neon grid lines
+    g.lineStyle(2, 0x1d4ed8, 0.18);
+    for (let x = 0; x <= 256; x += 32) g.strokeLineShape(new Phaser.Geom.Line(x, 0, x, 256));
+    for (let y = 0; y <= 256; y += 32) g.strokeLineShape(new Phaser.Geom.Line(0, y, 256, y));
+
+    // Dashed center guide
+    g.lineStyle(4, 0x22d3ee, 0.22);
+    for (let y = 10; y < 256; y += 26) {
+      g.strokeLineShape(new Phaser.Geom.Line(126, y, 130, y + 12));
+    }
+
+    g.generateTexture("runner_floor", 256, 256);
+    g.destroy();
+  }
+
+  _updateRunnerLevel2(delta) {
+    if (!this.runner) return;
+
+    // Scroll floor
+    if (this.runner.floor) {
+      this.runner.floor.tilePositionY -= (this.runner.speed * delta) / 1000;
+    }
+
+    // Update fork movement (physical fork scrolling down)
+    if (this.runner.forkActive && this.runner.forkContainer) {
+      this.runner.forkY += (this.runner.speed * delta) / 1000;
+      this.runner.forkContainer.setY(this.runner.forkY);
+
+      // Lock a choice when fork approaches the player
+      if (!this.runner.choiceLocked && this.runner.forkY >= this.runner.choiceDeadlineY) {
+        this.runner.choiceLocked = true;
+
+        // Must be fully committed: far enough into left/right half.
+        const deadZone = 70;
+        if (this.player.x < 500 - deadZone) {
+          // chosen left
+          // ok
+        } else if (this.player.x > 500 + deadZone) {
+          // chosen right
+          // ok
+        } else {
+          // Not committed: give a warning + small shake (no life loss, but pedagogical pressure)
+          this._showRunnerToast("Choose a lane before the fork passes!", "#fbbf24");
+          this.cameras.main.shake(160, 0.006);
+        }
+      }
+
+      // When fork fully passes bottom, end fork
+      if (this.runner.forkY >= 720) {
+        this._endForkLevel2();
+      }
+    }
+
+    // Player controls (Left/Right lane switching)
+    const leftPressed = Phaser.Input.Keyboard.JustDown(this.cursors.left);
+    const rightPressed = Phaser.Input.Keyboard.JustDown(this.cursors.right);
+
+    if (leftPressed) this._switchLaneLevel2(0);
+    if (rightPressed) this._switchLaneLevel2(1);
+
+    // No drifting
+    this.player.setVelocityX(0);
+  }
+
+  _switchLaneLevel2(newLaneIndex) {
+    if (!this.runner) return;
+    if (newLaneIndex !== 0 && newLaneIndex !== 1) return;
+
+    // During single-road time (no fork), lanes still exist as targets for early positioning.
+    const targetX = this.runner.laneX[newLaneIndex];
+
+    this.tweens.add({
+      targets: this.player,
+      x: targetX,
+      duration: 160,
+      ease: "Sine.inOut"
+    });
+  }
+
+  _spawnForkLevel2() {
+    if (!this.runner) return;
+    if (this.runner.forkActive) return;
+
+    // Create a *physical fork* that scrolls down as one system.
+    this.runner.forkActive = true;
+    this.runner.choiceLocked = false;
+    this.runner.forkResolved = false;
+    this.runner.forkY = -140;
+
+    // Randomly decide safe lane (INT)
+    const leftIsInt = Phaser.Math.Between(0, 1) === 0;
+    this.runner.safeLaneIndex = leftIsInt ? 0 : 1;
+    const leftLabel = leftIsInt ? "INT (Whole)" : "DOUBLE (Decimal)";
+    const rightLabel = leftIsInt ? "DOUBLE (Decimal)" : "INT (Whole)";
+
+    // Fork container
+    const container = this.add.container(0, this.runner.forkY).setDepth(6);
+    this.runner.forkContainer = container;
+
+    // Fork graphics (road split + neon edges)
+    const g = this.add.graphics();
+    this.runner.forkGraphics = g;
+    container.add(g);
+
+    // Draw fork shape in local space (0..1000)
+    const roadTopY = 70;
+    const forkStartY = 120;
+    const forkEndY = 360;
+    const roadLeft = 340;
+    const roadRight = 660;
+    const laneGap = 120;
+
+    g.clear();
+    // Road fill
+    g.fillStyle(0x0b1220, 0.85);
+    g.fillRoundedRect(roadLeft, roadTopY, roadRight - roadLeft, forkEndY - roadTopY, 22);
+
+    // Fork "split" highlight: two diverging lines
+    g.lineStyle(5, 0x22d3ee, 0.25);
+    g.beginPath();
+    g.moveTo(500, forkStartY);
+    g.lineTo(500 - laneGap, forkEndY);
+    g.moveTo(500, forkStartY);
+    g.lineTo(500 + laneGap, forkEndY);
+    g.strokePath();
+
+    // Neon edges of lanes
+    const leftEdge = 300;
+    const rightEdge = 700;
+    g.lineStyle(3, 0x60a5fa, 0.25);
+    g.strokeRoundedRect(leftEdge, roadTopY, rightEdge - leftEdge, forkEndY - roadTopY, 26);
+
+    // Signs (move with fork)
+    const makeSign = (x, y, label, tint) => {
+      const bg = this.add.rectangle(x, y, 300, 44, 0x0b1220, 0.88);
+      bg.setStrokeStyle(3, tint, 0.7);
+      const txt = this.add.text(x, y, label, {
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "18px",
+        color: "#e8e8ff",
+        fontStyle: "bold"
+      }).setOrigin(0.5);
+      container.add([bg, txt]);
+      return [bg, txt];
+    };
+
+    const leftTint = leftIsInt ? 0x22d3ee : 0xef4444;
+    const rightTint = leftIsInt ? 0xef4444 : 0x22d3ee;
+    makeSign(this.runner.laneX[0], 100, leftLabel, leftTint);
+    makeSign(this.runner.laneX[1], 100, rightLabel, rightTint);
+
+    // Update road guides to show split while fork is active
+    this._drawForkRoadGuides();
+
+    // Spawn crates only during an active fork (handled by timer callback)
+    this._showRunnerToast("Fork incoming! Choose INT lane!", "#fbbf24");
+  }
+
+  _spawnRunnerCratesLevel2() {
+    if (!this.runner) return;
+    if (!this.runner.forkActive) return;
+
+    // During a fork, left/right lanes are meaningful:
+    // - safeLaneIndex => INT (whole) crates
+    // - other lane    => DOUBLE (decimal) crates
+    for (let lane = 0; lane < 2; lane += 1) {
+      const isSafe = lane === this.runner.safeLaneIndex;
+      const isWhole = isSafe;
+
+      const x = this.runner.laneX[lane] + Phaser.Math.Between(-28, 28);
+      const y = -10;
+      const crate = (isWhole ? this.wholeCrates : this.brokenCrates).create(
+        x,
+        y,
+        isWhole ? "crate_whole" : "crate_broken"
+      );
+      this._fitSpriteToHeight(crate, 56);
+
+      crate.setData("val", isWhole ? Phaser.Math.Between(1, 9) : parseFloat((Phaser.Math.FloatBetween(1.1, 9.9)).toFixed(1)));
+
+      // Runner physics: no gravity; move down at runner speed
+      crate.body.setAllowGravity(false);
+      crate.setVelocity(0, this.runner.speed + Phaser.Math.Between(-20, 60));
+      crate.setAngularVelocity(isWhole ? Phaser.Math.Between(-10, 10) : Phaser.Math.Between(-40, 40));
+
+      // Optional small neon label
+      const label = crate.getData("val").toString();
+      const textObj = this.add.text(x, y, label, {
+        fontFamily: "monospace",
+        fontSize: "18px",
+        color: "#ffffff",
+        fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(5);
+      crate.setData("textObj", textObj);
+
+      const syncText = () => {
+        if (crate && crate.active) {
+          textObj.setPosition(crate.x, crate.y);
+          textObj.setRotation(crate.rotation);
+        }
+      };
+      this.events.on("update", syncText);
+
+      crate.on("destroy", () => {
+        textObj.destroy();
+        this.events.off("update", syncText);
+      });
+    }
+  }
+
+  _scheduleNextForkLevel2() {
+    if (!this.runner) return;
+    if (this.runner.nextForkEvent) this.runner.nextForkEvent.remove();
+
+    const delay = Phaser.Math.Between(5000, 7000);
+    this.runner.nextForkEvent = this.time.delayedCall(delay, () => {
+      if (!this.runner) return;
+      if (this.isTransitioning || this.isInstructionShowing) return;
+      if (this.gameState.currentLevel !== 2) return;
+
+      this._spawnForkLevel2();
+      this._scheduleNextForkLevel2();
+    });
+  }
+
+  _endForkLevel2() {
+    if (!this.runner) return;
+    if (!this.runner.forkActive) return;
+
+    this.runner.forkActive = false;
+    this.runner.choiceLocked = false;
+    this.runner.forkResolved = true;
+
+    if (this.runner.forkContainer) {
+      this.runner.forkContainer.destroy();
+      this.runner.forkContainer = null;
+    }
+    if (this.runner.forkGraphics) {
+      this.runner.forkGraphics.destroy();
+      this.runner.forkGraphics = null;
+    }
+
+    // Return to single-road guides after fork passes
+    this._drawSingleRoadGuides();
+  }
+
+  _drawSingleRoadGuides() {
+    if (!this.runner?.laneLines) return;
+    const g = this.runner.laneLines;
+    g.clear();
+    g.lineStyle(3, 0x22d3ee, 0.20);
+    // Single road edges
+    g.strokeLineShape(new Phaser.Geom.Line(320, 70, 320, 600));
+    g.strokeLineShape(new Phaser.Geom.Line(680, 70, 680, 600));
+    // Center guide
+    g.lineStyle(2, 0xa78bfa, 0.14);
+    g.strokeLineShape(new Phaser.Geom.Line(500, 70, 500, 600));
+  }
+
+  _drawForkRoadGuides() {
+    if (!this.runner?.laneLines) return;
+    const g = this.runner.laneLines;
+    g.clear();
+    g.lineStyle(3, 0x22d3ee, 0.20);
+    // Outer edges
+    g.strokeLineShape(new Phaser.Geom.Line(260, 70, 260, 600));
+    g.strokeLineShape(new Phaser.Geom.Line(740, 70, 740, 600));
+    // Split guides
+    g.lineStyle(3, 0xa78bfa, 0.18);
+    g.strokeLineShape(new Phaser.Geom.Line(500, 120, 380, 600));
+    g.strokeLineShape(new Phaser.Geom.Line(500, 120, 620, 600));
+  }
+}

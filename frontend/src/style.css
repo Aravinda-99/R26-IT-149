@@ -28,6 +28,24 @@ body {
 
 .hidden { display: none !important; }
 
+/* --- Phaser Container (fixed canvas sizing) --- */
+#phaser-container {
+    width: 800px;
+    height: 600px;
+    margin: 1.5rem auto 2rem auto;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    background: #0f0f1b;
+}
+
+#phaser-container canvas {
+    display: block;
+    width: 800px !important;
+    height: 600px !important;
+}
+
 /* --- Navbar --- */
 .navbar {
     display: flex;

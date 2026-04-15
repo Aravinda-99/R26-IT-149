@@ -26,18 +26,18 @@ export class Level_Int extends Phaser.Scene {
     this.isTransitioning = false;
     this.isInstructionShowing = false;
 
-    // Background
-    this.cameras.main.setBackgroundColor("#1a1a2e");
+    // Background (Deep space theme)
+    this.cameras.main.setBackgroundColor("#0f0f1b");
 
     // Physics Groups
     this.wholeCrates = this.physics.add.group();
     this.brokenCrates = this.physics.add.group();
 
-    // Setup World Bounds
+    // Setup World Bounds (match canvas: 800x600)
     this.physics.world.setBounds(0, 0, 800, 600);
 
     // Player (Robot)
-    this.player = this.physics.add.sprite(400, 550, "robot");
+    this.player = this.physics.add.sprite(400, 550, "robot"); // Center X, near bottom
     this._fitSpriteToHeight(this.player, 72);
     this.player.setCollideWorldBounds(true);
     this.player.body.setAllowGravity(false);
@@ -51,18 +51,18 @@ export class Level_Int extends Phaser.Scene {
 
     // Particles for success (fallback generated texture if absent)
     this._generateSparkTexture();
-    this.successParticles = this.add.particles(0, 0, 'spark', { 
-        speed: { min: 50, max: 200 },
-        scale: { start: 1, end: 0 },
-        alpha: { start: 1, end: 0 },
-        lifespan: 800,
-        blendMode: 'ADD',
-        emitting: false
+    this.successParticles = this.add.particles(0, 0, 'spark', {
+      speed: { min: 50, max: 200 },
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 800,
+      blendMode: 'ADD',
+      emitting: false
     });
 
     // Boot Level 1 immediately
     this._startLevel(1);
-    
+
     // Core Physics Collisions/Overlaps
     this.physics.add.overlap(this.player, this.wholeCrates, this._catchWholeCrate, null, this);
     this.physics.add.overlap(this.player, this.brokenCrates, this._catchBrokenCrate, null, this);
@@ -80,15 +80,15 @@ export class Level_Int extends Phaser.Scene {
     } else if (this.cursors.right.isDown) {
       this.player.setVelocityX(450);
     } else {
-      this.player.setVelocityX(0); 
+      this.player.setVelocityX(0);
     }
 
     // Clean up fallen rigidbodies off-screen
     this.wholeCrates.getChildren().forEach(crate => {
-        if (crate.y > 650) crate.destroy();
+      if (crate.y > 650) crate.destroy();
     });
     this.brokenCrates.getChildren().forEach(crate => {
-        if (crate.y > 650) crate.destroy();
+      if (crate.y > 650) crate.destroy();
     });
   }
 
@@ -98,15 +98,15 @@ export class Level_Int extends Phaser.Scene {
 
   showLevelInstruction(title, description, buttonText, onStartAction, codeSnippet = null, subDescription = null) {
     this.isInstructionShowing = true;
-    
-    // Dim Background Overlay
+
+    // Dim Background Overlay (match canvas: 800x600)
     const overlayBg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.85).setDepth(200);
-    
+
     // Futuristic Panel
     const panelHeight = codeSnippet ? 540 : 400;
     const panel = this.add.rectangle(400, 300, 650, panelHeight, 0x111122, 1).setDepth(201);
     panel.setStrokeStyle(4, 0x38bdf8);
-    
+
     // Glowing Title
     const titleY = codeSnippet ? 90 : 160;
     const titleText = this.add.text(400, titleY, title, {
@@ -132,28 +132,28 @@ export class Level_Int extends Phaser.Scene {
     const elementsToDestroy = [overlayBg, panel, titleText, descText];
 
     if (codeSnippet) {
-       const codeBg = this.add.rectangle(400, 275, 520, 110, 0x0f172a, 1).setDepth(202);
-       codeBg.setStrokeStyle(2, 0x4ade80);
-       const codeText = this.add.text(400, 275, codeSnippet, {
-          fontFamily: "monospace",
-          fontSize: "20px",
-          color: "#4ade80",
-          align: "left",
-          lineSpacing: 8
-       }).setOrigin(0.5).setDepth(203);
-       elementsToDestroy.push(codeBg, codeText);
+      const codeBg = this.add.rectangle(400, 275, 520, 110, 0x0f172a, 1).setDepth(202);
+      codeBg.setStrokeStyle(2, 0x4ade80);
+      const codeText = this.add.text(400, 275, codeSnippet, {
+        fontFamily: "monospace",
+        fontSize: "20px",
+        color: "#4ade80",
+        align: "left",
+        lineSpacing: 8
+      }).setOrigin(0.5).setDepth(203);
+      elementsToDestroy.push(codeBg, codeText);
     }
 
     if (subDescription) {
-       const subText = this.add.text(400, 400, subDescription, {
-          fontFamily: "Inter, Arial, sans-serif",
-          fontSize: "22px",
-          color: "#fbbf24",
-          align: "center",
-          wordWrap: { width: 550, useAdvancedWrap: true },
-          fontStyle: "bold"
-       }).setOrigin(0.5).setDepth(202);
-       elementsToDestroy.push(subText);
+      const subText = this.add.text(400, 400, subDescription, {
+        fontFamily: "Inter, Arial, sans-serif",
+        fontSize: "22px",
+        color: "#fbbf24",
+        align: "center",
+        wordWrap: { width: 550, useAdvancedWrap: true },
+        fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(202);
+      elementsToDestroy.push(subText);
     }
 
     // Start Button
@@ -162,7 +162,7 @@ export class Level_Int extends Phaser.Scene {
       // Clean up overlay elements
       elementsToDestroy.forEach(e => e.destroy());
       startBtn.destroy();
-      
+
       // Unpause game
       this.isInstructionShowing = false;
       onStartAction();
@@ -176,40 +176,40 @@ export class Level_Int extends Phaser.Scene {
   _startLevel(level) {
     this.gameState.currentLevel = level;
     this.isTransitioning = false;
-    
+
     // Erase old artifacts to ensure clean starts
     this._clearCrates();
-    
+
     // Purge old spawn loops
     if (this.spawnTimer) this.spawnTimer.remove();
 
     if (level === 1) {
       this.showLevelInstruction(
-        "MISSION 1: ACCRETION", 
-        "Integers (int) are whole numbers used for counting items like cargo crates. Catch 5 whole crates to initialize your knowledge.", 
-        "I'm Ready!", 
+        "MISSION 1: ACCRETION",
+        "Integers (int) are whole numbers used for counting items like cargo crates. Catch 5 whole crates to initialize your knowledge.",
+        "I'm Ready!",
         () => {
           this.levelText.setText("Level 1: Accretion - Meet the Integers (int)");
           this.spawnTimer = this.time.addEvent({ delay: 1500, callback: this._spawnCrateL1, callbackScope: this, loop: true });
         }
       );
-    } 
+    }
     else if (level === 2) {
       this.showLevelInstruction(
-        "MISSION 2: TUNING", 
-        "Warning! 'int' variables cannot store decimal values. Catch the whole crates and DODGE the broken decimal crates (e.g., 2.5). Catching a decimal will damage your robot!", 
-        "Start Mission", 
+        "MISSION 2: TUNING",
+        "Warning! 'int' variables cannot store decimal values. Catch the whole crates and DODGE the broken decimal crates (e.g., 2.5). Catching a decimal will damage your robot!",
+        "Start Mission",
         () => {
           this.levelText.setText("Level 2: Tuning - Fix the Data Mismatch!");
           this.spawnTimer = this.time.addEvent({ delay: 1000, callback: this._spawnCrateL2, callbackScope: this, loop: true });
         }
       );
-    } 
+    }
     else if (level === 3) {
       this.showLevelInstruction(
-        "FINAL MISSION: LOGIC RESTRUCTURING", 
-        "To unlock the final gate, you must solve this integer logic:", 
-        "I solved it! Start Mission", 
+        "FINAL MISSION: LOGIC RESTRUCTURING",
+        "To unlock the final gate, you must solve this integer logic:",
+        "I solved it! Start Mission",
         () => {
           this.levelText.setText("Level 3: Restructuring - Logic Application\nint goal = 10; int held = 6; int pick = ?;");
           this.spawnTimer = this.time.addEvent({ delay: 1200, callback: this._spawnCrateL3, callbackScope: this, loop: true });
@@ -231,7 +231,7 @@ export class Level_Int extends Phaser.Scene {
       this._showTransitionPopup("LEVEL 1 COMPLETE: CONCEPT LEARNED!", "PLAY LEVEL 2", () => {
         this._startLevel(2);
       });
-    } 
+    }
     else if (level === 2) {
       this._updateProgress(66);
       this._showTransitionPopup("LEVEL 2 COMPLETE: SCHEMA REFINED!", "FINAL CHALLENGE", () => {
@@ -248,7 +248,7 @@ export class Level_Int extends Phaser.Scene {
     this._clearCrates();
     this._updateProgress(100);
 
-    // Massive particle explosion
+    // Massive particle explosion at center
     this.successParticles.emitParticleAt(400, 300, 200);
     this.cameras.main.flash(600, 255, 255, 255);
 
@@ -280,7 +280,7 @@ export class Level_Int extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(301);
 
     this._createInteractiveButton(400, 480, "RESTART MODULE", () => {
-        this.scene.restart();
+      this.scene.restart();
     }, 301);
   }
 
@@ -291,7 +291,7 @@ export class Level_Int extends Phaser.Scene {
     this._clearCrates();
 
     this._showTransitionPopup("GAME OVER\nZero Lives Remaining.", "RETRY LEVEL", () => {
-        this.scene.restart(); // Restart entirely back to level 1 for penalty compliance
+      this.scene.restart(); // Restart entirely back to level 1 for penalty compliance
     }, "#ef4444");
   }
 
@@ -301,11 +301,11 @@ export class Level_Int extends Phaser.Scene {
 
   _catchWholeCrate(player, crate) {
     if (this.isTransitioning || this.isInstructionShowing) return;
-    
+
     this.successParticles.emitParticleAt(crate.x, crate.y, 25);
     const value = crate.getData('val');
     crate.destroy();
-    
+
     // Action branches based on active Phase
     if (this.gameState.currentLevel === 1) {
       // ACCRETION: Goal collect 5 crates. Only Whole spawn.
@@ -314,7 +314,7 @@ export class Level_Int extends Phaser.Scene {
       if (this.gameState.collectedL1 >= 5) {
         this._levelComplete(1);
       }
-    } 
+    }
     else if (this.gameState.currentLevel === 2) {
       // TUNING: Catching Whole yields 50 pts
       this.gameState.score += 50;
@@ -386,7 +386,7 @@ export class Level_Int extends Phaser.Scene {
   }
 
   _spawnDetailedCrate(isWhole, specificValue = null) {
-    const x = Phaser.Math.Between(50, 750);
+    const x = Phaser.Math.Between(50, 750); // Match 800px canvas width
     let crate, valText;
 
     if (isWhole) {
@@ -409,24 +409,24 @@ export class Level_Int extends Phaser.Scene {
 
     // Dynamic Text Anchor tied to physics object 
     const textObj = this.add.text(x, -60, valText, {
-        fontFamily: "monospace", fontSize: "18px", color: "#ffffff", fontStyle: "bold",
-        backgroundColor: "rgba(0,0,0,0.4)"
+      fontFamily: "monospace", fontSize: "18px", color: "#ffffff", fontStyle: "bold",
+      backgroundColor: "rgba(0,0,0,0.4)"
     }).setOrigin(0.5).setDepth(5);
 
     crate.setData('textObj', textObj);
 
     const syncText = () => {
-        if (crate && crate.active) {
-            textObj.setPosition(crate.x, crate.y);
-            textObj.setRotation(crate.rotation);
-        }
+      if (crate && crate.active) {
+        textObj.setPosition(crate.x, crate.y);
+        textObj.setRotation(crate.rotation);
+      }
     };
     this.events.on('update', syncText);
 
     // Proper GC handler
     crate.on('destroy', () => {
-        textObj.destroy();
-        this.events.off('update', syncText);
+      textObj.destroy();
+      this.events.off('update', syncText);
     });
   }
 
@@ -440,10 +440,10 @@ export class Level_Int extends Phaser.Scene {
   // ---------------------------------------------------------------------------
 
   _createHUD() {
-    // Info Container Background
+    // Info Container Background (match canvas: 800px width)
     this.add.rectangle(400, 30, 800, 60, 0x111122, 0.9).setDepth(9);
 
-    // Glowing Progress Bar (Background Array)
+    // Glowing Progress Bar
     this.progressBg = this.add.rectangle(400, 5, 800, 10, 0x333333).setOrigin(0.5, 0).setDepth(10);
     this.progressFg = this.add.rectangle(0, 5, 0, 10, 0x4ade80).setOrigin(0, 0).setDepth(11);
 
@@ -467,7 +467,7 @@ export class Level_Int extends Phaser.Scene {
       shadow: { blur: 10, color: "#fbbf24", fill: true }
     }).setDepth(10);
 
-    // Real-Time Lives Engine
+    // Real-Time Lives Engine (Shifted Right)
     this.livesText = this.add.text(650, 20, `Lives: ${this.gameState.lives}`, {
       fontFamily: "monospace",
       fontSize: "24px",
@@ -490,7 +490,7 @@ export class Level_Int extends Phaser.Scene {
 
   _updateProgress(targetPercentage) {
     this.gameState.progress = targetPercentage;
-    const targetWidth = (targetPercentage / 100) * 800;
+    const targetWidth = (targetPercentage / 100) * 800; // Calibrated to canvas width
     this.tweens.add({
       targets: this.progressFg,
       width: targetWidth,
@@ -500,22 +500,22 @@ export class Level_Int extends Phaser.Scene {
   }
 
   _showTransitionPopup(title, btnText, btnCallback, titleColor = "#4ade80") {
-    // Create Blocking Overlay
+    // Create Blocking Overlay (match canvas: 800x600)
     this.overlayBg = this.add.rectangle(400, 300, 800, 600, 0x000000, 0.85).setDepth(100);
-    
+
     this.overlayTitle = this.add.text(400, 250, title, {
-        fontFamily: "Inter, Arial, sans-serif",
-        fontSize: "36px",
-        color: titleColor,
-        align: "center",
-        fontStyle: "bold"
+      fontFamily: "Inter, Arial, sans-serif",
+      fontSize: "36px",
+      color: titleColor,
+      align: "center",
+      fontStyle: "bold"
     }).setOrigin(0.5).setDepth(101);
 
     this.overlayBtn = this._createInteractiveButton(400, 380, btnText, () => {
-        this.overlayBg.destroy();
-        this.overlayTitle.destroy();
-        this.overlayBtn.destroy();
-        btnCallback();
+      this.overlayBg.destroy();
+      this.overlayTitle.destroy();
+      this.overlayBtn.destroy();
+      btnCallback();
     }, 101);
   }
 
@@ -533,9 +533,9 @@ export class Level_Int extends Phaser.Scene {
     btnText.on('pointerover', () => { btnText.setBackgroundColor("#2563eb").setTint(0xdddddd); });
     btnText.on('pointerout', () => { btnText.setBackgroundColor("#3b82f6").clearTint(); });
     btnText.on('pointerdown', () => { btnText.y += 3; });
-    
-    btnText.on('pointerup', () => { 
-      btnText.y -= 3; 
+
+    btnText.on('pointerup', () => {
+      btnText.y -= 3;
       // Force minor execution delay to allow the visual 'click' bounce to render 100%
       this.time.delayedCall(60, onClick);
     });
@@ -563,11 +563,11 @@ export class Level_Int extends Phaser.Scene {
 
   _generateSparkTexture() {
     if (!this.textures.exists("spark")) {
-        const g = this.add.graphics();
-        g.fillStyle(0x4ade80, 1); 
-        g.fillCircle(4, 4, 4);
-        g.generateTexture("spark", 8, 8);
-        g.destroy();
+      const g = this.add.graphics();
+      g.fillStyle(0x4ade80, 1);
+      g.fillCircle(4, 4, 4);
+      g.generateTexture("spark", 8, 8);
+      g.destroy();
     }
   }
 }

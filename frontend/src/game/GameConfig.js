@@ -13,6 +13,12 @@ export function createGameConfig({ parent } = {}) {
     type: Phaser.AUTO,
     width: 800,
     height: 600,
+    scale: {
+      // Prevent gradual rescale due to parent/layout changes.
+      // Canvas will remain a fixed 800x600; CSS will handle centering.
+      mode: Phaser.Scale.NONE,
+      autoCenter: Phaser.Scale.NO_CENTER,
+    },
     parent,
     backgroundColor: "#1a1a2e",
     dom: {
