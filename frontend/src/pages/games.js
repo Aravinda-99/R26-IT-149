@@ -43,7 +43,7 @@ export async function renderGames(container) {
             <div>
                 <h3 style="color: var(--accent-purple); font-size: 1.15rem; margin-bottom: 0.35rem;">🧠 Integer Mastery Module</h3>
                 <p style="color: var(--text-secondary); font-size: 0.85rem;">
-                    3-Level Schema Theory Course: <b>Number Line Adventure</b> → <b>Math Combat</b> → <b>Code Escape Room</b>
+                    3-Level Schema Theory Course: <b>Number Line Adventure</b> → <b>Cyber Variable Arena</b> → <b>Code Escape Room</b>
                 </p>
                 <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
                     Badges: 🏆 Integer Explorer &nbsp; ⚔️ Math Warrior &nbsp; 🧠 Logic Master
