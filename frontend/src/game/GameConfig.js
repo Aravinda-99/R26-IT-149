@@ -1,12 +1,17 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene.js";
+import { MenuScene } from "./scenes/MenuScene.js";
+import { Level1Scene } from "./scenes/Level1Scene.js";
+import { Level2Scene } from "./scenes/Level2Scene.js";
+import { Level3Scene } from "./scenes/Level3Scene.js";
+import { UIScene } from "./scenes/UIScene.js";
 import { Level_Int } from "./scenes/Level_Int.js";
 
 /**
  * Creates a Phaser configuration object for CodeQuest learning games.
  *
- * Keep this config factory small and "pure" so it’s easy to mount the game
- * inside any DOM container (e.g., the `#phaser-container` div in `index.html`).
+ * Registers all scenes: Boot → Menu → Level1/2/3 + UIScene overlay.
+ * The legacy Level_Int scene is also included for backward compatibility.
  */
 export function createGameConfig({ parent } = {}) {
   return {
@@ -14,15 +19,12 @@ export function createGameConfig({ parent } = {}) {
     width: 800,
     height: 600,
     scale: {
-      // Prevent gradual rescale due to parent/layout changes.
-      // Canvas will remain a fixed 800x600; CSS will handle centering.
       mode: Phaser.Scale.NONE,
       autoCenter: Phaser.Scale.NO_CENTER,
     },
     parent,
-    backgroundColor: "#1a1a2e",
+    backgroundColor: "#0a0a1a",
     dom: {
-      // Required for `this.add.dom()` HTML overlay code editors.
       createContainer: true,
     },
     physics: {
@@ -32,7 +34,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, Level_Int],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, UIScene, Level_Int],
   };
 }
-
