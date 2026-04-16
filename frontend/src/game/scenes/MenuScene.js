@@ -61,8 +61,8 @@ export class MenuScene extends Phaser.Scene {
       {
         title: "Level 1: Integer Discovery",
         phase: "ACCRETION PHASE",
-        desc: "Sort numbers into Positive, Negative & Zero zones",
-        mechanic: "Number Sorting Puzzle",
+        desc: "Catch falling integers on the number line — avoid decimals & fractions!",
+        mechanic: "Number Line Adventure",
         badge: BADGES.integer_explorer,
         scene: "Level1Scene",
         index: 0,
