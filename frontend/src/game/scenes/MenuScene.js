@@ -126,9 +126,9 @@ export class MenuScene extends Phaser.Scene {
         index: 3,
       },
       {
-        title: "Level 5: Precision Calibration Lab",
+        title: "Level 5: Rocket Launch Sequence",
         phase: "TUNING",
-        desc: "Classify, round, and compare float precision!",
+        desc: "Complete 5 precision systems to launch the rocket!",
         badge: BADGES.precision_master,
         scene: "Level5Scene",
         index: 4,
