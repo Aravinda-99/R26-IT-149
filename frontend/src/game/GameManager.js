@@ -6,15 +6,15 @@
  */
 
 const DEFAULT_STATE = {
-  currentLevel: 0,       // 0 = menu, 1-3 = levels
+  currentLevel: 0,       // 0 = menu, 1-6 = levels
   score: 0,
   xp: 0,
   lives: 3,
   maxLives: 3,
   combo: 0,
-  levelsCompleted: [false, false, false],
-  levelAccuracy: [0, 0, 0],   // % accuracy per level
-  levelAttempts: [0, 0, 0],
+  levelsCompleted: [false, false, false, false, false, false],
+  levelAccuracy: [0, 0, 0, 0, 0, 0],
+  levelAttempts: [0, 0, 0, 0, 0, 0],
   badges: [],
 };
 
@@ -92,6 +92,10 @@ class _GameManager {
   }
 
   isLevelUnlocked(levelIndex) {
+    // DEV MODE: all levels unlocked for testing — set to false for production
+    const DEV_MODE = true;
+    if (DEV_MODE) return true;
+
     if (levelIndex === 0) return true;
     return this.state.levelsCompleted[levelIndex - 1];
   }
@@ -105,7 +109,7 @@ class _GameManager {
   }
 
   resetAll() {
-    this.state = { ...DEFAULT_STATE, levelsCompleted: [false, false, false], levelAccuracy: [0, 0, 0], levelAttempts: [0, 0, 0], badges: [] };
+    this.state = { ...DEFAULT_STATE, levelsCompleted: [false, false, false, false, false, false], levelAccuracy: [0, 0, 0, 0, 0, 0], levelAttempts: [0, 0, 0, 0, 0, 0], badges: [] };
     this._emit("reset");
   }
 

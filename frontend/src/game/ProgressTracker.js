@@ -96,12 +96,13 @@ export const ProgressTracker = {
   },
 
   /**
-   * Calculate overall completion percentage across 3 levels.
+   * Calculate overall completion percentage across all levels.
    */
   getCompletionPercentage(state) {
     if (!state || !state.levelsCompleted) return 0;
     const done = state.levelsCompleted.filter(Boolean).length;
-    return Math.round((done / 3) * 100);
+    const total = state.levelsCompleted.length || 6;
+    return Math.round((done / total) * 100);
   },
 
   /**

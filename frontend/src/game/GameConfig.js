@@ -1,9 +1,12 @@
 import Phaser from "phaser";
 import { BootScene } from "./scenes/BootScene.js";
 import { MenuScene } from "./scenes/MenuScene.js";
-import { Level1Scene } from "./scenes/Level1Scene.js";
-import { Level2Scene } from "./scenes/Level2Scene.js";
-import { Level3Scene } from "./scenes/Level3Scene.js";
+import { Level1Scene } from "./scenes/int/Level1Scene.js";
+import { Level2Scene } from "./scenes/int/Level2Scene.js";
+import { Level3Scene } from "./scenes/int/Level3Scene.js";
+import { Level4Scene } from "./scenes/Level4Scene.js";
+import { Level5Scene } from "./scenes/Level5Scene.js";
+import { Level6Scene } from "./scenes/Level6Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -33,6 +36,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, UIScene],
   };
 }

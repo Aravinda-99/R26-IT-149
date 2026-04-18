@@ -34,6 +34,30 @@ export const BADGES = {
     level: 3,
     color: 0xa78bfa,
   },
+  float_explorer: {
+    id: "float_explorer",
+    name: "Float Explorer",
+    emoji: "🌊",
+    description: "Completed Level 4 — Float Accretion Phase",
+    level: 4,
+    color: 0x00d4ff,
+  },
+  precision_master: {
+    id: "precision_master",
+    name: "Precision Master",
+    emoji: "🔬",
+    description: "Completed Level 5 — Float Tuning Phase",
+    level: 5,
+    color: 0x00bcd4,
+  },
+  calculation_wizard: {
+    id: "calculation_wizard",
+    name: "Calculation Wizard",
+    emoji: "🧮",
+    description: "Completed Level 6 — Float Restructuring Phase",
+    level: 6,
+    color: 0x4ade80,
+  },
 };
 
 // In-memory cache of unlocked badges
