@@ -174,9 +174,9 @@ export class MenuScene extends Phaser.Scene {
         index: 7,
       },
       {
-        title: "Level 9: Char Manipulation Lab",
+        title: "Level 9: Char Quest — Typing Adventure",
         phase: "RESTRUCTURING",
-        desc: "Escape sequences, case conversion & string building!",
+        desc: "Type char code through 20 rooms — rescue the Kingdom!",
         badge: BADGES.char_wizard,
         scene: "Level9Scene",
         index: 8,

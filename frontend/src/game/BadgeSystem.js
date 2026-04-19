@@ -76,9 +76,9 @@ export const BADGES = {
   },
   char_wizard: {
     id: "char_wizard",
-    name: "Char Wizard",
-    emoji: "🧙",
-    description: "Completed Level 9 — Char Restructuring Phase",
+    name: "Char Champion",
+    emoji: "⚔️",
+    description: "Completed Level 9 — Char Quest (Restructuring)",
     level: 9,
     color: 0x818cf8,
   },

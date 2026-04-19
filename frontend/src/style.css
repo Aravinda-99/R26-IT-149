@@ -34,16 +34,19 @@ body {
     height: 600px;
     margin: 1.5rem auto 2rem auto;
     border-radius: 16px;
-    overflow: hidden;
+    /* visible: Phaser DOM overlays (e.g. Level 9 editor) must not clip on the right */
+    overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
     background: #0f0f1b;
+    position: relative;
 }
 
 #phaser-container canvas {
     display: block;
     width: 800px !important;
     height: 600px !important;
+    border-radius: 16px;
 }
 
 /* --- Navbar --- */
