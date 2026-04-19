@@ -1,15 +1,10 @@
 /**
- * Level9Scene — "Char Restructuring: Char Manipulation Lab" (Restructuring Phase)
- * ================================================================================
- * Mechanic: Top-down RPG Lab Exploration
- * - Player (scientist) navigates a research lab to 3 interactive stations
- * - Station 1: Escape Sequence Identifier — match escape sequences to meanings
- * - Station 2: Case Converter — predict ASCII case conversion results
- * - Station 3: String Builder — understand char-to-string operations
- * - Each station has 5 sub-questions presented via DOM overlay panels
- * - Complete all 3 stations with ≥80% accuracy to earn Char Wizard badge
+ * Level9Scene — "Char Quest: The Typing Adventure" (Restructuring Phase)
+ * =======================================================================
+ * Adventure RPG: type Java-style char solutions to clear 20 rooms across
+ * Castle → Forest → Mountain → Volcano. DOM code editor + story panels.
  *
- * Schema Theory: Restructuring — applying char manipulation knowledge
+ * Schema Theory: Restructuring — applying char knowledge in practical code
  */
 
 import Phaser from "phaser";
@@ -17,72 +12,304 @@ import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 
-/* ───────── Constants ───────── */
 const W = 800;
 const H = 600;
-const PLAYER_SPEED = 150;
-const ACCURACY_THRESHOLD = 80;
-const MAX_LIVES = 3;
-const QUESTIONS_PER_STATION = 5;
-const TOTAL_QUESTIONS = QUESTIONS_PER_STATION * 3;
+const TOTAL_ROOMS = 20;
+const SKIP_PENALTY = 50;
+const ACCURACY_THRESHOLD = 75;
+const BONUS_FINAL = 500;
 
-/* ───────── Question Banks ───────── */
-const STATION1_QUESTIONS = [
-  { code: "\\n", answer: "New Line", options: ["New Line", "Tab", "Backslash", "Null"] },
-  { code: "\\t", answer: "Tab", options: ["New Line", "Tab", "Backspace", "Return"] },
-  { code: "\\\\", answer: "Backslash", options: ["Forward Slash", "Backslash", "New Line", "Null"] },
-  { code: "\\'", answer: "Single Quote", options: ["Double Quote", "Single Quote", "Apostrophe Escape", "Tab"] },
-  { code: "\\\"", answer: "Double Quote", options: ["Single Quote", "Double Quote", "Escape", "Backslash"] },
-];
-
-const STATION2_QUESTIONS = [
-  { code: "char c = 'a';  c = c - 32;", question: "What is c?", answer: "'A'", options: ["'A'", "'a'", "'!'", "'Z'"] },
-  { code: "char c = 'Z';  c = c + 32;", question: "What is c?", answer: "'z'", options: ["'z'", "'Z'", "'a'", "'A'"] },
-  { code: "char c = 'D';  c = c + 32;", question: "What is c?", answer: "'d'", options: ["'d'", "'D'", "'E'", "'e'"] },
-  { code: "char c = 'm';  c = c - 32;", question: "What is c?", answer: "'M'", options: ["'M'", "'m'", "'N'", "'n'"] },
-  { code: "char c = 'G';", question: "Is 'G' uppercase or lowercase?", answer: "Uppercase", options: ["Uppercase", "Lowercase", "Neither", "Both"] },
-];
-
-const STATION3_QUESTIONS = [
-  { code: "char a='H'; char b='i';\nPrint a then b.", question: "What is produced?", answer: "Hi", options: ["Hi", "iH", "HI", "hi"] },
-  { code: "char c = 'A' + 1;", question: "What is c?", answer: "'B'", options: ["'B'", "'A'", "'C'", "'1'"] },
-  { code: "char x = '5';", question: "Is x a number or character?", answer: "Character", options: ["Number", "Character", "Both", "Neither"] },
-  { code: "char c = 65;", question: "What character is stored?", answer: "'A'", options: ["'A'", "'a'", "'6'", "'5'"] },
-  { code: "'Z' - 'A' + 1", question: "What is the result?", answer: "26", options: ["25", "26", "27", "90"] },
-];
-
-/* ───────── Station Definitions ───────── */
-const STATION_DEFS = [
-  {
-    x: 150, y: 300, label: "ESCAPE LAB", color: 0x4ade80, colorHex: "#4ade80",
-    title: "ESCAPE SEQUENCE IDENTIFIER", subtitle: "Match each escape sequence to its meaning",
-    questions: STATION1_QUESTIONS,
-  },
-  {
-    x: 650, y: 300, label: "CASE CONVERTER", color: 0x60a5fa, colorHex: "#60a5fa",
-    title: "CASE CONVERTER", subtitle: "Convert between uppercase and lowercase using ASCII arithmetic",
-    questions: STATION2_QUESTIONS,
-  },
-  {
-    x: 400, y: 480, label: "STRING BUILDER", color: 0xc084fc, colorHex: "#c084fc",
-    title: "STRING BUILDER", subtitle: "Build and predict strings from individual chars",
-    questions: STATION3_QUESTIONS,
-  },
-];
-
-/* ───────── Helpers ───────── */
-function lerpColor(a, b, t) {
-  const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
-  const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const bl = Math.round(ab + (bb - ab) * t);
-  return (r << 16) | (g << 8) | bl;
+/* ── Room validators: full-line flexible (whitespace-tolerant) ── */
+function stripComments(s) {
+  return s.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 9 SCENE
- * ═══════════════════════════════════════════════════════════════ */
+function compact(s) {
+  return stripComments(s).replace(/\s+/g, " ").trim();
+}
+
+function mustMatch(re) {
+  return (code) => re.test(compact(code));
+}
+
+function mustMatchAll(res) {
+  return (code) => {
+    const c = compact(code);
+    return res.every(r => r.test(c));
+  };
+}
+
+/**
+ * ROOMS 1–20 — story, starter template, points, hints, validate()
+ */
+const ROOMS = [
+  {
+    id: 1,
+    zone: "castle",
+    title: "🏰 The Entrance Gate",
+    story: "A guard blocks your path:\n\"Declare a char variable named password with the value 'A'!\"",
+    starter: `// Declare char variable 'password' with value 'A'\nchar password = `,
+    validate: mustMatch(/char\s+password\s*=\s*'A'\s*;/),
+    points: 50,
+    hints: [
+      "Use single quotes around one letter: 'A'",
+      "Full line: char password = 'A';",
+    ],
+    wrong: [
+      { test: (c) => /"/.test(c) && !/'/.test(c), msg: "Double quotes make a String — use single quotes for char!" },
+      { test: (c) => /'AB'/.test(compact(c)), msg: "A char holds exactly ONE character inside quotes." },
+    ],
+  },
+  {
+    id: 2,
+    zone: "castle",
+    title: "📚 The Royal Library",
+    story: "A magical book asks:\n\"The first letter is 'A'. What comes next in the alphabet?\"",
+    starter: `char first = 'A';\nchar second = `,
+    validate: mustMatch(/char\s+first\s*=\s*'A'\s*;\s*char\s+second\s*=\s*'B'\s*;/),
+    points: 50,
+    hints: ["After 'A' comes 'B'.", "char second = 'B';"],
+    wrong: [],
+  },
+  {
+    id: 3,
+    zone: "castle",
+    title: "🔢 The Number Vault",
+    story: "The safe asks for the CHARACTER for digit five — not the number 5!",
+    starter: `// Store the character '5' (not int 5!)\nchar digitFive = `,
+    validate: mustMatch(/char\s+digitFive\s*=\s*'5'\s*;/),
+    points: 75,
+    hints: ["Use quotes: '5' is a char; 5 alone is an int.", "char digitFive = '5';"],
+    wrong: [
+      { test: (c) => /=\s*5\s*;/.test(compact(c)) && !/'5'/.test(compact(c)), msg: "That's a NUMBER — use quotes: '5'" },
+    ],
+  },
+  {
+    id: 4,
+    zone: "castle",
+    title: "⚡ The Symbol Chamber",
+    story: "Capture the @ symbol in a char variable named atSymbol.",
+    starter: `char atSymbol = `,
+    validate: mustMatch(/char\s+atSymbol\s*=\s*'@'\s*;/),
+    points: 75,
+    hints: ["Symbols use single quotes too: '@'", "char atSymbol = '@';"],
+    wrong: [],
+  },
+  {
+    id: 5,
+    zone: "castle",
+    title: "🌌 The Space Portal",
+    story: "\"The hardest char is the one you cannot see!\" Declare a SPACE character.",
+    starter: `// One space BETWEEN the quotes: ' '\nchar space = `,
+    validate: mustMatch(/char\s+space\s*=\s*'\s'\s*;/),
+    points: 100,
+    hints: ["Type a space between the quotes: ' then SPACE then '", "'' is empty — ' ' is one space char."],
+    wrong: [
+      { test: (c) => /=\s*''\s*;/.test(compact(c)), msg: "'' is EMPTY. You need one space: ' '" },
+    ],
+  },
+  {
+    id: 6,
+    zone: "forest",
+    title: "🌲 The Newline Bridge",
+    story: "Repair the bridge with a NEWLINE character — it splits text to the next line!",
+    starter: `// Escape sequences start with \\\nchar newline = `,
+    validate: mustMatch(/char\s+newline\s*=\s*'\\n'\s*;/),
+    points: 100,
+    hints: ["Newline in char: '\\n' (backslash + n)", "char newline = '\\n';"],
+    wrong: [],
+  },
+  {
+    id: 7,
+    zone: "forest",
+    title: "🕳️ The Tab Cave",
+    story: "Create a TAB for indentation — used to align text in output.",
+    starter: `char tab = `,
+    validate: mustMatch(/char\s+tab\s*=\s*'\\t'\s*;/),
+    points: 100,
+    hints: ["Tab escape: '\\t'", "char tab = '\\t';"],
+    wrong: [],
+  },
+  {
+    id: 8,
+    zone: "forest",
+    title: "🪓 The Backslash Puzzle",
+    story: "Store a single backslash. In source code you must escape it: '\\\\' → one \\.",
+    starter: `// Two backslashes between quotes = one \\ char\nchar backslash = `,
+    validate: mustMatch(/char\s+backslash\s*=\s*'\\\\'\s*;/),
+    points: 100,
+    hints: ["Literal backslash char is written '\\' in Java/C++ style.", "char backslash = '\\\\';"],
+    wrong: [],
+  },
+  {
+    id: 9,
+    zone: "forest",
+    title: "💬 The Quote Dilemma",
+    story: "Store a single quote character — escape it inside single quotes: \\'",
+    starter: `char quote = `,
+    validate: mustMatch(/char\s+quote\s*=\s*'\\''\s*;/),
+    points: 100,
+    hints: ["Use: '\\''  (backslash + quote between outer quotes)", "char quote = '\\'';"],
+    wrong: [],
+  },
+  {
+    id: 10,
+    zone: "forest",
+    title: "🌲 Forest Exit",
+    story: "Complete the spell: set newline so \"Hi\" and \"Bye\" can sit on two lines.",
+    starter: `char h = 'H';\nchar i = 'i';\nchar newline = `,
+    validate: mustMatch(/char\s+newline\s*=\s*'\\n'\s*;/),
+    points: 150,
+    hints: ["Same as the bridge: '\\n'", "char newline = '\\n';"],
+    wrong: [],
+  },
+  {
+    id: 11,
+    zone: "mountain",
+    title: "⛰️ The Name Carver",
+    story: "Spell CAT — three chars, letter by letter.",
+    starter: `// Spell "CAT"\nchar letter1 = \nchar letter2 = \nchar letter3 = `,
+    validate: mustMatchAll([
+      /char\s+letter1\s*=\s*'C'\s*;/,
+      /char\s+letter2\s*=\s*'A'\s*;/,
+      /char\s+letter3\s*=\s*'T'\s*;/,
+    ]),
+    points: 100,
+    hints: ["Three lines: 'C', 'A', 'T'", "letter1 = 'C'; letter2 = 'A'; letter3 = 'T';"],
+    wrong: [],
+  },
+  {
+    id: 12,
+    zone: "mountain",
+    title: "🔠 Case Cavern",
+    story: "Uppercase and lowercase are DIFFERENT chars. Show both 'A' and 'a'.",
+    starter: `char upper = \nchar lower = `,
+    validate: mustMatchAll([
+      /char\s+upper\s*=\s*'A'\s*;/,
+      /char\s+lower\s*=\s*'a'\s*;/,
+    ]),
+    points: 100,
+    hints: ["'A' ≠ 'a' — they are two different char values.", "char upper = 'A';\nchar lower = 'a';"],
+    wrong: [],
+  },
+  {
+    id: 13,
+    zone: "mountain",
+    title: "🎨 Pattern Workshop",
+    story: "Reuse two variables to build pattern A B A B — only need chars 'A' and 'B'.",
+    starter: `char a = \nchar b = `,
+    validate: mustMatchAll([
+      /char\s+a\s*=\s*'A'\s*;/,
+      /char\s+b\s*=\s*'B'\s*;/,
+    ]),
+    points: 150,
+    hints: ["char a = 'A';\nchar b = 'B';"],
+    wrong: [],
+  },
+  {
+    id: 14,
+    zone: "mountain",
+    title: "🔐 Secret Message",
+    story: "Decode \"H I\" — letter, SPACE, letter (not \"HI\").",
+    starter: `char h = \nchar space = \nchar i = `,
+    validate: mustMatchAll([
+      /char\s+h\s*=\s*'H'\s*;/,
+      /char\s+space\s*=\s*'\s'\s*;/,
+      /char\s+i\s*=\s*'I'\s*;/,
+    ]),
+    points: 150,
+    hints: ["Middle must be space char: ' '", "char h = 'H'; char space = ' '; char i = 'I';"],
+    wrong: [],
+  },
+  {
+    id: 15,
+    zone: "mountain",
+    title: "🏔️ Mountain Peak",
+    story: "Build CODE then a newline — five char declarations.",
+    starter: `char c = \nchar o = \nchar d = \nchar e = \nchar newline = `,
+    validate: mustMatchAll([
+      /char\s+c\s*=\s*'C'\s*;/,
+      /char\s+o\s*=\s*'O'\s*;/,
+      /char\s+d\s*=\s*'D'\s*;/,
+      /char\s+e\s*=\s*'E'\s*;/,
+      /char\s+newline\s*=\s*'\\n'\s*;/,
+    ]),
+    points: 200,
+    hints: ["Last line: char newline = '\\n';", "Letters C,O,D,E then newline."],
+    wrong: [],
+  },
+  {
+    id: 16,
+    zone: "volcano",
+    title: "🔥 The Error Detector",
+    story: "Buggy code used double quotes. Write the FIXED declaration with single quotes.",
+    starter: `// WRONG: char bad = \"X\";\n// Your fix:\nchar fixed = `,
+    validate: mustMatch(/char\s+fixed\s*=\s*'X'\s*;/),
+    points: 150,
+    hints: ["char fixed = 'X'; — single quotes only!"],
+    wrong: [],
+  },
+  {
+    id: 17,
+    zone: "volcano",
+    title: "🪤 The Multi-Char Trap",
+    story: "'ABC' in quotes is invalid for char. Store only the FIRST letter.",
+    starter: `// char wrong = 'ABC'; // too many!\nchar firstLetter = `,
+    validate: mustMatch(/char\s+firstLetter\s*=\s*'A'\s*;/),
+    points: 150,
+    hints: ["One char only: 'A'", "char firstLetter = 'A';"],
+    wrong: [],
+  },
+  {
+    id: 18,
+    zone: "volcano",
+    title: "📋 Format Chamber",
+    story: "Use a TAB escape to align labels and values in formatted output.",
+    starter: `char tab = `,
+    validate: mustMatch(/char\s+tab\s*=\s*'\\t'\s*;/),
+    points: 200,
+    hints: ["char tab = '\\t';"],
+    wrong: [],
+  },
+  {
+    id: 19,
+    zone: "volcano",
+    title: "💼 Real-World Path",
+    story: "File paths need a backslash char — store it the same way as before: escaped.",
+    starter: `char c = 'C';\nchar colon = ':';\nchar backslash = `,
+    validate: mustMatchAll([
+      /char\s+c\s*=\s*'C'\s*;/,
+      /char\s+colon\s*=\s*':'\s*;/,
+      /char\s+backslash\s*=\s*'\\\\'\s*;/,
+    ]),
+    points: 200,
+    hints: ["char backslash = '\\\\';"],
+    wrong: [],
+  },
+  {
+    id: 20,
+    zone: "volcano",
+    title: "🔥 FINAL BOSS — Char Master",
+    story: "Combine everything: quotes, newlines, and backslash — declare all five specials.",
+    starter: `// Fill ALL five lines exactly:\nchar quote = \nchar quote2 = \nchar newline1 = \nchar backslash = \nchar newline2 = `,
+    validate: mustMatchAll([
+      /char\s+quote\s*=\s*'\\''\s*;/,
+      /char\s+quote2\s*=\s*'\\''\s*;/,
+      /char\s+newline1\s*=\s*'\\n'\s*;/,
+      /char\s+backslash\s*=\s*'\\\\'\s*;/,
+      /char\s+newline2\s*=\s*'\\n'\s*;/,
+    ]),
+    points: 500,
+    hints: [
+      "quote lines: '\\''",
+      "newlines: '\\n'",
+      "backslash literal: '\\\\'",
+    ],
+    wrong: [],
+  },
+];
+
+/* ═══════════════════════════════════════════════════════════════ */
 export class Level9Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level9Scene" });
@@ -90,1136 +317,490 @@ export class Level9Scene extends Phaser.Scene {
 
   create() {
     this.physics.world.gravity.y = 0;
-    this.physics.world.setBounds(0, 0, W, H);
 
-    /* ── State ── */
-    this.stationsSolved = 0;
-    this.correctAnswers = 0;
-    this.totalQuestions = 0;
-    this.lives = MAX_LIVES;
+    this.currentRoom = 0;
     this.score = 0;
+    this.hintsUsed = 0;
+    this.hintIdx = 0;
+    this.correctSubs = 0;
+    this.wrongSubs = 0;
+    this.skips = 0;
+    this.bossBonusEarned = false;
     this.isComplete = false;
     this.gameStarted = false;
-    this.panelOpen = false;
-    this.activeStationIdx = -1;
-    this.activeDom = null;
-    this._panelOverlay = null;
     this.startTime = 0;
+    this.domRoot = null;
+    this.feedbackEl = null;
 
-    this._drawLabBackground();
-    this._genTextures();
-    this._createHolographicDisplay();
-    this._createStations();
-    this._createPlayer();
-    this._createHUD();
+    this._drawWorld();
+    this._generateTextures();
     this._createParticles();
-    this._createAmbientParticles();
+    this._createMapMarkers();
+    this._createHeroHud();
 
     const uiScene = this.scene.get("UIScene");
-    if (uiScene && uiScene.setLevelLabel) {
-      uiScene.setLevelLabel("Level 9: Restructuring — Char Manipulation Lab!");
+    if (uiScene?.setLevelLabel) {
+      uiScene.setLevelLabel("Level 9: Restructuring — Char Quest!");
     }
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd = this.input.keyboard.addKeys({
-      up: Phaser.Input.Keyboard.KeyCodes.W,
-      down: Phaser.Input.Keyboard.KeyCodes.S,
-      left: Phaser.Input.Keyboard.KeyCodes.A,
-      right: Phaser.Input.Keyboard.KeyCodes.D,
-    });
 
     this._showIntro();
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  LAB BACKGROUND
-   * ───────────────────────────────────────────────────────────── */
-  _drawLabBackground() {
+  _drawWorld() {
     const g = this.add.graphics().setDepth(0);
-
-    g.fillStyle(0x0a0f1a, 1);
-    g.fillRect(0, 0, W, H);
-
-    g.lineStyle(1, 0x1a2744, 0.2);
-    for (let x = 0; x < W; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath(); }
-    for (let y = 0; y < H; y += 40) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath(); }
-
-    g.lineStyle(1, 0x4ade80, 0.04);
-    g.beginPath(); g.moveTo(0, H / 2); g.lineTo(W, H / 2); g.strokePath();
-    g.beginPath(); g.moveTo(W / 2, 0); g.lineTo(W / 2, H); g.strokePath();
-
-    const corners = [[30, 30], [W - 30, 30], [30, H - 30], [W - 30, H - 30]];
-    corners.forEach(([cx, cy]) => {
-      g.lineStyle(2, 0x4ade80, 0.1);
-      g.strokeCircle(cx, cy, 8);
-    });
-
-    g.lineStyle(2, 0x1a3a5c, 0.4);
-    g.strokeRect(10, 10, W - 20, H - 20);
-
-    // Lab wall decorations — subtle equipment silhouettes
-    g.fillStyle(0x0f1828, 0.6);
-    g.fillRoundedRect(20, 170, 40, 80, 4);
-    g.fillRoundedRect(20, 380, 40, 80, 4);
-    g.fillRoundedRect(W - 60, 170, 40, 80, 4);
-    g.fillRoundedRect(W - 60, 380, 40, 80, 4);
-
-    // Hazard stripes near stations (subtle)
-    g.lineStyle(1, 0xfbbf24, 0.06);
-    for (let i = 0; i < 5; i++) {
-      const offset = i * 12;
-      g.beginPath(); g.moveTo(100 + offset, 260); g.lineTo(110 + offset, 250); g.strokePath();
-      g.beginPath(); g.moveTo(600 + offset, 260); g.lineTo(610 + offset, 250); g.strokePath();
-      g.beginPath(); g.moveTo(350 + offset, 440); g.lineTo(360 + offset, 430); g.strokePath();
+    const top = 0x1a0a2e;
+    const bot = 0x0a0612;
+    for (let i = 0; i < 50; i++) {
+      const t = i / 50;
+      const c = Phaser.Display.Color.Interpolate.ColorWithColor(
+        Phaser.Display.Color.IntegerToColor(top),
+        Phaser.Display.Color.IntegerToColor(bot),
+        50,
+        i
+      );
+      g.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
+      g.fillRect(0, (H * i) / 50, W, H / 50 + 1);
     }
 
-    // Floor lane markers leading to stations
-    g.lineStyle(1, 0x4ade80, 0.03);
-    g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(150, 300); g.strokePath();
-    g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(650, 300); g.strokePath();
-    g.beginPath(); g.moveTo(W / 2, H / 2); g.lineTo(400, 480); g.strokePath();
+    this.add.text(W / 2, 22, "CHAR QUEST", {
+      fontFamily: "Georgia, serif",
+      fontSize: "22px",
+      color: "#fbbf24",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(5);
+
+    this.add.text(W / 2, 44, "Kingdom of Code", {
+      fontFamily: "Georgia, serif",
+      fontSize: "12px",
+      color: "#94a3b8",
+    }).setOrigin(0.5).setDepth(5);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  TEXTURES
-   * ───────────────────────────────────────────────────────────── */
-  _genTextures() {
-    const makeCircle = (key, color) => {
-      if (this.textures.exists(key)) return;
+  _generateTextures() {
+    if (!this.textures.exists("goldSpark")) {
       const g = this.add.graphics();
-      g.fillStyle(color, 1);
+      g.fillStyle(0xffd700, 1);
       g.fillCircle(4, 4, 4);
-      g.generateTexture(key, 8, 8);
-      g.destroy();
-    };
-    makeCircle("greenSpark", 0x4ade80);
-    makeCircle("blueSpark", 0x60a5fa);
-    makeCircle("purpleSpark", 0xc084fc);
-    makeCircle("confettiSpark", 0xfbbf24);
-    makeCircle("cyanSpark", 0x00d4ff);
-
-    if (!this.textures.exists("scientistBody")) {
-      const g = this.add.graphics();
-      g.fillStyle(0xf5c6aa, 1);
-      g.fillCircle(16, 8, 7);
-      g.fillStyle(0xffffff, 1);
-      g.fillRoundedRect(6, 14, 20, 22, 4);
-      g.lineStyle(1, 0xcccccc, 0.5);
-      g.strokeRoundedRect(6, 14, 20, 22, 4);
-      g.fillStyle(0x4ade80, 1);
-      g.fillRect(12, 18, 8, 3);
-      g.fillStyle(0x1e3a5f, 1);
-      g.fillRect(8, 36, 6, 10);
-      g.fillRect(18, 36, 6, 10);
-      g.generateTexture("scientistBody", 32, 48);
+      g.generateTexture("goldSpark", 8, 8);
       g.destroy();
     }
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  HOLOGRAPHIC DISPLAY — center-top area
-   * ───────────────────────────────────────────────────────────── */
-  _createHolographicDisplay() {
-    const cx = W / 2, cy = 120;
-
-    this.holoOuter = this.add.rectangle(cx, cy, 280, 70, 0x0a1a2e, 0.6).setDepth(5);
-    this.holoOuter.setStrokeStyle(2, 0x4ade80, 0.5);
-
-    this.holoInner = this.add.rectangle(cx, cy, 260, 50, 0x0a2a1a, 0.3).setDepth(6);
-    this.holoInner.setStrokeStyle(1, 0x4ade80, 0.3);
-
-    this.holoTitle = this.add.text(cx, cy - 10, "CHAR MANIPULATION LAB", {
-      fontFamily: "monospace", fontSize: "14px", color: "#4ade80", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(7);
-
-    this.holoProgress = this.add.text(cx, cy + 14, "Stations Solved: 0 / 3", {
-      fontFamily: "monospace", fontSize: "11px", color: "#86efac",
-    }).setOrigin(0.5).setDepth(7);
-
-    this.tweens.add({
-      targets: this.holoInner, alpha: 0.15, yoyo: true, repeat: -1, duration: 1200,
-    });
-    this.tweens.add({
-      targets: this.holoOuter, scaleX: 1.02, scaleY: 1.04, yoyo: true, repeat: -1, duration: 1800,
-    });
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-   *  STATIONS — 3 lab terminals
-   * ───────────────────────────────────────────────────────────── */
-  _createStations() {
-    this.stations = [];
-    const stationW = 80, stationH = 60;
-
-    STATION_DEFS.forEach((def, i) => {
-      const bg = this.add.rectangle(def.x, def.y, stationW, stationH, 0x0f1a2e, 0.9).setDepth(8);
-      bg.setStrokeStyle(2, def.color, 0.6);
-
-      const icon = this.add.text(def.x, def.y - 8, ">_", {
-        fontFamily: "Courier New", fontSize: "18px",
-        color: def.colorHex, fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(9);
-
-      const label = this.add.text(def.x, def.y + stationH / 2 + 14, def.label, {
-        fontFamily: "monospace", fontSize: "9px", color: "#64748b", align: "center",
-      }).setOrigin(0.5).setDepth(9);
-
-      const beacon = this.add.circle(
-        def.x + stationW / 2 - 6, def.y - stationH / 2 + 6, 4, 0x333333
-      ).setDepth(10);
-
-      const glow = this.add.circle(def.x, def.y, 50, def.color, 0.04).setDepth(4);
-      this.tweens.add({
-        targets: glow, alpha: 0.08, yoyo: true, repeat: -1, duration: 2000,
-      });
-
-      this.tweens.add({
-        targets: bg, alpha: 0.6, yoyo: true, repeat: -1, duration: 1500,
-      });
-
-      const zone = this.add.zone(def.x, def.y, stationW + 24, stationH + 24).setDepth(1);
-      this.physics.add.existing(zone, true);
-
-      // Inner terminal screen effect
-      const screen = this.add.rectangle(def.x, def.y - 2, stationW - 20, stationH - 24, def.color, 0.06).setDepth(8);
-      this.tweens.add({
-        targets: screen, alpha: 0.12, yoyo: true, repeat: -1, duration: 800 + i * 200,
-      });
-
-      // Station number label
-      const numLabel = this.add.text(def.x - stationW / 2 + 8, def.y - stationH / 2 + 4, `S${i + 1}`, {
-        fontFamily: "monospace", fontSize: "8px", color: def.colorHex, fontStyle: "bold",
-      }).setDepth(10).setAlpha(0.5);
-
-      this.stations.push({
-        bg, icon, label, beacon, glow, zone, screen, numLabel,
-        solved: false, def, idx: i,
-      });
-    });
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-   *  PLAYER
-   * ───────────────────────────────────────────────────────────── */
-  _createPlayer() {
-    this.player = this.physics.add.sprite(W / 2, H / 2 + 40, "scientistBody");
-    this.player.setCollideWorldBounds(true);
-    this.player.setDrag(300);
-    this.player.body.setAllowGravity(false);
-    this.player.body.setSize(20, 24, true);
-    this.player.setDepth(30);
-
-    this.playerGlow = this.add.circle(this.player.x, this.player.y, 18, 0x4ade80, 0.06).setDepth(29);
-
-    this.playerLabel = this.add.text(this.player.x, this.player.y - 30, "YOU", {
-      fontFamily: "monospace", fontSize: "8px", color: "#4ade80", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(31).setAlpha(0.6);
-
-    // Approach prompts (shown near unsolved stations)
-    this.stations.forEach(s => {
-      s.approachTxt = this.add.text(s.def.x, s.def.y - 50, "[ INTERACT ]", {
-        fontFamily: "monospace", fontSize: "9px", color: s.def.colorHex, fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(12).setAlpha(0);
-
-      this.tweens.add({
-        targets: s.approachTxt, y: s.def.y - 55, yoyo: true, repeat: -1, duration: 1200,
-      });
-    });
-
-    this.stations.forEach(s => {
-      this.physics.add.overlap(this.player, s.zone, () => {
-        if (!s.solved && !this.panelOpen && !this.isComplete && this.gameStarted) {
-          this._openStation(s.idx);
-        }
-      });
-    });
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-   *  HUD
-   * ───────────────────────────────────────────────────────────── */
-  _createHUD() {
-    const dp = 100;
-
-    this.add.rectangle(W / 2, 28, W, 56, 0x0a0f1a, 0.92).setDepth(dp);
-
-    this.scoreText = this.add.text(16, 12, "Score: 0", {
-      fontFamily: "monospace", fontSize: "14px", color: "#ffffff", fontStyle: "bold",
-    }).setDepth(dp + 1);
-
-    this.livesText = this.add.text(16, 32, `Lives: ${"❤️".repeat(this.lives)}`, {
-      fontFamily: "monospace", fontSize: "13px", color: "#ef4444",
-    }).setDepth(dp + 1);
-
-    this.add.text(W / 2, 14, "Stations Completed", {
-      fontFamily: "monospace", fontSize: "11px", color: "#64748b",
-    }).setOrigin(0.5).setDepth(dp + 1);
-
-    this.progressBg = this.add.rectangle(W / 2, 34, 200, 10, 0x1e293b).setStrokeStyle(1, 0x334155).setDepth(dp + 1);
-    this.progressFill = this.add.rectangle(W / 2 - 100, 34, 0, 8, 0x4ade80).setOrigin(0, 0.5).setDepth(dp + 2);
-    this.progressTxt = this.add.text(W / 2, 34, "0 / 3", {
-      fontFamily: "monospace", fontSize: "9px", color: "#ffffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(dp + 3);
-
-    this.accuracyText = this.add.text(W - 16, 20, "Accuracy: --", {
-      fontFamily: "monospace", fontSize: "12px", color: "#94a3b8",
-    }).setOrigin(1, 0.5).setDepth(dp + 1);
-
-    this.hintTxt = this.add.text(W / 2, H - 16, "Walk to a station to interact", {
-      fontFamily: "monospace", fontSize: "11px", color: "#475569",
-    }).setOrigin(0.5).setDepth(dp);
-  }
-
-  _updateHUD() {
-    this.progressFill.width = 200 * (this.stationsSolved / 3);
-    this.progressTxt.setText(`${this.stationsSolved} / 3`);
-    this.scoreText.setText(`Score: ${this.score}`);
-    this.livesText.setText(`Lives: ${"❤️".repeat(Math.max(0, this.lives))}`);
-    this.holoProgress.setText(`Stations Solved: ${this.stationsSolved} / 3`);
-    if (this.totalQuestions > 0) {
-      const acc = Math.round((this.correctAnswers / this.totalQuestions) * 100);
-      this.accuracyText.setText(`Accuracy: ${acc}%`);
-    }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-   *  PARTICLES
-   * ───────────────────────────────────────────────────────────── */
   _createParticles() {
-    this.greenParticles = this.add.particles(0, 0, "greenSpark", {
-      speed: { min: 60, max: 200 }, scale: { start: 1.2, end: 0 },
-      alpha: { start: 1, end: 0 }, lifespan: 600, blendMode: "ADD", emitting: false,
-    }).setDepth(50);
-
-    this.blueParticles = this.add.particles(0, 0, "blueSpark", {
-      speed: { min: 60, max: 200 }, scale: { start: 1.2, end: 0 },
-      alpha: { start: 1, end: 0 }, lifespan: 600, blendMode: "ADD", emitting: false,
-    }).setDepth(50);
-
-    this.purpleParticles = this.add.particles(0, 0, "purpleSpark", {
-      speed: { min: 60, max: 200 }, scale: { start: 1.2, end: 0 },
-      alpha: { start: 1, end: 0 }, lifespan: 600, blendMode: "ADD", emitting: false,
-    }).setDepth(50);
-
-    this.confettiParticles = this.add.particles(0, 0, "confettiSpark", {
-      speed: { min: 80, max: 350 }, scale: { start: 1.5, end: 0 },
-      alpha: { start: 1, end: 0 }, lifespan: 1200, blendMode: "ADD", emitting: false,
-    }).setDepth(50);
+    this.spark = this.add.particles(0, 0, "goldSpark", {
+      speed: { min: 40, max: 180 },
+      scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 900,
+      blendMode: "ADD",
+      emitting: false,
+    }).setDepth(200);
   }
 
-  _createAmbientParticles() {
-    this.ambientDots = [];
-    for (let i = 0; i < 15; i++) {
-      const x = Phaser.Math.Between(20, W - 20);
-      const y = Phaser.Math.Between(60, H - 20);
-      const colors = [0x4ade80, 0x00d4ff];
-      const color = colors[i % 2];
-      const dot = this.add.circle(x, y, Phaser.Math.Between(1, 3), color, 0.15).setDepth(2);
-      this.ambientDots.push({
-        obj: dot,
-        baseX: x,
-        baseY: y,
-        speedX: Phaser.Math.FloatBetween(-0.15, 0.15),
-        speedY: Phaser.Math.FloatBetween(-0.1, 0.1),
-        phase: Phaser.Math.FloatBetween(0, Math.PI * 2),
-      });
-    }
+  _createMapMarkers() {
+    const zones = [
+      { emoji: "🏰", label: "Castle", range: "1-5", x: 120, y: 115, c: 0x6366f1 },
+      { emoji: "🌲", label: "Forest", range: "6-10", x: 310, y: 115, c: 0x22c55e },
+      { emoji: "⛰️", label: "Mountain", range: "11-15", x: 500, y: 115, c: 0x94a3b8 },
+      { emoji: "🔥", label: "Volcano", range: "16-20", x: 690, y: 115, c: 0xef4444 },
+    ];
+    this.zoneLabels = [];
+    zones.forEach(z => {
+      const r = this.add.rectangle(z.x, z.y, 150, 64, z.c, 0.15).setDepth(3).setStrokeStyle(1, z.c, 0.4);
+      const t = this.add.text(z.x, z.y - 8, `${z.emoji}\n${z.label}\n[${z.range}]`, {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#e2e8f0",
+        align: "center",
+      }).setOrigin(0.5).setDepth(4);
+      this.zoneLabels.push({ r, t, ...z });
+    });
+
+    this.heroMarker = this.add.text(W / 2, 168, "🧙", { fontSize: "28px" }).setOrigin(0.5).setDepth(6);
+    this.roomHudText = this.add.text(W / 2, 198, "Room 0 / 20", {
+      fontFamily: "monospace",
+      fontSize: "13px",
+      color: "#fbbf24",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(6);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  INTRO OVERLAY
-   * ───────────────────────────────────────────────────────────── */
+  _createHeroHud() {
+    this.scoreTxt = this.add.text(16, 72, "Score: 0", {
+      fontFamily: "monospace",
+      fontSize: "14px",
+      color: "#86efac",
+    }).setDepth(10);
+
+    this.hintStatTxt = this.add.text(W - 16, 72, "Hints: 0", {
+      fontFamily: "monospace",
+      fontSize: "12px",
+      color: "#94a3b8",
+    }).setOrigin(1, 0).setDepth(10);
+  }
+
   _showIntro() {
-    const els = [];
-    const track = (e) => { els.push(e); return e; };
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(100);
 
-    track(this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200)).setInteractive();
+    const panel = this.add.graphics().setDepth(101);
+    panel.fillStyle(0x0f172a, 0.98);
+    panel.fillRoundedRect(40, 40, W - 80, H - 80, 14);
+    panel.lineStyle(2, 0xfbbf24);
+    panel.strokeRoundedRect(40, 40, W - 80, H - 80, 14);
 
-    const pg = track(this.add.graphics().setDepth(201));
-    pg.fillStyle(0x0a0f1a, 0.98);
-    pg.fillRoundedRect(70, 40, 660, 510, 16);
-    pg.lineStyle(3, 0xc084fc);
-    pg.strokeRoundedRect(70, 40, 660, 510, 16);
+    const title = this.add.text(W / 2, 85, "⌨️ CHAR QUEST: THE TYPING ADVENTURE", {
+      fontFamily: "Arial Black, Arial",
+      fontSize: "20px",
+      color: "#fbbf24",
+    }).setOrigin(0.5).setDepth(102);
 
-    track(this.add.text(400, 75, "MISSION 9: CHAR MANIPULATION LAB", {
-      fontFamily: "Arial Black", fontSize: "21px", color: "#c084fc", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202));
+    const st = this.add.text(
+      W / 2,
+      200,
+      "You are a Programming Hero rescuing the Kingdom of Code.\n\n" +
+        "Each room needs correct char declarations — type real code in the editor.\n" +
+        "Java/C-style syntax: char name = 'X';  Escape: '\\\\n'  '\\\\t'  '\\\\\\\\'  '\\\\''\n\n" +
+        "Submit when ready · Hints cost nothing · Skip costs -50 pts",
+      {
+        fontFamily: "monospace",
+        fontSize: "12px",
+        color: "#cbd5e1",
+        align: "center",
+        lineSpacing: 6,
+      }
+    )
+      .setOrigin(0.5)
+      .setDepth(102);
 
-    track(this.add.text(400, 105, "Master escape sequences, case conversion & char building", {
-      fontFamily: "Arial", fontSize: "14px", color: "#e9d5ff", fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(202));
+    const btn = this.add.rectangle(W / 2, 480, 220, 48, 0x7c3aed, 1).setDepth(102).setInteractive({ useHandCursor: true });
+    const bt = this.add.text(W / 2, 480, "BEGIN QUEST", {
+      fontFamily: "monospace",
+      fontSize: "18px",
+      color: "#fff",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(103);
 
-    const desc =
-      "\nYou are a scientist in the Char Manipulation Lab.\n" +
-      "Navigate to 3 lab stations and solve their challenges!\n\n" +
-      "STATION 1  —  Escape Lab          (Escape Sequences)\n" +
-      "STATION 2  —  Case Converter      (ASCII Arithmetic)\n" +
-      "STATION 3  —  String Builder      (Char Operations)\n\n" +
-      "Walk to each station with Arrow Keys or WASD.\n" +
-      "Each station has 5 questions — answer correctly!\n\n" +
-      "You have 3 lives. Wrong answers cost 1 life.\n" +
-      "Complete all 3 stations to become a Char Wizard!";
-
-    track(this.add.text(400, 145, desc, {
-      fontFamily: "Arial", fontSize: "13px", color: "#cbd5e1",
-      align: "center", lineSpacing: 6, wordWrap: { width: 560 },
-    }).setOrigin(0.5, 0).setDepth(202));
-
-    const learnTitle = track(this.add.text(400, 390, "What You'll Learn:", {
-      fontFamily: "Arial", fontSize: "14px", color: "#c084fc", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202));
-
-    const bullets =
-      "• Escape sequences: \\n, \\t, \\\\, \\', \\\"\n" +
-      "• Case conversion using ASCII arithmetic (+/- 32)\n" +
-      "• How individual chars combine into strings\n" +
-      "• Difference between char values and numbers";
-
-    track(this.add.text(400, 415, bullets, {
-      fontFamily: "Arial", fontSize: "12px", color: "#94a3b8",
-      align: "center", lineSpacing: 5, wordWrap: { width: 480 },
-    }).setOrigin(0.5, 0).setDepth(202));
-
-    const btnBg = track(this.add.rectangle(400, 510, 240, 44, 0x581c87).setDepth(210));
-    btnBg.setStrokeStyle(2, 0xc084fc);
-    track(this.add.text(400, 510, ">>  ENTER THE LAB", {
-      fontFamily: "Arial", fontSize: "17px", color: "#ffffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(211));
-
-    btnBg.setInteractive({ useHandCursor: true });
-    btnBg.on("pointerover", () => btnBg.setFillStyle(0xc084fc));
-    btnBg.on("pointerout", () => btnBg.setFillStyle(0x581c87));
-    btnBg.on("pointerup", () => {
-      els.forEach(e => { try { e.destroy(); } catch (_) {} });
-      this.gameStarted = true;
-      this.startTime = this.time.now;
+    btn.on("pointerover", () => btn.setFillStyle(0x8b5cf6));
+    btn.on("pointerout", () => btn.setFillStyle(0x7c3aed));
+    btn.on("pointerup", () => {
+      overlay.destroy();
+      panel.destroy();
+      title.destroy();
+      st.destroy();
+      btn.destroy();
+      bt.destroy();
+      this._startQuest();
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  STATION INTERACTION — DOM Panels
-   * ═══════════════════════════════════════════════════════════════ */
-  _openStation(idx) {
-    if (this.panelOpen || this.stations[idx].solved) return;
-    this.panelOpen = true;
-    this.activeStationIdx = idx;
-    this.player.body.setVelocity(0, 0);
-
-    this._buildQuestionPanel(idx, 0, 0);
+  _startQuest() {
+    this.gameStarted = true;
+    this.startTime = this.time.now;
+    GameManager.set("lives", 3);
+    this.currentRoom = 1;
+    this._mountEditor();
+    this._loadRoom(1);
   }
 
-  _closePanel() {
-    if (this.activeDom) {
-      this.activeDom.destroy();
-      this.activeDom = null;
-    }
-    if (this._panelOverlay) {
-      this._panelOverlay.destroy();
-      this._panelOverlay = null;
-    }
-    this.panelOpen = false;
-    this.activeStationIdx = -1;
-  }
+  _mountEditor() {
+    const wrap = document.createElement("div");
+    wrap.id = "l9-char-quest-root";
+    /* Fit inside 800×600 canvas: Phaser positions this node — do NOT set left/transform
+       (they fight Phaser’s matrix() and clip the panel on the right). */
+    const gw = this.game?.config?.width ?? W;
+    const panelW = Math.max(280, Math.min(752, gw - 24));
 
-  /* ─────────────────────────────────────────────────────────────
-   *  BUILD QUESTION PANEL — shared across all 3 stations
-   * ───────────────────────────────────────────────────────────── */
-  _buildQuestionPanel(stationIdx, questionIdx, stationCorrect) {
-    if (this.activeDom) { this.activeDom.destroy(); this.activeDom = null; }
-    if (this._panelOverlay) { this._panelOverlay.destroy(); this._panelOverlay = null; }
+    wrap.style.cssText = [
+      "box-sizing:border-box",
+      "width:" + panelW + "px",
+      "max-width:100%",
+      "font-family:Consolas,'Courier New',monospace",
+      "pointer-events:auto",
+    ].join(";");
 
-    const def = STATION_DEFS[stationIdx];
-    const q = def.questions[questionIdx];
-    const qNum = questionIdx + 1;
-
-    this._panelOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(150).setInteractive();
-
-    const isStation1 = stationIdx === 0;
-    const codeDisplay = isStation1
-      ? q.code
-      : q.code;
-    const questionText = isStation1
-      ? "What does this escape sequence represent?"
-      : q.question;
-
-    const optionsHtml = q.options.map((opt, i) => `
-      <button class="q9opt" data-idx="${i}" style="
-        background: rgba(30, 40, 60, 0.9);
-        border: 2px solid #334155;
-        border-radius: 12px;
-        padding: 12px 20px;
-        color: #e2e8f0;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.2s;
-        min-width: 120px;
-        text-align: center;
-        font-family: 'Courier New', monospace;
-      ">${opt}</button>
-    `).join("");
-
-    const html = `
-      <div style="
-        width: 560px;
-        background: rgba(10, 15, 26, 0.97);
-        border: 2px solid ${def.colorHex};
-        border-radius: 16px;
-        padding: 30px;
-        font-family: Arial, sans-serif;
-        color: #e2e8f0;
-        box-shadow: 0 0 40px ${def.colorHex}33;
-      ">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <div style="
-            color: ${def.colorHex};
-            font-size: 16px;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-          ">${def.title}</div>
-          <div style="
-            color: #64748b;
-            font-size: 12px;
-            font-family: monospace;
-          ">Q${qNum} / ${QUESTIONS_PER_STATION}</div>
-        </div>
-        <div style="
-          color: #94a3b8;
-          font-size: 13px;
-          margin-bottom: 18px;
-        ">${def.subtitle}</div>
-        <div style="
-          background: #0d1117;
-          border: 1px solid #30363d;
-          border-radius: 10px;
-          padding: 16px 20px;
-          margin-bottom: 14px;
-          font-family: 'Courier New', monospace;
-          font-size: 18px;
-          color: ${def.colorHex};
-          text-align: center;
-          white-space: pre-wrap;
-          line-height: 1.6;
-        ">${codeDisplay}</div>
-        <div style="
-          color: #cbd5e1;
-          font-size: 14px;
-          margin-bottom: 16px;
-          text-align: center;
-          font-weight: bold;
-        ">${questionText}</div>
-        <div style="
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 10px;
-          margin-bottom: 16px;
-        ">${optionsHtml}</div>
-        <div id="q9feedback" style="
-          color: #94a3b8;
-          font-size: 13px;
-          text-align: center;
-          min-height: 22px;
-          font-family: monospace;
-        "></div>
-        <div style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-top: 10px;
-        ">
-          <div style="color: #64748b; font-size: 11px; font-family: monospace;">
-            Station ${stationIdx + 1} of 3  •  Correct: ${stationCorrect}/${questionIdx}
-          </div>
-          <div style="color: #ef4444; font-size: 12px; font-family: monospace;">
-            Lives: ${"❤️".repeat(Math.max(0, this.lives))}
-          </div>
+    wrap.innerHTML = `
+      <div id="l9-panel" style="box-sizing:border-box;width:100%;max-width:100%;overflow:hidden;background:rgba(15,23,42,0.98);border:2px solid #fbbf24;border-radius:12px;padding:10px 12px;margin-top:200px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
+        <div id="l9-story" style="color:#e2e8f0;font-size:11px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere;min-height:64px;margin-bottom:8px;border-bottom:1px solid #334155;padding-bottom:8px;max-width:100%;"></div>
+        <div style="color:#94a3b8;font-size:9px;margin-bottom:6px;word-wrap:break-word;">CODE EDITOR — full lines + semicolons</div>
+        <textarea id="l9-code" spellcheck="false" style="display:block;width:100%;max-width:100%;height:130px;background:#020617;color:#4ade80;border:1px solid #334155;border-radius:8px;padding:8px;font-size:12px;resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+        <div id="l9-feedback" style="min-height:22px;margin-top:6px;font-size:11px;color:#f87171;word-wrap:break-word;overflow-wrap:anywhere;"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:center;align-items:center;width:100%;box-sizing:border-box;">
+          <button type="button" id="l9-submit" style="flex:1 1 auto;min-width:120px;max-width:100%;padding:8px 12px;background:#22c55e;border:none;border-radius:8px;color:#fff;font-weight:bold;cursor:pointer;font-family:inherit;font-size:12px;">SUBMIT CODE</button>
+          <button type="button" id="l9-hint" style="flex:1 1 auto;min-width:100px;max-width:100%;padding:8px 12px;background:#3b82f6;border:none;border-radius:8px;color:#fff;font-weight:bold;cursor:pointer;font-family:inherit;font-size:12px;">HINT</button>
+          <button type="button" id="l9-skip" style="flex:1 1 auto;min-width:120px;max-width:100%;padding:8px 12px;background:#64748b;border:none;border-radius:8px;color:#fff;font-weight:bold;cursor:pointer;font-family:inherit;font-size:11px;">SKIP (−50)</button>
         </div>
       </div>
     `;
 
-    this.activeDom = this.add.dom(W / 2, H / 2).createFromHTML(html).setDepth(160);
+    this.domRoot = this.add.dom(W / 2, 0, wrap);
+    this.domRoot.setOrigin(0.5, 0);
+    this.domRoot.setScrollFactor(0);
 
-    const el = this.activeDom.node;
-    let answered = false;
+    this.feedbackEl = () => document.getElementById("l9-feedback");
+    this.codeEl = () => document.getElementById("l9-code");
+    this.storyEl = () => document.getElementById("l9-story");
 
-    el.querySelectorAll(".q9opt").forEach(btn => {
-      btn.addEventListener("mouseenter", () => {
-        if (!answered) {
-          btn.style.borderColor = def.colorHex;
-          btn.style.background = "rgba(50, 60, 80, 0.95)";
-        }
-      });
-      btn.addEventListener("mouseleave", () => {
-        if (!answered) {
-          btn.style.borderColor = "#334155";
-          btn.style.background = "rgba(30, 40, 60, 0.9)";
-        }
-      });
-
-      btn.addEventListener("click", () => {
-        if (answered) return;
-        answered = true;
-        this.totalQuestions++;
-
-        const selectedOption = btn.textContent.trim();
-        const isCorrect = selectedOption === q.answer;
-
-        if (isCorrect) {
-          stationCorrect++;
-          this.correctAnswers++;
-          this.score += 25;
-          GameManager.addScore(25);
-
-          btn.style.borderColor = "#4ade80";
-          btn.style.background = "rgba(74, 222, 128, 0.2)";
-          btn.style.color = "#4ade80";
-
-          el.querySelector("#q9feedback").innerHTML =
-            `<span style="color:#4ade80; font-weight:bold;">✓ Correct! +25</span>`;
-
-          this._showFloatingScore(W / 2, H / 2 - 60, "+25", 0x4ade80);
-        } else {
-          this.lives--;
-          GameManager.loseLife();
-
-          btn.style.borderColor = "#ef4444";
-          btn.style.background = "rgba(239, 68, 68, 0.2)";
-          btn.style.color = "#ef4444";
-
-          const correctBtn = el.querySelectorAll(".q9opt");
-          correctBtn.forEach(b => {
-            if (b.textContent.trim() === q.answer) {
-              b.style.borderColor = "#4ade80";
-              b.style.background = "rgba(74, 222, 128, 0.15)";
-              b.style.color = "#4ade80";
-            }
-          });
-
-          el.querySelector("#q9feedback").innerHTML =
-            `<span style="color:#ef4444;">✗ Wrong!</span> The answer is <span style="color:#4ade80; font-weight:bold;">${q.answer}</span>`;
-
-          this.cameras.main.shake(150, 0.008);
-        }
-
-        this._updateHUD();
-
-        if (this.lives <= 0) {
-          this.time.delayedCall(1200, () => {
-            this._closePanel();
-            this._gameOver();
-          });
-          return;
-        }
-
-        const nextIdx = questionIdx + 1;
-        if (nextIdx < QUESTIONS_PER_STATION) {
-          this.time.delayedCall(isCorrect ? 800 : 1500, () => {
-            this._buildQuestionPanel(stationIdx, nextIdx, stationCorrect);
-          });
-        } else {
-          this.time.delayedCall(isCorrect ? 1000 : 1500, () => {
-            this._showStationComplete(stationIdx, stationCorrect);
-          });
-        }
-      });
-    });
+    document.getElementById("l9-submit").addEventListener("click", () => this._submit());
+    document.getElementById("l9-hint").addEventListener("click", () => this._hint());
+    document.getElementById("l9-skip").addEventListener("click", () => this._skip());
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  STATION COMPLETE — brief celebration, then close panel
-   * ───────────────────────────────────────────────────────────── */
-  _showStationComplete(stationIdx, stationCorrect) {
-    if (this.activeDom) { this.activeDom.destroy(); this.activeDom = null; }
+  _loadRoom(n) {
+    const room = ROOMS[n - 1];
+    if (!room) return;
 
-    const def = STATION_DEFS[stationIdx];
-    const stationLessons = [
-      "You identified all major C escape sequences!",
-      "You mastered ASCII arithmetic for case conversion!",
-      "You understand how chars combine into strings!",
-    ];
-    const perfLabel = stationCorrect === QUESTIONS_PER_STATION ? "PERFECT!" :
-      stationCorrect >= 4 ? "Great work!" :
-      stationCorrect >= 3 ? "Good job!" : "Completed!";
-    const perfColor = stationCorrect === QUESTIONS_PER_STATION ? "#fbbf24" : "#4ade80";
+    this.hintIdx = 0;
+    const story = document.getElementById("l9-story");
+    const ta = document.getElementById("l9-code");
+    if (story) {
+      story.innerHTML = `<strong style="color:#fbbf24">${room.title}</strong><br/><span style="color:#cbd5e1">${room.story.replace(/\n/g, "<br/>")}</span>`;
+    }
+    if (ta) {
+      const start = room.starterFull || room.starter;
+      ta.value = typeof start === "string" ? start : "";
+      ta.focus();
+    }
+    if (this.feedbackEl()) this.feedbackEl().textContent = "";
 
-    const html = `
-      <div style="
-        width: 420px;
-        background: rgba(10, 15, 26, 0.97);
-        border: 2px solid ${def.colorHex};
-        border-radius: 16px;
-        padding: 36px;
-        text-align: center;
-        font-family: Arial, sans-serif;
-        box-shadow: 0 0 50px ${def.colorHex}44;
-      ">
-        <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
-        <div style="
-          font-size: 22px;
-          font-weight: bold;
-          color: ${def.colorHex};
-          margin-bottom: 6px;
-        ">Station ${stationIdx + 1} Complete!</div>
-        <div style="
-          color: #94a3b8;
-          font-size: 14px;
-          margin-bottom: 12px;
-        ">${def.label}</div>
-        <div style="
-          color: #cbd5e1;
-          font-size: 16px;
-          font-family: monospace;
-          margin-bottom: 6px;
-        ">Score: ${stationCorrect} / ${QUESTIONS_PER_STATION}</div>
-        <div style="
-          color: ${perfColor};
-          font-size: 15px;
-          font-weight: bold;
-          margin-bottom: 14px;
-        ">${perfLabel}</div>
-        <div style="
-          color: #64748b;
-          font-size: 12px;
-          font-style: italic;
-          line-height: 1.5;
-        ">${stationLessons[stationIdx]}</div>
-      </div>
-    `;
+    this.roomHudText.setText(`Room ${n} / ${TOTAL_ROOMS}`);
+    this._pulseHero(n);
 
-    this.activeDom = this.add.dom(W / 2, H / 2).createFromHTML(html).setDepth(160);
-
-    this.time.delayedCall(1800, () => {
-      this._markStationSolved(stationIdx);
-    });
+    const zt = { castle: "🏰", forest: "🌲", mountain: "⛰️", volcano: "🔥" };
+    this.heroMarker.setText(`🧙 ${zt[room.zone] || "✨"}`);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  MARK STATION SOLVED — visual updates
-   * ───────────────────────────────────────────────────────────── */
-  _markStationSolved(idx) {
-    const s = this.stations[idx];
-    s.solved = true;
-    this.stationsSolved++;
-    this.score += 100;
-    GameManager.addScore(100);
-    GameManager.addXP(200);
-
-    s.beacon.setFillStyle(s.def.color);
-    s.bg.setStrokeStyle(3, s.def.color, 1);
-    s.bg.setAlpha(1);
-    this.tweens.killTweensOf(s.bg);
-
-    s.icon.setText("✓");
-    s.icon.setFontSize("22px");
-
-    s.glow.setAlpha(0.15);
+  _pulseHero(room) {
     this.tweens.add({
-      targets: s.glow, alpha: 0.25, yoyo: true, repeat: -1, duration: 1000,
+      targets: this.heroMarker,
+      scale: 1.15,
+      duration: 200,
+      yoyo: true,
     });
-
-    const particleEmitter = idx === 0 ? this.greenParticles
-      : idx === 1 ? this.blueParticles
-      : this.purpleParticles;
-    particleEmitter.emitParticleAt(s.def.x, s.def.y, 30);
-
-    const flashColors = [
-      [0, 255, 100],
-      [0, 100, 255],
-      [150, 50, 255],
-    ];
-    const fc = flashColors[idx];
-    this.cameras.main.flash(300, fc[0], fc[1], fc[2]);
-
-    this._updateHUD();
-    this._closePanel();
-
-    if (this.stationsSolved === 3) {
-      this.time.delayedCall(800, () => this._victorySequence());
-    }
-  }
-
-  /* ─────────────────────────────────────────────────────────────
-   *  FLOATING SCORE POPUP
-   * ───────────────────────────────────────────────────────────── */
-  _showFloatingScore(x, y, text, color) {
-    const colorStr = "#" + color.toString(16).padStart(6, "0");
-    const txt = this.add.text(x, y, text, {
-      fontFamily: "Arial Black", fontSize: "22px", color: colorStr, fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(170);
-
-    this.tweens.add({
-      targets: txt, y: y - 40, alpha: 0, duration: 800, ease: "Power2",
-      onComplete: () => txt.destroy(),
+    this.zoneLabels.forEach(zl => {
+      const [lo, hi] = zl.range.split("-").map(Number);
+      const on = room >= lo && room <= hi;
+      zl.r.setStrokeStyle(on ? 3 : 1, zl.c, on ? 1 : 0.4);
+      zl.r.setFillStyle(zl.c, on ? 0.35 : 0.12);
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  VICTORY SEQUENCE
-   * ═══════════════════════════════════════════════════════════════ */
-  _victorySequence() {
-    this.isComplete = true;
+  _submit() {
+    if (this.isComplete) return;
+    const room = ROOMS[this.currentRoom - 1];
+    const code = this.codeEl()?.value || "";
 
-    this.tweens.killTweensOf(this.holoInner);
-    this.tweens.killTweensOf(this.holoOuter);
-
-    this.holoTitle.setText("ALL STATIONS COMPLETE!");
-    this.holoTitle.setColor("#fbbf24");
-    this.holoProgress.setText("LAB FULLY OPERATIONAL");
-    this.holoProgress.setColor("#fbbf24");
-
-    this.holoOuter.setStrokeStyle(3, 0xfbbf24, 0.9);
-    this.holoInner.setFillStyle(0x2a1a00, 0.5);
-    this.tweens.add({
-      targets: this.holoInner, alpha: 0.3, yoyo: true, repeat: -1, duration: 600,
-    });
-
-    this.cameras.main.flash(600, 74, 222, 128);
-    this.cameras.main.shake(400, 0.012);
-
-    this.stations.forEach(s => {
-      const emitter = s.idx === 0 ? this.greenParticles
-        : s.idx === 1 ? this.blueParticles
-        : this.purpleParticles;
-      emitter.emitParticleAt(s.def.x, s.def.y, 40);
-    });
-
-    const holoCX = W / 2, holoCY = 120;
-    this.stations.forEach((s, i) => {
-      this.time.delayedCall(i * 300, () => {
-        const lineGfx = this.add.graphics().setDepth(7);
-        const color = s.def.color;
-
-        lineGfx.lineStyle(2, color, 0.5);
-        lineGfx.beginPath();
-        lineGfx.moveTo(s.def.x, s.def.y);
-        lineGfx.lineTo(holoCX, holoCY);
-        lineGfx.strokePath();
-
-        lineGfx.lineStyle(8, color, 0.08);
-        lineGfx.beginPath();
-        lineGfx.moveTo(s.def.x, s.def.y);
-        lineGfx.lineTo(holoCX, holoCY);
-        lineGfx.strokePath();
-
-        // Spark trail along the connection line
-        const steps = 6;
-        for (let j = 0; j <= steps; j++) {
-          const frac = j / steps;
-          const px = s.def.x + (holoCX - s.def.x) * frac;
-          const py = s.def.y + (holoCY - s.def.y) * frac;
-          this.time.delayedCall(j * 50, () => {
-            const emitter = i === 0 ? this.greenParticles
-              : i === 1 ? this.blueParticles
-              : this.purpleParticles;
-            emitter.emitParticleAt(px, py, 4);
-          });
-        }
-      });
-    });
-
-    for (let i = 0; i < 10; i++) {
-      this.time.delayedCall(i * 150, () => {
-        this.confettiParticles.emitParticleAt(
-          Phaser.Math.Between(100, W - 100),
-          Phaser.Math.Between(0, 80),
-          15
-        );
-      });
+    for (const w of room.wrong || []) {
+      if (w.test(code)) {
+        this.wrongSubs++;
+        this._setFeedback(w.msg, false);
+        return;
+      }
     }
 
-    const accuracy = this.totalQuestions > 0
-      ? Math.round((this.correctAnswers / this.totalQuestions) * 100)
-      : 0;
-    const passed = accuracy >= ACCURACY_THRESHOLD;
+    if (room.validate(code)) {
+      this.correctSubs++;
+      const pts = room.points;
+      this.score += pts;
+      GameManager.addXP(pts);
+      GameManager.addScore(pts);
+      this.scoreTxt.setText(`Score: ${this.score}`);
+      this._setFeedback(`✓ Correct! +${pts} pts — ${room.title}`, true);
+      this.spark.emitParticleAt(W / 2, 320, 20);
+      this.cameras.main.flash(200, 52, 211, 76);
 
-    if (passed) {
-      GameManager.completeLevel(8, accuracy);
-      BadgeSystem.unlock("char_wizard");
-      ProgressTracker.saveProgress(GameManager.getState());
-      GameManager.addXP(500);
-    }
-
-    this.time.delayedCall(1800, () => this._showEndScreen(passed, accuracy));
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  END SCREEN
-   * ═══════════════════════════════════════════════════════════════ */
-  _showEndScreen(passed, accuracy) {
-    const elapsed = Math.round((this.time.now - this.startTime) / 1000);
-    const mins = Math.floor(elapsed / 60);
-    const secs = elapsed % 60;
-    const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
-
-    const panelG = this.add.graphics().setDepth(201);
-    const panelColor = passed ? 0x0a1a2e : 0x4a1e1e;
-    const borderColor = passed ? 0xc084fc : 0xe74c3c;
-    panelG.fillStyle(panelColor, 0.96);
-    panelG.fillRoundedRect(W / 2 - 290, 50, 580, 490, 16);
-    panelG.lineStyle(3, borderColor);
-    panelG.strokeRoundedRect(W / 2 - 290, 50, 580, 490, 16);
-
-    const titleText = passed ? "LEVEL 9 COMPLETE!" : "ACCURACY TOO LOW";
-    const titleColor = passed ? "#c084fc" : "#e74c3c";
-
-    const title = this.add.text(W / 2, 88, titleText, {
-      fontFamily: "Arial Black", fontSize: "28px", color: titleColor, fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202).setAlpha(0).setScale(0.5);
-
-    this.tweens.add({ targets: title, alpha: 1, scale: 1, duration: 600, ease: "Back.out" });
-
-    this.add.text(W / 2, 120, passed ? "All lab stations solved successfully!" : "Review and try again.", {
-      fontFamily: "Arial", fontSize: "14px", color: "#cbd5e1",
-    }).setOrigin(0.5).setDepth(202);
-
-    if (passed) {
-      const badgeG = this.add.graphics().setDepth(202);
-      badgeG.fillStyle(0x0f172a, 0.95);
-      badgeG.fillRoundedRect(W / 2 - 170, 145, 340, 65, 12);
-      badgeG.lineStyle(2, 0xc084fc);
-      badgeG.strokeRoundedRect(W / 2 - 170, 145, 340, 65, 12);
-
-      this.add.text(W / 2, 163, "CHAR WIZARD", {
-        fontFamily: "Arial Black", fontSize: "20px", color: "#c084fc",
-      }).setOrigin(0.5).setDepth(203);
-      this.add.text(W / 2, 190, "Badge Unlocked: Char Wizard!", {
-        fontFamily: "Arial", fontSize: "12px", color: "#e9d5ff",
-      }).setOrigin(0.5).setDepth(203);
-    }
-
-    const statsY = passed ? 230 : 160;
-    const stats = [
-      `Stations Solved: ${this.stationsSolved} / 3`,
-      `Total Correct: ${this.correctAnswers} / ${this.totalQuestions}`,
-      `Accuracy: ${accuracy}%`,
-      `Score: ${this.score}`,
-      `Time: ${timeStr}`,
-      `Lives Remaining: ${Math.max(0, this.lives)}`,
-    ];
-
-    stats.forEach((s, i) => {
-      this.add.text(W / 2, statsY + i * 26, s, {
-        fontFamily: "monospace", fontSize: "15px", color: "#ecf0f1",
-      }).setOrigin(0.5).setDepth(202);
-    });
-
-    const breakdownY = statsY + stats.length * 26 + 14;
-    this.add.text(W / 2, breakdownY, "Station Breakdown:", {
-      fontFamily: "Arial", fontSize: "13px", color: "#94a3b8", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202);
-
-    STATION_DEFS.forEach((def, i) => {
-      const solved = this.stations[i].solved;
-      const icon = solved ? "✅" : "❌";
-      this.add.text(W / 2, breakdownY + 20 + i * 22, `${icon}  ${def.label}`, {
-        fontFamily: "monospace", fontSize: "13px", color: solved ? def.colorHex : "#64748b",
-      }).setOrigin(0.5).setDepth(202);
-    });
-
-    const learnY = breakdownY + 20 + 3 * 22 + 10;
-
-    if (passed) {
-      this.add.text(W / 2, learnY, "What You Mastered:", {
-        fontFamily: "Arial", fontSize: "13px", color: "#c084fc", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-
-      const learnings =
-        "✅ Escape sequences: \\n (newline), \\t (tab), \\\\\\ (backslash)\n" +
-        "✅ Case conversion via ASCII arithmetic (+/- 32)\n" +
-        "✅ Char vs string — individual chars build strings\n" +
-        "✅ ASCII code-to-character mapping (e.g., 65 = 'A')";
-      this.add.text(W / 2, learnY + 18, learnings, {
-        fontFamily: "Arial", fontSize: "11px", color: "#94a3b8",
-        align: "center", lineSpacing: 4, wordWrap: { width: 460 },
-      }).setOrigin(0.5, 0).setDepth(202);
-    } else {
-      this.add.text(W / 2, learnY, "Tips for Next Attempt:", {
-        fontFamily: "Arial", fontSize: "13px", color: "#fbbf24", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-
-      const tips =
-        "• Remember: \\n = New Line, \\t = Tab, \\\\\\ = Backslash\n" +
-        "• Uppercase to lowercase: add 32 to ASCII value\n" +
-        "• Lowercase to uppercase: subtract 32 from ASCII value\n" +
-        "• '0'-'9' are char digits, not actual numbers!";
-      this.add.text(W / 2, learnY + 18, tips, {
-        fontFamily: "Arial", fontSize: "11px", color: "#94a3b8",
-        align: "center", lineSpacing: 4, wordWrap: { width: 460 },
-      }).setOrigin(0.5, 0).setDepth(202);
-    }
-
-    const btnY = 500;
-    if (passed) {
-      this._createEndButton(W / 2 - 130, btnY, "Finish Module", 0x581c87, 0xc084fc, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
-      this._createEndButton(W / 2 + 130, btnY, "REPLAY", 0x1e293b, 0x60a5fa, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-    } else {
-      this._createEndButton(W / 2 - 100, btnY, "TRY AGAIN", 0x7f1d1d, 0xe74c3c, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-      this._createEndButton(W / 2 + 100, btnY, "MENU", 0x1e293b, 0x64748b, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
-    }
-  }
-
-  _createEndButton(x, y, text, bgColor, borderColor, callback) {
-    const bg = this.add.rectangle(x, y, 200, 44, bgColor, 1).setDepth(210);
-    bg.setStrokeStyle(2, borderColor);
-    const colorHex = "#" + borderColor.toString(16).padStart(6, "0");
-    const txt = this.add.text(x, y, text, {
-      fontFamily: "Arial", fontSize: "15px", color: colorHex, fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(211);
-
-    bg.setInteractive({ useHandCursor: true });
-    bg.on("pointerover", () => {
-      bg.setFillStyle(borderColor);
-      txt.setColor("#ffffff");
-      this.tweens.add({ targets: [bg, txt], scaleX: 1.06, scaleY: 1.06, duration: 100 });
-    });
-    bg.on("pointerout", () => {
-      bg.setFillStyle(bgColor);
-      txt.setColor(colorHex);
-      this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 100 });
-    });
-    bg.on("pointerup", callback);
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  GAME OVER
-   * ═══════════════════════════════════════════════════════════════ */
-  _gameOver() {
-    this.isComplete = true;
-
-    this.cameras.main.shake(500, 0.02);
-    this.cameras.main.flash(300, 255, 0, 0);
-
-    this.time.delayedCall(600, () => {
-      const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
-
-      const panelG = this.add.graphics().setDepth(201);
-      panelG.fillStyle(0x2a0000, 0.96);
-      panelG.fillRoundedRect(W / 2 - 240, H / 2 - 150, 480, 300, 16);
-      panelG.lineStyle(3, 0xef4444);
-      panelG.strokeRoundedRect(W / 2 - 240, H / 2 - 150, 480, 300, 16);
-
-      this.add.text(W / 2, H / 2 - 100, "EXPERIMENT FAILED", {
-        fontFamily: "Arial Black", fontSize: "30px", color: "#ef4444", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-
-      this.add.text(W / 2, H / 2 - 55, "Too many wrong answers!", {
-        fontFamily: "Arial", fontSize: "18px", color: "#fca5a5",
-      }).setOrigin(0.5).setDepth(202);
-
-      const accuracy = this.totalQuestions > 0
-        ? Math.round((this.correctAnswers / this.totalQuestions) * 100)
-        : 0;
-
-      this.add.text(W / 2, H / 2 - 15, `Stations Solved: ${this.stationsSolved} / 3`, {
-        fontFamily: "monospace", fontSize: "15px", color: "#ecf0f1",
-      }).setOrigin(0.5).setDepth(202);
-
-      this.add.text(W / 2, H / 2 + 12, `Correct Answers: ${this.correctAnswers} / ${this.totalQuestions}  •  Accuracy: ${accuracy}%`, {
-        fontFamily: "monospace", fontSize: "13px", color: "#94a3b8",
-      }).setOrigin(0.5).setDepth(202);
-
-      this._createEndButton(W / 2 - 110, H / 2 + 80, "TRY AGAIN", 0x7f1d1d, 0xef4444, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-      this._createEndButton(W / 2 + 110, H / 2 + 80, "MENU", 0x1e293b, 0x64748b, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
-    });
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
-  update(time, delta) {
-    this._updateAmbient(time);
-
-    if (!this.gameStarted || this.isComplete) return;
-
-    /* ── Player movement (blocked when panel open) ── */
-    if (this.panelOpen) {
-      this.player.setVelocity(0, 0);
-    } else {
-      let vx = 0, vy = 0;
-
-      const left = this.cursors.left.isDown || this.wasd.left.isDown;
-      const right = this.cursors.right.isDown || this.wasd.right.isDown;
-      const up = this.cursors.up.isDown || this.wasd.up.isDown;
-      const down = this.cursors.down.isDown || this.wasd.down.isDown;
-
-      if (left) vx = -PLAYER_SPEED;
-      else if (right) vx = PLAYER_SPEED;
-      if (up) vy = -PLAYER_SPEED;
-      else if (down) vy = PLAYER_SPEED;
-
-      if (vx !== 0 && vy !== 0) { vx *= 0.707; vy *= 0.707; }
-      this.player.setVelocity(vx, vy);
-    }
-
-    /* ── Player glow & label follow ── */
-    if (this.playerGlow?.active) {
-      this.playerGlow.setPosition(this.player.x, this.player.y);
-    }
-    if (this.playerLabel?.active) {
-      this.playerLabel.setPosition(this.player.x, this.player.y - 30);
-    }
-
-    /* ── Approach prompts & hint text ── */
-    if (!this.panelOpen) {
-      let nearStation = false;
-      this.stations.forEach(s => {
-        if (!s.solved) {
-          const dist = Phaser.Math.Distance.Between(
-            this.player.x, this.player.y, s.def.x, s.def.y
-          );
-          const isNear = dist < 100;
-          if (isNear) nearStation = true;
-          if (s.approachTxt?.active) {
-            s.approachTxt.setAlpha(isNear ? 0.9 : 0);
-          }
-        } else {
-          if (s.approachTxt?.active) s.approachTxt.setAlpha(0);
-        }
-      });
-      if (this.hintTxt?.active) {
-        this.hintTxt.setText(nearStation ? "Walk into the station to interact!" : "Walk to a station to interact");
-        this.hintTxt.setColor(nearStation ? "#c084fc" : "#475569");
+      if (this.currentRoom === TOTAL_ROOMS) {
+        this.bossBonusEarned = true;
+        this.score += BONUS_FINAL;
+        GameManager.addXP(BONUS_FINAL);
+        GameManager.addScore(BONUS_FINAL);
+        this.time.delayedCall(900, () => this._victory());
+      } else {
+        this.time.delayedCall(650, () => {
+          this.currentRoom++;
+          this._loadRoom(this.currentRoom);
+        });
       }
     } else {
-      this.stations.forEach(s => {
-        if (s.approachTxt?.active) s.approachTxt.setAlpha(0);
+      this.wrongSubs++;
+      this._setFeedback("✗ Not quite — check quotes, escapes, and semicolons. Try again!", false);
+      this.cameras.main.shake(120, 0.008);
+    }
+  }
+
+  _setFeedback(msg, ok) {
+    const el = this.feedbackEl();
+    if (el) {
+      el.style.color = ok ? "#4ade80" : "#f87171";
+      el.textContent = msg;
+    }
+  }
+
+  _hint() {
+    const room = ROOMS[this.currentRoom - 1];
+    if (!room?.hints?.length) return;
+    this.hintsUsed++;
+    this.hintStatTxt.setText(`Hints: ${this.hintsUsed}`);
+    const h = room.hints[Math.min(this.hintIdx, room.hints.length - 1)];
+    this.hintIdx++;
+    this._setFeedback(`💡 Hint: ${h}`, true);
+  }
+
+  _skip() {
+    if (this.isComplete) return;
+    this.skips++;
+    this.score = Math.max(0, this.score - SKIP_PENALTY);
+    GameManager.addScore(-SKIP_PENALTY);
+    this.scoreTxt.setText(`Score: ${this.score}`);
+    this._setFeedback(`Skipped (−${SKIP_PENALTY} pts).`, false);
+
+    if (this.currentRoom === TOTAL_ROOMS) {
+      this.time.delayedCall(400, () => this._victory());
+    } else {
+      this.time.delayedCall(400, () => {
+        this.currentRoom++;
+        this._loadRoom(this.currentRoom);
       });
     }
   }
 
-  _updateAmbient(time) {
-    if (!this.ambientDots) return;
-    const t = time / 1000;
-    this.ambientDots.forEach(d => {
-      d.obj.x = d.baseX + Math.sin(t * 0.5 + d.phase) * 12 * (d.speedX > 0 ? 1 : -1);
-      d.obj.y = d.baseY + Math.cos(t * 0.3 + d.phase) * 8 * (d.speedY > 0 ? 1 : -1);
-    });
+  _victory() {
+    this.isComplete = true;
+    const total = this.correctSubs + this.wrongSubs;
+    const acc = total > 0 ? Math.round((this.correctSubs / total) * 100) : 0;
+    const minCorrect = Math.ceil(TOTAL_ROOMS * 0.75);
+    const passed = acc >= ACCURACY_THRESHOLD && this.correctSubs >= minCorrect;
+    const elapsed = Math.round((this.time.now - this.startTime) / 1000);
+    const mm = Math.floor(elapsed / 60);
+    const ss = String(elapsed % 60).padStart(2, "0");
+
+    if (passed) {
+      GameManager.completeLevel(8, acc);
+      BadgeSystem.unlock("char_wizard");
+      ProgressTracker.saveProgress(GameManager.getState());
+      this.cameras.main.flash(500, 255, 215, 100);
+      for (let i = 0; i < 12; i++) {
+        this.time.delayedCall(i * 80, () =>
+          this.spark.emitParticleAt(Phaser.Math.Between(80, W - 80), Phaser.Math.Between(100, 400), 8)
+        );
+      }
+    }
+
+    if (this.domRoot) {
+      this.domRoot.destroy();
+      this.domRoot = null;
+    }
+
+    this._showEndScreen(acc >= ACCURACY_THRESHOLD, acc, `${mm}:${ss}`);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
+  _showEndScreen(passed, acc, timeStr) {
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.92).setDepth(300);
+
+    const g = this.add.graphics().setDepth(301);
+    g.fillStyle(0x0f172a, 0.98);
+    g.fillRoundedRect(30, 30, W - 60, H - 60, 14);
+    g.lineStyle(2, 0xfbbf24);
+    g.strokeRoundedRect(30, 30, W - 60, H - 60, 14);
+
+    const title = passed ? "🏆 CHAR MASTER — QUEST COMPLETE!" : "QUEST ENDED";
+    this.add
+      .text(W / 2, 70, title, {
+        fontFamily: "Arial Black",
+        fontSize: "22px",
+        color: passed ? "#fbbf24" : "#f87171",
+      })
+      .setOrigin(0.5)
+      .setDepth(302);
+
+    const lines = [
+      `Correct submissions: ${this.correctSubs} / ${TOTAL_ROOMS}`,
+      `Score: ${this.score}${this.bossBonusEarned ? ` (includes +${BONUS_FINAL} final-room bonus)` : ""}`,
+      `Accuracy: ${acc}%`,
+      `Time: ${timeStr}`,
+      `Hints used: ${this.hintsUsed}`,
+      `Skips: ${this.skips}`,
+    ];
+
+    lines.forEach((line, i) => {
+      this.add
+        .text(W / 2, 120 + i * 26, line, {
+          fontFamily: "monospace",
+          fontSize: "14px",
+          color: "#e2e8f0",
+        })
+        .setOrigin(0.5)
+        .setDepth(302);
+    });
+
+    const learnY = 300;
+    if (passed) {
+      this.add
+        .text(W / 2, learnY, "Badge: Char Champion — char_wizard unlocked!", {
+          fontSize: "14px",
+          color: "#a78bfa",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(302);
+
+      const bullets = [
+        "✓ Chars use single quotes; strings use double quotes",
+        "✓ Escape sequences: \\\\n \\\\t \\\\\\\\ \\\\'",
+        "✓ Build text from chars; debug quote vs char mistakes",
+      ];
+      bullets.forEach((b, i) => {
+        this.add
+          .text(W / 2, learnY + 28 + i * 20, b, { fontSize: "11px", color: "#94a3b8" })
+          .setOrigin(0.5)
+          .setDepth(302);
+      });
+    } else {
+      this.add
+        .text(
+          W / 2,
+          learnY,
+          `Need ${ACCURACY_THRESHOLD}%+ accuracy and ≥${Math.ceil(TOTAL_ROOMS * 0.75)} correct submissions.`,
+          { fontSize: "13px", color: "#fca5a5" }
+        )
+        .setOrigin(0.5)
+        .setDepth(302);
+    }
+
+    const by = 480;
+    if (passed) {
+      this._endBtn(W / 2 - 110, by, "MAIN MENU", 0x7c3aed, () => {
+        this.scene.stop("UIScene");
+        this.scene.start("MenuScene");
+      });
+      this._endBtn(W / 2 + 110, by, "REPLAY", 0x334155, () => {
+        GameManager.resetLevel();
+        this.scene.restart();
+      });
+    } else {
+      this._endBtn(W / 2 - 100, by, "TRY AGAIN", 0xdc2626, () => {
+        GameManager.resetLevel();
+        this.scene.restart();
+      });
+      this._endBtn(W / 2 + 100, by, "MENU", 0x475569, () => {
+        this.scene.stop("UIScene");
+        this.scene.start("MenuScene");
+      });
+    }
+  }
+
+  _endBtn(x, y, label, col, fn) {
+    const b = this.add.rectangle(x, y, 180, 42, col, 1).setDepth(302).setInteractive({ useHandCursor: true });
+    const t = this.add
+      .text(x, y, label, { fontSize: "14px", color: "#fff", fontStyle: "bold" })
+      .setOrigin(0.5)
+      .setDepth(303);
+    b.on("pointerup", fn);
+  }
+
   shutdown() {
-    this._closePanel();
-    this.ambientDots = [];
+    if (this.domRoot) {
+      this.domRoot.destroy();
+      this.domRoot = null;
+    }
   }
 }
