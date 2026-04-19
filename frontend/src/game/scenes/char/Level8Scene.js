@@ -1,15 +1,23 @@
 /**
- * Level8Scene — "Char Tuning: ASCII Code Breaker" (Tuning Phase)
- * ================================================================
- * Mechanic: Cyber Hacking Lab / Code-Breaking Terminal
- * - 5 challenge rounds testing ASCII value knowledge
- * - Round 1: Match char → ASCII value
- * - Round 2: Match ASCII value → char
- * - Round 3: Compare two chars by ASCII value
- * - Round 4: Identify valid single chars
- * - Round 5: Predict code output involving char arithmetic
+ * Level8Scene — "Character Workshop: Char Refinement" (Tuning Phase)
+ * ===================================================================
+ * Mechanic: Factory assembly line — validate, categorize, pattern-match
  *
- * Schema Theory: Tuning — refining char/ASCII understanding
+ *  WAVE STRUCTURE (progressive difficulty):
+ *   Waves  1-10: Basic Validation (valid/invalid, 4s timer)
+ *   Waves 11-20: Category Sorting + Pattern challenges (3s)
+ *   Waves 21-30: Special / Escape chars + Pattern challenges (3s)
+ *   Waves 31-40: Rapid-fire categorisation (2s)
+ *   Waves 41-50: Master mode — everything combined (1.5s)
+ *
+ *  MECHANICS:
+ *   1. Validation Scanner — is this a valid char?  ✓/✗
+ *   2. Category Sorting   — drag/click to correct bin
+ *   3. Pattern Matching    — sequence / case / type / quote challenges
+ *   4. Rapid Fire          — triggered after 10 consecutive correct
+ *   5. Escape Detective    — identify escape-sequence meanings
+ *
+ * Schema Theory: Tuning — deepening char understanding through repetition
  */
 
 import Phaser from "phaser";
@@ -20,73 +28,99 @@ import { ProgressTracker } from "../../ProgressTracker.js";
 /* ───────── Constants ───────── */
 const W = 800;
 const H = 600;
-const ACCURACY_THRESHOLD = 80;
-const TOTAL_ROUNDS = 5;
-const QUESTIONS_PER_ROUND = 5;
-const TOTAL_QUESTIONS = TOTAL_ROUNDS * QUESTIONS_PER_ROUND;
+const ACCURACY_THRESHOLD = 85;
 const MAX_LIVES = 3;
+const TARGET_PROCESSED = 50;
 
-/* ───────── Question Banks ───────── */
-const ROUND1_QUESTIONS = [
-  { question: "'A'", options: ["65", "97", "66", "48"], correctIndex: 0, explanation: "'A' has ASCII value 65" },
-  { question: "'a'", options: ["65", "97", "98", "96"], correctIndex: 1, explanation: "'a' has ASCII value 97 (lowercase = uppercase + 32)" },
-  { question: "'Z'", options: ["122", "90", "91", "88"], correctIndex: 1, explanation: "'Z' has ASCII value 90" },
-  { question: "'0'", options: ["0", "30", "48", "57"], correctIndex: 2, explanation: "'0' (digit char) has ASCII value 48, not 0!" },
-  { question: "'!'", options: ["21", "33", "64", "35"], correctIndex: 1, explanation: "'!' has ASCII value 33" },
+/* ───────── Char pools ───────── */
+const VALID_UPPERCASE = ["'A'","'B'","'C'","'D'","'E'","'F'","'G'","'H'","'K'","'M'","'N'","'P'","'R'","'S'","'T'","'W'","'X'","'Z'"];
+const VALID_LOWERCASE = ["'a'","'b'","'c'","'d'","'e'","'f'","'g'","'h'","'k'","'m'","'n'","'p'","'r'","'s'","'t'","'w'","'x'","'z'"];
+const VALID_DIGITS    = ["'0'","'1'","'2'","'3'","'4'","'5'","'6'","'7'","'8'","'9'"];
+const VALID_SYMBOLS   = ["'@'","'#'","'!'","'?'","'*'","'+'","'-'","'='","'%'","'&'"];
+const VALID_SPECIAL   = ["'\\n'","'\\t'","'\\\\'","'\\''"];
+const VALID_SPACES    = ["' '"];
+
+const INVALID_CHARS = [
+  { value: '"A"',    reason: "Double quotes → that's a string!" },
+  { value: '"Hello"',reason: "Double quotes → that's a string!" },
+  { value: "'AB'",   reason: "Multiple characters → a char holds exactly ONE!" },
+  { value: "'XY'",   reason: "Multiple characters → a char holds exactly ONE!" },
+  { value: "''",     reason: "Empty quotes → a char needs exactly ONE character!" },
+  { value: "A",      reason: "No quotes → must use single quotes for char!" },
+  { value: "z",      reason: "No quotes → must use single quotes for char!" },
+  { value: "123",    reason: "Number without quotes → that's an integer!" },
+  { value: "45",     reason: "Number without quotes → that's an integer!" },
+  { value: '"BC"',   reason: "Double quotes → that's a string!" },
+  { value: "'abc'",  reason: "Multiple characters → a char holds exactly ONE!" },
 ];
 
-const ROUND2_QUESTIONS = [
-  { question: "65", options: ["'A'", "'a'", "'B'", "'@'"], correctIndex: 0, explanation: "ASCII 65 = 'A' (first uppercase letter)" },
-  { question: "97", options: ["'A'", "'a'", "'z'", "'1'"], correctIndex: 1, explanation: "ASCII 97 = 'a' (first lowercase letter)" },
-  { question: "48", options: ["'0'", "'9'", "'A'", "' '"], correctIndex: 0, explanation: "ASCII 48 = '0' (first digit character)" },
-  { question: "32", options: ["'0'", "'!'", "' '", "'@'"], correctIndex: 2, explanation: "ASCII 32 = ' ' (space character)" },
-  { question: "64", options: ["'A'", "'@'", "'a'", "'#'"], correctIndex: 1, explanation: "ASCII 64 = '@' (at symbol)" },
+/* Category metadata */
+const CATEGORIES = {
+  UPPERCASE: { color: 0xff6b6b, icon: "A",   label: "UPPERCASE" },
+  LOWERCASE: { color: 0x4ecdc4, icon: "a",   label: "LOWERCASE" },
+  DIGITS:    { color: 0xffd93d, icon: "0",    label: "DIGITS" },
+  SYMBOLS:   { color: 0xc56cf0, icon: "@",    label: "SYMBOLS" },
+  SPECIAL:   { color: 0xff9ff3, icon: "\\n",  label: "SPECIAL" },
+  SPACES:    { color: 0xaaaaaa, icon: "□",    label: "SPACES" },
+};
+
+/* Pattern challenge banks */
+const PATTERN_SEQUENCE = [
+  { seq: ["'A'","'B'","'C'"], answer: "'D'", options: ["'D'","'a'","'4'","\"D\""], explanation: "Next in alphabetical sequence: A→B→C→D" },
+  { seq: ["'x'","'y'"], answer: "'z'", options: ["'z'","'Z'","'a'","'w'"], explanation: "Next lowercase letter: x→y→z" },
+  { seq: ["'1'","'2'","'3'"], answer: "'4'", options: ["'4'","'5'","4","\"4\""], explanation: "Next digit char: '1'→'2'→'3'→'4'" },
+  { seq: ["'P'","'Q'","'R'"], answer: "'S'", options: ["'S'","'s'","'T'","\"S\""], explanation: "Next uppercase: P→Q→R→S" },
 ];
 
-const ROUND3_QUESTIONS = [
-  { chars: ["'A'", "'a'"], asciiVals: [65, 97], correctIndex: 0, explanation: "'A'=65 < 'a'=97 — uppercase letters have LOWER ASCII values!" },
-  { chars: ["'Z'", "'A'"], asciiVals: [90, 65], correctIndex: 1, explanation: "'A'=65 < 'Z'=90 — earlier letters have lower values" },
-  { chars: ["'0'", "'A'"], asciiVals: [48, 65], correctIndex: 0, explanation: "'0'=48 < 'A'=65 — digits come before letters in ASCII" },
-  { chars: ["'z'", "'a'"], asciiVals: [122, 97], correctIndex: 1, explanation: "'a'=97 < 'z'=122 — same pattern as uppercase" },
-  { chars: ["' '", "'!'"], asciiVals: [32, 33], correctIndex: 0, explanation: "' '=32 < '!'=33 — space is the lowest printable ASCII" },
+const PATTERN_CASE = [
+  { given: "'a'", answer: "'z'", options: ["'A'","'z'","'5'","'@'"], explanation: "Both 'a' and 'z' are lowercase letters" },
+  { given: "'B'", answer: "'M'", options: ["'b'","'M'","'3'","'!'"], explanation: "Both 'B' and 'M' are uppercase letters" },
+  { given: "'3'", answer: "'7'", options: ["'A'","'a'","'7'","'#'"], explanation: "Both '3' and '7' are digit characters" },
 ];
 
-const ROUND4_QUESTIONS = [
-  { value: "'A'", isValid: true, explanation: "Single letter in single quotes — valid char!" },
-  { value: "\"AB\"", isValid: false, explanation: "\"AB\" is a STRING (double quotes, multiple chars) — not a char!" },
-  { value: "65", isValid: false, explanation: "65 is an INTEGER — chars use single quotes like 'A'!" },
-  { value: "' '", isValid: true, explanation: "Space in single quotes — valid char! (ASCII 32)" },
-  { value: "'XY'", isValid: false, explanation: "'XY' has TWO characters — a char holds exactly ONE!" },
+const PATTERN_ODDONE = [
+  { group: ["'A'","'B'","'5'","'C'"], oddIndex: 2, explanation: "'5' is a digit among uppercase letters" },
+  { group: ["'a'","'z'","'@'","'m'"], oddIndex: 2, explanation: "'@' is a symbol among lowercase letters" },
+  { group: ["'1'","'2'","'a'","'3'"], oddIndex: 2, explanation: "'a' is a letter among digit chars" },
+  { group: ["'#'","'!'","'K'","'*'"], oddIndex: 2, explanation: "'K' is an uppercase letter among symbols" },
 ];
 
-const ROUND5_QUESTIONS = [
-  { code: "char c = 'A';\nc = c + 1;", options: ["'A'", "'B'", "'C'", "66"], correctIndex: 1, explanation: "'A' is 65, +1 = 66 = 'B'" },
-  { code: "char c = '0' + 5;", options: ["'5'", "'0'", "5", "53"], correctIndex: 0, explanation: "'0' is ASCII 48, +5 = 53 = '5'" },
-  { code: "int x = 'Z' - 'A';", options: ["25", "26", "0", "90"], correctIndex: 0, explanation: "'Z'=90, 'A'=65, difference = 25" },
-  { code: "char c = 'a';\nc = c - 32;", options: ["'A'", "'a'", "'!'", "65"], correctIndex: 0, explanation: "'a'=97, -32 = 65 = 'A' (lowercase→uppercase trick!)" },
-  { code: "int x = 'B' - 'A';", options: ["0", "1", "2", "'B'"], correctIndex: 1, explanation: "'B'=66, 'A'=65, difference = 1" },
+const PATTERN_QUOTE = [
+  { options: ['"A"',"'A'","'AB'","A"], correctIndex: 1, explanation: "'A' uses single quotes with ONE character — valid char!" },
+  { options: ["'XY'","\"z\"","'z'","z"], correctIndex: 2, explanation: "'z' is a single character in single quotes!" },
+  { options: ["''","\"5\"","5","'5'"], correctIndex: 3, explanation: "'5' is a single digit character in single quotes!" },
 ];
 
-const ROUND_NAMES = [
-  "ASCII Decoder",
-  "Reverse Decoder",
-  "Char Comparator",
-  "Type Identifier",
-  "Code Output",
+const ESCAPE_CHALLENGES = [
+  { char: "'\\n'", answer: "Newline", options: ["Tab","Newline","Backslash","Nothing"], preview: "Line 1\n↓\nLine 2", explanation: "\\n creates a new line break" },
+  { char: "'\\t'", answer: "Tab", options: ["Newline","Tab","Backspace","Space"], preview: "Col1\t→\tCol2", explanation: "\\t inserts a horizontal tab space" },
+  { char: "'\\\\'", answer: "Backslash", options: ["Forward Slash","Backslash","Newline","Null"], preview: "Path: C:\\\\folder", explanation: "\\\\ produces a single backslash \\" },
+  { char: "'\\''", answer: "Single Quote", options: ["Double Quote","Single Quote","Tab","Backslash"], preview: "It\\'s valid!", explanation: "\\' lets you store a literal single quote" },
 ];
 
 /* ───────── Helper ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const bl = Math.round(ab + (bb - ab) * t);
-  return (r << 16) | (g << 8) | bl;
+  return (Math.round(ar + (br - ar) * t) << 16) |
+         (Math.round(ag + (bg - ag) * t) << 8) |
+          Math.round(ab + (bb - ab) * t);
+}
+
+function pickRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function getCategory(val) {
+  if (VALID_UPPERCASE.includes(val)) return "UPPERCASE";
+  if (VALID_LOWERCASE.includes(val)) return "LOWERCASE";
+  if (VALID_DIGITS.includes(val))    return "DIGITS";
+  if (VALID_SYMBOLS.includes(val))   return "SYMBOLS";
+  if (VALID_SPECIAL.includes(val))   return "SPECIAL";
+  if (VALID_SPACES.includes(val))    return "SPACES";
+  return null;
 }
 
 /* ═══════════════════════════════════════════════════════════════
- *  LEVEL 8 SCENE
+ *  LEVEL 8 SCENE — Character Workshop Factory
  * ═══════════════════════════════════════════════════════════════ */
 export class Level8Scene extends Phaser.Scene {
   constructor() {
@@ -97,108 +131,90 @@ export class Level8Scene extends Phaser.Scene {
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
-    this.currentRound = 0;
-    this.currentQuestion = 0;
     this.score = 0;
     this.lives = MAX_LIVES;
-    this.correctAnswers = 0;
-    this.wrongAnswers = 0;
     this.combo = 0;
     this.maxCombo = 0;
+    this.totalProcessed = 0;
+    this.correctAnswers = 0;
+    this.wrongAnswers = 0;
+    this.waveNumber = 0;
     this.isComplete = false;
     this.gameStarted = false;
     this.startTime = 0;
-    this.answered = false;
-    this.retryAvailable = false;
-    this.roundElements = [];
+    this.currentElements = [];
+    this.consecutiveCorrect = 0;
+    this.rapidFireActive = false;
+    this.rapidFireTimer = null;
+    this.rapidFireScore = 0;
+    this.patternChallengesDone = 0;
+    this.timerEvent = null;
+    this.timerBarTween = null;
+    this.binCounts = { UPPERCASE: 0, LOWERCASE: 0, DIGITS: 0, SYMBOLS: 0, SPECIAL: 0, SPACES: 0 };
+    this.scrapCount = 0;
+    this.phase = "validate";
 
-    this._drawCyberBackground();
+    this._drawFactoryBackground();
     this._generateTextures();
     this._createParticles();
-    this._createAmbientBinary();
+    this._createConveyorBelt();
+    this._createInspectionZone();
+    this._createSortingBins();
     this._createHUD();
 
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
-      uiScene.setLevelLabel("Level 8: Tuning — ASCII Code Breaker!");
+      uiScene.setLevelLabel("Level 8: Tuning — Character Workshop!");
     }
 
     this._showInstruction();
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  CYBER BACKGROUND
+   *  FACTORY BACKGROUND
    * ═══════════════════════════════════════════════════════════════ */
-  _drawCyberBackground() {
+  _drawFactoryBackground() {
     const gfx = this.add.graphics().setDepth(0);
-    const topColor = 0x0a0f1a;
-    const botColor = 0x0d1117;
-    const steps = 60;
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      const c = lerpColor(topColor, botColor, t);
-      gfx.fillStyle(c, 1);
-      gfx.fillRect(0, Math.floor((H * i) / steps), W, Math.ceil(H / steps) + 1);
+    const top = 0x1a1a2e;
+    const bot = 0x0d0d1a;
+    for (let i = 0; i < 60; i++) {
+      const t = i / 60;
+      gfx.fillStyle(lerpColor(top, bot, t), 1);
+      gfx.fillRect(0, Math.floor((H * i) / 60), W, Math.ceil(H / 60) + 1);
     }
 
-    /* Grid lines — faint cyan, slowly scrolling */
-    this.gridGfx = this.add.graphics().setDepth(1).setAlpha(0.06);
-    this._drawGrid(0);
-
-    this.gridOffset = 0;
-
-    /* Scan line overlay — CRT style */
-    const scanGfx = this.add.graphics().setDepth(2).setAlpha(0.03);
-    for (let y = 0; y < H; y += 3) {
-      scanGfx.fillStyle(0x000000, 1);
-      scanGfx.fillRect(0, y, W, 1);
+    /* Metal grid on floor */
+    const gridGfx = this.add.graphics().setDepth(1).setAlpha(0.04);
+    gridGfx.lineStyle(1, 0x00ffff, 1);
+    for (let x = 0; x < W; x += 40) {
+      gridGfx.beginPath(); gridGfx.moveTo(x, 0); gridGfx.lineTo(x, H); gridGfx.strokePath();
+    }
+    for (let y = 0; y < H; y += 40) {
+      gridGfx.beginPath(); gridGfx.moveTo(0, y); gridGfx.lineTo(W, y); gridGfx.strokePath();
     }
 
-    /* Screen flicker (subtle alpha flash) */
-    this.flickerOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x00ffff, 0).setDepth(3);
-    this.time.addEvent({
-      delay: Phaser.Math.Between(4000, 8000),
-      callback: () => {
-        if (this.flickerOverlay && this.flickerOverlay.active) {
-          this.tweens.add({
-            targets: this.flickerOverlay,
-            alpha: 0.03,
-            duration: 60,
-            yoyo: true,
-            repeat: 1,
-            onComplete: () => {
-              if (this.flickerOverlay && this.flickerOverlay.active) {
-                this.flickerOverlay.setAlpha(0);
-              }
-            },
-          });
-        }
-        this.time.addEvent({
-          delay: Phaser.Math.Between(4000, 8000),
-          callback: arguments.callee,
-          callbackScope: this,
-        });
-      },
-      callbackScope: this,
-    });
-  }
-
-  _drawGrid(offset) {
-    this.gridGfx.clear();
-    this.gridGfx.lineStyle(1, 0x00ffff, 1);
-    const spacing = 40;
-    for (let x = 0; x < W; x += spacing) {
-      this.gridGfx.beginPath();
-      this.gridGfx.moveTo(x, 0);
-      this.gridGfx.lineTo(x, H);
-      this.gridGfx.strokePath();
+    /* Hazard stripes at top */
+    const stripGfx = this.add.graphics().setDepth(2);
+    for (let x = 0; x < W; x += 30) {
+      stripGfx.fillStyle(x % 60 === 0 ? 0xffd93d : 0x1a1a2e, 0.15);
+      stripGfx.fillRect(x, 0, 15, 6);
     }
-    const yOff = offset % spacing;
-    for (let y = -spacing + yOff; y < H + spacing; y += spacing) {
-      this.gridGfx.beginPath();
-      this.gridGfx.moveTo(0, y);
-      this.gridGfx.lineTo(W, y);
-      this.gridGfx.strokePath();
+
+    /* Ambient sparks */
+    this.ambientSparks = [];
+    for (let i = 0; i < 15; i++) {
+      const s = this.add.circle(
+        Phaser.Math.Between(10, W - 10),
+        Phaser.Math.Between(10, H - 10),
+        Phaser.Math.FloatBetween(0.5, 2),
+        0xffd93d,
+        Phaser.Math.FloatBetween(0.05, 0.2)
+      ).setDepth(3);
+      this.ambientSparks.push({
+        obj: s,
+        speed: Phaser.Math.FloatBetween(0.1, 0.4),
+        wobbleOff: Math.random() * Math.PI * 2,
+      });
     }
   }
 
@@ -206,194 +222,457 @@ export class Level8Scene extends Phaser.Scene {
    *  TEXTURES
    * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
-    if (!this.textures.exists("cyanSpark")) {
+    const make = (name, color, r) => {
+      if (this.textures.exists(name)) return;
       const g = this.add.graphics();
-      g.fillStyle(0x00ffff, 1);
-      g.fillCircle(4, 4, 4);
-      g.generateTexture("cyanSpark", 8, 8);
+      g.fillStyle(color, 1);
+      g.fillCircle(r, r, r);
+      g.generateTexture(name, r * 2, r * 2);
       g.destroy();
-    }
-    if (!this.textures.exists("greenSpark")) {
-      const g = this.add.graphics();
-      g.fillStyle(0x00ff88, 1);
-      g.fillCircle(4, 4, 4);
-      g.generateTexture("greenSpark", 8, 8);
-      g.destroy();
-    }
-    if (!this.textures.exists("redSpark")) {
-      const g = this.add.graphics();
-      g.fillStyle(0xe74c3c, 1);
-      g.fillCircle(4, 4, 4);
-      g.generateTexture("redSpark", 8, 8);
-      g.destroy();
-    }
-    if (!this.textures.exists("confettiSpark")) {
-      const g = this.add.graphics();
-      g.fillStyle(0xffd700, 1);
-      g.fillCircle(4, 4, 4);
-      g.generateTexture("confettiSpark", 8, 8);
-      g.destroy();
-    }
-    if (!this.textures.exists("binarySpark")) {
-      const g = this.add.graphics();
-      g.fillStyle(0xffffff, 1);
-      g.fillCircle(2, 2, 2);
-      g.generateTexture("binarySpark", 4, 4);
-      g.destroy();
-    }
+    };
+    make("greenSpark", 0x00ff88, 4);
+    make("redSpark", 0xe74c3c, 4);
+    make("cyanSpark", 0x00ffff, 4);
+    make("goldSpark", 0xffd700, 4);
+    make("confettiSpark", 0xffd700, 4);
+    make("factorySpark", 0xffa500, 3);
   }
 
   /* ═══════════════════════════════════════════════════════════════
    *  PARTICLES
    * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
-    this.correctParticles = this.add.particles(0, 0, "greenSpark", {
-      speed: { min: 80, max: 250 },
-      scale: { start: 1.2, end: 0 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 700,
-      blendMode: "ADD",
-      emitting: false,
+    this.correctPart = this.add.particles(0, 0, "greenSpark", {
+      speed: { min: 80, max: 250 }, scale: { start: 1.2, end: 0 },
+      alpha: { start: 1, end: 0 }, lifespan: 700, blendMode: "ADD", emitting: false,
     }).setDepth(160);
 
-    this.wrongParticles = this.add.particles(0, 0, "redSpark", {
-      speed: { min: 60, max: 180 },
-      scale: { start: 1, end: 0 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 500,
-      blendMode: "ADD",
-      emitting: false,
+    this.wrongPart = this.add.particles(0, 0, "redSpark", {
+      speed: { min: 60, max: 180 }, scale: { start: 1, end: 0 },
+      alpha: { start: 1, end: 0 }, lifespan: 500, blendMode: "ADD", emitting: false,
     }).setDepth(160);
 
-    this.cyanParticles = this.add.particles(0, 0, "cyanSpark", {
-      speed: { min: 40, max: 120 },
-      scale: { start: 0.8, end: 0 },
-      alpha: { start: 0.7, end: 0 },
-      lifespan: 900,
-      blendMode: "ADD",
-      emitting: false,
+    this.cyanPart = this.add.particles(0, 0, "cyanSpark", {
+      speed: { min: 40, max: 120 }, scale: { start: 0.8, end: 0 },
+      alpha: { start: 0.7, end: 0 }, lifespan: 900, blendMode: "ADD", emitting: false,
     }).setDepth(160);
 
-    this.confettiParticles = this.add.particles(0, 0, "confettiSpark", {
-      speed: { min: 40, max: 180 },
-      angle: { min: 230, max: 310 },
-      scale: { start: 1, end: 0.3 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 2500,
-      gravityY: 120,
-      emitting: false,
+    this.confettiPart = this.add.particles(0, 0, "confettiSpark", {
+      speed: { min: 40, max: 180 }, angle: { min: 230, max: 310 },
+      scale: { start: 1, end: 0.3 }, alpha: { start: 1, end: 0 },
+      lifespan: 2500, gravityY: 120, emitting: false,
+    }).setDepth(160);
+
+    this.binPart = this.add.particles(0, 0, "factorySpark", {
+      speed: { min: 60, max: 160 }, scale: { start: 0.8, end: 0 },
+      alpha: { start: 1, end: 0 }, lifespan: 500, blendMode: "ADD", emitting: false,
     }).setDepth(160);
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  AMBIENT BINARY RAIN
+   *  CONVEYOR BELT (animated tile sprite drawn programmatically)
    * ═══════════════════════════════════════════════════════════════ */
-  _createAmbientBinary() {
-    this.binaryDigits = [];
-    for (let i = 0; i < 35; i++) {
-      const x = Phaser.Math.Between(10, W - 10);
-      const y = Phaser.Math.Between(0, H);
-      const digit = Math.random() > 0.5 ? "1" : "0";
-      const alpha = Phaser.Math.FloatBetween(0.04, 0.15);
-      const size = Phaser.Math.Between(10, 16);
-      const txt = this.add.text(x, y, digit, {
+  _createConveyorBelt() {
+    if (!this.textures.exists("beltTile")) {
+      const g = this.add.graphics();
+      g.fillStyle(0x2a2a3a, 1);
+      g.fillRect(0, 0, 64, 30);
+      g.fillStyle(0x3a3a4a, 1);
+      g.fillRect(0, 0, 32, 30);
+      g.lineStyle(1, 0x555566, 0.5);
+      g.strokeRect(0, 0, 32, 30);
+      g.strokeRect(32, 0, 32, 30);
+      g.generateTexture("beltTile", 64, 30);
+      g.destroy();
+    }
+
+    this.belt = this.add.tileSprite(W / 2, 280, W - 40, 30, "beltTile").setDepth(5);
+
+    /* Metal rails */
+    const railGfx = this.add.graphics().setDepth(6);
+    railGfx.fillStyle(0x555566, 1);
+    railGfx.fillRect(20, 265, W - 40, 3);
+    railGfx.fillRect(20, 293, W - 40, 3);
+
+    /* Conveyor arrows */
+    this.conveyorArrows = [];
+    for (let i = 0; i < 6; i++) {
+      const arrow = this.add.text(80 + i * 120, 280, "→", {
+        fontFamily: "Arial",
+        fontSize: "18px",
+        color: "#ffd93d",
+      }).setOrigin(0.5).setAlpha(0.15).setDepth(7);
+      this.conveyorArrows.push(arrow);
+    }
+
+    /* Belt shine effect */
+    this.beltShine = this.add.rectangle(0, 280, 100, 30, 0xffffff, 0.03).setDepth(8);
+    this.tweens.add({
+      targets: this.beltShine,
+      x: W,
+      duration: 3000,
+      repeat: -1,
+      ease: "Linear",
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  INSPECTION ZONE (center circle with scanning beams)
+   * ═══════════════════════════════════════════════════════════════ */
+  _createInspectionZone() {
+    this.inspectionGfx = this.add.graphics().setDepth(10);
+
+    /* Outer glow rings */
+    for (let i = 3; i > 0; i--) {
+      const ring = this.add.circle(W / 2, 280, 70 + i * 12, 0x00ffff, 0.02 / i).setDepth(9);
+      this.tweens.add({
+        targets: ring,
+        scale: { from: 1, to: 1.08 },
+        alpha: { from: 0.04, to: 0.01 },
+        duration: 1500 + i * 300,
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+
+    /* Scanning laser beams */
+    this.scanBeams = [];
+    for (let i = 0; i < 4; i++) {
+      const beam = this.add.rectangle(W / 2, 280, 2, 100, 0x00ffff, 0.15).setDepth(11);
+      beam.setAngle(i * 45);
+      this.tweens.add({
+        targets: beam,
+        angle: beam.angle + 360,
+        duration: 5000 + i * 600,
+        repeat: -1,
+      });
+      this.scanBeams.push(beam);
+    }
+
+    /* Platform circle */
+    this.inspectionPlatform = this.add.circle(W / 2, 280, 65, 0x00ffff, 0.06).setDepth(10);
+    this.inspectionPlatform.setStrokeStyle(3, 0x00ffff, 0.5);
+    this.tweens.add({
+      targets: this.inspectionPlatform,
+      alpha: { from: 0.06, to: 0.12 },
+      scale: { from: 1, to: 1.03 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+    });
+
+    /* "INSPECTION ZONE" label */
+    this.add.text(W / 2, 215, "INSPECTION ZONE", {
+      fontFamily: "Courier New, monospace",
+      fontSize: "10px",
+      color: "#00ffff",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setAlpha(0.4).setDepth(12);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  SORTING BINS (bottom row) + SCRAP chute for rejects
+   * ═══════════════════════════════════════════════════════════════ */
+  _createSortingBins() {
+    this.bins = {};
+    const catKeys = Object.keys(CATEGORIES);
+    const binW = 100;
+    const binH = 72;
+    const gap = 6;
+    const scrapW = 68;
+    const totalCatsW = catKeys.length * binW + (catKeys.length - 1) * gap;
+    const totalRowW = scrapW + gap + totalCatsW;
+    const leftEdge = (W - totalRowW) / 2;
+    const binY = H - 55;
+    const maxFillVis = 18;
+
+    /* ── SCRAP / REJECT chute (invalid items correctly rejected) ── */
+    const scrapX = leftEdge + scrapW / 2;
+    const scrapContainer = this.add.container(scrapX, binY).setDepth(50);
+    const scrapBody = this.add.rectangle(0, 0, scrapW, binH, 0x991b1b, 0.35);
+    scrapBody.setStrokeStyle(2, 0xff4444, 0.7);
+    const scrapLabel = this.add.text(0, -binH / 2 - 10, "SCRAP", {
+      fontFamily: "Courier New, monospace",
+      fontSize: "8px",
+      color: "#ff8888",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+    const scrapIcon = this.add.text(0, -4, "✗", {
+      fontFamily: "Arial",
+      fontSize: "26px",
+      color: "#ff6666",
+      fontStyle: "bold",
+    }).setOrigin(0.5).setAlpha(0.7);
+    const scrapFill = this.add.rectangle(0, binH / 2 - 4, scrapW - 10, 1, 0xff4444, 0.55).setOrigin(0.5, 1);
+    const scrapCounter = this.add.text(0, 24, "0", {
+      fontFamily: "Courier New, monospace",
+      fontSize: "13px",
+      color: "#ffffff",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+    scrapContainer.add([scrapBody, scrapFill, scrapLabel, scrapIcon, scrapCounter]);
+    this.scrapBin = {
+      container: scrapContainer,
+      body: scrapBody,
+      fill: scrapFill,
+      counter: scrapCounter,
+      count: 0,
+      binH,
+      scrapW,
+      maxFillVis,
+    };
+
+    const startX = leftEdge + scrapW + gap + binW / 2;
+
+    catKeys.forEach((key, i) => {
+      const cat = CATEGORIES[key];
+      const bx = startX + i * (binW + gap);
+      const container = this.add.container(bx, binY).setDepth(50);
+
+      const body = this.add.rectangle(0, 0, binW, binH, cat.color, 0.12);
+      body.setStrokeStyle(2, cat.color, 0.6);
+
+      const fillBar = this.add.rectangle(0, binH / 2 - 4, binW - 10, 1, cat.color, 0.45).setOrigin(0.5, 1);
+
+      const label = this.add.text(0, -binH / 2 - 10, cat.label, {
         fontFamily: "Courier New, monospace",
-        fontSize: `${size}px`,
-        color: "#00ffff",
-      }).setAlpha(alpha).setDepth(2);
-      this.binaryDigits.push({
-        obj: txt,
-        speed: Phaser.Math.FloatBetween(0.3, 1.2),
+        fontSize: "8px",
+        color: Phaser.Display.Color.IntegerToColor(cat.color).rgba,
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const icon = this.add.text(0, -6, cat.icon, {
+        fontFamily: "Courier New, monospace",
+        fontSize: "20px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      }).setOrigin(0.5).setAlpha(0.55);
+
+      const counter = this.add.text(0, 22, "0", {
+        fontFamily: "Courier New, monospace",
+        fontSize: "13px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      container.add([body, fillBar, label, icon, counter]);
+
+      body.setInteractive({ useHandCursor: true });
+      body.on("pointerover", () => {
+        if (!this._isSortingPhase()) return;
+        this.tweens.add({ targets: container, scaleY: 1.08, scaleX: 1.04, duration: 120 });
+        body.setStrokeStyle(3, cat.color, 1);
+      });
+      body.on("pointerout", () => {
+        this.tweens.add({ targets: container, scaleY: 1, scaleX: 1, duration: 120 });
+        body.setStrokeStyle(2, cat.color, 0.6);
+      });
+      body.on("pointerup", () => {
+        if (!this._isSortingPhase() || !this._currentSortChar) return;
+        this._handleCategoryChoice(key);
+      });
+
+      this.bins[key] = {
+        container,
+        body,
+        fillBar,
+        counter,
+        count: 0,
+        color: cat.color,
+        binH,
+        binW,
+        maxFillVis,
+      };
+    });
+
+    this.binRowHint = this.add.text(W / 2, H - 118, "↑ Valid/Reject තෝරන්න — පසුව bins පිරෙනවා ↑", {
+      fontFamily: "Arial",
+      fontSize: "10px",
+      color: "#64748b",
+      fontStyle: "italic",
+    }).setOrigin(0.5).setDepth(48).setAlpha(0.85);
+  }
+
+  _updateBinFillBar(binData) {
+    if (!binData?.fillBar) return;
+    const innerH = binData.binH - 18;
+    const h = Math.min(innerH * Math.min(binData.count / binData.maxFillVis, 1), innerH);
+    binData.fillBar.height = Math.max(1, h);
+  }
+
+  _updateScrapFill() {
+    const s = this.scrapBin;
+    if (!s?.fill) return;
+    const innerH = s.binH - 18;
+    const h = Math.min(innerH * Math.min(s.count / s.maxFillVis, 1), innerH);
+    s.fill.height = Math.max(1, h);
+  }
+
+  _setBinsDimmedForValidation(dim) {
+    const alphaBody = dim ? 0.06 : 0.12;
+    const alphaFill = dim ? 0.15 : 0.45;
+    Object.keys(this.bins).forEach(k => {
+      const b = this.bins[k];
+      if (!b?.body) return;
+      this.tweens.add({
+        targets: b.body,
+        alpha: alphaBody,
+        duration: 200,
+      });
+      if (b.fillBar) this.tweens.add({ targets: b.fillBar, alpha: alphaFill, duration: 200 });
+    });
+    if (this.scrapBin?.body) {
+      this.tweens.add({
+        targets: [this.scrapBin.body, this.scrapBin.fill],
+        alpha: dim ? 0.25 : 0.55,
+        duration: 200,
       });
     }
   }
 
+  _flashBinsReadyForSort() {
+    Object.keys(this.bins).forEach(k => {
+      const b = this.bins[k];
+      if (!b?.body) return;
+      b.body.setAlpha(0.12);
+      if (b.fillBar) b.fillBar.setAlpha(0.45);
+      this.tweens.add({
+        targets: b.body,
+        alpha: { from: 0.08, to: 0.22 },
+        duration: 350,
+        yoyo: true,
+        repeat: 2,
+        onComplete: () => {
+          if (b.body?.active) b.body.setAlpha(0.18);
+        },
+      });
+    });
+    if (this.scrapBin?.body) {
+      this.tweens.add({ targets: this.scrapBin.body, alpha: 0.12, duration: 200 });
+      this.tweens.add({ targets: this.scrapBin.fill, alpha: 0.2, duration: 200 });
+    }
+  }
+
+  _animateScrapFeed() {
+    const s = this.scrapBin;
+    if (!s?.container) return;
+    this.binPart.emitParticleAt(s.container.x, s.container.y - 25, 18);
+    this.tweens.add({
+      targets: s.container,
+      scaleX: 1.12,
+      scaleY: 1.15,
+      duration: 120,
+      yoyo: true,
+    });
+    this.tweens.add({
+      targets: s.counter,
+      scale: { from: 1.6, to: 1 },
+      duration: 280,
+    });
+  }
+
+  _isSortingPhase() {
+    return this.phase === "sort" || this.phase === "rapidfire";
+  }
+
   /* ═══════════════════════════════════════════════════════════════
-   *  HUD — persistent across rounds
+   *  HUD
    * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
-    /* Top bar background */
-    this.add.rectangle(W / 2, 30, W, 50, 0x0a0f1a, 0.85).setDepth(dp - 1);
-    this.add.rectangle(W / 2, 55, W, 1, 0x00ffff, 0.15).setDepth(dp - 1);
+    /* Top bar bg */
+    this.add.rectangle(W / 2, 28, W, 48, 0x0a0a1a, 0.88).setDepth(dp - 1);
+    this.add.rectangle(W / 2, 52, W, 1, 0xffd93d, 0.15).setDepth(dp - 1);
 
     /* Score */
-    this.scoreText = this.add.text(16, 18, "SCORE: 0", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "16px",
-      color: "#00ffff",
-      fontStyle: "bold",
+    this.scoreText = this.add.text(16, 12, "SCORE: 0", {
+      fontFamily: "Courier New, monospace", fontSize: "15px",
+      color: "#ffd93d", fontStyle: "bold",
     }).setDepth(dp);
 
-    /* Round indicator */
-    this.roundText = this.add.text(W / 2, 18, "ROUND 1/5", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "16px",
-      color: "#00ff88",
-      fontStyle: "bold",
-    }).setOrigin(0.5, 0).setDepth(dp);
+    /* Wave */
+    this.waveText = this.add.text(16, 32, "WAVE: 0 / 50", {
+      fontFamily: "Courier New, monospace", fontSize: "11px", color: "#888888",
+    }).setDepth(dp);
+
+    /* Progress bar */
+    this.progBg = this.add.rectangle(W / 2, 16, 240, 12, 0x1a1a2e, 0.8).setDepth(dp);
+    this.progBg.setStrokeStyle(1, 0xffd93d, 0.3);
+    this.progFill = this.add.rectangle(W / 2 - 120, 16, 0, 10, 0xffd93d, 0.7)
+      .setOrigin(0, 0.5).setDepth(dp + 1);
+    this.progText = this.add.text(W / 2, 16, "0 / 50", {
+      fontFamily: "Courier New, monospace", fontSize: "9px",
+      color: "#ffffff", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(dp + 2);
+
+    /* Combo */
+    this.comboText = this.add.text(W / 2, 38, "", {
+      fontFamily: "Courier New, monospace", fontSize: "11px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setAlpha(0).setDepth(dp);
 
     /* Lives */
-    this.livesText = this.add.text(W - 16, 18, "♥♥♥", {
-      fontFamily: "Arial",
-      fontSize: "20px",
-      color: "#ff4444",
-      fontStyle: "bold",
+    this.livesText = this.add.text(W - 16, 12, "♥♥♥", {
+      fontFamily: "Arial", fontSize: "20px",
+      color: "#ff4444", fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(dp);
 
     /* Accuracy */
-    this.accuracyText = this.add.text(W - 16, 38, "ACC: 100%", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#aaaaaa",
+    this.accText = this.add.text(W - 16, 36, "ACC: 100%", {
+      fontFamily: "Courier New, monospace", fontSize: "10px", color: "#888888",
     }).setOrigin(1, 0).setDepth(dp);
 
-    /* Combo */
-    this.comboText = this.add.text(16, 38, "", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-    }).setAlpha(0).setDepth(dp);
+    /* Timer bar (shown per character) */
+    this.timerBarBg = this.add.rectangle(W / 2, 188, 200, 8, 0x1a1a2e, 0.6).setDepth(dp);
+    this.timerBarBg.setStrokeStyle(1, 0x00ffff, 0.2);
+    this.timerBarFill = this.add.rectangle(W / 2 - 100, 188, 200, 6, 0x00ffff, 0.7)
+      .setOrigin(0, 0.5).setDepth(dp + 1);
+    this.timerBarBg.setAlpha(0);
+    this.timerBarFill.setAlpha(0);
 
-    /* Progress dots (bottom) */
-    this.progressDots = [];
-    const dotStartX = W / 2 - (TOTAL_ROUNDS - 1) * 20;
-    for (let i = 0; i < TOTAL_ROUNDS; i++) {
-      const dot = this.add.circle(dotStartX + i * 40, H - 20, 8, 0x333333, 0.8).setDepth(dp);
-      dot.setStrokeStyle(1.5, 0x00ffff, 0.4);
-      this.progressDots.push(dot);
-    }
-    this.add.text(W / 2, H - 38, "ROUNDS", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "9px",
-      color: "#555555",
-    }).setOrigin(0.5).setDepth(dp);
+    /* Tooltip */
+    this.tooltip = this.add.text(W / 2, 360, "", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ffffff",
+      backgroundColor: "rgba(10, 10, 26, 0.9)",
+      padding: { x: 14, y: 6 },
+      align: "center",
+      wordWrap: { width: 500 },
+    }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
+
+    /* Rapid fire banner (hidden) */
+    this.rapidBanner = this.add.text(W / 2, 170, "⚡ RAPID FIRE! DOUBLE POINTS! ⚡", {
+      fontFamily: "Courier New, monospace", fontSize: "16px",
+      color: "#ffd93d", fontStyle: "bold",
+      stroke: "#ff6b00", strokeThickness: 2,
+    }).setOrigin(0.5).setAlpha(0).setDepth(dp + 5);
   }
 
   _updateHUD() {
-    if (this.scoreText && this.scoreText.active) {
-      this.scoreText.setText(`SCORE: ${this.score}`);
+    if (this.scoreText?.active) this.scoreText.setText(`SCORE: ${this.score}`);
+    if (this.waveText?.active) this.waveText.setText(`WAVE: ${Math.min(this.waveNumber, 50)} / 50`);
+
+    const pct = Math.min(this.totalProcessed / TARGET_PROCESSED, 1);
+    if (this.progFill?.active) {
+      this.tweens.add({ targets: this.progFill, width: 240 * pct, duration: 200, ease: "Cubic.out" });
     }
-    if (this.roundText && this.roundText.active) {
-      this.roundText.setText(`ROUND ${this.currentRound + 1}/${TOTAL_ROUNDS}`);
+    if (this.progText?.active) this.progText.setText(`${this.totalProcessed} / ${TARGET_PROCESSED}`);
+
+    if (this.livesText?.active) {
+      let h = "";
+      for (let i = 0; i < MAX_LIVES; i++) h += i < this.lives ? "♥" : "♡";
+      this.livesText.setText(h);
     }
-    if (this.livesText && this.livesText.active) {
-      let hearts = "";
-      for (let i = 0; i < MAX_LIVES; i++) {
-        hearts += i < this.lives ? "♥" : "♡";
-      }
-      this.livesText.setText(hearts);
-    }
-    if (this.accuracyText && this.accuracyText.active) {
-      const total = this.correctAnswers + this.wrongAnswers;
-      const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
-      this.accuracyText.setText(`ACC: ${acc}%`);
-    }
-    if (this.comboText && this.comboText.active) {
+
+    const total = this.correctAnswers + this.wrongAnswers;
+    const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
+    if (this.accText?.active) this.accText.setText(`ACC: ${acc}%`);
+
+    if (this.comboText?.active) {
       if (this.combo >= 2) {
-        this.comboText.setText(`${this.combo}x COMBO`);
+        const mult = this.combo >= 20 ? "x5" : this.combo >= 10 ? "x3" : this.combo >= 5 ? "x2" : "";
+        this.comboText.setText(`COMBO: ${this.combo} ${mult}`);
         this.comboText.setAlpha(1);
       } else {
         this.comboText.setAlpha(0);
@@ -410,76 +689,59 @@ export class Level8Scene extends Phaser.Scene {
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x0d1b2a, 0.98);
     panelG.fillRoundedRect(W / 2 - 320, 30, 640, 530, 16);
-    panelG.lineStyle(3, 0x00ffff);
+    panelG.lineStyle(3, 0xffd93d);
     panelG.strokeRoundedRect(W / 2 - 320, 30, 640, 530, 16);
 
-    const title = this.add.text(W / 2, 68, "🔤 MISSION 8: ASCII CODE BREAKER", {
+    const title = this.add.text(W / 2, 68, "🏭 MISSION 8: CHARACTER WORKSHOP", {
       fontFamily: "Arial Black, Arial, sans-serif",
-      fontSize: "24px",
-      color: "#00ffff",
-      fontStyle: "bold",
+      fontSize: "23px", color: "#ffd93d", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 98, "Master the numbers behind characters", {
-      fontFamily: "Arial",
-      fontSize: "16px",
-      color: "#4ecdc4",
-      fontStyle: "italic",
+    const sub = this.add.text(W / 2, 98, "Quality Control Engineer Reporting for Duty", {
+      fontFamily: "Arial", fontSize: "15px",
+      color: "#4ecdc4", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 195,
-      "Every character has a secret number called its ASCII value!\n" +
-      "You must decode, convert, and compare these values.\n\n" +
-      "Quick Reference:\n" +
-      "  A = 65    a = 97    0 = 48    space = 32\n" +
-      "  Z = 90    z = 122   9 = 57    ! = 33\n\n" +
-      "5 Rounds — 5 Questions Each:\n" +
-      "  R1: Match char → ASCII value\n" +
-      "  R2: Match ASCII value → char\n" +
-      "  R3: Compare two chars\n" +
-      "  R4: Identify valid chars\n" +
-      "  R5: Predict code output",
+    const desc = this.add.text(W / 2, 215,
+      "Process incoming characters on the factory line!\n\n" +
+      "STEP 1: VALIDATE — Is it a valid char?\n" +
+      "   ✓ Valid:  'A'  'z'  '5'  '@'  ' '  '\\n'\n" +
+      "   ✗ Invalid: \"AB\"  123  ''  'XY'  A\n\n" +
+      "STEP 2: CATEGORIZE — Sort into the right bin\n" +
+      "   Uppercase · Lowercase · Digits\n" +
+      "   Symbols · Special · Spaces\n\n" +
+      "BONUS: Pattern challenges & rapid-fire rounds!\n" +
+      "Combo streaks multiply your score!",
       {
         fontFamily: "Courier New, monospace",
-        fontSize: "13px",
-        color: "#bdc3c7",
-        align: "center",
-        lineSpacing: 5,
+        fontSize: "12px", color: "#bdc3c7",
+        align: "center", lineSpacing: 5,
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 410, "Score 80%+ accuracy to unlock the\nASCII Master badge! 🔤", {
-      fontFamily: "Arial",
-      fontSize: "14px",
-      color: "#f1c40f",
-      align: "center",
-      fontStyle: "bold",
-      lineSpacing: 6,
+    const goal = this.add.text(W / 2, 415, "Process 50 characters with 85%+ accuracy\nto earn the ASCII Master badge! 🔤", {
+      fontFamily: "Arial", fontSize: "13px",
+      color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 5,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 455, "⚠ 3 lives only — each wrong answer costs 1 life!", {
-      fontFamily: "Arial",
-      fontSize: "12px",
-      color: "#e74c3c",
-      align: "center",
+    const warn = this.add.text(W / 2, 460, "⚠ 3 lives — wrong answers cost lives!", {
+      fontFamily: "Arial", fontSize: "11px", color: "#e74c3c",
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 505, 260, 48, 0x004d40, 1).setDepth(202);
-    btnBg.setStrokeStyle(2, 0x00ffff);
-    const btnTxt = this.add.text(W / 2, 505, "BEGIN HACKING", {
+    const btnBg = this.add.rectangle(W / 2, 505, 280, 48, 0x8B6914, 1).setDepth(202);
+    btnBg.setStrokeStyle(2, 0xffd93d);
+    const btnTxt = this.add.text(W / 2, 505, "START SHIFT", {
       fontFamily: "Courier New, monospace",
-      fontSize: "20px",
-      color: "#00ffff",
-      fontStyle: "bold",
+      fontSize: "20px", color: "#ffd93d", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
 
     btnBg.setInteractive({ useHandCursor: true });
     btnBg.on("pointerover", () => {
-      btnBg.setFillStyle(0x00796b);
+      btnBg.setFillStyle(0xa67c00);
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1.08, scaleY: 1.08, duration: 120 });
     });
     btnBg.on("pointerout", () => {
-      btnBg.setFillStyle(0x004d40);
+      btnBg.setFillStyle(0x8B6914);
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1, scaleY: 1, duration: 120 });
     });
     btnBg.on("pointerup", () => {
@@ -495,136 +757,433 @@ export class Level8Scene extends Phaser.Scene {
     this.gameStarted = true;
     this.startTime = this.time.now;
     GameManager.set("lives", MAX_LIVES);
-    this._showRound();
+    this._nextWave();
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  ROUND DISPLAY
+   *  WAVE SYSTEM
    * ═══════════════════════════════════════════════════════════════ */
-  _showRound() {
-    this._clearRoundElements();
-    this.currentQuestion = 0;
-    this.answered = false;
-    this.retryAvailable = false;
-    this._updateHUD();
-
-    /* Round header transition */
-    const headerBg = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(140);
-    const headerText = this.add.text(W / 2, H / 2 - 20,
-      `ROUND ${this.currentRound + 1}/${TOTAL_ROUNDS}`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "36px",
-      color: "#00ffff",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(141);
-    const nameText = this.add.text(W / 2, H / 2 + 25, ROUND_NAMES[this.currentRound], {
-      fontFamily: "Arial",
-      fontSize: "22px",
-      color: "#4ecdc4",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(141);
-
-    headerText.setScale(0);
-    nameText.setAlpha(0);
-
-    this.tweens.add({
-      targets: headerText,
-      scaleX: 1, scaleY: 1,
-      duration: 400,
-      ease: "Back.out",
-    });
-    this.tweens.add({
-      targets: nameText,
-      alpha: 1,
-      duration: 400,
-      delay: 200,
-    });
-
-    this.time.delayedCall(1400, () => {
-      this.tweens.add({
-        targets: [headerBg, headerText, nameText],
-        alpha: 0,
-        duration: 300,
-        onComplete: () => {
-          headerBg.destroy();
-          headerText.destroy();
-          nameText.destroy();
-          this._showQuestion();
-        },
-      });
-    });
+  _getTimerDuration() {
+    if (this.waveNumber <= 10) return 4000;
+    if (this.waveNumber <= 20) return 3000;
+    if (this.waveNumber <= 30) return 3000;
+    if (this.waveNumber <= 40) return 2000;
+    return 1500;
   }
 
-  _clearRoundElements() {
-    this.roundElements.forEach(el => {
-      if (el && el.active) {
-        this.tweens.killTweensOf(el);
-        el.destroy();
-      }
-    });
-    this.roundElements = [];
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  QUESTION DISPLAY — dispatches to the right round handler
-   * ═══════════════════════════════════════════════════════════════ */
-  _showQuestion() {
-    this._clearRoundElements();
-    this.answered = false;
-    this.retryAvailable = false;
-
+  _nextWave() {
     if (this.isComplete) return;
 
-    /* Round progress bar */
-    const progBg = this.add.rectangle(W / 2, 70, 300, 10, 0x1a2332, 0.8).setDepth(110);
-    progBg.setStrokeStyle(1, 0x00ffff, 0.3);
-    const progFill = this.add.rectangle(W / 2 - 150, 70, 300 * (this.currentQuestion / QUESTIONS_PER_ROUND), 8, 0x00ffff, 0.6)
-      .setOrigin(0, 0.5).setDepth(111);
-    const progLabel = this.add.text(W / 2, 84, `Q${this.currentQuestion + 1}/${QUESTIONS_PER_ROUND}: ${ROUND_NAMES[this.currentRound]}`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "11px",
-      color: "#00ffff",
-    }).setOrigin(0.5).setDepth(111);
-    this.roundElements.push(progBg, progFill, progLabel);
+    if (this.totalProcessed >= TARGET_PROCESSED) {
+      this._levelComplete();
+      return;
+    }
 
-    switch (this.currentRound) {
-      case 0: this._showRound1Question(); break;
-      case 1: this._showRound2Question(); break;
-      case 2: this._showRound3Question(); break;
-      case 3: this._showRound4Question(); break;
-      case 4: this._showRound5Question(); break;
+    this.waveNumber++;
+    this._updateHUD();
+
+    /* Check for rapid-fire trigger */
+    if (this.consecutiveCorrect >= 10 && !this.rapidFireActive) {
+      this._startRapidFire();
+      return;
+    }
+
+    /* Every 5 waves (from wave 11+), insert a pattern challenge */
+    if (this.waveNumber > 10 && this.waveNumber % 5 === 0) {
+      this._showPatternChallenge();
+      return;
+    }
+
+    /* Determine wave type based on wave number */
+    if (this.waveNumber <= 10) {
+      this._spawnValidationChar();
+    } else if (this.waveNumber <= 30) {
+      this._spawnValidationThenSort();
+    } else {
+      this._spawnValidationThenSort();
     }
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  CENTRAL DISPLAY PANEL (reused by all rounds)
+   *  SPAWN CHARACTER for Validation
    * ═══════════════════════════════════════════════════════════════ */
-  _createCentralPanel(yPos, panelH) {
-    const panelW = 520;
-    const px = W / 2 - panelW / 2;
-    const py = yPos;
+  _pickCharForWave() {
+    const validPools = [VALID_UPPERCASE, VALID_LOWERCASE, VALID_DIGITS, VALID_SYMBOLS];
+    if (this.waveNumber > 20) validPools.push(VALID_SPECIAL, VALID_SPACES);
+    else if (this.waveNumber > 5) validPools.push(VALID_SPACES);
 
-    const panel = this.add.graphics().setDepth(110);
-    panel.fillStyle(0x0d1b2a, 0.95);
-    panel.fillRoundedRect(px, py, panelW, panelH, 12);
-    panel.lineStyle(2, 0x00ffff, 0.7);
-    panel.strokeRoundedRect(px, py, panelW, panelH, 12);
-    this.roundElements.push(panel);
+    const isValid = Math.random() < 0.65;
+    if (isValid) {
+      const pool = pickRandom(validPools);
+      const val = pickRandom(pool);
+      return { value: val, isValid: true, category: getCategory(val) };
+    } else {
+      const inv = pickRandom(INVALID_CHARS);
+      return { value: inv.value, isValid: false, reason: inv.reason, category: null };
+    }
+  }
 
-    return { x: W / 2, y: py + panelH / 2, w: panelW, h: panelH, top: py };
+  _spawnValidationChar() {
+    this._clearCurrentElements();
+    this.phase = "validate";
+    const char = this._pickCharForWave();
+    this._currentChar = char;
+
+    /* Character display in inspection zone */
+    const charText = this.add.text(W / 2, 270, char.value, {
+      fontFamily: "Courier New, monospace",
+      fontSize: char.value.length > 4 ? "28px" : "38px",
+      color: "#ffffff", fontStyle: "bold",
+      stroke: "#0d1b2a", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(60);
+
+    /* Scale-in animation */
+    charText.setScale(0);
+    this.tweens.add({
+      targets: charText,
+      scaleX: 1, scaleY: 1,
+      duration: 250,
+      ease: "Back.out",
+    });
+
+    /* Pulsing glow */
+    this.tweens.add({
+      targets: charText,
+      scaleX: 1.06, scaleY: 1.06,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut",
+    });
+
+    this.currentElements.push(charText);
+
+    this._needsSort = char.isValid;
+
+    /* Validation buttons */
+    const validBtn = this._makeActionButton(W / 2 - 100, 370, "✓ VALID", 0x00aa55, () => {
+      this._handleValidation(true);
+    });
+    const rejectBtn = this._makeActionButton(W / 2 + 100, 370, "✗ REJECT", 0xcc3333, () => {
+      this._handleValidation(false);
+    });
+    this.currentElements.push(...validBtn, ...rejectBtn);
+
+    this._setBinsDimmedForValidation(true);
+    if (this.binRowHint) {
+      this.binRowHint.setText("↑ Tap VALID or REJECT — scrap / bins fill when correct ↑");
+    }
+
+    /* Timer */
+    this._startTimer(this._getTimerDuration(), () => {
+      this._onTimerExpired();
+    });
+  }
+
+  _spawnValidationThenSort() {
+    this._clearCurrentElements();
+    this.phase = "validate";
+    const char = this._pickCharForWave();
+    this._currentChar = char;
+    this._needsSort = char.isValid;
+
+    const charText = this.add.text(W / 2, 270, char.value, {
+      fontFamily: "Courier New, monospace",
+      fontSize: char.value.length > 4 ? "28px" : "38px",
+      color: "#ffffff", fontStyle: "bold",
+      stroke: "#0d1b2a", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(60);
+
+    charText.setScale(0);
+    this.tweens.add({
+      targets: charText,
+      scaleX: 1, scaleY: 1,
+      duration: 250,
+      ease: "Back.out",
+    });
+    this.tweens.add({
+      targets: charText,
+      scaleX: 1.06, scaleY: 1.06,
+      duration: 800, yoyo: true, repeat: -1, ease: "Sine.inOut",
+    });
+
+    this.currentElements.push(charText);
+
+    const validBtn = this._makeActionButton(W / 2 - 100, 370, "✓ VALID", 0x00aa55, () => {
+      this._handleValidation(true);
+    });
+    const rejectBtn = this._makeActionButton(W / 2 + 100, 370, "✗ REJECT", 0xcc3333, () => {
+      this._handleValidation(false);
+    });
+    this.currentElements.push(...validBtn, ...rejectBtn);
+
+    this._setBinsDimmedForValidation(true);
+    if (this.binRowHint) {
+      this.binRowHint.setText("↑ Tap VALID or REJECT — scrap / bins fill when correct ↑");
+    }
+
+    this._startTimer(this._getTimerDuration(), () => this._onTimerExpired());
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  ANSWER BUTTONS (4-button grid or 2-button row)
+   *  VALIDATION HANDLER
    * ═══════════════════════════════════════════════════════════════ */
-  _createAnswerButtons(options, correctIndex, onAnswerCallback, yStart) {
-    const btnW = 170;
-    const btnH = 48;
-    const gapX = 20;
-    const gapY = 14;
-    const cols = options.length <= 2 ? options.length : 2;
-    const rows = Math.ceil(options.length / cols);
+  _handleValidation(playerSaidValid) {
+    this._stopTimer();
+    const char = this._currentChar;
+    const correct = playerSaidValid === char.isValid;
 
+    if (correct) {
+      this._onCorrect(char.isValid
+        ? `✓ '${char.value}' is a valid char!`
+        : `✓ Correct! ${char.value} is NOT a valid char.`);
+
+      /* Correct REJECT → scrap chute fills */
+      if (!char.isValid) {
+        this.scrapCount++;
+        if (this.scrapBin) {
+          this.scrapBin.count = this.scrapCount;
+          this.scrapBin.counter.setText(String(this.scrapCount));
+          this._updateScrapFill();
+          this._animateScrapFeed();
+        }
+      }
+
+      /* Correct VALID → pulse category bins, then sort */
+      if (char.isValid && this._needsSort) {
+        this._flashBinsReadyForSort();
+        this.time.delayedCall(600, () => this._enterSortPhase(char));
+        return;
+      }
+    } else {
+      const msg = char.isValid
+        ? `✗ Wrong! ${char.value} IS a valid char — single character in single quotes!`
+        : `✗ Wrong! ${char.value} is NOT a valid char — ${char.reason}`;
+      this._onWrong(msg);
+      if (this.lives <= 0) return;
+    }
+
+    this.totalProcessed++;
+    this._updateHUD();
+    this.time.delayedCall(correct ? 600 : 1200, () => this._nextWave());
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  SORT PHASE — categorize the validated char
+   * ═══════════════════════════════════════════════════════════════ */
+  _enterSortPhase(char) {
+    this._clearCurrentElements();
+    this.phase = "sort";
+    this._currentSortChar = char;
+
+    this._setBinsDimmedForValidation(false);
+    if (this.binRowHint) {
+      this.binRowHint.setText("↓ Click the correct category bin — watch it fill ↓");
+    }
+
+    /* Show the char and instruction */
+    const label = this.add.text(W / 2, 210, "SORT INTO CATEGORY:", {
+      fontFamily: "Courier New, monospace", fontSize: "12px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(60);
+
+    const charText = this.add.text(W / 2, 260, char.value, {
+      fontFamily: "Courier New, monospace", fontSize: "34px",
+      color: "#00ffff", fontStyle: "bold",
+      stroke: "#0d1b2a", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(60);
+
+    this.tweens.add({
+      targets: charText,
+      scaleX: 1.05, scaleY: 1.05,
+      duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut",
+    });
+
+    /* Arrow pointing to bins */
+    const arrow = this.add.text(W / 2, 320, "↓ Click a bin below ↓", {
+      fontFamily: "Courier New, monospace", fontSize: "11px",
+      color: "#888888",
+    }).setOrigin(0.5).setDepth(60);
+    this.tweens.add({
+      targets: arrow, alpha: { from: 0.4, to: 1 },
+      duration: 600, yoyo: true, repeat: -1,
+    });
+
+    this.currentElements.push(label, charText, arrow);
+    this._startTimer(this._getTimerDuration(), () => this._onTimerExpired());
+  }
+
+  _handleCategoryChoice(chosenCategory) {
+    this._stopTimer();
+    const char = this._currentSortChar;
+    if (!char) return;
+
+    const correctCat = char.category;
+    const correct = chosenCategory === correctCat;
+
+    if (correct) {
+      this._onCorrect(`✓ '${char.value}' sorted into ${correctCat}!`);
+      this.binCounts[correctCat]++;
+      this.bins[correctCat].count++;
+      this.bins[correctCat].counter.setText(String(this.bins[correctCat].count));
+      this._updateBinFillBar(this.bins[correctCat]);
+
+      /* Animate bin */
+      this.binPart.emitParticleAt(this.bins[correctCat].container.x, this.bins[correctCat].container.y - 20, 12);
+      this.tweens.add({
+        targets: this.bins[correctCat].container,
+        scaleY: 1.15, scaleX: 1.08,
+        duration: 150, yoyo: true,
+      });
+      this.tweens.add({
+        targets: this.bins[correctCat].counter,
+        scale: { from: 1.5, to: 1 }, duration: 300,
+      });
+    } else {
+      this._onWrong(`✗ Wrong bin! '${char.value}' belongs in ${correctCat}, not ${chosenCategory}!`);
+      if (this.lives <= 0) return;
+    }
+
+    this._currentSortChar = null;
+    this.totalProcessed++;
+    this._updateHUD();
+
+    if (this.rapidFireActive) {
+      this.time.delayedCall(correct ? 300 : 600, () => this._rapidFireNext());
+    } else {
+      this.time.delayedCall(correct ? 500 : 1000, () => this._nextWave());
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  PATTERN CHALLENGE
+   * ═══════════════════════════════════════════════════════════════ */
+  _showPatternChallenge() {
+    this._clearCurrentElements();
+    this.phase = "pattern";
+    this._setBinsDimmedForValidation(true);
+    if (this.binRowHint) {
+      this.binRowHint.setText("Pattern challenge — bins idle");
+    }
+
+    /* Pick random challenge type */
+    const types = ["sequence", "case", "oddone", "quote"];
+    if (this.waveNumber > 20) types.push("escape");
+    const type = pickRandom(types);
+
+    switch (type) {
+      case "sequence": this._patternSequence(); break;
+      case "case":     this._patternCase(); break;
+      case "oddone":   this._patternOddOne(); break;
+      case "quote":    this._patternQuote(); break;
+      case "escape":   this._patternEscape(); break;
+    }
+  }
+
+  _patternSequence() {
+    const q = pickRandom(PATTERN_SEQUENCE);
+
+    const panelLabel = this.add.text(W / 2, 120, "🧩 PATTERN CHALLENGE: Complete the Sequence", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    /* Display sequence */
+    const seqStr = q.seq.join("  →  ") + "  →  [?]";
+    const seqText = this.add.text(W / 2, 180, seqStr, {
+      fontFamily: "Courier New, monospace", fontSize: "24px",
+      color: "#00ffff", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    this.currentElements.push(panelLabel, seqText);
+
+    /* Answer buttons */
+    this._createPatternButtons(q.options, q.options.indexOf(q.answer), q.explanation, 260);
+  }
+
+  _patternCase() {
+    const q = pickRandom(PATTERN_CASE);
+
+    const panelLabel = this.add.text(W / 2, 120, "🧩 CASE MATCHING: Find the Same Type", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    const givenText = this.add.text(W / 2, 180, `Given:  ${q.given}     Which matches?`, {
+      fontFamily: "Courier New, monospace", fontSize: "20px",
+      color: "#00ffff", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    this.currentElements.push(panelLabel, givenText);
+    this._createPatternButtons(q.options, q.options.indexOf(q.answer), q.explanation, 250);
+  }
+
+  _patternOddOne() {
+    const q = pickRandom(PATTERN_ODDONE);
+
+    const panelLabel = this.add.text(W / 2, 120, "🧩 ODD ONE OUT: Which Doesn't Belong?", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    const groupStr = q.group.join("    ");
+    const groupText = this.add.text(W / 2, 180, groupStr, {
+      fontFamily: "Courier New, monospace", fontSize: "24px",
+      color: "#ffffff", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    this.currentElements.push(panelLabel, groupText);
+    this._createPatternButtons(q.group, q.oddIndex, q.explanation, 250);
+  }
+
+  _patternQuote() {
+    const q = pickRandom(PATTERN_QUOTE);
+
+    const panelLabel = this.add.text(W / 2, 120, "🧩 QUOTE CHECK: Which is a VALID Char?", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    this.currentElements.push(panelLabel);
+    this._createPatternButtons(q.options, q.correctIndex, q.explanation, 200);
+  }
+
+  _patternEscape() {
+    const q = pickRandom(ESCAPE_CHALLENGES);
+
+    const panelLabel = this.add.text(W / 2, 110, "🔍 ESCAPE DETECTIVE: What Does This Do?", {
+      fontFamily: "Courier New, monospace", fontSize: "13px",
+      color: "#ff9ff3", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(110);
+
+    const charDisplay = this.add.text(W / 2, 165, q.char, {
+      fontFamily: "Courier New, monospace", fontSize: "36px",
+      color: "#ff9ff3", fontStyle: "bold",
+      stroke: "#0d1b2a", strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(110);
+    this.tweens.add({
+      targets: charDisplay, scaleX: 1.08, scaleY: 1.08,
+      duration: 700, yoyo: true, repeat: -1, ease: "Sine.inOut",
+    });
+
+    /* Preview */
+    const previewBg = this.add.rectangle(W / 2, 220, 300, 40, 0x0d1b2a, 0.9).setDepth(109);
+    previewBg.setStrokeStyle(1, 0xff9ff3, 0.3);
+    const previewText = this.add.text(W / 2, 220, q.preview, {
+      fontFamily: "Courier New, monospace", fontSize: "11px",
+      color: "#aaaaaa", align: "center",
+    }).setOrigin(0.5).setDepth(110);
+
+    this.currentElements.push(panelLabel, charDisplay, previewBg, previewText);
+    this._createPatternButtons(q.options, q.options.indexOf(q.answer), q.explanation, 270);
+  }
+
+  _createPatternButtons(options, correctIndex, explanation, yStart) {
+    const btnW = 160;
+    const btnH = 44;
+    const cols = options.length <= 2 ? options.length : 2;
+    const gapX = 16;
+    const gapY = 12;
     const totalW = cols * btnW + (cols - 1) * gapX;
     const startX = W / 2 - totalW / 2 + btnW / 2;
 
@@ -637,543 +1196,337 @@ export class Level8Scene extends Phaser.Scene {
       const by = yStart + row * (btnH + gapY);
 
       const bg = this.add.rectangle(bx, by, btnW, btnH, 0x1a2332, 0.9).setDepth(120);
-      bg.setStrokeStyle(2, 0x00ffff, 0.5);
+      bg.setStrokeStyle(2, 0x00ffff, 0.4);
 
-      const fontSize = opt.length > 15 ? "12px" : opt.length > 8 ? "14px" : "18px";
+      const fontSize = opt.length > 12 ? "12px" : opt.length > 6 ? "14px" : "18px";
       const txt = this.add.text(bx, by, opt, {
-        fontFamily: "Courier New, monospace",
-        fontSize,
-        color: "#ffffff",
-        fontStyle: "bold",
-        align: "center",
-        wordWrap: { width: btnW - 16 },
+        fontFamily: "Courier New, monospace", fontSize,
+        color: "#ffffff", fontStyle: "bold",
+        wordWrap: { width: btnW - 14 }, align: "center",
       }).setOrigin(0.5).setDepth(121);
 
       bg.setInteractive({ useHandCursor: true });
-
       bg.on("pointerover", () => {
-        if (this.answered) return;
         bg.setStrokeStyle(2, 0x00ffff, 1);
         this.tweens.add({ targets: [bg, txt], scaleX: 1.05, scaleY: 1.05, duration: 80 });
       });
       bg.on("pointerout", () => {
-        if (this.answered) return;
-        bg.setStrokeStyle(2, 0x00ffff, 0.5);
+        bg.setStrokeStyle(2, 0x00ffff, 0.4);
         this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 80 });
       });
       bg.on("pointerup", () => {
-        if (this.answered) return;
-        onAnswerCallback(i, bg, txt, buttons);
+        if (this.phase !== "pattern") return;
+        this._handlePatternAnswer(i, correctIndex, explanation, bg, buttons);
       });
 
-      this.roundElements.push(bg, txt);
+      this.currentElements.push(bg, txt);
       buttons.push({ bg, txt, index: i });
     });
+  }
 
-    return buttons;
+  _handlePatternAnswer(selected, correctIndex, explanation, selectedBg, allButtons) {
+    this.phase = "pattern_answered";
+    const correct = selected === correctIndex;
+
+    if (correct) {
+      this.patternChallengesDone++;
+      const points = 50;
+      this._onCorrect(explanation, points);
+    } else {
+      this._onWrong(explanation);
+      if (this.lives <= 0) return;
+
+      /* Highlight correct */
+      const correctBtn = allButtons.find(b => b.index === correctIndex);
+      if (correctBtn) {
+        correctBtn.bg.setFillStyle(0x004d40, 1);
+        correctBtn.bg.setStrokeStyle(3, 0x00ff88, 1);
+        this.tweens.add({
+          targets: [correctBtn.bg, correctBtn.txt],
+          scaleX: 1.1, scaleY: 1.1, duration: 200, yoyo: true, repeat: 1,
+        });
+      }
+    }
+
+    this._updateHUD();
+    this.time.delayedCall(correct ? 800 : 1500, () => this._nextWave());
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  HANDLE ANSWER
+   *  RAPID FIRE MODE
    * ═══════════════════════════════════════════════════════════════ */
-  _handleAnswer(selectedIndex, correctIndex, explanation, selectedBg, selectedTxt, allButtons) {
-    this.answered = true;
-    const isCorrect = selectedIndex === correctIndex;
+  _startRapidFire() {
+    this._clearCurrentElements();
+    this.rapidFireActive = true;
+    this.rapidFireScore = 0;
+    this.consecutiveCorrect = 0;
+    this.phase = "rapidfire";
 
-    if (isCorrect) {
-      this._onCorrectAnswer(selectedBg, selectedTxt, allButtons, correctIndex, explanation);
-    } else {
-      this._onWrongAnswer(selectedBg, selectedTxt, allButtons, correctIndex, explanation);
-    }
+    /* Announcement */
+    this.rapidBanner.setAlpha(1);
+    this.tweens.add({
+      targets: this.rapidBanner,
+      scaleX: 1.1, scaleY: 1.1,
+      duration: 300, yoyo: true, repeat: 2,
+    });
+    this.cameras.main.flash(300, 255, 215, 0);
+
+    /* Flash bins */
+    Object.values(this.bins).forEach(bin => {
+      this.tweens.add({
+        targets: bin.body,
+        alpha: { from: 0.3, to: 1 },
+        duration: 200, yoyo: true, repeat: 2,
+      });
+    });
+
+    this._rapidFireCount = 0;
+    this._rapidFireMax = 10;
+
+    this.time.delayedCall(1200, () => this._rapidFireNext());
   }
 
-  _onCorrectAnswer(selectedBg, selectedTxt, allButtons, correctIndex, explanation) {
+  _rapidFireNext() {
+    if (this._rapidFireCount >= this._rapidFireMax || this.isComplete) {
+      this._endRapidFire();
+      return;
+    }
+
+    this._clearCurrentElements();
+    this.phase = "rapidfire";
+    this._rapidFireCount++;
+
+    this._setBinsDimmedForValidation(false);
+    if (this.binRowHint) {
+      this.binRowHint.setText("⚡ RAPID FIRE — tap the correct bin! ⚡");
+    }
+
+    /* Pick a valid char only for rapid fire */
+    const allValid = [...VALID_UPPERCASE, ...VALID_LOWERCASE, ...VALID_DIGITS, ...VALID_SYMBOLS];
+    if (this.waveNumber > 20) allValid.push(...VALID_SPECIAL, ...VALID_SPACES);
+    const val = pickRandom(allValid);
+    const cat = getCategory(val);
+    this._currentSortChar = { value: val, category: cat, isValid: true };
+
+    /* Rapid counter */
+    const counterText = this.add.text(W / 2, 200, `${this._rapidFireCount} / ${this._rapidFireMax}`, {
+      fontFamily: "Courier New, monospace", fontSize: "11px", color: "#ffd93d",
+    }).setOrigin(0.5).setDepth(60);
+
+    const charText = this.add.text(W / 2, 260, val, {
+      fontFamily: "Courier New, monospace", fontSize: "36px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(60);
+    charText.setScale(0);
+    this.tweens.add({
+      targets: charText, scaleX: 1, scaleY: 1,
+      duration: 150, ease: "Back.out",
+    });
+
+    const arrow = this.add.text(W / 2, 310, "↓ SORT! ↓", {
+      fontFamily: "Courier New, monospace", fontSize: "12px", color: "#ffd93d",
+    }).setOrigin(0.5).setDepth(60);
+    this.tweens.add({
+      targets: arrow, alpha: { from: 0.4, to: 1 },
+      duration: 300, yoyo: true, repeat: -1,
+    });
+
+    this.currentElements.push(counterText, charText, arrow);
+    this._startTimer(2000, () => {
+      this._onTimerExpired();
+      this.time.delayedCall(500, () => this._rapidFireNext());
+    });
+  }
+
+  _endRapidFire() {
+    this.rapidFireActive = false;
+    this.rapidBanner.setAlpha(0);
+    this._clearCurrentElements();
+
+    const bonusText = this.add.text(W / 2, H / 2, `⚡ RAPID FIRE COMPLETE! +${this.rapidFireScore}`, {
+      fontFamily: "Courier New, monospace", fontSize: "18px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(150);
+
+    this.cyanPart.emitParticleAt(W / 2, H / 2, 25);
+
+    this.tweens.add({
+      targets: bonusText, alpha: 0, y: H / 2 - 60,
+      duration: 1500, delay: 800,
+      onComplete: () => { bonusText.destroy(); this._nextWave(); },
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+   *  CORRECT / WRONG HANDLERS
+   * ═══════════════════════════════════════════════════════════════ */
+  _onCorrect(message, basePoints) {
     this.correctAnswers++;
     this.combo++;
+    this.consecutiveCorrect++;
     if (this.combo > this.maxCombo) this.maxCombo = this.combo;
 
-    const multiplier = this.combo >= 5 ? 3 : this.combo >= 3 ? 2 : 1;
-    const points = this.retryAvailable ? 10 : 25 * multiplier;
+    const mult = this.combo >= 20 ? 5 : this.combo >= 10 ? 3 : this.combo >= 5 ? 2 : 1;
+    const rapidMult = this.rapidFireActive ? 2 : 1;
+    const points = (basePoints || 20) * mult * rapidMult;
     this.score += points;
+    if (this.rapidFireActive) this.rapidFireScore += points;
 
     GameManager.addXP(points);
     GameManager.addScore(points);
     GameManager.addCombo();
 
-    /* Visual feedback */
-    selectedBg.setFillStyle(0x004d40, 1);
-    selectedBg.setStrokeStyle(3, 0x00ff88, 1);
+    this.correctPart.emitParticleAt(W / 2, 270, 15);
+    this._showPopup(W / 2, 240, `+${points}`, "#00ff88");
+    this._showTooltip(message, "#00ff88");
 
-    this.correctParticles.emitParticleAt(selectedBg.x, selectedBg.y, 20);
-    this.cyanParticles.emitParticleAt(selectedBg.x, selectedBg.y - 30, 10);
-
-    this._showPopup(selectedBg.x, selectedBg.y - 40, this.retryAvailable ? "✓ +10" : `✓ +${points}`, "#00ff88");
-
-    /* Show explanation */
-    const expTxt = this.add.text(W / 2, 520, explanation, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#4ecdc4",
-      align: "center",
-      wordWrap: { width: 500 },
-    }).setOrigin(0.5).setDepth(130).setAlpha(0);
-    this.roundElements.push(expTxt);
-    this.tweens.add({ targets: expTxt, alpha: 1, duration: 300 });
-
-    /* Grey out other buttons */
-    allButtons.forEach(btn => {
-      if (btn.index !== correctIndex) {
-        btn.bg.setAlpha(0.3);
-        btn.txt.setAlpha(0.3);
-      }
-    });
+    if (this.combo === 5 || this.combo === 10 || this.combo === 20) {
+      this._showComboFlash();
+    }
 
     this._updateHUD();
-
-    /* Advance after delay */
-    this.time.delayedCall(1200, () => this._advanceQuestion());
   }
 
-  _onWrongAnswer(selectedBg, selectedTxt, allButtons, correctIndex, explanation) {
+  _onWrong(message) {
     this.wrongAnswers++;
     this.combo = 0;
+    this.consecutiveCorrect = 0;
     this.lives--;
 
     GameManager.resetCombo();
     GameManager.loseLife();
 
-    /* Visual feedback */
-    selectedBg.setFillStyle(0x4a1e1e, 1);
-    selectedBg.setStrokeStyle(3, 0xff4444, 1);
-
-    this.wrongParticles.emitParticleAt(selectedBg.x, selectedBg.y, 15);
+    this.wrongPart.emitParticleAt(W / 2, 270, 12);
     this.cameras.main.shake(200, 0.012);
     this.cameras.main.flash(150, 255, 50, 0);
 
-    this._showPopup(selectedBg.x, selectedBg.y - 40, "✗ WRONG", "#ff4444");
-
-    /* Highlight correct answer */
-    const correctBtn = allButtons.find(b => b.index === correctIndex);
-    if (correctBtn) {
-      correctBtn.bg.setFillStyle(0x004d40, 1);
-      correctBtn.bg.setStrokeStyle(3, 0x00ff88, 1);
-      this.tweens.add({
-        targets: [correctBtn.bg, correctBtn.txt],
-        scaleX: 1.1, scaleY: 1.1,
-        duration: 200,
-        yoyo: true,
-        repeat: 1,
-      });
-    }
-
-    /* Show explanation */
-    const expTxt = this.add.text(W / 2, 520, explanation, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#ff8888",
-      align: "center",
-      wordWrap: { width: 500 },
-    }).setOrigin(0.5).setDepth(130).setAlpha(0);
-    this.roundElements.push(expTxt);
-    this.tweens.add({ targets: expTxt, alpha: 1, duration: 300 });
+    this._showPopup(W / 2, 240, "WRONG!", "#ff4444");
+    this._showTooltip(message, "#ff4444");
 
     this._updateHUD();
 
-    /* Check game over */
     if (this.lives <= 0) {
-      this.time.delayedCall(1000, () => this._gameOver());
-      return;
-    }
-
-    /* Advance after delay */
-    this.time.delayedCall(1500, () => this._advanceQuestion());
-  }
-
-  _advanceQuestion() {
-    this.currentQuestion++;
-    if (this.currentQuestion >= QUESTIONS_PER_ROUND) {
-      this._completeRound();
-    } else {
-      this._showQuestion();
+      this.time.delayedCall(800, () => this._gameOver());
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  ROUND COMPLETE
-   * ═══════════════════════════════════════════════════════════════ */
-  _completeRound() {
-    this._clearRoundElements();
-
-    /* Light up progress dot */
-    if (this.progressDots[this.currentRound]) {
-      this.progressDots[this.currentRound].setFillStyle(0x00ffff, 0.9);
-      this.tweens.add({
-        targets: this.progressDots[this.currentRound],
-        scaleX: 1.4, scaleY: 1.4,
-        duration: 200,
-        yoyo: true,
-      });
-    }
-
-    this.currentRound++;
-
-    if (this.currentRound >= TOTAL_ROUNDS) {
-      this.time.delayedCall(500, () => this._levelComplete());
-      return;
-    }
-
-    /* Round complete transition */
-    const compBg = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6).setDepth(140);
-    const compText = this.add.text(W / 2, H / 2 - 10, "ROUND COMPLETE", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "28px",
-      color: "#00ff88",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(141);
-    const scoreShow = this.add.text(W / 2, H / 2 + 30, `Score: ${this.score}`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "18px",
-      color: "#00ffff",
-    }).setOrigin(0.5).setDepth(141);
-
-    compText.setScale(0);
-    this.tweens.add({
-      targets: compText,
-      scaleX: 1, scaleY: 1,
-      duration: 300,
-      ease: "Back.out",
-    });
-
-    this.cyanParticles.emitParticleAt(W / 2, H / 2, 25);
-
-    this.time.delayedCall(1500, () => {
-      this.tweens.add({
-        targets: [compBg, compText, scoreShow],
-        alpha: 0,
-        duration: 300,
-        onComplete: () => {
-          compBg.destroy();
-          compText.destroy();
-          scoreShow.destroy();
-          this._showRound();
-        },
-      });
-    });
+  _onTimerExpired() {
+    this._stopTimer();
+    this._onWrong("⏰ Time's up! Too slow!");
+    if (this.lives <= 0) return;
+    this.totalProcessed++;
+    this._updateHUD();
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  ROUND 1: Match char → ASCII value
+   *  TIMER
    * ═══════════════════════════════════════════════════════════════ */
-  _showRound1Question() {
-    const q = ROUND1_QUESTIONS[this.currentQuestion];
-    const panel = this._createCentralPanel(100, 180);
+  _startTimer(duration, onExpire) {
+    this.timerBarBg.setAlpha(1);
+    this.timerBarFill.setAlpha(1);
+    this.timerBarFill.width = 200;
+    this.timerBarFill.setFillStyle(0x00ffff, 0.7);
 
-    /* Prompt label */
-    const label = this.add.text(panel.x, panel.top + 25, "What is the ASCII value of:", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "14px",
-      color: "#aaaaaa",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(label);
-
-    /* Character display */
-    const charDisplay = this.add.text(panel.x, panel.top + 85, q.question, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "52px",
-      color: "#00ffff",
-      fontStyle: "bold",
-      stroke: "#0d1b2a",
-      strokeThickness: 4,
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(charDisplay);
-
-    /* Glow pulse on the char */
-    this.tweens.add({
-      targets: charDisplay,
-      scaleX: 1.08,
-      scaleY: 1.08,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut",
+    if (this.timerBarTween) this.timerBarTween.destroy();
+    this.timerBarTween = this.tweens.add({
+      targets: this.timerBarFill,
+      width: 0,
+      duration,
+      ease: "Linear",
+      onUpdate: () => {
+        const pct = this.timerBarFill.width / 200;
+        if (pct < 0.25) this.timerBarFill.setFillStyle(0xff4444, 0.8);
+        else if (pct < 0.5) this.timerBarFill.setFillStyle(0xffd93d, 0.7);
+      },
     });
 
-    /* Decorative brackets */
-    const leftBracket = this.add.text(panel.x - 80, panel.top + 85, "[", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "52px",
-      color: "#335566",
-    }).setOrigin(0.5).setDepth(114);
-    const rightBracket = this.add.text(panel.x + 80, panel.top + 85, "]", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "52px",
-      color: "#335566",
-    }).setOrigin(0.5).setDepth(114);
-    this.roundElements.push(leftBracket, rightBracket);
+    if (this.timerEvent) this.timerEvent.destroy();
+    this.timerEvent = this.time.delayedCall(duration, onExpire);
+  }
 
-    /* Subtitle */
-    const subLabel = this.add.text(panel.x, panel.top + 145, "SELECT THE CORRECT ASCII CODE", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "10px",
-      color: "#556677",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(subLabel);
-
-    /* Answer buttons */
-    this._createAnswerButtons(q.options, q.correctIndex, (i, bg, txt, buttons) => {
-      this._handleAnswer(i, q.correctIndex, q.explanation, bg, txt, buttons);
-    }, 330);
+  _stopTimer() {
+    if (this.timerBarTween) { this.timerBarTween.destroy(); this.timerBarTween = null; }
+    if (this.timerEvent) { this.timerEvent.destroy(); this.timerEvent = null; }
+    this.timerBarBg.setAlpha(0);
+    this.timerBarFill.setAlpha(0);
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  ROUND 2: Match ASCII value → char
+   *  UI HELPERS
    * ═══════════════════════════════════════════════════════════════ */
-  _showRound2Question() {
-    const q = ROUND2_QUESTIONS[this.currentQuestion];
-    const panel = this._createCentralPanel(100, 180);
+  _makeActionButton(x, y, label, color, callback) {
+    const bg = this.add.rectangle(x, y, 160, 48, color, 0.85).setDepth(70);
+    bg.setStrokeStyle(2, Phaser.Display.Color.IntegerToColor(color).brighten(30).color, 0.8);
 
-    const label = this.add.text(panel.x, panel.top + 25, "Which character has ASCII value:", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "14px",
-      color: "#aaaaaa",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(label);
+    const txt = this.add.text(x, y, label, {
+      fontFamily: "Courier New, monospace", fontSize: "18px",
+      color: "#ffffff", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(71);
 
-    /* ASCII value display */
-    const valDisplay = this.add.text(panel.x, panel.top + 85, q.question, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "52px",
-      color: "#ff6bcb",
-      fontStyle: "bold",
-      stroke: "#0d1b2a",
-      strokeThickness: 4,
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(valDisplay);
-
-    this.tweens.add({
-      targets: valDisplay,
-      scaleX: 1.08,
-      scaleY: 1.08,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut",
+    bg.setInteractive({ useHandCursor: true });
+    bg.on("pointerover", () => {
+      this.tweens.add({ targets: [bg, txt], scaleX: 1.08, scaleY: 1.08, duration: 100 });
     });
-
-    /* ASCII prefix */
-    const prefix = this.add.text(panel.x - 70, panel.top + 55, "ASCII", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#556677",
-    }).setOrigin(0.5).setDepth(114);
-    this.roundElements.push(prefix);
-
-    const subLabel = this.add.text(panel.x, panel.top + 145, "SELECT THE MATCHING CHARACTER", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "10px",
-      color: "#556677",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(subLabel);
-
-    this._createAnswerButtons(q.options, q.correctIndex, (i, bg, txt, buttons) => {
-      this._handleAnswer(i, q.correctIndex, q.explanation, bg, txt, buttons);
-    }, 330);
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  ROUND 3: Char Comparator
-   * ═══════════════════════════════════════════════════════════════ */
-  _showRound3Question() {
-    const q = ROUND3_QUESTIONS[this.currentQuestion];
-    const panel = this._createCentralPanel(100, 160);
-
-    const label = this.add.text(panel.x, panel.top + 22, "Which has the LOWER ASCII value?", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "15px",
-      color: "#f1c40f",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(label);
-
-    /* Two chars side by side */
-    const char1 = this.add.text(panel.x - 80, panel.top + 90, q.chars[0], {
-      fontFamily: "Courier New, monospace",
-      fontSize: "42px",
-      color: "#00ffff",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(115);
-
-    const vsText = this.add.text(panel.x, panel.top + 90, "vs", {
-      fontFamily: "Arial",
-      fontSize: "22px",
-      color: "#555555",
-      fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(115);
-
-    const char2 = this.add.text(panel.x + 80, panel.top + 90, q.chars[1], {
-      fontFamily: "Courier New, monospace",
-      fontSize: "42px",
-      color: "#ff6bcb",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(char1, vsText, char2);
-
-    /* Hidden ASCII values (shown after answer) */
-    const asciiHint1 = this.add.text(panel.x - 80, panel.top + 130, `(${q.asciiVals[0]})`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#00ffff",
-    }).setOrigin(0.5).setDepth(115).setAlpha(0);
-    const asciiHint2 = this.add.text(panel.x + 80, panel.top + 130, `(${q.asciiVals[1]})`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "12px",
-      color: "#ff6bcb",
-    }).setOrigin(0.5).setDepth(115).setAlpha(0);
-    this.roundElements.push(asciiHint1, asciiHint2);
-
-    /* Two answer buttons */
-    const options = q.chars;
-    this._createAnswerButtons(options, q.correctIndex, (i, bg, txt, buttons) => {
-      /* Reveal ASCII values */
-      this.tweens.add({ targets: asciiHint1, alpha: 1, duration: 300 });
-      this.tweens.add({ targets: asciiHint2, alpha: 1, duration: 300 });
-      this._handleAnswer(i, q.correctIndex, q.explanation, bg, txt, buttons);
-    }, 320);
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  ROUND 4: Type Identifier
-   * ═══════════════════════════════════════════════════════════════ */
-  _showRound4Question() {
-    const q = ROUND4_QUESTIONS[this.currentQuestion];
-    const panel = this._createCentralPanel(100, 180);
-
-    const label = this.add.text(panel.x, panel.top + 22, "Is this a VALID single char?", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "15px",
-      color: "#f1c40f",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(label);
-
-    /* Value display */
-    const valDisplay = this.add.text(panel.x, panel.top + 95, q.value, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "40px",
-      color: "#ffffff",
-      fontStyle: "bold",
-      stroke: "#0d1b2a",
-      strokeThickness: 3,
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(valDisplay);
-
-    this.tweens.add({
-      targets: valDisplay,
-      scaleX: 1.05,
-      scaleY: 1.05,
-      duration: 900,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut",
+    bg.on("pointerout", () => {
+      this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 100 });
     });
+    bg.on("pointerup", callback);
 
-    const subLabel = this.add.text(panel.x, panel.top + 150, "Can this fit in a char variable?", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "10px",
-      color: "#556677",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(subLabel);
-
-    /* Two buttons: VALID / INVALID */
-    const correctIndex = q.isValid ? 0 : 1;
-    const options = ["VALID CHAR ✓", "INVALID ✗"];
-    this._createAnswerButtons(options, correctIndex, (i, bg, txt, buttons) => {
-      this._handleAnswer(i, correctIndex, q.explanation, bg, txt, buttons);
-    }, 340);
+    return [bg, txt];
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  ROUND 5: Code Output Prediction
-   * ═══════════════════════════════════════════════════════════════ */
-  _showRound5Question() {
-    const q = ROUND5_QUESTIONS[this.currentQuestion];
-    const panel = this._createCentralPanel(95, 210);
-
-    const label = this.add.text(panel.x, panel.top + 18, "What does this code produce?", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "13px",
-      color: "#aaaaaa",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(label);
-
-    /* Code display — syntax colored */
-    const lines = q.code.split("\n");
-    lines.forEach((line, idx) => {
-      const coloredLine = this._syntaxHighlight(line);
-      const lineText = this.add.text(panel.x, panel.top + 55 + idx * 28, coloredLine.text, {
-        fontFamily: "Courier New, monospace",
-        fontSize: "17px",
-        color: coloredLine.color,
-        fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(115);
-      this.roundElements.push(lineText);
-    });
-
-    /* Line numbers */
-    lines.forEach((_, idx) => {
-      const lineNum = this.add.text(panel.x - 220, panel.top + 55 + idx * 28, `${idx + 1}`, {
-        fontFamily: "Courier New, monospace",
-        fontSize: "12px",
-        color: "#334455",
-      }).setOrigin(0.5).setDepth(114);
-      this.roundElements.push(lineNum);
-    });
-
-    /* Output prompt */
-    const outputLabel = this.add.text(panel.x, panel.top + 55 + lines.length * 28 + 20, "OUTPUT = ?", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "14px",
-      color: "#f1c40f",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(115);
-    this.roundElements.push(outputLabel);
-
-    /* Answer buttons */
-    this._createAnswerButtons(q.options, q.correctIndex, (i, bg, txt, buttons) => {
-      this._handleAnswer(i, q.correctIndex, q.explanation, bg, txt, buttons);
-    }, 360);
-  }
-
-  _syntaxHighlight(line) {
-    if (line.includes("char") || line.includes("int")) {
-      return { text: line, color: "#56b6c2" };
-    }
-    return { text: line, color: "#e06c75" };
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUP
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "22px",
-      color,
-      fontStyle: "bold",
-      stroke: "#0a0f1a",
-      strokeThickness: 3,
+      fontFamily: "Courier New, monospace", fontSize: "22px",
+      color, fontStyle: "bold",
+      stroke: "#0a0a1a", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(170);
 
     this.tweens.add({
-      targets: popup,
-      y: y - 60,
-      alpha: 0,
-      scaleX: 1.3,
-      scaleY: 1.3,
-      duration: 800,
-      ease: "Cubic.out",
+      targets: popup, y: y - 60, alpha: 0,
+      scaleX: 1.3, scaleY: 1.3, duration: 800, ease: "Cubic.out",
       onComplete: () => popup.destroy(),
     });
+  }
+
+  _showTooltip(text, color) {
+    if (!this.tooltip?.active) return;
+    this.tooltip.setText(text);
+    this.tooltip.setColor(color || "#ffffff");
+    this.tooltip.setAlpha(1);
+    this.tweens.killTweensOf(this.tooltip);
+    this.tweens.add({
+      targets: this.tooltip, alpha: 0, delay: 2000, duration: 500,
+    });
+  }
+
+  _showComboFlash() {
+    const mult = this.combo >= 20 ? "x5" : this.combo >= 10 ? "x3" : "x2";
+    const comboPopup = this.add.text(W / 2, 150, `🔥 COMBO ${mult}!`, {
+      fontFamily: "Arial Black, Arial, sans-serif", fontSize: "28px",
+      color: "#ffd93d", fontStyle: "bold",
+      stroke: "#ff6b00", strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(175);
+
+    this.tweens.add({
+      targets: comboPopup,
+      scaleX: { from: 0.5, to: 1.4 },
+      scaleY: { from: 0.5, to: 1.4 },
+      alpha: { from: 1, to: 0 },
+      y: 100, duration: 1200,
+      onComplete: () => comboPopup.destroy(),
+    });
+
+    if (this.combo >= 10) {
+      this.cameras.main.flash(200, 255, 215, 0);
+    }
+  }
+
+  _clearCurrentElements() {
+    this.currentElements.forEach(el => {
+      if (el?.active) { this.tweens.killTweensOf(el); el.destroy(); }
+    });
+    this.currentElements = [];
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1181,7 +1534,8 @@ export class Level8Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════ */
   _levelComplete() {
     this.isComplete = true;
-    this._clearRoundElements();
+    this._stopTimer();
+    this._clearCurrentElements();
 
     const total = this.correctAnswers + this.wrongAnswers;
     const accuracy = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
@@ -1196,14 +1550,13 @@ export class Level8Scene extends Phaser.Scene {
       GameManager.completeLevel(7, accuracy);
       BadgeSystem.unlock("ascii_master");
       ProgressTracker.saveProgress(GameManager.getState());
-      this.cameras.main.flash(600, 0, 200, 255);
+      this.cameras.main.flash(600, 255, 215, 0);
 
       for (let i = 0; i < 8; i++) {
         this.time.delayedCall(i * 200, () => {
-          this.confettiParticles.emitParticleAt(
+          this.confettiPart.emitParticleAt(
             Phaser.Math.Between(100, W - 100),
-            Phaser.Math.Between(0, 50),
-            15
+            Phaser.Math.Between(0, 50), 15
           );
         });
       }
@@ -1219,95 +1572,101 @@ export class Level8Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     const panelColor = passed ? 0x0d1b2a : 0x4a1e1e;
-    const borderColor = passed ? 0x00ffff : 0xe74c3c;
+    const borderColor = passed ? 0xffd93d : 0xe74c3c;
     panelG.fillStyle(panelColor, 0.97);
-    panelG.fillRoundedRect(W / 2 - 280, 40, 560, 510, 16);
+    panelG.fillRoundedRect(W / 2 - 300, 20, 600, 555, 16);
     panelG.lineStyle(3, borderColor);
-    panelG.strokeRoundedRect(W / 2 - 280, 40, 560, 510, 16);
+    panelG.strokeRoundedRect(W / 2 - 300, 20, 600, 555, 16);
 
-    const titleText = passed ? "🎉 LEVEL 8 COMPLETE!" : "❌ ACCURACY TOO LOW";
-    const titleColor = passed ? "#00ffff" : "#e74c3c";
+    const titleText = passed ? "🏭 WORKSHOP SHIFT COMPLETE!" : "❌ ACCURACY TOO LOW";
+    const titleColor = passed ? "#ffd93d" : "#e74c3c";
 
-    this.add.text(W / 2, 80, titleText, {
-      fontFamily: "Arial Black, Arial, sans-serif",
-      fontSize: "28px",
-      color: titleColor,
-      fontStyle: "bold",
+    this.add.text(W / 2, 55, titleText, {
+      fontFamily: "Arial Black, Arial, sans-serif", fontSize: "24px",
+      color: titleColor, fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const statsY = 125;
+    let sy = 90;
     const stats = [
-      `Rounds Completed: ${Math.min(this.currentRound, TOTAL_ROUNDS)} / ${TOTAL_ROUNDS}`,
-      `Correct Answers: ${this.correctAnswers} / ${TOTAL_QUESTIONS}`,
+      `Characters Processed: ${this.totalProcessed} / ${TARGET_PROCESSED}`,
       `Accuracy: ${accuracy}%`,
       `Score: ${this.score}`,
       `Time: ${timeStr}`,
       `Max Combo: ${this.maxCombo}x`,
+      `Pattern Challenges: ${this.patternChallengesDone}`,
+      `Scrap (correct rejects): ${this.scrapCount}`,
       `Lives Remaining: ${this.lives} / ${MAX_LIVES}`,
     ];
-
     stats.forEach((s, i) => {
-      this.add.text(W / 2, statsY + i * 26, s, {
-        fontFamily: "Courier New, monospace",
-        fontSize: "14px",
-        color: "#ecf0f1",
+      this.add.text(W / 2, sy + i * 24, s, {
+        fontFamily: "Courier New, monospace", fontSize: "13px", color: "#ecf0f1",
       }).setOrigin(0.5).setDepth(202);
     });
 
-    if (passed) {
-      const badgeY = statsY + stats.length * 26 + 15;
-      this.add.text(W / 2, badgeY, "🔤 Badge Unlocked: ASCII Master!", {
-        fontFamily: "Arial",
-        fontSize: "16px",
-        color: "#f1c40f",
-        fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
+    /* Category breakdown */
+    sy += stats.length * 24 + 15;
+    this.add.text(W / 2, sy, "Sorted By Category:", {
+      fontFamily: "Courier New, monospace", fontSize: "12px",
+      color: "#ffd93d", fontStyle: "bold",
+    }).setOrigin(0.5).setDepth(202);
+    sy += 18;
 
-      const learnY = badgeY + 30;
+    Object.keys(CATEGORIES).forEach((key, i) => {
+      const cat = CATEGORIES[key];
+      const cnt = this.binCounts[key] || 0;
+      const colorStr = Phaser.Display.Color.IntegerToColor(cat.color).rgba;
+      this.add.text(W / 2, sy + i * 18, `${cat.label}: ${cnt}`, {
+        fontFamily: "Courier New, monospace", fontSize: "11px", color: colorStr,
+      }).setOrigin(0.5).setDepth(202);
+    });
+
+    sy += Object.keys(CATEGORIES).length * 18 + 10;
+
+    if (passed) {
+      this.add.text(W / 2, sy, "🔤 Badge Unlocked: ASCII Master!", {
+        fontFamily: "Arial", fontSize: "15px",
+        color: "#f1c40f", fontStyle: "bold",
+      }).setOrigin(0.5).setDepth(202);
+      sy += 25;
+
       const bullets = [
-        "✅ Every char has a unique ASCII number",
-        "✅ Uppercase A-Z = 65-90, lowercase a-z = 97-122",
-        "✅ Digits '0'-'9' = 48-57 (not 0-9!)",
-        "✅ Char arithmetic: 'A'+1 = 'B', 'a'-32 = 'A'",
+        "✅ Valid char format: single char in single quotes",
+        "✅ Categories: A-Z, a-z, 0-9, symbols, special, space",
+        "✅ Escape sequences: \\n, \\t, \\\\, \\'",
+        "✅ Pattern recognition across char types",
       ];
       bullets.forEach((b, i) => {
-        this.add.text(W / 2, learnY + i * 20, b, {
-          fontFamily: "Arial",
-          fontSize: "11px",
-          color: "#bdc3c7",
+        this.add.text(W / 2, sy + i * 18, b, {
+          fontFamily: "Arial", fontSize: "10px", color: "#bdc3c7",
         }).setOrigin(0.5).setDepth(202);
       });
+      sy += bullets.length * 18 + 12;
 
-      const btnY = learnY + bullets.length * 20 + 25;
-      this._createEndButton(W / 2 - 130, btnY, "NEXT LEVEL →", 0x004d40, () => {
+      this._createEndButton(W / 2 - 130, sy, "NEXT LEVEL →", 0x8B6914, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
-      this._createEndButton(W / 2 + 130, btnY, "REPLAY", 0x1a3a4a, () => {
+      this._createEndButton(W / 2 + 130, sy, "REPLAY", 0x1a3a4a, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
     } else {
-      const failY = statsY + stats.length * 26 + 15;
-      this.add.text(W / 2, failY, `Need ${ACCURACY_THRESHOLD}%+ accuracy to pass!`, {
-        fontFamily: "Arial",
-        fontSize: "15px",
-        color: "#ff8888",
-        fontStyle: "bold",
+      this.add.text(W / 2, sy, `Need ${ACCURACY_THRESHOLD}%+ accuracy to pass!`, {
+        fontFamily: "Arial", fontSize: "14px",
+        color: "#ff8888", fontStyle: "bold",
       }).setOrigin(0.5).setDepth(202);
+      sy += 25;
 
-      this.add.text(W / 2, failY + 25, "Review ASCII values and try again.", {
-        fontFamily: "Arial",
-        fontSize: "13px",
-        color: "#aaaaaa",
+      this.add.text(W / 2, sy, "Practice recognizing valid chars and try again.", {
+        fontFamily: "Arial", fontSize: "12px", color: "#aaaaaa",
       }).setOrigin(0.5).setDepth(202);
+      sy += 35;
 
-      const btnY = failY + 70;
-      this._createEndButton(W / 2 - 100, btnY, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 100, sy, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, btnY, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 100, sy, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -1315,11 +1674,12 @@ export class Level8Scene extends Phaser.Scene {
   }
 
   /* ═══════════════════════════════════════════════════════════════
-   *  GAME OVER (lives exhausted)
+   *  GAME OVER
    * ═══════════════════════════════════════════════════════════════ */
   _gameOver() {
     this.isComplete = true;
-    this._clearRoundElements();
+    this._stopTimer();
+    this._clearCurrentElements();
 
     this.cameras.main.shake(500, 0.02);
     this.cameras.main.flash(300, 255, 0, 0);
@@ -1333,54 +1693,41 @@ export class Level8Scene extends Phaser.Scene {
       panelG.lineStyle(3, 0xe74c3c);
       panelG.strokeRoundedRect(W / 2 - 260, H / 2 - 170, 520, 340, 16);
 
-      this.add.text(W / 2, H / 2 - 120, "💀 SYSTEM LOCKED OUT", {
-        fontFamily: "Courier New, monospace",
-        fontSize: "28px",
-        color: "#e74c3c",
-        fontStyle: "bold",
+      this.add.text(W / 2, H / 2 - 120, "💀 FACTORY SHUTDOWN", {
+        fontFamily: "Courier New, monospace", fontSize: "28px",
+        color: "#e74c3c", fontStyle: "bold",
       }).setOrigin(0.5).setDepth(202);
 
-      this.add.text(W / 2, H / 2 - 70, "All lives lost — access denied!", {
-        fontFamily: "Courier New, monospace",
-        fontSize: "14px",
-        color: "#ff8888",
+      this.add.text(W / 2, H / 2 - 70, "All lives lost — quality control failed!", {
+        fontFamily: "Courier New, monospace", fontSize: "13px", color: "#ff8888",
       }).setOrigin(0.5).setDepth(202);
 
       const total = this.correctAnswers + this.wrongAnswers;
       const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 0;
 
-      this.add.text(W / 2, H / 2 - 30, [
-        `Round: ${this.currentRound + 1} / ${TOTAL_ROUNDS}`,
+      this.add.text(W / 2, H / 2 - 20, [
+        `Processed: ${this.totalProcessed} / ${TARGET_PROCESSED}`,
         `Correct: ${this.correctAnswers}  |  Wrong: ${this.wrongAnswers}`,
         `Accuracy: ${acc}%  |  Score: ${this.score}`,
       ].join("\n"), {
-        fontFamily: "Courier New, monospace",
-        fontSize: "13px",
-        color: "#aaaaaa",
-        align: "center",
-        lineSpacing: 6,
+        fontFamily: "Courier New, monospace", fontSize: "12px",
+        color: "#aaaaaa", align: "center", lineSpacing: 6,
       }).setOrigin(0.5).setDepth(202);
 
-      /* Glitch effect on game over title */
-      const glitchText = this.add.text(W / 2, H / 2 - 120, "💀 SYSTEM LOCKED OUT", {
-        fontFamily: "Courier New, monospace",
-        fontSize: "28px",
-        color: "#ff0000",
-        fontStyle: "bold",
+      /* Glitch effect */
+      const glitchText = this.add.text(W / 2, H / 2 - 120, "💀 FACTORY SHUTDOWN", {
+        fontFamily: "Courier New, monospace", fontSize: "28px",
+        color: "#ff0000", fontStyle: "bold",
       }).setOrigin(0.5).setDepth(203).setAlpha(0);
 
       this.time.addEvent({
-        delay: 300,
-        repeat: 5,
+        delay: 300, repeat: 5,
         callback: () => {
-          if (glitchText && glitchText.active) {
+          if (glitchText?.active) {
             glitchText.setAlpha(0.5);
             glitchText.setX(W / 2 + Phaser.Math.Between(-3, 3));
             this.time.delayedCall(60, () => {
-              if (glitchText && glitchText.active) {
-                glitchText.setAlpha(0);
-                glitchText.setX(W / 2);
-              }
+              if (glitchText?.active) { glitchText.setAlpha(0); glitchText.setX(W / 2); }
             });
           }
         },
@@ -1404,10 +1751,8 @@ export class Level8Scene extends Phaser.Scene {
     const bg = this.add.rectangle(x, y, 200, 44, color, 1).setDepth(202);
     bg.setStrokeStyle(2, Phaser.Display.Color.IntegerToColor(color).brighten(30).color);
     const txt = this.add.text(x, y, text, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "15px",
-      color: "#ffffff",
-      fontStyle: "bold",
+      fontFamily: "Courier New, monospace", fontSize: "14px",
+      color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
 
     bg.setInteractive({ useHandCursor: true });
@@ -1424,20 +1769,26 @@ export class Level8Scene extends Phaser.Scene {
    *  UPDATE LOOP
    * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
-    /* Grid scroll animation */
-    if (this.gridGfx && this.gridGfx.active) {
-      this.gridOffset += delta * 0.008;
-      this._drawGrid(this.gridOffset);
+    /* Conveyor belt scroll */
+    if (this.belt?.active) {
+      this.belt.tilePositionX += delta * 0.04;
     }
 
-    /* Binary rain */
-    if (this.binaryDigits) {
-      this.binaryDigits.forEach(bd => {
-        bd.obj.y += bd.speed;
-        if (bd.obj.y > H + 20) {
-          bd.obj.y = -20;
-          bd.obj.x = Phaser.Math.Between(10, W - 10);
-          bd.obj.setText(Math.random() > 0.5 ? "1" : "0");
+    /* Conveyor arrows float */
+    if (this.conveyorArrows) {
+      this.conveyorArrows.forEach((a, i) => {
+        a.setAlpha(0.1 + Math.sin(time * 0.003 + i) * 0.08);
+      });
+    }
+
+    /* Ambient sparks drift */
+    if (this.ambientSparks) {
+      this.ambientSparks.forEach(s => {
+        s.obj.y -= s.speed;
+        s.obj.x += Math.sin(time * 0.001 + s.wobbleOff) * 0.2;
+        if (s.obj.y < -5) {
+          s.obj.y = H + 5;
+          s.obj.x = Phaser.Math.Between(10, W - 10);
         }
       });
     }
@@ -1447,7 +1798,9 @@ export class Level8Scene extends Phaser.Scene {
    *  SHUTDOWN
    * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
-    this._clearRoundElements();
-    this.binaryDigits = [];
+    this._stopTimer();
+    this._clearCurrentElements();
+    this.ambientSparks = [];
+    this.conveyorArrows = [];
   }
 }

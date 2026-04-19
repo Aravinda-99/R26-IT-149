@@ -166,9 +166,9 @@ export class MenuScene extends Phaser.Scene {
         index: 6,
       },
       {
-        title: "Level 8: ASCII Code Breaker",
+        title: "Level 8: Character Workshop",
         phase: "TUNING",
-        desc: "Master ASCII values, conversion & char comparison!",
+        desc: "Validate, sort & refine chars on the factory line!",
         badge: BADGES.ascii_master,
         scene: "Level8Scene",
         index: 7,
