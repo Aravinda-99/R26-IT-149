@@ -1,7 +1,7 @@
 /**
  * MenuScene — Level Selection Menu
  * ==================================
- * Animated starfield background with 9 level cards in 3 modules.
+ * Animated starfield background with 12 level cards in 4 modules.
  * Locked/unlocked state based on GameManager progress.
  */
 
@@ -23,9 +23,9 @@ export class MenuScene extends Phaser.Scene {
     try {
       const saved = await ProgressTracker.loadProgress();
       if (saved && saved.levelsCompleted) {
-        while (saved.levelsCompleted.length < 9) saved.levelsCompleted.push(false);
-        while ((saved.levelAccuracy || []).length < 9) (saved.levelAccuracy = saved.levelAccuracy || []).push(0);
-        while ((saved.levelAttempts || []).length < 9) (saved.levelAttempts = saved.levelAttempts || []).push(0);
+        while (saved.levelsCompleted.length < 12) saved.levelsCompleted.push(false);
+        while ((saved.levelAccuracy || []).length < 12) (saved.levelAccuracy = saved.levelAccuracy || []).push(0);
+        while ((saved.levelAttempts || []).length < 12) (saved.levelAttempts = saved.levelAttempts || []).push(0);
 
         GameManager.set("levelsCompleted", saved.levelsCompleted);
         GameManager.set("xp", saved.xp || 0);
@@ -48,22 +48,22 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // ── Title ──
-    this.add.text(400, 28, "CODEQUEST", {
+    this.add.text(400, 22, "CODEQUEST", {
       fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "28px",
+      fontSize: "26px",
       color: "#38bdf8",
       fontStyle: "bold",
       shadow: { blur: 20, color: "#38bdf8", fill: true },
     }).setOrigin(0.5);
 
-    this.add.text(400, 52, "Schema Theory Based Learning", {
+    this.add.text(400, 40, "Schema Theory Based Learning", {
       fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "12px",
+      fontSize: "11px",
       color: "#64748b",
     }).setOrigin(0.5);
 
     // ── INTEGER MODULE HEADER ──
-    this.add.text(400, 74, "── INTEGER MODULE ──", {
+    this.add.text(400, 54, "── INTEGER MODULE ──", {
       fontFamily: "monospace",
       fontSize: "10px",
       color: "#38bdf8",
@@ -98,7 +98,7 @@ export class MenuScene extends Phaser.Scene {
     ];
 
     intLevels.forEach((lvl, i) => {
-      const y = 104 + i * 52;
+      const y = 66 + i * 32;
       const unlocked = GameManager.isLevelUnlocked(lvl.index);
       const completed = GameManager.get("levelsCompleted")[lvl.index];
       const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -106,7 +106,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── FLOAT MODULE HEADER ──
-    this.add.text(400, 242, "── FLOAT MODULE ──", {
+    this.add.text(400, 160, "── FLOAT MODULE ──", {
       fontFamily: "monospace",
       fontSize: "10px",
       color: "#4ade80",
@@ -141,7 +141,7 @@ export class MenuScene extends Phaser.Scene {
     ];
 
     floatLevels.forEach((lvl, i) => {
-      const y = 272 + i * 52;
+      const y = 176 + i * 32;
       const unlocked = GameManager.isLevelUnlocked(lvl.index);
       const completed = GameManager.get("levelsCompleted")[lvl.index];
       const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -149,7 +149,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── CHAR MODULE HEADER ──
-    this.add.text(400, 410, "── CHAR MODULE ──", {
+    this.add.text(400, 268, "── CHAR MODULE ──", {
       fontFamily: "monospace",
       fontSize: "10px",
       color: "#c084fc",
@@ -184,16 +184,59 @@ export class MenuScene extends Phaser.Scene {
     ];
 
     charLevels.forEach((lvl, i) => {
-      const y = 440 + i * 52;
+      const y = 284 + i * 32;
       const unlocked = GameManager.isLevelUnlocked(lvl.index);
       const completed = GameManager.get("levelsCompleted")[lvl.index];
       const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
       this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xc084fc);
     });
 
+    // ── STRING MODULE HEADER ──
+    this.add.text(400, 378, "── STRING MODULE ──", {
+      fontFamily: "monospace",
+      fontSize: "10px",
+      color: "#f59e0b",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+
+    const stringLevels = [
+      {
+        title: "Level 10: Message Garden Collector",
+        phase: "ACCRETION",
+        desc: "Collect valid double-quoted strings in the message garden!",
+        badge: BADGES.garden_keeper,
+        scene: "Level10Scene",
+        index: 9,
+      },
+      {
+        title: "Level 11: String Lab Master",
+        phase: "TUNING",
+        desc: "Lab challenges: concat, length, charAt, substring & more!",
+        badge: BADGES.string_master,
+        scene: "Level11Scene",
+        index: 10,
+      },
+      {
+        title: "Level 12: Advanced String Master",
+        phase: "RESTRUCTURING",
+        desc: "Expert split, trim, slice, includes, repeat, indexOf!",
+        badge: BADGES.string_genius,
+        scene: "Level12Scene",
+        index: 11,
+      },
+    ];
+
+    stringLevels.forEach((lvl, i) => {
+      const y = 394 + i * 32;
+      const unlocked = GameManager.isLevelUnlocked(lvl.index);
+      const completed = GameManager.get("levelsCompleted")[lvl.index];
+      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xf59e0b);
+    });
+
     // ── XP display ──
     const xp = GameManager.get("xp");
-    this.add.text(400, 570, `Total XP: ${xp}`, {
+    this.add.text(400, 502, `Total XP: ${xp}`, {
       fontFamily: "monospace",
       fontSize: "13px",
       color: "#fbbf24",
@@ -202,7 +245,7 @@ export class MenuScene extends Phaser.Scene {
     // ── Completion badge ──
     const allDone = GameManager.get("levelsCompleted").every(Boolean);
     if (allDone) {
-      this.add.text(400, 555, "🏅 ALL MODULES COMPLETE!", {
+      this.add.text(400, 486, "🏅 ALL MODULES COMPLETE!", {
         fontFamily: "Arial",
         fontSize: "12px",
         color: "#fbbf24",
@@ -211,7 +254,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // ── Reset button ──
-    const resetBtn = this.add.text(760, 590, "Reset", {
+    const resetBtn = this.add.text(760, 516, "Reset", {
       fontFamily: "Inter, Arial, sans-serif",
       fontSize: "11px",
       color: "#475569",
@@ -230,8 +273,9 @@ export class MenuScene extends Phaser.Scene {
     try {
       const focus = sessionStorage.getItem("codequest_menu_focus");
       if (focus) sessionStorage.removeItem("codequest_menu_focus");
-      if (focus === "float") this.cameras.main.setScroll(0, 130);
-      else if (focus === "char") this.cameras.main.setScroll(0, 260);
+      if (focus === "float") this.cameras.main.setScroll(0, 90);
+      else if (focus === "char") this.cameras.main.setScroll(0, 175);
+      else if (focus === "string") this.cameras.main.setScroll(0, 265);
     } catch { /* ignore */ }
   }
 

@@ -123,7 +123,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   _syncProgress() {
-    const completed = GameManager.get("levelsCompleted") || [false, false, false, false, false, false];
+    const completed = GameManager.get("levelsCompleted") || [false, false, false, false, false, false, false, false, false, false, false, false];
     const totalLevels = completed.length || 6;
     const pct = completed.filter(Boolean).length / totalLevels;
     const targetWidth = pct * 800;

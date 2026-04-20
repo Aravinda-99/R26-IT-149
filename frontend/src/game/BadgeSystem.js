@@ -82,6 +82,30 @@ export const BADGES = {
     level: 9,
     color: 0x818cf8,
   },
+  garden_keeper: {
+    id: "garden_keeper",
+    name: "Garden Keeper",
+    emoji: "🌸",
+    description: "Completed Level 10 — String Accretion (Message Garden)",
+    level: 10,
+    color: 0xf472b6,
+  },
+  string_master: {
+    id: "string_master",
+    name: "String Master",
+    emoji: "🧪",
+    description: "Completed Level 11 — String Tuning (String Lab)",
+    level: 11,
+    color: 0x34d399,
+  },
+  string_genius: {
+    id: "string_genius",
+    name: "String Genius",
+    emoji: "🎓",
+    description: "Completed Level 12 — String Restructuring (Advanced String Master)",
+    level: 12,
+    color: 0xfbbf24,
+  },
 };
 
 // In-memory cache of unlocked badges

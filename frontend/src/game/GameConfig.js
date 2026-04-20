@@ -10,6 +10,9 @@ import { Level6Scene } from "./scenes/float/Level6Scene.js";
 import { Level7Scene } from "./scenes/char/Level7Scene.js";
 import { Level8Scene } from "./scenes/char/Level8Scene.js";
 import { Level9Scene } from "./scenes/char/Level9Scene.js";
+import { Level10Scene } from "./scenes/string/Level10Scene.js";
+import { Level11Scene } from "./scenes/string/Level11Scene.js";
+import { Level12Scene } from "./scenes/string/Level12Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -39,6 +42,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, UIScene],
   };
 }
