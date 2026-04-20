@@ -176,7 +176,7 @@ export class MenuScene extends Phaser.Scene {
       {
         title: "Level 9: Char Quest — Typing Adventure",
         phase: "RESTRUCTURING",
-        desc: "Type char code through 20 rooms — rescue the Kingdom!",
+        desc: "Type char code through 8 rooms (2 per realm) — rescue the Kingdom!",
         badge: BADGES.char_wizard,
         scene: "Level9Scene",
         index: 8,
@@ -225,6 +225,14 @@ export class MenuScene extends Phaser.Scene {
       ProgressTracker.clearProgress();
       this.scene.restart();
     });
+
+    // Scroll to module launched from Learning Games page (see games.js)
+    try {
+      const focus = sessionStorage.getItem("codequest_menu_focus");
+      if (focus) sessionStorage.removeItem("codequest_menu_focus");
+      if (focus === "float") this.cameras.main.setScroll(0, 130);
+      else if (focus === "char") this.cameras.main.setScroll(0, 260);
+    } catch { /* ignore */ }
   }
 
   update() {

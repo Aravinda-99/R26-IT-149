@@ -1,8 +1,8 @@
 /**
  * Level9Scene — "Char Quest: The Typing Adventure" (Restructuring Phase)
  * =======================================================================
- * Adventure RPG: type Java-style char solutions to clear 20 rooms across
- * Castle → Forest → Mountain → Volcano. DOM code editor + story panels.
+ * Adventure RPG: type Java-style char solutions to clear 8 rooms (2 per zone)
+ * across Castle → Forest → Mountain → Volcano. DOM code editor + story panels.
  *
  * Schema Theory: Restructuring — applying char knowledge in practical code
  */
@@ -14,7 +14,7 @@ import { ProgressTracker } from "../../ProgressTracker.js";
 
 const W = 800;
 const H = 600;
-const TOTAL_ROOMS = 20;
+const TOTAL_ROOMS = 8;
 const SKIP_PENALTY = 50;
 const ACCURACY_THRESHOLD = 75;
 const BONUS_FINAL = 500;
@@ -40,7 +40,7 @@ function mustMatchAll(res) {
 }
 
 /**
- * ROOMS 1–20 — story, starter template, points, hints, validate()
+ * ROOMS 1–8 — two rooms per zone (Castle, Forest, Mountain, Volcano).
  */
 const ROOMS = [
   {
@@ -73,43 +73,6 @@ const ROOMS = [
   },
   {
     id: 3,
-    zone: "castle",
-    title: "🔢 The Number Vault",
-    story: "The safe asks for the CHARACTER for digit five — not the number 5!",
-    starter: `// Store the character '5' (not int 5!)\nchar digitFive = `,
-    validate: mustMatch(/char\s+digitFive\s*=\s*'5'\s*;/),
-    points: 75,
-    hints: ["Use quotes: '5' is a char; 5 alone is an int.", "char digitFive = '5';"],
-    wrong: [
-      { test: (c) => /=\s*5\s*;/.test(compact(c)) && !/'5'/.test(compact(c)), msg: "That's a NUMBER — use quotes: '5'" },
-    ],
-  },
-  {
-    id: 4,
-    zone: "castle",
-    title: "⚡ The Symbol Chamber",
-    story: "Capture the @ symbol in a char variable named atSymbol.",
-    starter: `char atSymbol = `,
-    validate: mustMatch(/char\s+atSymbol\s*=\s*'@'\s*;/),
-    points: 75,
-    hints: ["Symbols use single quotes too: '@'", "char atSymbol = '@';"],
-    wrong: [],
-  },
-  {
-    id: 5,
-    zone: "castle",
-    title: "🌌 The Space Portal",
-    story: "\"The hardest char is the one you cannot see!\" Declare a SPACE character.",
-    starter: `// One space BETWEEN the quotes: ' '\nchar space = `,
-    validate: mustMatch(/char\s+space\s*=\s*'\s'\s*;/),
-    points: 100,
-    hints: ["Type a space between the quotes: ' then SPACE then '", "'' is empty — ' ' is one space char."],
-    wrong: [
-      { test: (c) => /=\s*''\s*;/.test(compact(c)), msg: "'' is EMPTY. You need one space: ' '" },
-    ],
-  },
-  {
-    id: 6,
     zone: "forest",
     title: "🌲 The Newline Bridge",
     story: "Repair the bridge with a NEWLINE character — it splits text to the next line!",
@@ -120,18 +83,7 @@ const ROOMS = [
     wrong: [],
   },
   {
-    id: 7,
-    zone: "forest",
-    title: "🕳️ The Tab Cave",
-    story: "Create a TAB for indentation — used to align text in output.",
-    starter: `char tab = `,
-    validate: mustMatch(/char\s+tab\s*=\s*'\\t'\s*;/),
-    points: 100,
-    hints: ["Tab escape: '\\t'", "char tab = '\\t';"],
-    wrong: [],
-  },
-  {
-    id: 8,
+    id: 4,
     zone: "forest",
     title: "🪓 The Backslash Puzzle",
     story: "Store a single backslash. In source code you must escape it: '\\\\' → one \\.",
@@ -142,29 +94,7 @@ const ROOMS = [
     wrong: [],
   },
   {
-    id: 9,
-    zone: "forest",
-    title: "💬 The Quote Dilemma",
-    story: "Store a single quote character — escape it inside single quotes: \\'",
-    starter: `char quote = `,
-    validate: mustMatch(/char\s+quote\s*=\s*'\\''\s*;/),
-    points: 100,
-    hints: ["Use: '\\''  (backslash + quote between outer quotes)", "char quote = '\\'';"],
-    wrong: [],
-  },
-  {
-    id: 10,
-    zone: "forest",
-    title: "🌲 Forest Exit",
-    story: "Complete the spell: set newline so \"Hi\" and \"Bye\" can sit on two lines.",
-    starter: `char h = 'H';\nchar i = 'i';\nchar newline = `,
-    validate: mustMatch(/char\s+newline\s*=\s*'\\n'\s*;/),
-    points: 150,
-    hints: ["Same as the bridge: '\\n'", "char newline = '\\n';"],
-    wrong: [],
-  },
-  {
-    id: 11,
+    id: 5,
     zone: "mountain",
     title: "⛰️ The Name Carver",
     story: "Spell CAT — three chars, letter by letter.",
@@ -179,7 +109,7 @@ const ROOMS = [
     wrong: [],
   },
   {
-    id: 12,
+    id: 6,
     zone: "mountain",
     title: "🔠 Case Cavern",
     story: "Uppercase and lowercase are DIFFERENT chars. Show both 'A' and 'a'.",
@@ -193,53 +123,7 @@ const ROOMS = [
     wrong: [],
   },
   {
-    id: 13,
-    zone: "mountain",
-    title: "🎨 Pattern Workshop",
-    story: "Reuse two variables to build pattern A B A B — only need chars 'A' and 'B'.",
-    starter: `char a = \nchar b = `,
-    validate: mustMatchAll([
-      /char\s+a\s*=\s*'A'\s*;/,
-      /char\s+b\s*=\s*'B'\s*;/,
-    ]),
-    points: 150,
-    hints: ["char a = 'A';\nchar b = 'B';"],
-    wrong: [],
-  },
-  {
-    id: 14,
-    zone: "mountain",
-    title: "🔐 Secret Message",
-    story: "Decode \"H I\" — letter, SPACE, letter (not \"HI\").",
-    starter: `char h = \nchar space = \nchar i = `,
-    validate: mustMatchAll([
-      /char\s+h\s*=\s*'H'\s*;/,
-      /char\s+space\s*=\s*'\s'\s*;/,
-      /char\s+i\s*=\s*'I'\s*;/,
-    ]),
-    points: 150,
-    hints: ["Middle must be space char: ' '", "char h = 'H'; char space = ' '; char i = 'I';"],
-    wrong: [],
-  },
-  {
-    id: 15,
-    zone: "mountain",
-    title: "🏔️ Mountain Peak",
-    story: "Build CODE then a newline — five char declarations.",
-    starter: `char c = \nchar o = \nchar d = \nchar e = \nchar newline = `,
-    validate: mustMatchAll([
-      /char\s+c\s*=\s*'C'\s*;/,
-      /char\s+o\s*=\s*'O'\s*;/,
-      /char\s+d\s*=\s*'D'\s*;/,
-      /char\s+e\s*=\s*'E'\s*;/,
-      /char\s+newline\s*=\s*'\\n'\s*;/,
-    ]),
-    points: 200,
-    hints: ["Last line: char newline = '\\n';", "Letters C,O,D,E then newline."],
-    wrong: [],
-  },
-  {
-    id: 16,
+    id: 7,
     zone: "volcano",
     title: "🔥 The Error Detector",
     story: "Buggy code used double quotes. Write the FIXED declaration with single quotes.",
@@ -250,46 +134,9 @@ const ROOMS = [
     wrong: [],
   },
   {
-    id: 17,
+    id: 8,
     zone: "volcano",
-    title: "🪤 The Multi-Char Trap",
-    story: "'ABC' in quotes is invalid for char. Store only the FIRST letter.",
-    starter: `// char wrong = 'ABC'; // too many!\nchar firstLetter = `,
-    validate: mustMatch(/char\s+firstLetter\s*=\s*'A'\s*;/),
-    points: 150,
-    hints: ["One char only: 'A'", "char firstLetter = 'A';"],
-    wrong: [],
-  },
-  {
-    id: 18,
-    zone: "volcano",
-    title: "📋 Format Chamber",
-    story: "Use a TAB escape to align labels and values in formatted output.",
-    starter: `char tab = `,
-    validate: mustMatch(/char\s+tab\s*=\s*'\\t'\s*;/),
-    points: 200,
-    hints: ["char tab = '\\t';"],
-    wrong: [],
-  },
-  {
-    id: 19,
-    zone: "volcano",
-    title: "💼 Real-World Path",
-    story: "File paths need a backslash char — store it the same way as before: escaped.",
-    starter: `char c = 'C';\nchar colon = ':';\nchar backslash = `,
-    validate: mustMatchAll([
-      /char\s+c\s*=\s*'C'\s*;/,
-      /char\s+colon\s*=\s*':'\s*;/,
-      /char\s+backslash\s*=\s*'\\\\'\s*;/,
-    ]),
-    points: 200,
-    hints: ["char backslash = '\\\\';"],
-    wrong: [],
-  },
-  {
-    id: 20,
-    zone: "volcano",
-    title: "🔥 FINAL BOSS — Char Master",
+    title: "🔥 FINAL — Char Master",
     story: "Combine everything: quotes, newlines, and backslash — declare all five specials.",
     starter: `// Fill ALL five lines exactly:\nchar quote = \nchar quote2 = \nchar newline1 = \nchar backslash = \nchar newline2 = `,
     validate: mustMatchAll([
@@ -399,10 +246,10 @@ export class Level9Scene extends Phaser.Scene {
 
   _createMapMarkers() {
     const zones = [
-      { emoji: "🏰", label: "Castle", range: "1-5", x: 120, y: 115, c: 0x6366f1 },
-      { emoji: "🌲", label: "Forest", range: "6-10", x: 310, y: 115, c: 0x22c55e },
-      { emoji: "⛰️", label: "Mountain", range: "11-15", x: 500, y: 115, c: 0x94a3b8 },
-      { emoji: "🔥", label: "Volcano", range: "16-20", x: 690, y: 115, c: 0xef4444 },
+      { emoji: "🏰", label: "Castle", range: "1-2", x: 120, y: 115, c: 0x6366f1 },
+      { emoji: "🌲", label: "Forest", range: "3-4", x: 310, y: 115, c: 0x22c55e },
+      { emoji: "⛰️", label: "Mountain", range: "5-6", x: 500, y: 115, c: 0x94a3b8 },
+      { emoji: "🔥", label: "Volcano", range: "7-8", x: 690, y: 115, c: 0xef4444 },
     ];
     this.zoneLabels = [];
     zones.forEach(z => {
@@ -417,7 +264,7 @@ export class Level9Scene extends Phaser.Scene {
     });
 
     this.heroMarker = this.add.text(W / 2, 168, "🧙", { fontSize: "28px" }).setOrigin(0.5).setDepth(6);
-    this.roomHudText = this.add.text(W / 2, 198, "Room 0 / 20", {
+    this.roomHudText = this.add.text(W / 2, 198, "Room 0 / 8", {
       fontFamily: "monospace",
       fontSize: "13px",
       color: "#fbbf24",
@@ -458,7 +305,7 @@ export class Level9Scene extends Phaser.Scene {
       W / 2,
       200,
       "You are a Programming Hero rescuing the Kingdom of Code.\n\n" +
-        "Each room needs correct char declarations — type real code in the editor.\n" +
+        "8 rooms, 2 in each realm — each needs correct char declarations in the editor.\n" +
         "Java/C-style syntax: char name = 'X';  Escape: '\\\\n'  '\\\\t'  '\\\\\\\\'  '\\\\''\n\n" +
         "Submit when ready · Hints cost nothing · Skip costs -50 pts",
       {
