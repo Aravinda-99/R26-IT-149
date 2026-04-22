@@ -556,19 +556,33 @@ export class Level10Scene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
 
-    btnBg.setInteractive({ useHandCursor: true });
-    btnBg.on("pointerover", () => {
+    const hoverOn = () => {
       btnBg.setFillStyle(0xff69b4);
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1.08, scaleY: 1.08, duration: 120 });
-    });
-    btnBg.on("pointerout", () => {
+    };
+    const hoverOff = () => {
       btnBg.setFillStyle(0x228b22);
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1, scaleY: 1, duration: 120 });
-    });
-    btnBg.on("pointerup", () => {
+    };
+
+    let dismissed = false;
+    const dismissAndStart = () => {
+      if (dismissed) return;
+      dismissed = true;
       [overlay, panelG, title, sub, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
       this._startGame();
-    });
+    };
+
+    btnBg.setInteractive({ useHandCursor: true });
+    btnBg.on("pointerover", hoverOn);
+    btnBg.on("pointerout", hoverOff);
+    btnBg.on("pointerup", dismissAndStart);
+
+    /* Label sits above the rectangle — make the whole label clickable too */
+    btnTxt.setInteractive({ useHandCursor: true });
+    btnTxt.on("pointerover", hoverOn);
+    btnTxt.on("pointerout", hoverOff);
+    btnTxt.on("pointerup", dismissAndStart);
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1173,8 +1187,10 @@ export class Level10Scene extends Phaser.Scene {
       vy *= 0.707;
     }
 
-    /* Container player: velocity lives on the Arcade body, not the GameObject */
-    this.player.body.setVelocity(vx, vy);
+    /* Basket is a Container — velocity must be set on the Arcade body */
+    if (this.player.body) {
+      this.player.body.setVelocity(vx, vy);
+    }
 
     /* Oxygen decay */
     this.oxygen = Math.max(0, this.oxygen - OXYGEN_DECAY_PER_SEC * dt);
