@@ -25,7 +25,7 @@ from utils.helpers import timestamp_now
 # Display names for concepts
 CONCEPT_NAMES = {
     "variables": "Variables & Data Types",
-    "conditionals": "Conditional Statements",
+    "operators": "Operators & Expressions",
     "loops": "Loops & Iteration",
     "arrays": "Arrays & Lists",
     "methods": "Methods & Functions",

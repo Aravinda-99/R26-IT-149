@@ -78,7 +78,7 @@ def get_questions(concept):
     Stage 2: Get MCQ diagnostic questions for a specific concept.
     Returns questions without answers (answers are checked server-side).
     """
-    valid_concepts = ["variables", "conditionals", "loops", "arrays", "methods"]
+    valid_concepts = ["variables", "operators", "loops", "arrays", "methods"]
     if concept not in valid_concepts:
         return jsonify({
             "error": f"Invalid concept '{concept}'",

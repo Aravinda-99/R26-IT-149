@@ -30,7 +30,7 @@ mock_students = [
                 "quizTotal": 10,
                 "errorPatternScore": 0.1,
             },
-            "conditionals": {
+            "operators": {
                 "totalSubmissions": 10,
                 "correctSubmissions": 8,
                 "numberOfAttempts": 2,
@@ -82,7 +82,7 @@ mock_students = [
                 "quizTotal": 10,
                 "errorPatternScore": 0.45,
             },
-            "conditionals": {
+            "operators": {
                 "totalSubmissions": 10,
                 "correctSubmissions": 7,
                 "numberOfAttempts": 3,
@@ -134,7 +134,7 @@ mock_students = [
                 "quizTotal": 10,
                 "errorPatternScore": 0.9,
             },
-            "conditionals": {
+            "operators": {
                 "totalSubmissions": 10,
                 "correctSubmissions": 3,
                 "numberOfAttempts": 8,
