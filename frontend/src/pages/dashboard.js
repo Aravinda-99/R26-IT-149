@@ -12,8 +12,8 @@ export async function renderDashboard(container) {
         <div class="dashboard-page">
             <div class="dashboard-header">
                 <div>
-                    <h1>Schema Mastery Dashboard</h1>
-                    <p class="dashboard-subtitle">Track your conceptual understanding across programming concepts</p>
+                    <h1>CodeQuest - Learning Progress Dashboard</h1>
+                    <p class="dashboard-subtitle">Track your Java programming journey across all concepts</p>
                 </div>
             </div>
 
@@ -89,32 +89,62 @@ async function loadDashboardData(studentId) {
             methods: "Methods & Functions",
         };
 
-        // Determine dynamic message based on user status
-        let dynamicMessage = "";
-        const masteredConcepts = conceptEntries.filter(([, c]) => c.schema_state === "Stable");
-        
-        if (needsReview.length > 0) {
-            const firstReviewName = conceptNames[needsReview[0][0]] || needsReview[0][0];
-            dynamicMessage = `You need to review ${firstReviewName}`;
-        } else if (masteredConcepts.length > 0) {
-            const firstMasteredName = conceptNames[masteredConcepts[0][0]] || masteredConcepts[0][0];
-            dynamicMessage = `You have mastered ${firstMasteredName}!`;
-        } else {
-            dynamicMessage = "Keep playing games to build your mastery!";
-        }
+        // Build dynamic recommendations sorted by priority
+        const statePriority = { Misconception: 0, Fragile: 1, Developing: 2, Stable: 3 };
+        const sortedConcepts = [...conceptEntries].sort(([, a], [, b]) =>
+            (statePriority[a.schema_state] ?? 4) - (statePriority[b.schema_state] ?? 4)
+        );
+
+        const recommendations = sortedConcepts.map(([key, c]) => {
+            const name = conceptNames[key] || key;
+            switch (c.schema_state) {
+                case "Misconception":
+                    return `<div class="dashboard-recommendation-item" data-priority="critical">
+                        <span>⚠️ Critical: You have major misconceptions in <strong>${name}</strong>. Please redo the ${name} games immediately.</span>
+                    </div>`;
+                case "Fragile":
+                    return `<div class="dashboard-recommendation-item" data-priority="warning">
+                        <span>🔶 Warning: Your understanding of <strong>${name}</strong> is fragile. Practice more ${name} exercises.</span>
+                    </div>`;
+                case "Developing":
+                    return `<div class="dashboard-recommendation-item" data-priority="developing">
+                        <span>📈 Almost there! Keep practicing <strong>${name}</strong> to reach Stable level.</span>
+                    </div>`;
+                case "Stable":
+                    return `<div class="dashboard-recommendation-item" data-priority="stable">
+                        <span>✅ Great work! You have mastered <strong>${name}</strong>. Move on to the next topic.</span>
+                    </div>`;
+                default:
+                    return `<div class="dashboard-recommendation-item" data-priority="unknown">
+                        <span>ℹ️ No data yet for <strong>${name}</strong>.</span>
+                    </div>`;
+            }
+        }).join("");
+
+        // Determine Overall Mastery card color based on state
+        const overallStateColor = {
+            Stable: "#34d399",
+            Developing: "#fbbf24",
+            Fragile: "#f97316",
+            Misconception: "#ef4444"
+        }[data.overall_state] || data.overall_color;
+
+        // Need Review card color
+        const needReviewColor = needsReview.length > 0 ? "#f97316" : "#34d399";
 
         content.innerHTML = `
-            <!-- Dynamic Message Banner -->
-            <div class="dashboard-card" style="background: rgba(74, 144, 226, 0.08); border-left: 4px solid var(--accent-blue); padding: 1rem 1.5rem; margin-bottom: 1.5rem;">
-                <span style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary);">
-                    ${dynamicMessage}
-                </span>
+            <!-- Dynamic Recommendations -->
+            <div class="dashboard-card dashboard-recommendations-section">
+                <h3 class="dashboard-card-title">Recommendations</h3>
+                <div class="dashboard-recommendations-list">
+                    ${recommendations}
+                </div>
             </div>
 
             <!-- Stats Row -->
             <div class="dashboard-stats">
-                <div class="dashboard-stat-card" style="--stat-accent: ${data.overall_color}">
-                    <div class="dashboard-stat-value">${(avgMastery * 100).toFixed(1)}%</div>
+                <div class="dashboard-stat-card" style="--stat-accent: ${overallStateColor}">
+                    <div class="dashboard-stat-value" style="color: ${overallStateColor}">${(avgMastery * 100).toFixed(1)}%</div>
                     <div class="dashboard-stat-label">Overall Mastery</div>
                     <div class="dashboard-stat-badge" data-state="${data.overall_state}">${data.overall_state}</div>
                 </div>
@@ -126,8 +156,8 @@ async function loadDashboardData(studentId) {
                     <div class="dashboard-stat-value">${stableCount}/${conceptEntries.length}</div>
                     <div class="dashboard-stat-label">Concepts Mastered</div>
                 </div>
-                <div class="dashboard-stat-card" style="--stat-accent: ${needsReview.length > 0 ? '#f97316' : '#34d399'}">
-                    <div class="dashboard-stat-value">${needsReview.length}</div>
+                <div class="dashboard-stat-card ${needsReview.length > 0 ? 'dashboard-stat-card--alert' : ''}" style="--stat-accent: ${needReviewColor}">
+                    <div class="dashboard-stat-value" style="color: ${needReviewColor}">${needsReview.length}</div>
                     <div class="dashboard-stat-label">Need Review</div>
                 </div>
             </div>
@@ -160,10 +190,24 @@ async function loadDashboardData(studentId) {
                     <div class="dashboard-state-grid">
                         ${conceptEntries.map(([key, c]) => {
                             const name = conceptNames[key] || key;
+                            const pctVal = (c.mastery_score * 100).toFixed(0);
+                            // Determine trend icon based on history if available
+                            let trendIcon = "";
+                            if (c.history && c.history.length >= 2) {
+                                const prev = c.history[c.history.length - 2];
+                                const curr = c.mastery_score;
+                                if (curr > prev) trendIcon = `<span class="dashboard-trend trend-up" title="Improving">↑</span>`;
+                                else if (curr < prev) trendIcon = `<span class="dashboard-trend trend-down" title="Declining">↓</span>`;
+                                else trendIcon = `<span class="dashboard-trend trend-stable" title="Stable">→</span>`;
+                            }
                             return `
                                 <div class="dashboard-state-row">
                                     <span class="dashboard-state-name">${name}</span>
-                                    <span class="posttest-state-badge" data-state="${c.schema_state}">${c.schema_state}</span>
+                                    <div class="dashboard-state-right">
+                                        <span class="posttest-state-badge" data-state="${c.schema_state}">${c.schema_state}</span>
+                                        <span class="dashboard-state-pct" style="color: ${c.color}">${pctVal}%</span>
+                                        ${trendIcon}
+                                    </div>
                                 </div>
                             `;
                         }).join("")}
