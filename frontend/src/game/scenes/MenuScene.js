@@ -209,10 +209,10 @@ export class MenuScene extends Phaser.Scene {
         index: 9,
       },
       {
-        title: "Level 11: String Lab Master",
+        title: "Level 11: String Operations Lab",
         phase: "TUNING",
-        desc: "Lab challenges: concat, length, charAt, substring & more!",
-        badge: BADGES.string_master,
+        desc: "Master 6 essential string methods: length, charAt, case, concat, substring, and trim!",
+        badge: BADGES.assembly_master,
         scene: "Level11Scene",
         index: 10,
       },

@@ -90,6 +90,14 @@ export const BADGES = {
     level: 10,
     color: 0xf472b6,
   },
+  assembly_master: {
+    id: "assembly_master",
+    name: "Assembly Master",
+    emoji: "🏭",
+    description: "Completed Level 11 — String Tuning (String.length() Ruler)",
+    level: 11,
+    color: 0x34d399,
+  },
   string_master: {
     id: "string_master",
     name: "String Master",
