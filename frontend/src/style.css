@@ -1077,6 +1077,77 @@ textarea.input-field {
     background: rgba(74, 144, 226, 0.03);
 }
 
+/* Recommendations section */
+.dashboard-recommendations-section {
+    margin-bottom: 1.5rem;
+}
+.dashboard-recommendations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.dashboard-recommendation-item {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    border-left: 3px solid var(--border-color);
+    background: var(--bg-secondary);
+    transition: transform 0.15s ease;
+}
+.dashboard-recommendation-item:hover {
+    transform: translateX(4px);
+}
+.dashboard-recommendation-item strong {
+    color: var(--text-primary);
+}
+.dashboard-recommendation-item[data-priority="critical"] {
+    border-left-color: #ef4444;
+    background: rgba(239, 68, 68, 0.06);
+}
+.dashboard-recommendation-item[data-priority="warning"] {
+    border-left-color: #f97316;
+    background: rgba(249, 115, 22, 0.06);
+}
+.dashboard-recommendation-item[data-priority="developing"] {
+    border-left-color: #fbbf24;
+    background: rgba(251, 191, 36, 0.06);
+}
+.dashboard-recommendation-item[data-priority="stable"] {
+    border-left-color: #34d399;
+    background: rgba(52, 211, 153, 0.06);
+}
+
+/* Alert stat card (Need Review > 0) */
+.dashboard-stat-card--alert {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Schema State row right side */
+.dashboard-state-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.dashboard-state-pct {
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* Trend icons */
+.dashboard-trend {
+    font-size: 0.85rem;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+}
+.dashboard-trend.trend-up { color: #34d399; }
+.dashboard-trend.trend-down { color: #ef4444; }
+.dashboard-trend.trend-stable { color: var(--text-secondary); }
+
 @media (max-width: 768px) {
     .dashboard-stats { grid-template-columns: repeat(2, 1fr); }
     .dashboard-columns { grid-template-columns: 1fr; }
