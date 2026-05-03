@@ -1,945 +1,1468 @@
 /**
- * Level11Scene — "String Tuning: String Lab Master" (Tuning Phase)
- * ===============================================================
- * Mechanic: Laboratory/workshop for string manipulation challenges
- * - Challenge-based progression with timed puzzles
- * - String operations: concatenation, length, charAt, substring
- * - Pattern recognition: string equality, case sensitivity
- * - Wave system with increasing difficulty
- * - Physics-based dragging elements to test strings
+ * Level11Scene — String Operations (Tuning Phase)
+ * ═══════════════════════════════════════════════════════════════════════════
+ * v3 — All 6 operations in one scene with unique mini-game per operation
  *
- * Schema Theory: Tuning — deepening string understanding through repetition & challenges
+ * Operations & Mechanics:
+ * 1. length()           → Ruler Measure (drag notch to cut point)
+ * 2. charAt(i)          → Index Jumper (click correct character at index)
+ * 3. toUpperCase/Lower  → Case Flipper (click letters to flip case)
+ * 4. concat (+)         → Magnet Merge (drag two halves together)
+ * 5. substring(a,b)     → Slice Cutter (drag two blades to mark range)
+ * 6. trim()             → Space Sweeper (swipe to sweep leading/trailing spaces)
+ *
+ * Schema Theory: TUNING — mastery through guided repetitive practice
  */
 
 import Phaser from "phaser";
-import { GameManager } from "../../GameManager.js";
-import { BadgeSystem } from "../../BadgeSystem.js";
-import { ProgressTracker } from "../../ProgressTracker.js";
 
-/* ───────── Constants ───────── */
-const W =800;
-const H = 600;
-const ACCURACY_THRESHOLD = 85;
-const MAX_LIVES = 3;
-const TARGET_CHALLENGES = 40;
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  COLORS & CONSTANTS
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ───────── Challenge Pools ───────── */
-const CONCAT_CHALLENGES = [
-  { part1: '"Hello"', part2: '" "', result: '"Hello "', explanation: "Concatenation: combining two strings with +" },
-  { part1: '"Hi"', part2: '"!"', result: '"Hi!"', explanation: '"Hi" + "!" = "Hi!"' },
-  { part1: '"Java"', part2: '"Script"', result: '"JavaScript"', explanation: 'Two strings joined: "Java" + "Script"' },
-  { part1: '"2"', part2: '"024"', result: '"2024"', explanation: 'String concat: "2" + "024" = "2024"' },
+const COLORS = {
+  primary_purple: "#7F77DD", purple_light: "#9B92E8", purple_dark: "#534AB7",
+  purple_darker: "#26215C", purple_bg: "#EEEDFE", purple_pale: "#F4F2FE",
+  purple_border: "#D5D0E8", purple_tinted_gray: "#9B92C8",
+  success_green: "#1D9E75", success_green_dark: "#0F6E56",
+  success_bg: "#EAF3DE", success_bg_dark: "#D5EBC0",
+  error_red: "#E24B4A", error_red_dark: "#A32D2D",
+  error_bg: "#FCEBEB", error_bg_dark: "#F8DBDA",
+  text_primary: "#1F1E1D", text_secondary: "#888780",
+  white: "#FFFFFF", gold: "#FFD700", pink: "#ED93B1",
+  cyan: "#00C9DB", orange: "#F5A623"
+};
+
+const C = {
+  primary_purple: 0x7F77DD, purple_light: 0x9B92E8, purple_dark: 0x534AB7,
+  purple_darker: 0x26215C, purple_bg: 0xEEEDFE, purple_pale: 0xF4F2FE,
+  purple_border: 0xD5D0E8, purple_tinted_gray: 0x9B92C8,
+  success_green: 0x1D9E75, success_green_dark: 0x0F6E56,
+  success_bg: 0xEAF3DE, success_bg_dark: 0xD5EBC0,
+  error_red: 0xE24B4A, error_red_dark: 0xA32D2D,
+  error_bg: 0xFCEBEB, error_bg_dark: 0xF8DBDA,
+  text_primary: 0x1F1E1D, text_secondary: 0x888780,
+  bg_top: 0xF4F2FE, bg_bottom: 0xFAF9F5, white: 0xFFFFFF,
+  gold: 0xFFD700, pink: 0xED93B1, cyan: 0x00C9DB, orange: 0xF5A623,
+  confetti_purple: 0xB7AFEE, confetti_green: 0x7FCFA3, confetti_pink: 0xF5B9CC
+};
+
+const W = 800, H = 600;
+const BOX_W = 46, BOX_H = 56;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  OPERATIONS DATA — Each has tutorial + rounds
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+const OPERATIONS = [
+  {
+    id: "length", name: ".length()", emoji: "📏",
+    desc: "Count how many characters are in a String",
+    tutorial: {
+      code: 'String s = "Hello";',
+      demo_str: "Hello",
+      steps: [
+        "length() counts EVERY character in the string",
+        "This includes letters, numbers, spaces and symbols",
+        '"Hello" has 5 characters → length() returns 5'
+      ],
+      extras: [
+        { str: "a b c", length: 5, note: "Spaces count! Length = 5" },
+        { str: "", length: 0, note: 'Empty string "" → Length = 0' }
+      ]
+    },
+    rounds: [
+      { str: "Java", answer: "4" },
+      { str: "Hi", answer: "2" },
+      { str: "World!", answer: "6" },
+      { str: "a b c", answer: "5" },
+      { str: "Hello", answer: "5" }
+    ]
+  },
+  {
+    id: "charAt", name: ".charAt(i)", emoji: "👆",
+    desc: "Get the character at a specific index position",
+    tutorial: {
+      code: '"Hello".charAt(1)',
+      demo_str: "Hello",
+      steps: [
+        "charAt(i) returns the single character at index i",
+        "Strings are zero-indexed: first char is index 0",
+        '"Hello".charAt(1) → \'e\' (not \'H\'!)'
+      ],
+      extras: [
+        { str: "Code", idx: 0, answer: "C", note: "charAt(0) → always the FIRST character" },
+        { str: "Java!", idx: 4, answer: "!", note: "charAt(4) → symbols have indices too" }
+      ]
+    },
+    rounds: [
+      { str: "Hello", idx: 0, answer: "H" },
+      { str: "World", idx: 4, answer: "d" },
+      { str: "Java!", idx: 2, answer: "v" },
+      { str: "a b c", idx: 2, answer: "b" },
+      { str: "Code", idx: 3, answer: "e" }
+    ]
+  },
+  {
+    id: "caseChange", name: "toUpperCase() / toLowerCase()", emoji: "🔄",
+    desc: "Convert all letters to UPPERCASE or lowercase",
+    tutorial: {
+      code: '"Hello".toUpperCase()',
+      demo_str: "Hello",
+      steps: [
+        "toUpperCase() converts every letter to CAPITALS",
+        "toLowerCase() converts every letter to small",
+        "Numbers and symbols stay unchanged"
+      ],
+      extras: [
+        { str: "Hello", op: "upper", answer: "HELLO", note: "All letters become capitals" },
+        { str: "JAVA", op: "lower", answer: "java", note: "All letters become lowercase" }
+      ]
+    },
+    rounds: [
+      { str: "hello", op: "upper", answer: "HELLO" },
+      { str: "WORLD", op: "lower", answer: "world" },
+      { str: "Java", op: "upper", answer: "JAVA" },
+      { str: "HeLLo", op: "lower", answer: "hello" },
+      { str: "Code!", op: "upper", answer: "CODE!" }
+    ]
+  },
+  {
+    id: "concat", name: "concat / +", emoji: "🧲",
+    desc: "Join two strings together end-to-end",
+    tutorial: {
+      code: '"Hello" + " World"',
+      demo_str: "Hello",
+      steps: [
+        "concat() or + joins two strings into one",
+        "The second string attaches at the END of the first",
+        '"Hello" + " World" → "Hello World"'
+      ],
+      extras: [
+        { a: "Hi", b: "!", answer: "Hi!", note: "Strings merge exactly as-is" },
+        { a: "Java", b: " is fun", answer: "Java is fun", note: "Don't forget the space!" }
+      ]
+    },
+    rounds: [
+      { a: "Hello", b: " World", answer: "Hello World" },
+      { a: "Good", b: "bye", answer: "Goodbye" },
+      { a: "Hi", b: "!", answer: "Hi!" },
+      { a: "Java", b: " ", answer: "Java " },
+      { a: "a", b: "b", answer: "ab" }
+    ]
+  },
+  {
+    id: "substring", name: ".substring(a,b)", emoji: "✂️",
+    desc: "Extract a part of the string from index a to b (exclusive)",
+    tutorial: {
+      code: '"Hello".substring(1, 4)',
+      demo_str: "Hello",
+      steps: [
+        "substring(a, b) extracts characters from index a up to (NOT including) b",
+        "Think of it as: start at a, stop BEFORE b",
+        '"Hello".substring(1,4) → "ell" (indices 1,2,3)'
+      ],
+      extras: [
+        { str: "Welcome", a: 0, b: 3, answer: "Wel", note: "substring(0,3) = first 3 characters" },
+        { str: "Hello", a: 2, b: 5, answer: "llo", note: "substring(2,5) = index 2,3,4" }
+      ]
+    },
+    rounds: [
+      { str: "Hello", a: 1, b: 3, answer: "el" },
+      { str: "World!", a: 0, b: 5, answer: "World" },
+      { str: "Java", a: 1, b: 4, answer: "ava" },
+      { str: "Coding", a: 2, b: 4, answer: "di" },
+      { str: "String", a: 0, b: 3, answer: "Str" }
+    ]
+  },
+  {
+    id: "trim", name: ".trim()", emoji: "🧹",
+    desc: "Remove whitespace from both ends of the string",
+    tutorial: {
+      code: '"  Hello  ".trim()',
+      demo_str: "  Hello  ",
+      steps: [
+        "trim() removes spaces from the START and END only",
+        "Spaces in the MIDDLE are NOT removed",
+        '"  Hello  ".trim() → "Hello"'
+      ],
+      extras: [
+        { str: "  Hi  ", answer: "Hi", note: "Both ends cleaned" },
+        { str: " a b ", answer: "a b", note: "Middle space stays!" }
+      ]
+    },
+    rounds: [
+      { str: "  Java  ", answer: "Java" },
+      { str: "   Hi", answer: "Hi" },
+      { str: "World!   ", answer: "World!" },
+      { str: " a b c ", answer: "a b c" },
+      { str: "  Hello World  ", answer: "Hello World" }
+    ]
+  }
 ];
 
-const LENGTH_CHALLENGES = [
-  { string: '"Hello"', length: "5", explanation: 'The string "Hello" contains 5 characters' },
-  { string: '""', length: "0", explanation: 'Empty string has length 0' },
-  { string: '"Hi!"', length: "3", explanation: 'Punctuation counts: "Hi!" has 3 characters' },
-  { string: '" "', length: "1", explanation: 'Space counts as 1 character' },
-  { string: '"Code123"', length: "8", explanation: 'Mix of letters and numbers: 8 total' },
-];
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  SCENE CLASS
+ * ═══════════════════════════════════════════════════════════════════════════ */
 
-const CHARAT_CHALLENGES = [
-  { string: '"Hello"', index: "0", char: '"H"', explanation: 'Index 0 is the first character: "H"' },
-  { string: '"Hello"', index: "4", char: '"o"', explanation: 'Index 4 is the last character: "o"' },
-  { string: '"Java"', index: "1", char: '"a"', explanation: 'Character at index 1: "a"' },
-  { string: '"Code"', index: "2", char: '"d"', explanation: 'Third character (index 2): "d"' },
-];
-
-const SUBSTRING_CHALLENGES = [
-  { string: '"Hello"', start: "0", end: "3", result: '"Hel"', explanation: 'First 3 characters: "Hel"' },
-  { string: '"World"', start: "1", end: "4", result: '"orl"', explanation: 'Characters 1-3: "orl"' },
-  { string: '"JavaScript"', start: "4", end: "10", result: '"Script"', explanation: '"Script" from position 4 to 10' },
-];
-
-const EQUALITY_CHALLENGES = [
-  { str1: '"hello"', str2: '"hello"', equal: true, explanation: 'Same strings are equal!' },
-  { str1: '"Hello"', str2: '"hello"', equal: false, explanation: 'Case matters! "Hello" ≠ "hello"' },
-  { str1: '"123"', str2: '"" + "123"', equal: true, explanation: 'Both represent the same string' },
-  { str1: '"Hi"', str2: '"Hi "', equal: false, explanation: 'Space makes them different!' },
-];
-
-const UPPER_LOWER_CHALLENGES = [
-  { string: '"Hello"', action: "uppercase", result: '"HELLO"', explanation: 'toUpperCase() makes all letters big' },
-  { string: '"CODE"', action: "lowercase", result: '"code"', explanation: 'toLowerCase() makes all letters small' },
-  { string: '"JavaScript"', action: "uppercase", result: '"JAVASCRIPT"', explanation: 'All to uppercase: "JAVASCRIPT"' },
-];
-
-const REPLACE_CHALLENGES = [
-  { string: '"Hello World"', find: '"World"', replace: '"Universe"', result: '"Hello Universe"', explanation: 'Replace old string with new one' },
-  { string: '"Cat"', find: '"C"', replace: '"c"', result: '"cat"', explanation: 'Replace "C" with "c"' },
-];
-
-/**
- * Helper: Pick random from array
- */
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function lerpColor(a, b, t) {
-  const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
-  const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
-  return (Math.round(ar + (br - ar) * t) << 16) |
-         (Math.round(ag + (bg - ag) * t) << 8) |
-          Math.round(ab + (bb - ab) * t);
-}
-
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 11 SCENE — String Lab Master
- * ═══════════════════════════════════════════════════════════════ */
 export class Level11Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level11Scene" });
   }
 
   create() {
-    this.physics.world.gravity.y = 0;
-
-    /* ── State ── */
+    this.opIndex = 0;
+    this.roundIndex = 0;
     this.score = 0;
-    this.lives = MAX_LIVES;
-    this.combo = 0;
-    this.maxCombo = 0;
-    this.totalProcessed = 0;
-    this.correctAnswers = 0;
-    this.wrongAnswers = 0;
-    this.waveNumber = 0;
-    this.isComplete = false;
-    this.gameStarted = false;
-    this.startTime = 0;
-    this.currentElements = [];
-    this.currentChallenge = null;
+    this.streak = 0;
+    this.bestStreak = 0;
+    this.totalCorrect = 0;
+    this.totalAttempted = 0;
+    this.elements = [];
 
-    this._drawLabBackground();
-    this._generateTextures();
-    this._createParticles();
-    this._createHUD();
-
-    const uiScene = this.scene.get("UIScene");
-    if (uiScene && uiScene.setLevelLabel) {
-      uiScene.setLevelLabel("Level 11: Tuning — String Lab Master!");
-    }
-
-    this._showInstruction();
+    this._createBackground();
+    this._createParticleTextures();
+    this._startOperation();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LAB BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
-  _drawLabBackground() {
-    const gfx = this.add.graphics().setDepth(0);
-    const top = 0x1a1a3e;
-    const bot = 0x0d0d1a;
-    for (let i = 0; i < 60; i++) {
-      const t = i / 60;
-      gfx.fillStyle(lerpColor(top, bot, t), 1);
-      gfx.fillRect(0, Math.floor((H * i) / 60), W, Math.ceil(H / 60) + 1);
-    }
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  BACKGROUND (persistent)
+   * ═══════════════════════════════════════════════════════════════════════ */
 
-    /* Tech grid */
-    const gridGfx = this.add.graphics().setDepth(1).setAlpha(0.05);
-    gridGfx.lineStyle(1, 0x00ffff, 1);
-    for (let x = 0; x < W; x += 50) {
-      gridGfx.beginPath(); gridGfx.moveTo(x, 0); gridGfx.lineTo(x, H); gridGfx.strokePath();
-    }
-    for (let y = 0; y < H; y += 50) {
-      gridGfx.beginPath(); gridGfx.moveTo(0, y); gridGfx.lineTo(W, y); gridGfx.strokePath();
-    }
+  _createBackground() {
+    const bg = this.add.graphics().setDepth(0);
+    bg.fillGradientStyle(C.bg_top, C.bg_top, C.bg_bottom, C.bg_bottom, 1);
+    bg.fillRect(0, 0, W, H);
 
-    /* Lab stations (shimmer effects) */
-    for (let i = 0; i < 3; i++) {
-      const cx = 120 + i * 280;
-      const stationLabel = this.add.text(cx, 30, ["CONCAT LAB", "ANALYSIS LAB", "TRANSFORM LAB"][i], {
-        fontFamily: "Courier New, monospace",
-        fontSize: "10px",
-        color: "#00ffff",
-        fontStyle: "bold",
-      }).setOrigin(0.5).setAlpha(0.3).setDepth(2);
+    this.add.circle(100, 80, 180, C.primary_purple, 0.07).setDepth(1);
+    this.add.circle(700, 520, 220, C.success_green, 0.05).setDepth(1);
 
+    for (let i = 0; i < 25; i++) {
+      const star = this.add.circle(
+        Math.random() * W, Math.random() * H,
+        1 + Math.random() * 2, 0xC8C0F5, 0.3
+      ).setDepth(2);
       this.tweens.add({
-        targets: stationLabel,
-        alpha: { from: 0.2, to: 0.4 },
-        duration: 2000,
-        yoyo: true,
-        repeat: -1,
+        targets: star, alpha: { from: 0.2, to: 0.6 },
+        duration: 2000 + Math.random() * 2000,
+        yoyo: true, repeat: -1, delay: Math.random() * 2000
       });
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES & PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
-  _generateTextures() {
-    const make = (name, color, r) => {
-      if (this.textures.exists(name)) return;
-      const g = this.add.graphics();
-      g.fillStyle(color, 1);
-      g.fillCircle(r, r, r);
-      g.generateTexture(name, r * 2, r * 2);
-      g.destroy();
-    };
-    make("greenSpark", 0x00ff88, 4);
-    make("redSpark", 0xe74c3c, 4);
-    make("cyanSpark", 0x00ffff, 4);
-    make("goldSpark", 0xffd700, 4);
-    make("confettiSpark", 0xffd700, 4);
+  _createParticleTextures() {
+    const g = this.add.graphics();
+    g.fillStyle(0xFFFFFF, 1);
+    g.fillCircle(4, 4, 4);
+    g.generateTexture("pt_circle", 8, 8);
+    g.destroy();
   }
 
-  _createParticles() {
-    this.correctPart = this.add.particles(0, 0, "greenSpark", {
-      speed: { min: 80, max: 250 },
-      scale: { start: 1.2, end: 0 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 700, blendMode: "ADD", emitting: false,
-    }).setDepth(160);
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  CLEAR & UTILITY
+   * ═══════════════════════════════════════════════════════════════════════ */
 
-    this.wrongPart = this.add.particles(0, 0, "redSpark", {
-      speed: { min: 60, max: 180 },
-      scale: { start: 1, end: 0 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 500, blendMode: "ADD", emitting: false,
-    }).setDepth(160);
-
-    this.confettiPart = this.add.particles(0, 0, "confettiSpark", {
-      speed: { min: 40, max: 180 },
-      angle: { min: 230, max: 310 },
-      scale: { start: 1, end: 0.3 },
-      alpha: { start: 1, end: 0 },
-      lifespan: 2500, gravityY: 120, emitting: false,
-    }).setDepth(160);
+  _clear() {
+    this.elements.forEach(el => { if (el && el.destroy) el.destroy(); });
+    this.elements = [];
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
-  _createHUD() {
-    const dp = 100;
+  _addEl(...els) {
+    els.forEach(e => this.elements.push(e));
+  }
 
-    this.add.rectangle(W / 2, 28, W, 50, 0x0a0a1a, 0.88).setDepth(dp - 1);
-    this.add.rectangle(W / 2, 55, W, 1, 0x00ffff, 0.15).setDepth(dp - 1);
+  _drawRoundedBox(x, y, w, h, r, fillColor, borderColor) {
+    const g = this.add.graphics().setDepth(100);
+    // Shadow
+    g.fillStyle(C.purple_dark, 0.15);
+    g.fillRoundedRect(x - w/2 + 3, y - h/2 + 4, w, h, r);
+    // Fill
+    g.fillStyle(fillColor, 1);
+    g.fillRoundedRect(x - w/2, y - h/2, w, h, r);
+    // Border
+    g.lineStyle(2, borderColor, 1);
+    g.strokeRoundedRect(x - w/2, y - h/2, w, h, r);
+    return g;
+  }
 
-    this.scoreText = this.add.text(16, 12, "SCORE: 0", {
-      fontFamily: "Courier New, monospace", fontSize: "15px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setDepth(dp);
+  _charBoxes(str, cx, cy, opts = {}) {
+    const totalW = str.length * (BOX_W + 4);
+    const startX = cx - totalW / 2 + BOX_W / 2;
+    const boxes = [];
 
-    this.waveText = this.add.text(16, 35, "CHALLENGE: 0 / 40", {
-      fontFamily: "Courier New, monospace", fontSize: "11px", color: "#888888",
-    }).setDepth(dp);
+    str.split("").forEach((char, i) => {
+      const bx = startX + i * (BOX_W + 4);
+      const display = char === " " ? "␣" : char;
 
-    this.progBg = this.add.rectangle(W / 2, 16, 240, 12, 0x1a1a2e, 0.8).setDepth(dp);
-    this.progBg.setStrokeStyle(1, 0x00ffff, 0.3);
-    this.progFill = this.add.rectangle(W / 2 - 120, 16, 0, 10, 0x00ffff, 0.7)
-      .setOrigin(0, 0.5).setDepth(dp + 1);
-    this.progText = this.add.text(W / 2, 16, "0 / 40", {
-      fontFamily: "Courier New, monospace", fontSize: "9px",
-      color: "#ffffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(dp + 2);
+      const shadow = this.add.graphics().setDepth(99);
+      shadow.fillStyle(C.purple_dark, 0.15);
+      shadow.fillRoundedRect(bx - BOX_W/2 + 2, cy - BOX_H/2 + 3, BOX_W, BOX_H, 8);
 
-    this.livesText = this.add.text(W - 16, 12, "♥♥♥", {
-      fontFamily: "Arial", fontSize: "20px",
-      color: "#ff4444", fontStyle: "bold",
-    }).setOrigin(1, 0).setDepth(dp);
+      const box = this.add.graphics().setDepth(100);
+      const drawBox = (fill, border) => {
+        box.clear();
+        box.fillStyle(fill, 1);
+        box.fillRoundedRect(bx - BOX_W/2, cy - BOX_H/2, BOX_W, BOX_H, 8);
+        box.lineStyle(2, border, 1);
+        box.strokeRoundedRect(bx - BOX_W/2, cy - BOX_H/2, BOX_W, BOX_H, 8);
+      };
+      drawBox(opts.fill || C.white, opts.border || C.purple_border);
 
-    this.accText = this.add.text(W - 16, 36, "ACC: 100%", {
-      fontFamily: "Courier New, monospace", fontSize: "10px", color: "#888888",
-    }).setOrigin(1, 0).setDepth(dp);
+      const charTxt = this.add.text(bx, cy - 5, display, {
+        fontFamily: "Courier New", fontSize: "20px",
+        color: char === " " ? COLORS.purple_dark : COLORS.text_primary,
+        fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(101);
 
-    this.tooltip = this.add.text(W / 2, 360, "", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
-      color: "#ffffff",
-      backgroundColor: "rgba(10, 10, 26, 0.9)",
-      padding: { x: 14, y: 6 },
-      align: "center",
-      wordWrap: { width: 550 },
-    }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
+      const idxTxt = this.add.text(bx, cy + 20, i.toString(), {
+        fontFamily: "Arial", fontSize: "10px",
+        color: COLORS.purple_tinted_gray, fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(101);
 
-    this.timerBarBg = this.add.rectangle(W / 2, 160, 200, 8, 0x1a1a2e, 0.6).setDepth(dp);
-    this.timerBarBg.setStrokeStyle(1, 0x00ffff, 0.2);
-    this.timerBarFill = this.add.rectangle(W / 2 - 100, 160, 200, 6, 0x00ffff, 0.7)
-      .setOrigin(0, 0.5).setDepth(dp + 1);
-    this.timerBarBg.setAlpha(0);
-    this.timerBarFill.setAlpha(0);
+      if (opts.animate !== false) {
+        [shadow, box, charTxt, idxTxt].forEach(t => { t.setAlpha(0); t.setScale(0); });
+        this.tweens.add({
+          targets: [shadow, box, charTxt, idxTxt],
+          alpha: 1, scale: 1, duration: 300,
+          delay: (opts.baseDelay || 0) + i * 80, ease: "Back.out"
+        });
+      }
+
+      boxes.push({ shadow, box, charTxt, idxTxt, x: bx, y: cy, drawBox, char, i });
+      this._addEl(shadow, box, charTxt, idxTxt);
+    });
+
+    return boxes;
+  }
+
+  _btn(x, y, label, isPrimary, onClick) {
+    const container = this.add.container(x, y).setDepth(200);
+    const w = isPrimary ? 180 : 110;
+    const h = 44;
+
+    if (isPrimary) {
+      const shadow = this.add.graphics();
+      shadow.fillStyle(C.purple_dark, 0.35);
+      shadow.fillRoundedRect(-w/2, -h/2 + 4, w, h, 22);
+      container.add(shadow);
+
+      const bg = this.add.graphics();
+      bg.fillStyle(C.purple_light, 1);
+      bg.fillRoundedRect(-w/2, -h/2, w, h, 22);
+      bg.fillStyle(C.primary_purple, 0.6);
+      bg.fillRoundedRect(-w/2, 0, w, h/2, { tl: 0, tr: 0, bl: 22, br: 22 });
+      bg.lineStyle(2, C.purple_dark, 1);
+      bg.strokeRoundedRect(-w/2, -h/2, w, h, 22);
+      container.add(bg);
+    } else {
+      const bg = this.add.graphics();
+      bg.fillStyle(C.white, 1);
+      bg.fillRoundedRect(-w/2, -h/2, w, h, 22);
+      bg.lineStyle(1.5, C.purple_border, 1);
+      bg.strokeRoundedRect(-w/2, -h/2, w, h, 22);
+      container.add(bg);
+    }
+
+    const txt = this.add.text(0, 0, label, {
+      fontFamily: "Arial", fontSize: "14px",
+      color: isPrimary ? COLORS.white : COLORS.text_secondary, fontStyle: "bold"
+    }).setOrigin(0.5);
+    container.add(txt);
+
+    container.setSize(w, h).setInteractive({ useHandCursor: true });
+    container.on("pointerover", () => this.tweens.add({ targets: container, scale: 1.06, duration: 120 }));
+    container.on("pointerout", () => this.tweens.add({ targets: container, scale: 1, duration: 120 }));
+    container.on("pointerup", () => {
+      this.tweens.add({ targets: container, scale: 0.94, duration: 60, yoyo: true });
+      this.time.delayedCall(100, onClick);
+    });
+
+    this._addEl(container);
+    return container;
+  }
+
+  _spawnConfetti(x, y, count = 20) {
+    const cols = [C.gold, C.primary_purple, C.success_green, C.confetti_pink, C.confetti_purple];
+    for (let i = 0; i < count; i++) {
+      const c = this.add.rectangle(
+        x + (Math.random() - 0.5) * 80, y,
+        5, 8, cols[Math.floor(Math.random() * cols.length)]
+      ).setDepth(300).setRotation(Math.random() * Math.PI * 2);
+
+      this.tweens.add({
+        targets: c,
+        y: y + 350 + Math.random() * 200,
+        x: c.x + (Math.random() - 0.5) * 180,
+        rotation: c.rotation + Math.PI * 4,
+        alpha: { from: 1, to: 0 },
+        duration: 1800 + Math.random() * 1200,
+        ease: "Cubic.in",
+        onComplete: () => c.destroy()
+      });
+    }
+  }
+
+  _showFeedback(isCorrect, mainMsg, subMsg, callback) {
+    const container = this.add.container(W / 2, 440).setDepth(250);
+    const pw = 480, ph = 120;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(C.purple_dark, 0.2);
+    bg.fillRoundedRect(-pw/2 + 3, -ph/2 + 4, pw, ph, 14);
+    bg.fillStyle(isCorrect ? C.success_bg : C.error_bg, 1);
+    bg.fillRoundedRect(-pw/2, -ph/2, pw, ph, 14);
+    bg.lineStyle(2, isCorrect ? C.success_green : C.error_red, 1);
+    bg.strokeRoundedRect(-pw/2, -ph/2, pw, ph, 14);
+    container.add(bg);
+
+    const title = this.add.text(0, -30, isCorrect ? "🎉 Correct!" : "💭 Not quite", {
+      fontFamily: "Arial", fontSize: "22px",
+      color: isCorrect ? COLORS.success_green : COLORS.error_red, fontStyle: "bold"
+    }).setOrigin(0.5);
+    container.add(title);
+
+    const msg = this.add.text(0, 5, mainMsg, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_primary
+    }).setOrigin(0.5);
+    container.add(msg);
+
+    if (subMsg) {
+      const sub = this.add.text(0, 30, subMsg, {
+        fontFamily: "Arial", fontSize: "12px", color: COLORS.text_secondary, fontStyle: "italic",
+        wordWrap: { width: pw - 40 }
+      }).setOrigin(0.5);
+      container.add(sub);
+    }
+
+    container.setAlpha(0).setScale(0.8);
+    this.tweens.add({
+      targets: container, alpha: 1, scale: 1,
+      duration: 400, ease: isCorrect ? "Back.out" : "Cubic.out"
+    });
+
+    if (isCorrect) {
+      this._spawnConfetti(W / 2, 350, 20);
+    } else {
+      this.cameras.main.shake(200, 0.003);
+    }
+
+    this._addEl(container);
+
+    this.time.delayedCall(800, () => {
+      this._btn(W / 2, H - 40, "Continue →", true, callback);
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  HUD (persistent across rounds, rebuilt per operation)
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _createHUD(op) {
+    const pill = this.add.graphics().setDepth(50);
+    pill.fillStyle(C.white, 0.9);
+    pill.fillRoundedRect(15, 8, W - 30, 42, 21);
+    pill.lineStyle(1, C.purple_border, 1);
+    pill.strokeRoundedRect(15, 8, W - 30, 42, 21);
+    this._addEl(pill);
+
+    const items = [
+      { x: 65, icon: op.emoji, label: op.name },
+      { x: 290, icon: "📊", label: `Round ${this.roundIndex + 1}/5` },
+      { x: 490, icon: "⭐", label: `${this.score} pts` },
+      { x: 680, icon: "🔥", label: `×${this.streak}` }
+    ];
+
+    this.hudRefs = {};
+    items.forEach((it, idx) => {
+      const icon = this.add.text(it.x - 30, 29, it.icon, { fontSize: "16px" }).setOrigin(0.5).setDepth(51);
+      const txt = this.add.text(it.x, 29, it.label, {
+        fontFamily: "Arial", fontSize: "12px", color: COLORS.text_primary, fontStyle: "bold"
+      }).setOrigin(0, 0.5).setDepth(51);
+      if (idx === 1) this.hudRefs.round = txt;
+      if (idx === 2) this.hudRefs.score = txt;
+      if (idx === 3) this.hudRefs.streak = txt;
+      this._addEl(icon, txt);
+    });
   }
 
   _updateHUD() {
-    if (this.scoreText?.active) this.scoreText.setText(`SCORE: ${this.score}`);
-    if (this.waveText?.active) this.waveText.setText(`CHALLENGE: ${Math.min(this.totalProcessed, TARGET_CHALLENGES)} / ${TARGET_CHALLENGES}`);
-
-    const pct = Math.min(this.totalProcessed / TARGET_CHALLENGES, 1);
-    if (this.progFill?.active) {
-      this.tweens.add({ targets: this.progFill, width: 240 * pct, duration: 200, ease: "Cubic.out" });
+    if (this.hudRefs.round) this.hudRefs.round.setText(`Round ${this.roundIndex + 1}/5`);
+    if (this.hudRefs.score) {
+      this.hudRefs.score.setText(`${this.score} pts`);
+      this.tweens.add({ targets: this.hudRefs.score, scale: { from: 1.3, to: 1 }, duration: 300, ease: "Back.out" });
     }
-    if (this.progText?.active) this.progText.setText(`${this.totalProcessed} / ${TARGET_CHALLENGES}`);
-
-    if (this.livesText?.active) {
-      let h = "";
-      for (let i = 0; i < MAX_LIVES; i++) h += i < this.lives ? "♥" : "♡";
-      this.livesText.setText(h);
-    }
-
-    const total = this.correctAnswers + this.wrongAnswers;
-    const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
-    if (this.accText?.active) this.accText.setText(`ACC: ${acc}%`);
+    if (this.hudRefs.streak) this.hudRefs.streak.setText(`×${this.streak}`);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
-  _showInstruction() {
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
-
-    const panelG = this.add.graphics().setDepth(201);
-    panelG.fillStyle(0x0d1b2a, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 20, 640, 540, 16);
-    panelG.lineStyle(3, 0x00ffff);
-    panelG.strokeRoundedRect(W / 2 - 320, 20, 640, 540, 16);
-
-    const title = this.add.text(W / 2, 55, "🧪 MISSION 11: STRING LAB MASTER", {
-      fontFamily: "Arial Black, Arial, sans-serif",
-      fontSize: "22px", color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202);
-
-    const sub = this.add.text(W / 2, 85, "Master string manipulation & operations", {
-      fontFamily: "Arial", fontSize: "14px",
-      color: "#818cf8", fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(202);
-
-    const desc = this.add.text(W / 2, 195,
-      "Complete 40 string challenges!\n\n" +
-      "OPERATIONS TESTED:\n" +
-      '• Concatenation: "Hi" + "!" = "Hi!"\n' +
-      '• Length: "Hello".length = 5\n' +
-      '• Character Access: charAt(0), substring()\n' +
-      '• Case: toUpperCase(), toLowerCase()\n' +
-      '• Comparison: "hello" ≠ "Hello"\n' +
-      "• Replace: replace old with new\n\n" +
-      "⚠ 3 lives — wrong answers cost lives!",
-      {
-        fontFamily: "Courier New, monospace",
-        fontSize: "11px", color: "#bdc3c7",
-        align: "center", lineSpacing: 4,
-      }
-    ).setOrigin(0.5).setDepth(202);
-
-    const goal = this.add.text(W / 2, 405, "Complete 40 challenges with 85%+ accuracy\nto earn the String Master badge! 🧪", {
-      fontFamily: "Arial", fontSize: "12px",
-      color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 4,
-    }).setOrigin(0.5).setDepth(202);
-
-    const btnBg = this.add.rectangle(W / 2, 465, 280, 48, 0x1a3a5e, 1).setDepth(202);
-    btnBg.setStrokeStyle(2, 0x00ffff);
-    const btnTxt = this.add.text(W / 2, 465, "BEGIN EXPERIMENTS", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "18px", color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(203);
-
-    btnBg.setInteractive({ useHandCursor: true });
-    btnBg.on("pointerover", () => {
-      btnBg.setFillStyle(0x00ffff);
-      this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1.08, scaleY: 1.08, duration: 120 });
-    });
-    btnBg.on("pointerout", () => {
-      btnBg.setFillStyle(0x1a3a5e);
-      this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1, scaleY: 1, duration: 120 });
-    });
-    btnBg.on("pointerup", () => {
-      [overlay, panelG, title, sub, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
-      this._startGame();
-    });
+  _handleCorrect() {
+    this.streak++;
+    if (this.streak > this.bestStreak) this.bestStreak = this.streak;
+    const pts = 100 + (this.streak >= 3 ? 50 : 0);
+    this.score += pts;
+    this.totalCorrect++;
+    this.totalAttempted++;
+    this._updateHUD();
+    return pts;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
-  _startGame() {
-    this.gameStarted = true;
-    this.startTime = this.time.now;
-    GameManager.set("lives", MAX_LIVES);
-    this._nextChallenge();
+  _handleWrong() {
+    this.streak = 0;
+    this.totalAttempted++;
+    this._updateHUD();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CHALLENGE SYSTEM
-   * ═══════════════════════════════════════════════════════════════ */
-  _nextChallenge() {
-    if (this.isComplete || this.totalProcessed >= TARGET_CHALLENGES) {
-      this._levelComplete();
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION FLOW: Tutorial → Rounds → Next Operation
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _startOperation() {
+    if (this.opIndex >= OPERATIONS.length) {
+      this._showFinalResults();
       return;
     }
+    this.roundIndex = 0;
+    this._clear();
+    this._showTutorial();
+  }
 
-    this.waveNumber++;
-    this._clearCurrentElements();
+  _startRound() {
+    const op = OPERATIONS[this.opIndex];
+    if (this.roundIndex >= op.rounds.length) {
+      // Operation complete — transition screen
+      this._showOperationComplete();
+      return;
+    }
+    this._clear();
+    this._createHUD(op);
 
-    const challengeType = ["concat", "length", "charAt", "substring", "equality", "upperLower", "replace"][
-      Math.floor(Math.random() * 7)
-    ];
+    switch (op.id) {
+      case "length": this._playLength(); break;
+      case "charAt": this._playCharAt(); break;
+      case "caseChange": this._playCaseChange(); break;
+      case "concat": this._playConcat(); break;
+      case "substring": this._playSubstring(); break;
+      case "trim": this._playTrim(); break;
+    }
+  }
 
-    switch (challengeType) {
-      case "concat": this._showConcatChallenge(); break;
-      case "length": this._showLengthChallenge(); break;
-      case "charAt": this._showCharAtChallenge(); break;
-      case "substring": this._showSubstringChallenge(); break;
-      case "equality": this._showEqualityChallenge(); break;
-      case "upperLower": this._showUpperLowerChallenge(); break;
-      case "replace": this._showReplaceChallenge(); break;
+  _nextRound() {
+    this.roundIndex++;
+    this._startRound();
+  }
+
+  _showOperationComplete() {
+    this._clear();
+    const op = OPERATIONS[this.opIndex];
+
+    const title = this.add.text(W / 2, 180, `${op.emoji}  ${op.name}  Mastered!`, {
+      fontFamily: "Arial", fontSize: "28px", color: COLORS.purple_dark, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+
+    const nextOp = OPERATIONS[this.opIndex + 1];
+    const nextLabel = nextOp
+      ? `Next: ${nextOp.emoji} ${nextOp.name}`
+      : "🏆 See Final Results";
+
+    const sub = this.add.text(W / 2, 240, nextLabel, {
+      fontFamily: "Arial", fontSize: "16px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+
+    this._addEl(title, sub);
+    this._spawnConfetti(W / 2, 150, 30);
+
+    this._btn(W / 2, 340, "Continue →", true, () => {
+      this.opIndex++;
+      this._startOperation();
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  TUTORIAL (generic for all operations)
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _showTutorial() {
+    const op = OPERATIONS[this.opIndex];
+    const tut = op.tutorial;
+
+    // Title
+    const title = this.add.text(W / 2, 50, `${op.emoji}  Learn: ${op.name}`, {
+      fontFamily: "Arial", fontSize: "24px", color: COLORS.purple_dark, fontStyle: "bold"
+    }).setOrigin(0.5).setAlpha(0).setDepth(100);
+    this.tweens.add({ targets: title, alpha: 1, y: { from: 30, to: 50 }, duration: 500 });
+    this._addEl(title);
+
+    // Code display
+    const codeBg = this.add.graphics().setDepth(99);
+    codeBg.fillStyle(C.purple_light, 1);
+    codeBg.fillRoundedRect(W / 2 - 160, 85, 320, 38, 12);
+    codeBg.fillStyle(C.primary_purple, 0.5);
+    codeBg.fillRoundedRect(W / 2 - 160, 104, 320, 19, { tl: 0, tr: 0, bl: 12, br: 12 });
+    codeBg.lineStyle(2, C.purple_dark, 1);
+    codeBg.strokeRoundedRect(W / 2 - 160, 85, 320, 38, 12);
+
+    const codeTxt = this.add.text(W / 2, 104, tut.code, {
+      fontFamily: "Courier New", fontSize: "16px", color: COLORS.white, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100).setAlpha(0);
+
+    this.tweens.add({ targets: [codeBg, codeTxt], alpha: 1, duration: 500, delay: 300 });
+    this._addEl(codeBg, codeTxt);
+
+    // Demo string
+    const boxes = this._charBoxes(tut.demo_str, W / 2, 190, { baseDelay: 500 });
+
+    // Steps text
+    let stepY = 260;
+    tut.steps.forEach((step, i) => {
+      const st = this.add.text(W / 2, stepY + i * 32, `• ${step}`, {
+        fontFamily: "Arial", fontSize: "13px", color: COLORS.text_primary,
+        wordWrap: { width: 600 }
+      }).setOrigin(0.5).setDepth(100).setAlpha(0);
+
+      this.tweens.add({ targets: st, alpha: 1, x: { from: W / 2 - 20, to: W / 2 }, duration: 400, delay: 800 + i * 300 });
+      this._addEl(st);
+    });
+
+    // Extra examples
+    if (tut.extras && tut.extras.length > 0) {
+      const extrasY = stepY + tut.steps.length * 32 + 20;
+      tut.extras.forEach((ex, i) => {
+        const note = this.add.text(W / 2, extrasY + i * 28, `✦ ${ex.note}`, {
+          fontFamily: "Arial", fontSize: "12px", color: COLORS.success_green, fontStyle: "italic"
+        }).setOrigin(0.5).setDepth(100).setAlpha(0);
+        this.tweens.add({ targets: note, alpha: 1, duration: 400, delay: 1600 + i * 250 });
+        this._addEl(note);
+      });
     }
 
-    this._updateHUD();
+    // Skip & Got it buttons
+    const skipBtn = this._btn(W - 70, 50, "Skip →", false, () => {
+      this._clear();
+      this._startRound();
+    });
+
+    this.time.delayedCall(2500, () => {
+      this._btn(W / 2, H - 50, "Got it — let me play! →", true, () => {
+        this._clear();
+        this._startRound();
+      });
+    });
   }
 
-  _showConcatChallenge() {
-    const q = pickRandom(CONCAT_CHALLENGES);
-    this.currentChallenge = { type: "concat", answer: q.result };
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 1: length() — RULER MEASURE
+   * ═══════════════════════════════════════════════════════════════════════ */
 
-    const title = this.add.text(W / 2, 120, "⚗️ CONCATENATION LAB", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
+  _playLength() {
+    const round = OPERATIONS[0].rounds[this.roundIndex];
+    const str = round.str;
+    const correctLen = parseInt(round.answer);
 
-    const problem = this.add.text(W / 2, 200, `${q.part1} + ${q.part2} = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "28px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
+    // Task bar
+    const taskTxt = this.add.text(W / 2, 75, `📏  "${str}".length() = ?`, {
+      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
 
-    this.currentElements.push(title, problem);
+    // Character boxes
+    const boxes = this._charBoxes(str, W / 2, 160, { baseDelay: 100 });
 
-    const options = [q.result, `"${q.part1.slice(1, -1)}${q.part2.slice(1, -1)}"`, '""', `${q.part1}${q.part2}`];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
+    // Ruler
+    const rulerY = 220;
+    const totalW = str.length * (BOX_W + 4);
+    const startX = W / 2 - totalW / 2;
 
-    this._createChallengeButtons(shuffled, options.indexOf(q.result), q.explanation, 280);
-  }
+    const ruler = this.add.graphics().setDepth(98);
+    ruler.fillStyle(C.purple_border, 1);
+    ruler.fillRoundedRect(startX - 10, rulerY - 6, totalW + 20, 12, 4);
+    this._addEl(ruler);
 
-  _showLengthChallenge() {
-    const q = pickRandom(LENGTH_CHALLENGES);
-    this.currentChallenge = { type: "length", answer: q.length };
+    // Tick labels
+    for (let i = 0; i <= str.length; i++) {
+      const tx = startX + i * (BOX_W + 4) - 2;
+      const tick = this.add.graphics().setDepth(99);
+      tick.fillStyle(C.primary_purple, 1);
+      tick.fillRect(tx, rulerY - 8, 2, 16);
 
-    const title = this.add.text(W / 2, 120, "📏 LENGTH ANALYZER", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
+      const lbl = this.add.text(tx + 1, rulerY + 15, i.toString(), {
+        fontFamily: "Arial", fontSize: "11px", color: COLORS.purple_dark, fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(100);
+      this._addEl(tick, lbl);
+    }
 
-    const problem = this.add.text(W / 2, 200, `${q.string}.length = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "24px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
+    // Answer input: clickable number selector
+    const selectorY = 300;
 
-    this.currentElements.push(title, problem);
+    const prompt = this.add.text(W / 2, selectorY - 30, "What is the length? Click the correct number:", {
+      fontFamily: "Arial", fontSize: "14px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(prompt);
 
-    const nums = ["0", "1", "2", "3", "4", "5", "8", "10"];
-    const options = [q.length, nums[Math.floor(Math.random() * nums.length)], nums[Math.floor(Math.random() * nums.length)]];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.length), q.explanation, 280);
-  }
-
-  _showCharAtChallenge() {
-    const q = pickRandom(CHARAT_CHALLENGES);
-    this.currentChallenge = { type: "charAt", answer: q.char };
-
-    const title = this.add.text(W / 2, 120, "🔍 CHARACTER FINDER", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const problem = this.add.text(W / 2, 200, `${q.string}.charAt(${q.index}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "22px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    this.currentElements.push(title, problem);
-
-    const options = [q.char, '"X"', '""', '"0"'];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.char), q.explanation, 280);
-  }
-
-  _showSubstringChallenge() {
-    const q = pickRandom(SUBSTRING_CHALLENGES);
-    this.currentChallenge = { type: "substring", answer: q.result };
-
-    const title = this.add.text(W / 2, 120, "✂️ SUBSTRING CUTTER", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const problem = this.add.text(W / 2, 200, `${q.string}.substring(${q.start}, ${q.end}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    this.currentElements.push(title, problem);
-
-    const options = [q.result, '""', `"${q.string.slice(1, -1)}"`, '"?"'];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 280);
-  }
-
-  _showEqualityChallenge() {
-    const q = pickRandom(EQUALITY_CHALLENGES);
-    const answer = q.equal ? "TRUE" : "FALSE";
-    this.currentChallenge = { type: "equality", answer };
-
-    const title = this.add.text(W / 2, 120, "⚖️ EQUALITY CHECK", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const problem = this.add.text(W / 2, 200, `${q.str1} == ${q.str2}`, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const questionMark = this.add.text(W / 2, 240, "?", {
-      fontFamily: "Arial", fontSize: "32px",
-      color: "#ff00ff",
-    }).setOrigin(0.5).setDepth(110);
-
-    this.currentElements.push(title, problem, questionMark);
-
-    const options = ["TRUE", "FALSE"];
-    this._createChallengeButtons(options, options.indexOf(answer), q.explanation, 280);
-  }
-
-  _showUpperLowerChallenge() {
-    const q = pickRandom(UPPER_LOWER_CHALLENGES);
-    this.currentChallenge = { type: "case", answer: q.result };
-
-    const title = this.add.text(W / 2, 120, "🔤 CASE TRANSFORMER", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const action = q.action === "uppercase" ? "toUpperCase()" : "toLowerCase()";
-    const problem = this.add.text(W / 2, 200, `${q.string}.${action} = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    this.currentElements.push(title, problem);
-
-    const options = [q.result, q.string, '""'];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 280);
-  }
-
-  _showReplaceChallenge() {
-    const q = pickRandom(REPLACE_CHALLENGES);
-    this.currentChallenge = { type: "replace", answer: q.result };
-
-    const title = this.add.text(W / 2, 120, "🔄 STRING REPLACER", {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#00ffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    const problem = this.add.text(W / 2, 200, `${q.string}.replace(${q.find}, ${q.replace})`, {
-      fontFamily: "Courier New, monospace", fontSize: "16px",
-      color: "#ffd93d", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(110);
-
-    this.currentElements.push(title, problem);
-
-    const options = [q.result, q.string, '""'];
-    const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 280);
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  CHALLENGE BUTTONS
-   * ═══════════════════════════════════════════════════════════════ */
-  _createChallengeButtons(options, correctIndex, explanation, yStart) {
-    const btnW = 150;
-    const btnH = 44;
-    const cols = options.length <= 2 ? options.length : 2;
-    const gapX = 16;
-    const gapY = 12;
-    const totalW = cols * btnW + (cols - 1) * gapX;
-    const startX = W / 2 - totalW / 2 + btnW / 2;
-
-    const buttons = [];
+    // Generate options (correct + 3 wrong)
+    const options = this._generateOptions(correctLen, 0, str.length + 2);
 
     options.forEach((opt, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      const bx = startX + col * (btnW + gapX);
-      const by = yStart + row * (btnH + gapY);
+      const ox = W / 2 - ((options.length - 1) * 60) / 2 + i * 60;
+      const optBg = this.add.graphics().setDepth(100);
+      optBg.fillStyle(C.white, 1);
+      optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+      optBg.lineStyle(2, C.purple_border, 1);
+      optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
 
-      const bg = this.add.rectangle(bx, by, btnW, btnH, 0x1a2332, 0.9).setDepth(120);
-      bg.setStrokeStyle(2, 0x00ffff, 0.4);
+      const optTxt = this.add.text(ox, selectorY, opt.toString(), {
+        fontFamily: "Courier New", fontSize: "20px", color: COLORS.text_primary, fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(101);
 
-      const fontSize = opt.length > 12 ? "12px" : opt.length > 6 ? "14px" : "16px";
-      const txt = this.add.text(bx, by, opt, {
-        fontFamily: "Courier New, monospace", fontSize,
-        color: "#ffffff", fontStyle: "bold",
-        wordWrap: { width: btnW - 14 }, align: "center",
-      }).setOrigin(0.5).setDepth(121);
+      const hitArea = this.add.rectangle(ox, selectorY, 48, 44).setAlpha(0.001)
+        .setInteractive({ useHandCursor: true }).setDepth(102);
 
-      bg.setInteractive({ useHandCursor: true });
-      bg.on("pointerover", () => {
-        bg.setStrokeStyle(2, 0x00ffff, 1);
-        this.tweens.add({ targets: [bg, txt], scaleX: 1.05, scaleY: 1.05, duration: 80 });
-      });
-      bg.on("pointerout", () => {
-        bg.setStrokeStyle(2, 0x00ffff, 0.4);
-        this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 80 });
-      });
-      bg.on("pointerup", () => {
-        this._handleChallengeAnswer(i, correctIndex, explanation, buttons);
+      hitArea.on("pointerover", () => {
+        optBg.clear();
+        optBg.fillStyle(C.purple_bg, 1);
+        optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+        optBg.lineStyle(2, C.primary_purple, 1);
+        optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
       });
 
-      this.currentElements.push(bg, txt);
-      buttons.push({ bg, txt, index: i });
-    });
+      hitArea.on("pointerout", () => {
+        optBg.clear();
+        optBg.fillStyle(C.white, 1);
+        optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+        optBg.lineStyle(2, C.purple_border, 1);
+        optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+      });
 
-    this._startTimer(4000, () => {
-      this._onTimerExpired();
+      hitArea.on("pointerup", () => {
+        // Disable all options
+        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
+
+        if (opt === correctLen) {
+          // Correct
+          optBg.clear();
+          optBg.fillStyle(C.success_bg, 1);
+          optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+          optBg.lineStyle(2, C.success_green, 1);
+          optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+          optTxt.setColor(COLORS.success_green);
+
+          // Highlight all boxes
+          boxes.forEach(b => b.drawBox(C.success_bg, C.success_green));
+
+          const pts = this._handleCorrect();
+          let sub = str.includes(" ") ? "Spaces count as characters too!" : null;
+          this._showFeedback(true, `"${str}" has ${correctLen} characters. +${pts} pts`, sub, () => this._nextRound());
+        } else {
+          // Wrong
+          optBg.clear();
+          optBg.fillStyle(C.error_bg, 1);
+          optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+          optBg.lineStyle(2, C.error_red, 1);
+          optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+          optTxt.setColor(COLORS.error_red);
+
+          this._handleWrong();
+          let hint = "";
+          if (opt === correctLen - 1) hint = "Remember: length counts the total, not the last index";
+          else if (opt === correctLen + 1) hint = "One too many — count again";
+          else if (str.includes(" ")) hint = "Spaces count as characters too!";
+          this._showFeedback(false, `Actual length: ${correctLen} (you picked ${opt})`, hint, () => this._nextRound());
+        }
+      });
+
+      this._addEl(optBg, optTxt, hitArea);
     });
   }
 
-  _handleChallengeAnswer(selected, correctIndex, explanation, allButtons) {
-    this._stopTimer();
-    const correct = selected === correctIndex;
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 2: charAt(i) — INDEX JUMPER
+   * ═══════════════════════════════════════════════════════════════════════ */
 
-    if (correct) {
-      this._onCorrect(explanation, 25);
-    } else {
-      this._onWrong(explanation);
-      if (this.lives <= 0) return;
+  _playCharAt() {
+    const round = OPERATIONS[1].rounds[this.roundIndex];
+    const str = round.str;
+    const idx = round.idx;
+    const correctChar = round.answer;
 
-      const correctBtn = allButtons.find(b => b.index === correctIndex);
-      if (correctBtn) {
-        correctBtn.bg.setFillStyle(0x004d40, 1);
-        correctBtn.bg.setStrokeStyle(3, 0x00ff88, 1);
+    const taskTxt = this.add.text(W / 2, 75, `👆  "${str}".charAt(${idx}) = ?`, {
+      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
+
+    const instruction = this.add.text(W / 2, 110, "Click the character at the highlighted index", {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(instruction);
+
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
+
+    // Highlight target index
+    this.time.delayedCall(300 + str.length * 80, () => {
+      boxes[idx].drawBox(C.purple_bg, C.primary_purple);
+
+      // Pulse animation on target index
+      this.tweens.add({
+        targets: boxes[idx].idxTxt,
+        scale: { from: 1, to: 1.5 }, yoyo: true,
+        duration: 500, repeat: -1, ease: "Sine.inOut"
+      });
+
+      // Arrow pointing to target
+      const arrow = this.add.text(boxes[idx].x, 145, "⬇", {
+        fontSize: "22px", color: COLORS.primary_purple
+      }).setOrigin(0.5).setDepth(102);
+
+      this.tweens.add({
+        targets: arrow, y: { from: 140, to: 150 },
+        duration: 600, yoyo: true, repeat: -1, ease: "Sine.inOut"
+      });
+
+      this._addEl(arrow);
+    });
+
+    // Make each box clickable
+    boxes.forEach((b, i) => {
+      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
+        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
+
+      hitArea.on("pointerover", () => {
+        if (i !== idx) b.drawBox(C.purple_pale, C.purple_border);
+      });
+      hitArea.on("pointerout", () => {
+        if (i !== idx) b.drawBox(C.white, C.purple_border);
+      });
+
+      hitArea.on("pointerup", () => {
+        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
+
+        const clickedChar = str[i];
+        if (clickedChar === correctChar) {
+          b.drawBox(C.success_bg, C.success_green);
+          this.tweens.add({ targets: b.charTxt, scale: { from: 1, to: 1.4 }, yoyo: true, duration: 300, ease: "Back.out" });
+          const pts = this._handleCorrect();
+          this._showFeedback(true,
+            `charAt(${idx}) → '${correctChar}' ✓  +${pts} pts`,
+            `Index ${idx} = the ${this._ordinal(idx + 1)} character`, () => this._nextRound());
+        } else {
+          b.drawBox(C.error_bg, C.error_red);
+          boxes[idx].drawBox(C.success_bg, C.success_green);
+          this._handleWrong();
+          this._showFeedback(false,
+            `You clicked '${clickedChar}' (index ${i}). Correct: '${correctChar}' at index ${idx}`,
+            "Remember: counting starts from 0, not 1!", () => this._nextRound());
+        }
+      });
+
+      this._addEl(hitArea);
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 3: toUpperCase / toLowerCase — CASE FLIPPER
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _playCaseChange() {
+    const round = OPERATIONS[2].rounds[this.roundIndex];
+    const str = round.str;
+    const isUpper = round.op === "upper";
+    const correctAnswer = round.answer;
+    const methodName = isUpper ? "toUpperCase()" : "toLowerCase()";
+
+    const taskTxt = this.add.text(W / 2, 75, `🔄  "${str}".${methodName} = ?`, {
+      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
+
+    const instruction = this.add.text(W / 2, 108, `Click each letter to flip it ${isUpper ? "UPPERCASE" : "lowercase"}. Then submit!`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(instruction);
+
+    // Create mutable character boxes
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
+    const userChars = str.split("");
+
+    boxes.forEach((b, i) => {
+      if (!/[a-zA-Z]/.test(str[i])) return; // Only letters are flippable
+
+      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
+        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
+
+      hitArea.on("pointerup", () => {
+        // Toggle case
+        const current = userChars[i];
+        if (current === current.toUpperCase()) {
+          userChars[i] = current.toLowerCase();
+        } else {
+          userChars[i] = current.toUpperCase();
+        }
+
+        b.charTxt.setText(userChars[i]);
+
+        // Flash feedback
+        const isFlippedCorrect = userChars[i] === correctAnswer[i];
+        b.drawBox(isFlippedCorrect ? C.success_bg : C.purple_bg,
+                   isFlippedCorrect ? C.success_green : C.primary_purple);
+
         this.tweens.add({
-          targets: [correctBtn.bg, correctBtn.txt],
-          scaleX: 1.1, scaleY: 1.1, duration: 200, yoyo: true, repeat: 1,
+          targets: b.charTxt, scale: { from: 1.3, to: 1 },
+          duration: 200, ease: "Back.out"
+        });
+      });
+
+      this._addEl(hitArea);
+    });
+
+    // Submit button
+    this._btn(W / 2, 310, "Submit →", true, () => {
+      this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
+      const userAnswer = userChars.join("");
+
+      if (userAnswer === correctAnswer) {
+        boxes.forEach(b => b.drawBox(C.success_bg, C.success_green));
+        const pts = this._handleCorrect();
+        this._showFeedback(true, `"${str}" → "${correctAnswer}" ✓  +${pts} pts`, null, () => this._nextRound());
+      } else {
+        // Show which chars were wrong
+        boxes.forEach((b, i) => {
+          if (userChars[i] !== correctAnswer[i]) {
+            b.drawBox(C.error_bg, C.error_red);
+          }
+        });
+        this._handleWrong();
+        this._showFeedback(false,
+          `Your answer: "${userAnswer}" → Correct: "${correctAnswer}"`,
+          "Every letter must be flipped. Symbols and numbers stay the same!",
+          () => this._nextRound());
+      }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 4: concat (+) — MAGNET MERGE
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _playConcat() {
+    const round = OPERATIONS[3].rounds[this.roundIndex];
+    const a = round.a, b = round.b, correct = round.answer;
+
+    const taskTxt = this.add.text(W / 2, 75, `🧲  "${a}" + "${b}" = ?`, {
+      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
+
+    const instruction = this.add.text(W / 2, 108, "Drag the right string to connect it to the left string", {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(instruction);
+
+    // Left string (fixed)
+    const leftBoxes = this._charBoxes(a, W / 2 - 120, 200, { baseDelay: 100, fill: C.purple_bg, border: C.primary_purple });
+
+    // Right string (draggable group)
+    const rightStartX = W / 2 + 120;
+    const rightBoxes = this._charBoxes(b, rightStartX, 200, { baseDelay: 200, fill: 0xFFF4CC, border: C.orange });
+
+    // Make right group draggable via a container
+    const rightContainer = this.add.container(0, 0).setDepth(110);
+    rightContainer.setSize(b.length * (BOX_W + 4), BOX_H + 20);
+    rightContainer.setPosition(rightStartX, 200);
+    rightContainer.setInteractive({ draggable: true, useHandCursor: true });
+
+    let merged = false;
+
+    rightContainer.on("drag", (pointer, dragX) => {
+      if (merged) return;
+      const dx = dragX - rightStartX;
+      rightBoxes.forEach(rb => {
+        rb.shadow.setX(rb.shadow.x !== undefined ? rb.x + dx - BOX_W/2 + 2 : rb.shadow.x);
+        rb.box.setPosition(rb.x + dx, rb.y);
+        rb.charTxt.setX(rb.x + dx);
+        rb.idxTxt.setX(rb.x + dx);
+      });
+    });
+
+    rightContainer.on("dragend", () => {
+      if (merged) return;
+
+      // Check if close enough to merge
+      const lastLeft = leftBoxes[leftBoxes.length - 1];
+      const firstRight = rightBoxes[0];
+      const distance = Math.abs(firstRight.charTxt.x - (lastLeft.x + BOX_W + 4));
+
+      if (distance < 40) {
+        merged = true;
+        rightContainer.disableInteractive();
+
+        // Snap into place
+        rightBoxes.forEach((rb, i) => {
+          const targetX = lastLeft.x + (i + 1) * (BOX_W + 4);
+          this.tweens.add({
+            targets: [rb.charTxt, rb.idxTxt],
+            x: targetX, duration: 200, ease: "Back.out"
+          });
+          rb.drawBox(C.success_bg, C.success_green);
+        });
+        leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
+
+        // Burst effect at connection point
+        this._spawnConfetti(lastLeft.x + BOX_W / 2, 200, 15);
+
+        const pts = this._handleCorrect();
+        this._showFeedback(true,
+          `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`,
+          "Strings join exactly as they are — including spaces!", () => this._nextRound());
+      } else {
+        // Spring back
+        rightBoxes.forEach(rb => {
+          this.tweens.add({
+            targets: [rb.charTxt, rb.idxTxt],
+            x: rb.x, duration: 300, ease: "Back.out"
+          });
         });
       }
-    }
-
-    this.totalProcessed++;
-    this._updateHUD();
-    this.time.delayedCall(correct ? 600 : 1200, () => this._nextChallenge());
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  CORRECT / WRONG
-   * ═══════════════════════════════════════════════════════════════ */
-  _onCorrect(message, basePoints) {
-    this.correctAnswers++;
-    this.combo++;
-    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-
-    const mult = this.combo >= 20 ? 5 : this.combo >= 10 ? 3 : this.combo >= 5 ? 2 : 1;
-    const points = basePoints * mult;
-    this.score += points;
-
-    GameManager.addXP(points);
-    GameManager.addScore(points);
-    GameManager.addCombo();
-
-    this.correctPart.emitParticleAt(W / 2, 270, 15);
-    this._showPopup(W / 2, 240, `+${points}`, "#00ff88");
-    this._showTooltip(message, "#00ff88");
-
-    if (this.combo === 5 || this.combo === 10 || this.combo === 20) {
-      this.cameras.main.flash(150, 255, 215, 0);
-    }
-  }
-
-  _onWrong(message) {
-    this.wrongAnswers++;
-    this.combo = 0;
-    this.lives--;
-
-    GameManager.resetCombo();
-    GameManager.loseLife();
-
-    this.wrongPart.emitParticleAt(W / 2, 270, 12);
-    this.cameras.main.shake(150, 0.012);
-    this.cameras.main.flash(120, 255, 50, 0);
-
-    this._showPopup(W / 2, 240, "WRONG!", "#ff4444");
-    this._showTooltip(message, "#ff4444");
-
-    if (this.lives <= 0) {
-      this.time.delayedCall(600, () => this._gameOver());
-    }
-  }
-
-  _onTimerExpired() {
-    this._onWrong("⏰ Time's up!");
-    if (this.lives <= 0) return;
-    this.totalProcessed++;
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  TIMER
-   * ═══════════════════════════════════════════════════════════════ */
-  _startTimer(duration, onExpire) {
-    this.timerBarBg.setAlpha(1);
-    this.timerBarFill.setAlpha(1);
-    this.timerBarFill.width = 200;
-    this.timerBarFill.setFillStyle(0x00ffff, 0.7);
-
-    if (this.timerBarTween) this.timerBarTween.destroy();
-    this.timerBarTween = this.tweens.add({
-      targets: this.timerBarFill,
-      width: 0,
-      duration,
-      ease: "Linear",
-      onUpdate: () => {
-        const pct = this.timerBarFill.width / 200;
-        if (pct < 0.25) this.timerBarFill.setFillStyle(0xff4444, 0.8);
-        else if (pct < 0.5) this.timerBarFill.setFillStyle(0xffd93d, 0.7);
-      },
     });
 
-    if (this.timerEvent) this.timerEvent.destroy();
-    this.timerEvent = this.time.delayedCall(duration, onExpire);
-  }
+    this._addEl(rightContainer);
 
-  _stopTimer() {
-    if (this.timerBarTween) { this.timerBarTween.destroy(); this.timerBarTween = null; }
-    if (this.timerEvent) { this.timerEvent.destroy(); this.timerEvent = null; }
-    this.timerBarBg.setAlpha(0);
-    this.timerBarFill.setAlpha(0);
-  }
+    // Also provide type-in fallback
+    const orText = this.add.text(W / 2, 280, "— or type the result —", {
+      fontFamily: "Arial", fontSize: "12px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(orText);
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UI HELPERS
-   * ═══════════════════════════════════════════════════════════════ */
-  _showPopup(x, y, text, color) {
-    const popup = this.add.text(x, y, text, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
-      color, fontStyle: "bold",
-      stroke: "#0a0a1a", strokeThickness: 2,
-    }).setOrigin(0.5).setDepth(170);
+    // Generate options
+    const options = [correct];
+    // Add wrong options
+    if (b.startsWith(" ")) options.push(a + b.trim());
+    else options.push(a + " " + b);
+    options.push(b + a);
+    if (options.length < 4) options.push(a);
 
-    this.tweens.add({
-      targets: popup, y: y - 50, alpha: 0,
-      scaleX: 1.3, scaleY: 1.3, duration: 700, ease: "Cubic.out",
-      onComplete: () => popup.destroy(),
+    const unique = [...new Set(options)].slice(0, 4).sort(() => Math.random() - 0.5);
+
+    unique.forEach((opt, i) => {
+      const ox = W / 2 - ((unique.length - 1) * 140) / 2 + i * 140;
+
+      const optBtn = this.add.container(ox, 330).setDepth(100);
+      const bg = this.add.graphics();
+      bg.fillStyle(C.white, 1);
+      bg.fillRoundedRect(-60, -18, 120, 36, 8);
+      bg.lineStyle(1.5, C.purple_border, 1);
+      bg.strokeRoundedRect(-60, -18, 120, 36, 8);
+      optBtn.add(bg);
+
+      const display = opt.replace(/ /g, "·");
+      const txt = this.add.text(0, 0, `"${display}"`, {
+        fontFamily: "Courier New", fontSize: "12px", color: COLORS.text_primary
+      }).setOrigin(0.5);
+      optBtn.add(txt);
+
+      optBtn.setSize(120, 36).setInteractive({ useHandCursor: true });
+
+      optBtn.on("pointerover", () => {
+        bg.clear();
+        bg.fillStyle(C.purple_bg, 1);
+        bg.fillRoundedRect(-60, -18, 120, 36, 8);
+        bg.lineStyle(1.5, C.primary_purple, 1);
+        bg.strokeRoundedRect(-60, -18, 120, 36, 8);
+      });
+      optBtn.on("pointerout", () => {
+        bg.clear();
+        bg.fillStyle(C.white, 1);
+        bg.fillRoundedRect(-60, -18, 120, 36, 8);
+        bg.lineStyle(1.5, C.purple_border, 1);
+        bg.strokeRoundedRect(-60, -18, 120, 36, 8);
+      });
+
+      optBtn.on("pointerup", () => {
+        if (merged) return;
+        merged = true;
+        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
+
+        if (opt === correct) {
+          leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
+          rightBoxes.forEach(rb => rb.drawBox(C.success_bg, C.success_green));
+          const pts = this._handleCorrect();
+          this._showFeedback(true, `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`, null, () => this._nextRound());
+        } else {
+          this._handleWrong();
+          this._showFeedback(false,
+            `You picked "${opt}" → Correct: "${correct}"`,
+            'Strings concatenate exactly — every space and character matters!',
+            () => this._nextRound());
+        }
+      });
+
+      this._addEl(optBtn);
     });
   }
 
-  _showTooltip(text, color) {
-    if (!this.tooltip?.active) return;
-    this.tooltip.setText(text);
-    this.tooltip.setColor(color || "#ffffff");
-    this.tooltip.setAlpha(1);
-    this.tweens.killTweensOf(this.tooltip);
-    this.tweens.add({
-      targets: this.tooltip, alpha: 0, delay: 1800, duration: 500,
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 5: substring(a,b) — SLICE CUTTER
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _playSubstring() {
+    const round = OPERATIONS[4].rounds[this.roundIndex];
+    const str = round.str;
+    const a = round.a, b = round.b;
+    const correct = round.answer;
+
+    const taskTxt = this.add.text(W / 2, 75, `✂️  "${str}".substring(${a}, ${b}) = ?`, {
+      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
+
+    const instruction = this.add.text(W / 2, 108, `Click the characters from index ${a} to ${b - 1} (highlighted range)`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(instruction);
+
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
+
+    // Highlight the range
+    this.time.delayedCall(300 + str.length * 80, () => {
+      boxes.forEach((bx, i) => {
+        if (i >= a && i < b) {
+          bx.drawBox(C.purple_bg, C.primary_purple);
+          this.tweens.add({
+            targets: bx.charTxt, scale: { from: 1, to: 1.1 },
+            yoyo: true, duration: 500, repeat: 2, ease: "Sine.inOut"
+          });
+        } else {
+          bx.drawBox(C.white, C.purple_border);
+          bx.charTxt.setAlpha(0.4);
+          bx.idxTxt.setAlpha(0.4);
+        }
+      });
+
+      // Range markers
+      const leftBlade = this.add.text(boxes[a].x - BOX_W / 2 - 2, 160, "✂", {
+        fontSize: "20px"
+      }).setOrigin(0.5).setDepth(102);
+      const rightBlade = this.add.text(boxes[b - 1].x + BOX_W / 2 + 2, 160, "✂", {
+        fontSize: "20px"
+      }).setOrigin(0.5).setDepth(102).setFlipX(true);
+
+      this._addEl(leftBlade, rightBlade);
+    });
+
+    // Answer options
+    const selectorY = 300;
+    const prompt = this.add.text(W / 2, selectorY - 30, "What string does substring extract?", {
+      fontFamily: "Arial", fontSize: "14px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(prompt);
+
+    // Generate options
+    const wrongOptions = [];
+    if (a > 0) wrongOptions.push(str.substring(a - 1, b));
+    if (b < str.length) wrongOptions.push(str.substring(a, b + 1));
+    wrongOptions.push(str.substring(a + 1, b));
+    if (wrongOptions.length < 3) wrongOptions.push(str.substring(0, b));
+
+    const allOpts = [correct, ...wrongOptions.filter(w => w !== correct)].slice(0, 4);
+    const shuffled = allOpts.sort(() => Math.random() - 0.5);
+
+    shuffled.forEach((opt, i) => {
+      const ox = W / 2 - ((shuffled.length - 1) * 120) / 2 + i * 120;
+
+      const optContainer = this.add.container(ox, selectorY).setDepth(100);
+      const bg = this.add.graphics();
+      bg.fillStyle(C.white, 1);
+      bg.fillRoundedRect(-50, -20, 100, 40, 10);
+      bg.lineStyle(2, C.purple_border, 1);
+      bg.strokeRoundedRect(-50, -20, 100, 40, 10);
+      optContainer.add(bg);
+
+      const txt = this.add.text(0, 0, `"${opt}"`, {
+        fontFamily: "Courier New", fontSize: "14px", color: COLORS.text_primary, fontStyle: "bold"
+      }).setOrigin(0.5);
+      optContainer.add(txt);
+
+      optContainer.setSize(100, 40).setInteractive({ useHandCursor: true });
+      optContainer.on("pointerover", () => {
+        bg.clear();
+        bg.fillStyle(C.purple_bg, 1);
+        bg.fillRoundedRect(-50, -20, 100, 40, 10);
+        bg.lineStyle(2, C.primary_purple, 1);
+        bg.strokeRoundedRect(-50, -20, 100, 40, 10);
+      });
+      optContainer.on("pointerout", () => {
+        bg.clear();
+        bg.fillStyle(C.white, 1);
+        bg.fillRoundedRect(-50, -20, 100, 40, 10);
+        bg.lineStyle(2, C.purple_border, 1);
+        bg.strokeRoundedRect(-50, -20, 100, 40, 10);
+      });
+
+      optContainer.on("pointerup", () => {
+        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
+
+        if (opt === correct) {
+          boxes.forEach((bx, j) => {
+            if (j >= a && j < b) bx.drawBox(C.success_bg, C.success_green);
+          });
+          const pts = this._handleCorrect();
+          this._showFeedback(true,
+            `substring(${a},${b}) → "${correct}" ✓  +${pts} pts`,
+            `Characters at indices ${a} through ${b - 1} were extracted`,
+            () => this._nextRound());
+        } else {
+          this._handleWrong();
+          this._showFeedback(false,
+            `You picked "${opt}" → Correct: "${correct}"`,
+            `substring(${a},${b}) starts at index ${a}, stops BEFORE index ${b}`,
+            () => this._nextRound());
+        }
+      });
+
+      this._addEl(optContainer);
     });
   }
 
-  _clearCurrentElements() {
-    this.currentElements.forEach(el => {
-      if (el?.active) { this.tweens.killTweensOf(el); el.destroy(); }
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  OPERATION 6: trim() — SPACE SWEEPER
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _playTrim() {
+    const round = OPERATIONS[5].rounds[this.roundIndex];
+    const str = round.str;
+    const correct = round.answer;
+
+    const taskTxt = this.add.text(W / 2, 75, `🧹  "${str.replace(/ /g, "·")}".trim() = ?`, {
+      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(taskTxt);
+
+    const instruction = this.add.text(W / 2, 108, "Click the space characters that trim() would REMOVE (start & end only)", {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(instruction);
+
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
+
+    // Track which spaces user has "swept"
+    const swept = new Array(str.length).fill(false);
+
+    // Determine which indices SHOULD be swept (leading + trailing spaces)
+    const shouldSweep = new Array(str.length).fill(false);
+    let start = 0, end = str.length - 1;
+    while (start < str.length && str[start] === " ") { shouldSweep[start] = true; start++; }
+    while (end >= 0 && str[end] === " ") { shouldSweep[end] = true; end--; }
+
+    boxes.forEach((b, i) => {
+      if (str[i] !== " ") return; // Only spaces are clickable
+
+      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
+        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
+
+      hitArea.on("pointerup", () => {
+        swept[i] = !swept[i];
+        if (swept[i]) {
+          // "Swept" — dim and cross out
+          b.drawBox(C.error_bg, C.error_red);
+          b.charTxt.setAlpha(0.3);
+
+          // Sweep particles
+          this.add.particles(b.x, b.y, "pt_circle", {
+            speed: { min: 40, max: 100 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.4, end: 0 },
+            alpha: { start: 0.8, end: 0 },
+            lifespan: 500,
+            tint: C.purple_tinted_gray,
+            quantity: 6
+          }).setDepth(110).explode(6);
+
+          this.tweens.add({
+            targets: b.charTxt, scale: { from: 1.2, to: 1 },
+            duration: 200, ease: "Back.out"
+          });
+        } else {
+          // Un-swept
+          b.drawBox(C.white, C.purple_border);
+          b.charTxt.setAlpha(1);
+        }
+      });
+
+      this._addEl(hitArea);
     });
-    this.currentElements = [];
-  }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL COMPLETE
-   * ═══════════════════════════════════════════════════════════════ */
-  _levelComplete() {
-    this.isComplete = true;
-    this._stopTimer();
-    this._clearCurrentElements();
+    // Submit button
+    this._btn(W / 2, 310, "Submit →", true, () => {
+      this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
 
-    const total = this.correctAnswers + this.wrongAnswers;
-    const accuracy = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
-    const passed = accuracy >= ACCURACY_THRESHOLD;
+      // Check if user swept the correct spaces
+      const isCorrect = swept.every((s, i) => s === shouldSweep[i]);
 
-    const elapsed = Math.round((this.time.now - this.startTime) / 1000);
-    const mins = Math.floor(elapsed / 60);
-    const secs = elapsed % 60;
-    const timeStr = `${mins}:${secs.toString().padStart(2, "0")}`;
-
-    if (passed) {
-      GameManager.completeLevel(10, accuracy);
-      BadgeSystem.unlock("string_master");
-      ProgressTracker.saveProgress(GameManager.getState());
-      this.cameras.main.flash(600, 255, 215, 0);
-
-      for (let i = 0; i < 8; i++) {
-        this.time.delayedCall(i * 200, () => {
-          this.confettiPart.emitParticleAt(
-            Phaser.Math.Between(100, W - 100),
-            Phaser.Math.Between(0, 50), 15
-          );
+      if (isCorrect) {
+        // Animate removal
+        boxes.forEach((b, i) => {
+          if (shouldSweep[i]) {
+            this.tweens.add({
+              targets: [b.box, b.charTxt, b.idxTxt, b.shadow],
+              alpha: 0, scale: 0.5, duration: 400, delay: i * 50, ease: "Back.in"
+            });
+          } else {
+            b.drawBox(C.success_bg, C.success_green);
+          }
         });
-      }
-    }
 
-    this.time.delayedCall(passed ? 600 : 300, () => {
-      this._showEndScreen(passed, accuracy, timeStr);
+        const pts = this._handleCorrect();
+        this._showFeedback(true,
+          `trim() → "${correct}" ✓  +${pts} pts`,
+          "Only leading and trailing spaces are removed. Middle spaces stay!",
+          () => this._nextRound());
+      } else {
+        // Show correct answer
+        boxes.forEach((b, i) => {
+          if (shouldSweep[i]) {
+            b.drawBox(0xFFE0E0, C.error_red);
+            b.charTxt.setText("✕");
+          } else if (str[i] === " " && swept[i]) {
+            // User incorrectly swept a middle space
+            b.drawBox(0xFFF4CC, C.orange);
+          }
+        });
+
+        this._handleWrong();
+        let hint = "trim() only removes spaces from the START and END — middle spaces stay";
+        this._showFeedback(false,
+          `Correct result: "${correct}"`,
+          hint,
+          () => this._nextRound());
+      }
     });
   }
 
-  _showEndScreen(passed, accuracy, timeStr) {
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(200);
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  FINAL RESULTS
+   * ═══════════════════════════════════════════════════════════════════════ */
 
-    const panelG = this.add.graphics().setDepth(201);
-    const panelColor = passed ? 0x0d1b2a : 0x4a1e1e;
-    const borderColor = passed ? 0x00ffff : 0xe74c3c;
-    panelG.fillStyle(panelColor, 0.97);
-    panelG.fillRoundedRect(W / 2 - 300, 20, 600, 540, 16);
-    panelG.lineStyle(3, borderColor);
-    panelG.strokeRoundedRect(W / 2 - 300, 20, 600, 540, 16);
+  _showFinalResults() {
+    this._clear();
 
-    const titleText = passed ? "🧪 LAB MASTERY ACHIEVED!" : "❌ ACCURACY TOO LOW";
-    const titleColor = passed ? "#00ffff" : "#e74c3c";
+    // Dark overlay with stars
+    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x1a1a3e, 0.65).setDepth(200);
+    this._addEl(overlay);
 
-    this.add.text(W / 2, 50, titleText, {
-      fontFamily: "Arial Black, Arial, sans-serif", fontSize: "24px",
-      color: titleColor, fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202);
+    for (let i = 0; i < 40; i++) {
+      const star = this.add.circle(
+        Math.random() * W, Math.random() * H,
+        Math.random() * 2 + 1, 0xFFFFFF, 0.5
+      ).setDepth(201);
+      this.tweens.add({
+        targets: star, alpha: { from: 0.2, to: 0.8 },
+        duration: 1500 + Math.random() * 1500, yoyo: true, repeat: -1
+      });
+      this._addEl(star);
+    }
 
-    let sy = 95;
+    // Panel
+    const panel = this.add.container(W / 2, H / 2).setDepth(202);
+
+    const bg = this.add.graphics();
+    bg.fillStyle(C.bg_bottom, 1);
+    bg.fillRoundedRect(-280, -220, 560, 440, 20);
+    bg.fillStyle(C.bg_top, 0.7);
+    bg.fillRoundedRect(-280, 0, 560, 220, { tl: 0, tr: 0, bl: 20, br: 20 });
+    bg.lineStyle(2, C.primary_purple, 1);
+    bg.strokeRoundedRect(-280, -220, 560, 440, 20);
+    panel.add(bg);
+
+    const title = this.add.text(0, -180, "🏆  Level 11 Complete!  🏆", {
+      fontFamily: "Arial", fontSize: "28px", color: COLORS.purple_dark, fontStyle: "bold"
+    }).setOrigin(0.5);
+    panel.add(title);
+
+    const badgeTxt = this.add.text(0, -140, "Badge Unlocked: Assembly Master 🏭", {
+      fontFamily: "Arial", fontSize: "14px", color: COLORS.success_green, fontStyle: "bold"
+    }).setOrigin(0.5);
+    panel.add(badgeTxt);
+
+    const accuracy = this.totalAttempted > 0
+      ? Math.round((this.totalCorrect / this.totalAttempted) * 100) : 0;
+
     const stats = [
-      `Challenges Completed: ${this.totalProcessed} / ${TARGET_CHALLENGES}`,
-      `Accuracy: ${accuracy}%`,
-      `Score: ${this.score}`,
-      `Time: ${timeStr}`,
-      `Max Combo: ${this.maxCombo}x`,
-      `Lives Remaining: ${this.lives} / ${MAX_LIVES}`,
+      { icon: "⭐", label: "Total Score", value: `${this.score}` },
+      { icon: "🎯", label: "Accuracy", value: `${accuracy}%` },
+      { icon: "🔥", label: "Best Streak", value: `${this.bestStreak}×` },
+      { icon: "📊", label: "Operations Mastered", value: "6/6" }
     ];
-    stats.forEach((s, i) => {
-      this.add.text(W / 2, sy + i * 22, s, {
-        fontFamily: "Courier New, monospace", fontSize: "12px", color: "#ecf0f1",
-      }).setOrigin(0.5).setDepth(202);
+
+    stats.forEach((stat, i) => {
+      const row = this.add.container(0, -80 + i * 50);
+      const icon = this.add.text(-180, 0, stat.icon, { fontSize: "22px" }).setOrigin(0.5);
+      const label = this.add.text(-140, 0, stat.label, {
+        fontFamily: "Arial", fontSize: "14px", color: COLORS.text_secondary
+      }).setOrigin(0, 0.5);
+      const value = this.add.text(180, 0, stat.value, {
+        fontFamily: "Arial", fontSize: "22px", color: COLORS.purple_dark, fontStyle: "bold"
+      }).setOrigin(1, 0.5);
+
+      row.add([icon, label, value]);
+      row.setAlpha(0).setX(-40);
+      this.tweens.add({
+        targets: row, alpha: 1, x: 0,
+        duration: 400, delay: 600 + i * 150, ease: "Cubic.out"
+      });
+      panel.add(row);
     });
 
-    sy += stats.length * 22 + 15;
+    // Play again
+    const playBtn = this.add.container(0, 170);
+    const pBg = this.add.graphics();
+    pBg.fillStyle(C.purple_light, 1);
+    pBg.fillRoundedRect(-100, -24, 200, 48, 24);
+    pBg.fillStyle(C.primary_purple, 0.6);
+    pBg.fillRoundedRect(-100, 0, 200, 24, { tl: 0, tr: 0, bl: 24, br: 24 });
+    pBg.lineStyle(2, C.purple_dark, 1);
+    pBg.strokeRoundedRect(-100, -24, 200, 48, 24);
+    playBtn.add(pBg);
 
-    if (passed) {
-      this.add.text(W / 2, sy, "🧪 Badge Unlocked: String Master!", {
-        fontFamily: "Arial", fontSize: "14px",
-        color: "#f1c40f", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-      sy += 25;
+    const pTxt = this.add.text(0, 0, "↻  Play Again", {
+      fontFamily: "Arial", fontSize: "15px", color: COLORS.white, fontStyle: "bold"
+    }).setOrigin(0.5);
+    playBtn.add(pTxt);
 
-      const bullets = [
-        "✅ String concatenation: combining strings",
-        "✅ Length property: measuring strings",
-        "✅ charAt() & substring(): accessing parts",
-        "✅ Case transformation: upper/lowercase",
-        "✅ String comparison: equality matters",
-        "✅ String replace: substitution operations",
-      ];
-      bullets.forEach((b, i) => {
-        this.add.text(W / 2, sy + i * 16, b, {
-          fontFamily: "Arial", fontSize: "9px", color: "#bdc3c7",
-        }).setOrigin(0.5).setDepth(202);
-      });
-      sy += bullets.length * 16 + 12;
+    playBtn.setSize(200, 48).setInteractive({ useHandCursor: true });
+    playBtn.on("pointerover", () => this.tweens.add({ targets: playBtn, scale: 1.06, duration: 120 }));
+    playBtn.on("pointerout", () => this.tweens.add({ targets: playBtn, scale: 1, duration: 120 }));
+    playBtn.on("pointerup", () => this.scene.restart());
 
-      this._createEndButton(W / 2 - 130, sy, "NEXT LEVEL →", 0x1a3a5e, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
-      this._createEndButton(W / 2 + 130, sy, "REPLAY", 0x0d1b2a, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-    } else {
-      this.add.text(W / 2, sy, `Need ${ACCURACY_THRESHOLD}%+ accuracy to pass!`, {
-        fontFamily: "Arial", fontSize: "13px",
-        color: "#ff8888", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-      sy += 28;
+    playBtn.setAlpha(0);
+    this.tweens.add({ targets: playBtn, alpha: 1, duration: 400, delay: 1400 });
+    panel.add(playBtn);
 
-      this._createEndButton(W / 2 - 100, sy, "TRY AGAIN", 0xe74c3c, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-      this._createEndButton(W / 2 + 100, sy, "MENU", 0x34495e, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
+    panel.setAlpha(0).setScale(0.7);
+    this.tweens.add({
+      targets: panel, alpha: 1, scale: 1, duration: 600, ease: "Back.out"
+    });
+    this._addEl(panel);
+
+    // Continuous confetti
+    this.time.addEvent({
+      delay: 400,
+      callback: () => this._spawnConfetti(Math.random() * W, -10, 4),
+      repeat: 20
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+   *  UTILITIES
+   * ═══════════════════════════════════════════════════════════════════════ */
+
+  _generateOptions(correct, min, max) {
+    const opts = new Set([correct]);
+    while (opts.size < 4) {
+      let wrong = Math.floor(Math.random() * (max - min)) + min;
+      if (wrong !== correct) opts.add(wrong);
     }
+    return [...opts].sort(() => Math.random() - 0.5);
   }
 
-  _createEndButton(x, y, text, color, callback) {
-    const bg = this.add.rectangle(x, y, 200, 44, color, 1).setDepth(202);
-    bg.setStrokeStyle(2, Phaser.Display.Color.IntegerToColor(color).brighten(30).color);
-    const txt = this.add.text(x, y, text, {
-      fontFamily: "Courier New, monospace", fontSize: "14px",
-      color: "#ffffff", fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(203);
-
-    bg.setInteractive({ useHandCursor: true });
-    bg.on("pointerover", () => {
-      this.tweens.add({ targets: [bg, txt], scaleX: 1.08, scaleY: 1.08, duration: 100 });
-    });
-    bg.on("pointerout", () => {
-      this.tweens.add({ targets: [bg, txt], scaleX: 1, scaleY: 1, duration: 100 });
-    });
-    bg.on("pointerup", callback);
-  }
-
-  _gameOver() {
-    this.isComplete = true;
-    this._stopTimer();
-    this._clearCurrentElements();
-
-    this.cameras.main.shake(400, 0.02);
-    this.cameras.main.flash(250, 255, 0, 0);
-
-    this.time.delayedCall(500, () => {
-      const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(200);
-
-      const panelG = this.add.graphics().setDepth(201);
-      panelG.fillStyle(0x3a0000, 0.95);
-      panelG.fillRoundedRect(W / 2 - 250, H / 2 - 150, 500, 300, 16);
-      panelG.lineStyle(3, 0xe74c3c);
-      panelG.strokeRoundedRect(W / 2 - 250, H / 2 - 150, 500, 300, 16);
-
-      this.add.text(W / 2, H / 2 - 100, "💀 LAB FAILURE", {
-        fontFamily: "Courier New, monospace", fontSize: "26px",
-        color: "#e74c3c", fontStyle: "bold",
-      }).setOrigin(0.5).setDepth(202);
-
-      this.add.text(W / 2, H / 2 - 30, "All lives lost — experiments terminated!", {
-        fontFamily: "Courier New, monospace", fontSize: "13px", color: "#ff8888",
-      }).setOrigin(0.5).setDepth(202);
-
-      const total = this.correctAnswers + this.wrongAnswers;
-      const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 0;
-
-      this.add.text(W / 2, H / 2 + 20, [
-        `Completed: ${this.totalProcessed} / ${TARGET_CHALLENGES}`,
-        `Correct: ${this.correctAnswers}  |  Wrong: ${this.wrongAnswers}`,
-        `Accuracy: ${acc}%  |  Score: ${this.score}`,
-      ].join("\n"), {
-        fontFamily: "Courier New, monospace", fontSize: "11px",
-        color: "#aaaaaa", align: "center", lineSpacing: 5,
-      }).setOrigin(0.5).setDepth(202);
-
-      this._createEndButton(W / 2 - 100, H / 2 + 100, "TRY AGAIN", 0xe74c3c, () => {
-        GameManager.resetLevel();
-        this.scene.restart();
-      });
-      this._createEndButton(W / 2 + 100, H / 2 + 100, "MENU", 0x34495e, () => {
-        this.scene.stop("UIScene");
-        this.scene.start("MenuScene");
-      });
-    });
-  }
-
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
-  shutdown() {
-    this._stopTimer();
-    this._clearCurrentElements();
+  _ordinal(n) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
 }
