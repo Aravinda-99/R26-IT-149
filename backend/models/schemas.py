@@ -94,6 +94,9 @@ DIAGNOSTIC_RESULT = {
     "wrong_answers": 0,
     "score_percentage": 0.0,
     "current_level": "",                # Stable Level | Developing Level | Fragile Level | Misconception Level
+    "post_test_status": "",             # PASSED | FAILED
+    "attempt_number": 1,
+    "next_action": "",                  # DONE | LEARN_AGAIN
     "post_test_accuracy": 0.0,          # CorrectCount / TotalQuestions
     "average_confidence": 0.0,          # Mean of confidence levels
     "answers": [],                      # List of per-question results
@@ -133,7 +136,10 @@ MCQ_POSTTEST_RESULT = {
     "wrongAnswers": 0,
     "scorePercentage": 0.0,
     "currentLevel": "",                 # Stable Level | Developing Level | Fragile Level | Misconception Level
+    "postTestStatus": "",               # PASSED | FAILED
+    "attemptNumber": 1,
     "submittedAnswers": [],
+    "nextAction": "",                   # DONE | LEARN_AGAIN
     "createdAt": "",
     "updatedAt": "",
 }

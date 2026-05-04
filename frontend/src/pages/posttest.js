@@ -12,6 +12,7 @@ import { MasteryAPI } from "../api/api.js";
 let currentStudentId = "";
 let currentConcept = "";
 let currentPreTestSchemaState = "Unknown";
+let currentOnBack = null;
 let questions = [];
 let selectedAnswers = {};
 let testResult = null;
@@ -28,6 +29,7 @@ export async function renderPostTest(container, opts = {}) {
     const masteryScore = opts.masteryScore || 0;
     const schemaState = currentPreTestSchemaState;
     const onBack = opts.onBack || null;
+    currentOnBack = onBack;
     selectedAnswers = {};
     testResult = null;
 
@@ -277,7 +279,56 @@ function normalizeDiagnosticResult(raw) {
             (raw.total ? ((raw.correct ?? 0) / raw.total) * 100 : 0),
         current_level: raw.current_level ?? "Unknown",
         feedback_message: raw.feedback_message ?? "",
+        post_test_status: raw.post_test_status ?? "",
+        attempt_number: raw.attempt_number ?? 1,
+        next_action: raw.next_action ?? "",
     };
+}
+
+function isPassed(result) {
+    const pct = Number(result.score_percentage);
+    if (!Number.isNaN(pct) && pct > 0) return pct >= 60;
+    const total = Number(result.total) || 0;
+    const correct = Number(result.correct) || 0;
+    return total ? (correct / total) * 100 >= 60 : false;
+}
+
+function redirectToGamifiedLesson(concept) {
+    // Minimal integration with existing stack: go to Games page and auto-launch
+    // the most relevant module section. This keeps the flow within the app.
+    const conceptToSection = {
+        variables: "integer",
+        operators: "integer",
+        loops: "integer",
+        arrays: "integer",
+        methods: "string",
+    };
+    const section = conceptToSection[concept] || "integer";
+    sessionStorage.setItem("codequest_menu_focus", section);
+
+    const gamesLink = document.querySelector('.nav-link[data-page="games"]');
+    gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    // After the Games page renders, click launch for the chosen module.
+    const launchIdBySection = {
+        integer: "launch-int-module-btn",
+        float: "launch-float-module-btn",
+        char: "launch-char-module-btn",
+        string: "launch-string-module-btn",
+    };
+    const launchId = launchIdBySection[section] || launchIdBySection.integer;
+
+    const startedAt = Date.now();
+    const tryClick = () => {
+        const btn = document.getElementById(launchId);
+        if (btn) {
+            btn.click();
+            return;
+        }
+        if (Date.now() - startedAt > 4000) return;
+        setTimeout(tryClick, 100);
+    };
+    setTimeout(tryClick, 0);
 }
 
 function showResults(result) {
@@ -325,10 +376,14 @@ function showResults(result) {
     if (resultContainer) {
         const stateChanged = result.pre_test_state !== result.final_state;
         const improved = getStateRank(result.final_state) > getStateRank(result.pre_test_state);
+        const passed = isPassed(result);
+        const title = passed ? "Passed" : "Try Again";
+        const actionLabel = passed ? "Done" : "Learn Again";
+        const actionId = passed ? "posttest-done-btn" : "posttest-learn-again-btn";
 
         resultContainer.innerHTML = `
             <div class="posttest-result-card">
-                <h2>Diagnostic Results</h2>
+                <h2>${title}</h2>
 
                 <div class="posttest-result-score">
                     <div class="posttest-result-circle" style="--score-color: ${result.final_color}">
@@ -365,6 +420,12 @@ function showResults(result) {
                         ${result.feedback_message}
                     </div>
                 ` : ""}
+
+                <div class="posttest-actions" style="margin-top: 1rem; display:flex; justify-content:flex-end;">
+                    <button class="btn btn-primary" id="${actionId}">
+                        ${actionLabel}
+                    </button>
+                </div>
 
                 <div class="posttest-result-states">
                     <div class="posttest-state-block">
@@ -408,6 +469,17 @@ function showResults(result) {
         `;
         resultContainer.classList.remove("hidden");
         resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        const doneBtn = document.getElementById("posttest-done-btn");
+        if (doneBtn) {
+            doneBtn.addEventListener("click", () => {
+                if (currentOnBack) currentOnBack();
+            });
+        }
+        const learnAgainBtn = document.getElementById("posttest-learn-again-btn");
+        if (learnAgainBtn) {
+            learnAgainBtn.addEventListener("click", () => redirectToGamifiedLesson(currentConcept));
+        }
     }
 }
 

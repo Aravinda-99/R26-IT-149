@@ -86,6 +86,23 @@ class MasteryService:
         }
         return feedback.get(level, "Keep practicing to improve your mastery.")
 
+    @staticmethod
+    def _mcq_pass_fail(score_percentage):
+        return float(score_percentage) >= 60.0
+
+    @staticmethod
+    def _mcq_pass_fail_feedback(passed, level):
+        if passed and level == "Stable Level":
+            return "Great work! You have shown stable understanding of this concept. You can move forward."
+        if passed and level == "Developing Level":
+            return "Good progress! You passed this post-test, but you can still improve with more practice."
+        if not passed and level == "Fragile Level":
+            return "Your understanding is still not stable. Please repeat the gamified lesson and try the quiz again."
+        if not passed and level == "Misconception Level":
+            return "You may have misunderstood this concept. Please learn this concept again through the gamified activity before retrying the quiz."
+        # Fallbacks (should not happen with the defined thresholds)
+        return MasteryService._mcq_level_feedback(level)
+
     # -----------------------------------------------------------------
     # GET STATUS — Stage 1 mastery calculation
     # -----------------------------------------------------------------
@@ -405,7 +422,10 @@ class MasteryService:
         wrong_count = max(0, total_questions - correct_count)
         score_percentage = (correct_count / max(total_questions, 1)) * 100.0
         current_level = MasteryService._classify_mcq_level(score_percentage)
-        feedback_message = MasteryService._mcq_level_feedback(current_level)
+        passed = MasteryService._mcq_pass_fail(score_percentage)
+        post_test_status = "PASSED" if passed else "FAILED"
+        next_action = "DONE" if passed else "LEARN_AGAIN"
+        feedback_message = MasteryService._mcq_pass_fail_feedback(passed, current_level)
 
         # --- Load Stage-1 mastery from Firestore when not sent in the request ---
         mastery_data_from_db = None
@@ -481,6 +501,7 @@ class MasteryService:
                 # Component 4 feature fields (MCQ validation level)
                 "mcq_score_percentage": round(score_percentage, 2),
                 "current_level": current_level,
+                "post_test_status": post_test_status,
             })
 
             # Component 4: store/update MCQ result per student+concept
@@ -489,8 +510,11 @@ class MasteryService:
             mcq_ref = db.collection("mcq_posttest_results").document(mcq_doc_id)
             existing = mcq_ref.get()
             created_at = now
+            attempt_number = 1
             if existing.exists:
-                created_at = (existing.to_dict() or {}).get("createdAt", now)
+                prev = existing.to_dict() or {}
+                created_at = prev.get("createdAt", now)
+                attempt_number = int(prev.get("attemptNumber", 0) or 0) + 1
 
             mcq_ref.set({
                 "studentId": user_id,
@@ -500,7 +524,10 @@ class MasteryService:
                 "wrongAnswers": wrong_count,
                 "scorePercentage": round(score_percentage, 2),
                 "currentLevel": current_level,
+                "postTestStatus": post_test_status,
+                "attemptNumber": attempt_number,
                 "submittedAnswers": results,
+                "nextAction": next_action,
                 "createdAt": created_at,
                 "updatedAt": now,
             })
@@ -517,6 +544,9 @@ class MasteryService:
             "score_percentage": round(score_percentage, 2),
             "current_level": current_level,
             "feedback_message": feedback_message,
+            "post_test_status": post_test_status,
+            "attempt_number": int(attempt_number) if db else 1,
+            "next_action": next_action,
             "post_test_accuracy": post_acc,
             "average_confidence": diagnostic_result["breakdown"]["posttest"]["average_confidence"],
             "final_mastery_score": diagnostic_result["final_mastery_score"],
