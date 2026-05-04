@@ -11,6 +11,7 @@ import { MasteryAPI } from "../api/api.js";
 // State
 let currentStudentId = "";
 let currentConcept = "";
+let currentPreTestSchemaState = "Unknown";
 let questions = [];
 let selectedAnswers = {};
 let testResult = null;
@@ -23,8 +24,9 @@ let testResult = null;
 export async function renderPostTest(container, opts = {}) {
     currentStudentId = opts.studentId || "STU001";
     currentConcept = opts.concept || "variables";
+    currentPreTestSchemaState = opts.schemaState || "Unknown";
     const masteryScore = opts.masteryScore || 0;
-    const schemaState = opts.schemaState || "Unknown";
+    const schemaState = currentPreTestSchemaState;
     const onBack = opts.onBack || null;
     selectedAnswers = {};
     testResult = null;
@@ -224,14 +226,15 @@ async function submitTest() {
     }));
 
     try {
-        const result = await MasteryAPI.submitDiagnostic({
+        const raw = await MasteryAPI.submitDiagnostic({
             user_id: currentStudentId,
             concept: currentConcept,
+            schema_state_before: currentPreTestSchemaState,
             answers: answersPayload,
         });
 
-        testResult = result;
-        showResults(result);
+        testResult = normalizeDiagnosticResult(raw);
+        showResults(testResult);
 
     } catch (err) {
         if (submitBtn) {
@@ -242,7 +245,43 @@ async function submitTest() {
     }
 }
 
+/**
+ * Map API fields to what the results UI expects (backend uses schema_state, color, etc.).
+ */
+function normalizeDiagnosticResult(raw) {
+    const breakdown = raw.breakdown || {};
+    const pretest = breakdown.pretest_score ?? raw.pretest_score;
+    const masteryRaw =
+        raw.mastery_score ?? pretest ?? 0;
+    const masteryNum =
+        typeof masteryRaw === "number" && !Number.isNaN(masteryRaw)
+            ? masteryRaw
+            : parseFloat(masteryRaw) || 0;
+    const accRaw = raw.mcq_accuracy ?? raw.post_test_accuracy ?? 0;
+    const accNum =
+        typeof accRaw === "number" && !Number.isNaN(accRaw)
+            ? accRaw
+            : parseFloat(accRaw) || 0;
+
+    return {
+        ...raw,
+        pre_test_state:
+            raw.pre_test_state ?? currentPreTestSchemaState ?? "Unknown",
+        final_state: raw.final_state ?? raw.schema_state ?? "Unknown",
+        final_color: raw.final_color ?? raw.color ?? "#8899aa",
+        mastery_score: masteryNum,
+        mcq_accuracy: accNum,
+        wrong: raw.wrong ?? Math.max(0, (raw.total ?? 0) - (raw.correct ?? 0)),
+        score_percentage:
+            raw.score_percentage ??
+            (raw.total ? ((raw.correct ?? 0) / raw.total) * 100 : 0),
+        current_level: raw.current_level ?? "Unknown",
+        feedback_message: raw.feedback_message ?? "",
+    };
+}
+
 function showResults(result) {
+    result = normalizeDiagnosticResult(result);
     // Hide submit actions
     const actionsContainer = document.getElementById("posttest-actions");
     if (actionsContainer) actionsContainer.classList.add("hidden");
@@ -298,6 +337,35 @@ function showResults(result) {
                     </div>
                 </div>
 
+                <div class="posttest-result-details" style="margin-top: 1rem;">
+                    <div class="posttest-detail-row">
+                        <span>Total Questions</span>
+                        <span>${result.total}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Correct Answers</span>
+                        <span>${result.correct}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Wrong Answers</span>
+                        <span>${result.wrong}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Score</span>
+                        <span>${Number(result.score_percentage).toFixed(0)}%</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Current Level</span>
+                        <span class="posttest-state-badge large" data-state="${result.current_level}">${result.current_level}</span>
+                    </div>
+                </div>
+
+                ${result.feedback_message ? `
+                    <div class="posttest-state-change neutral" style="margin-top: 0.75rem;">
+                        ${result.feedback_message}
+                    </div>
+                ` : ""}
+
                 <div class="posttest-result-states">
                     <div class="posttest-state-block">
                         <span class="posttest-state-label">Before</span>
@@ -344,8 +412,14 @@ function showResults(result) {
 }
 
 function getStateRank(state) {
-    const ranks = { Misconception: 1, Fragile: 2, Developing: 3, Stable: 4 };
-    return ranks[state] || 0;
+    const ranks = {
+        Misconception: 1,
+        Fragile: 2,
+        Developing: 3,
+        Stable: 4,
+        Unknown: 0,
+    };
+    return ranks[state] ?? 0;
 }
 
 function escapeHtml(text) {
