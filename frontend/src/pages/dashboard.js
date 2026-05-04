@@ -45,7 +45,7 @@ async function loadDashboardStudents() {
         }
 
         select.innerHTML = students.map(s =>
-            `<option value="${s.studentId}">${s.studentName} (${s.studentId})</option>`
+            `<option value="${s.studentId}">${s.studentName}</option>`
         ).join("");
 
         select.addEventListener("change", () => {

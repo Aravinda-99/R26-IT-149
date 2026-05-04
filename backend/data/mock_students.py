@@ -18,7 +18,7 @@ Metrics per concept:
 mock_students = [
     {
         "studentId": "STU001",
-        "studentName": "Good Student",
+        "studentName": "Amal Perera",
         # Expected result: Stable
         "concepts": {
             "variables": {
@@ -70,7 +70,7 @@ mock_students = [
     },
     {
         "studentId": "STU002",
-        "studentName": "Average Student",
+        "studentName": "Kavindi Silva",
         # Expected result: Developing
         "concepts": {
             "variables": {
@@ -122,7 +122,7 @@ mock_students = [
     },
     {
         "studentId": "STU003",
-        "studentName": "Struggling Student",
+        "studentName": "Nuwan Jayasinghe",
         # Expected result: Fragile / Misconception
         "concepts": {
             "variables": {
