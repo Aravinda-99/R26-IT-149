@@ -1,6 +1,5 @@
 /**
  * API Client
- * ===========
  * Centralized fetch wrapper for all backend API calls.
  * Vite proxy sends /api/* requests to Flask at localhost:5000.
  */
@@ -45,7 +44,9 @@ export const GamificationAPI = {
 // --- Component 4: Mastery Tracker ---
 export const MasteryAPI = {
     getStatus: (userId) => apiRequest(`/mastery/status/${userId}`),
+    getStudents: () => apiRequest("/mastery/students"),
     update: (data) => apiRequest("/mastery/update", "POST", data),
+    getQuestions: (concept) => apiRequest(`/mastery/questions/${concept}`),
     submitDiagnostic: (data) => apiRequest("/mastery/diagnostic", "POST", data),
     getHistory: (userId, schema) => apiRequest(`/mastery/history/${userId}/${schema}`),
 };
