@@ -14,7 +14,20 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     if (body) options.body = JSON.stringify(body);
 
     const response = await fetch(`${API_BASE}${endpoint}`, options);
-    const data = await response.json();
+    const text = await response.text();
+    let data = {};
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch {
+            data = {
+                error:
+                    response.status === 404
+                        ? `Not found (${endpoint}) — is the API running and is the URL correct?`
+                        : `API error ${response.status}`,
+            };
+        }
+    }
     if (!response.ok) throw new Error(data.error || `API error ${response.status}`);
     return data;
 }

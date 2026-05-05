@@ -1,15 +1,15 @@
 """
 Component 4: Schema Mastery Tracker -- Routes
 ==============================================
-Flask API endpoints for mastery tracking, diagnostic post-tests,
-and dashboard data.
+Flask API endpoints for concept-specific schema mastery tracking,
+diagnostic post-tests with confidence, and dashboard data.
 
 Endpoints:
   GET  /api/mastery/status/<user_id>         - Get mastery status for a student
   GET  /api/mastery/students                 - List all students with mastery overview
   POST /api/mastery/update                   - Update mastery after activity completion
-  GET  /api/mastery/questions/<concept>       - Get MCQ questions for Stage 2
-  POST /api/mastery/diagnostic               - Submit diagnostic MCQ results
+  GET  /api/mastery/questions/<concept>       - Get concept-specific MCQ questions
+  POST /api/mastery/diagnostic               - Submit diagnostic post-test with confidence
   GET  /api/mastery/history/<user_id>/<schema> - Get mastery trend data
 """
 
@@ -75,8 +75,11 @@ def update_mastery():
 @mastery_bp.route("/questions/<concept>", methods=["GET"])
 def get_questions(concept):
     """
-    Stage 2: Get MCQ diagnostic questions for a specific concept.
-    Returns questions without answers (answers are checked server-side).
+    Get concept-specific MCQ diagnostic questions.
+
+    Returns only the 10 questions for the requested concept.
+    Answers are stripped — grading happens server-side.
+    Includes difficulty level and confidence prompt per question.
     """
     valid_concepts = ["variables", "operators", "loops", "arrays", "methods"]
     if concept not in valid_concepts:
@@ -95,16 +98,27 @@ def get_questions(concept):
 @mastery_bp.route("/diagnostic", methods=["POST"])
 def submit_diagnostic():
     """
-    Stage 2: Submit diagnostic MCQ answers and get final schema state.
+    Submit concept-specific diagnostic post-test with confidence levels.
+
+    This endpoint implements the full Concept-Specific Schema Mastery
+    Tracking algorithm.  It accepts data from Components 1–3 together
+    with post-test answers + confidence and returns the final schema
+    state, learning gain, and progression decision.
 
     Expects JSON body:
     {
         "user_id": "STU001",
-        "concept": "variables",
+        "concept": "loops",
+        "pretest_score": 0.30,
+        "error_category": "off-by-one error",
+        "error_severity": 0.7,
+        "gamified_score": 0.75,
+        "num_attempts": 2,
+        "time_taken": 180,
         "answers": [
-            {"question_id": "VAR_OP_01", "selected_option": "A"},
-            {"question_id": "VAR_CT_01", "selected_option": "D"},
-            {"question_id": "VAR_CR_01", "selected_option": "B"}
+            {"question_id": "LOOPS_OP_01", "selected_option": "B", "confidence": "high"},
+            {"question_id": "LOOPS_OP_02", "selected_option": "B", "confidence": "medium"},
+            ...
         ]
     }
     """
@@ -124,7 +138,7 @@ def submit_diagnostic():
 @mastery_bp.route("/history/<user_id>/<schema>", methods=["GET"])
 def get_history(user_id, schema):
     """
-    Stage 3: Return mastery trend data for a student and concept.
+    Return mastery trend data for a student and concept.
     Use schema="overall" for aggregate trend data.
     """
     try:

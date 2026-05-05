@@ -11,6 +11,8 @@ import { MasteryAPI } from "../api/api.js";
 // State
 let currentStudentId = "";
 let currentConcept = "";
+let currentPreTestSchemaState = "Unknown";
+let currentOnBack = null;
 let questions = [];
 let selectedAnswers = {};
 let testResult = null;
@@ -23,9 +25,11 @@ let testResult = null;
 export async function renderPostTest(container, opts = {}) {
     currentStudentId = opts.studentId || "STU001";
     currentConcept = opts.concept || "variables";
+    currentPreTestSchemaState = opts.schemaState || "Unknown";
     const masteryScore = opts.masteryScore || 0;
-    const schemaState = opts.schemaState || "Unknown";
+    const schemaState = currentPreTestSchemaState;
     const onBack = opts.onBack || null;
+    currentOnBack = onBack;
     selectedAnswers = {};
     testResult = null;
 
@@ -224,14 +228,15 @@ async function submitTest() {
     }));
 
     try {
-        const result = await MasteryAPI.submitDiagnostic({
+        const raw = await MasteryAPI.submitDiagnostic({
             user_id: currentStudentId,
             concept: currentConcept,
+            schema_state_before: currentPreTestSchemaState,
             answers: answersPayload,
         });
 
-        testResult = result;
-        showResults(result);
+        testResult = normalizeDiagnosticResult(raw);
+        showResults(testResult);
 
     } catch (err) {
         if (submitBtn) {
@@ -242,7 +247,92 @@ async function submitTest() {
     }
 }
 
+/**
+ * Map API fields to what the results UI expects (backend uses schema_state, color, etc.).
+ */
+function normalizeDiagnosticResult(raw) {
+    const breakdown = raw.breakdown || {};
+    const pretest = breakdown.pretest_score ?? raw.pretest_score;
+    const masteryRaw =
+        raw.mastery_score ?? pretest ?? 0;
+    const masteryNum =
+        typeof masteryRaw === "number" && !Number.isNaN(masteryRaw)
+            ? masteryRaw
+            : parseFloat(masteryRaw) || 0;
+    const accRaw = raw.mcq_accuracy ?? raw.post_test_accuracy ?? 0;
+    const accNum =
+        typeof accRaw === "number" && !Number.isNaN(accRaw)
+            ? accRaw
+            : parseFloat(accRaw) || 0;
+
+    return {
+        ...raw,
+        pre_test_state:
+            raw.pre_test_state ?? currentPreTestSchemaState ?? "Unknown",
+        final_state: raw.final_state ?? raw.schema_state ?? "Unknown",
+        final_color: raw.final_color ?? raw.color ?? "#8899aa",
+        mastery_score: masteryNum,
+        mcq_accuracy: accNum,
+        wrong: raw.wrong ?? Math.max(0, (raw.total ?? 0) - (raw.correct ?? 0)),
+        score_percentage:
+            raw.score_percentage ??
+            (raw.total ? ((raw.correct ?? 0) / raw.total) * 100 : 0),
+        current_level: raw.current_level ?? "Unknown",
+        feedback_message: raw.feedback_message ?? "",
+        post_test_status: raw.post_test_status ?? "",
+        attempt_number: raw.attempt_number ?? 1,
+        next_action: raw.next_action ?? "",
+    };
+}
+
+function isPassed(result) {
+    const pct = Number(result.score_percentage);
+    if (!Number.isNaN(pct) && pct > 0) return pct >= 60;
+    const total = Number(result.total) || 0;
+    const correct = Number(result.correct) || 0;
+    return total ? (correct / total) * 100 >= 60 : false;
+}
+
+function redirectToGamifiedLesson(concept) {
+    // Minimal integration with existing stack: go to Games page and auto-launch
+    // the most relevant module section. This keeps the flow within the app.
+    const conceptToSection = {
+        variables: "integer",
+        operators: "integer",
+        loops: "integer",
+        arrays: "integer",
+        methods: "string",
+    };
+    const section = conceptToSection[concept] || "integer";
+    sessionStorage.setItem("codequest_menu_focus", section);
+
+    const gamesLink = document.querySelector('.nav-link[data-page="games"]');
+    gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+    // After the Games page renders, click launch for the chosen module.
+    const launchIdBySection = {
+        integer: "launch-int-module-btn",
+        float: "launch-float-module-btn",
+        char: "launch-char-module-btn",
+        string: "launch-string-module-btn",
+    };
+    const launchId = launchIdBySection[section] || launchIdBySection.integer;
+
+    const startedAt = Date.now();
+    const tryClick = () => {
+        const btn = document.getElementById(launchId);
+        if (btn) {
+            btn.click();
+            return;
+        }
+        if (Date.now() - startedAt > 4000) return;
+        setTimeout(tryClick, 100);
+    };
+    setTimeout(tryClick, 0);
+}
+
 function showResults(result) {
+    result = normalizeDiagnosticResult(result);
     // Hide submit actions
     const actionsContainer = document.getElementById("posttest-actions");
     if (actionsContainer) actionsContainer.classList.add("hidden");
@@ -286,16 +376,55 @@ function showResults(result) {
     if (resultContainer) {
         const stateChanged = result.pre_test_state !== result.final_state;
         const improved = getStateRank(result.final_state) > getStateRank(result.pre_test_state);
+        const passed = isPassed(result);
+        const title = passed ? "Passed" : "Try Again";
+        const actionLabel = passed ? "Done" : "Learn Again";
+        const actionId = passed ? "posttest-done-btn" : "posttest-learn-again-btn";
 
         resultContainer.innerHTML = `
             <div class="posttest-result-card">
-                <h2>Diagnostic Results</h2>
+                <h2>${title}</h2>
 
                 <div class="posttest-result-score">
                     <div class="posttest-result-circle" style="--score-color: ${result.final_color}">
                         <span class="posttest-result-fraction">${result.correct}/${result.total}</span>
                         <span class="posttest-result-label">Correct</span>
                     </div>
+                </div>
+
+                <div class="posttest-result-details" style="margin-top: 1rem;">
+                    <div class="posttest-detail-row">
+                        <span>Total Questions</span>
+                        <span>${result.total}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Correct Answers</span>
+                        <span>${result.correct}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Wrong Answers</span>
+                        <span>${result.wrong}</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Score</span>
+                        <span>${Number(result.score_percentage).toFixed(0)}%</span>
+                    </div>
+                    <div class="posttest-detail-row">
+                        <span>Current Level</span>
+                        <span class="posttest-state-badge large" data-state="${result.current_level}">${result.current_level}</span>
+                    </div>
+                </div>
+
+                ${result.feedback_message ? `
+                    <div class="posttest-state-change neutral" style="margin-top: 0.75rem;">
+                        ${result.feedback_message}
+                    </div>
+                ` : ""}
+
+                <div class="posttest-actions" style="margin-top: 1rem; display:flex; justify-content:flex-end;">
+                    <button class="btn btn-primary" id="${actionId}">
+                        ${actionLabel}
+                    </button>
                 </div>
 
                 <div class="posttest-result-states">
@@ -340,12 +469,29 @@ function showResults(result) {
         `;
         resultContainer.classList.remove("hidden");
         resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        const doneBtn = document.getElementById("posttest-done-btn");
+        if (doneBtn) {
+            doneBtn.addEventListener("click", () => {
+                if (currentOnBack) currentOnBack();
+            });
+        }
+        const learnAgainBtn = document.getElementById("posttest-learn-again-btn");
+        if (learnAgainBtn) {
+            learnAgainBtn.addEventListener("click", () => redirectToGamifiedLesson(currentConcept));
+        }
     }
 }
 
 function getStateRank(state) {
-    const ranks = { Misconception: 1, Fragile: 2, Developing: 3, Stable: 4 };
-    return ranks[state] || 0;
+    const ranks = {
+        Misconception: 1,
+        Fragile: 2,
+        Developing: 3,
+        Stable: 4,
+        Unknown: 0,
+    };
+    return ranks[state] ?? 0;
 }
 
 function escapeHtml(text) {
