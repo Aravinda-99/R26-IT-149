@@ -11,6 +11,17 @@ import { renderPostTest } from "./posttest.js";
 
 let currentContainer = null;
 
+function normalizeStudent(s = {}) {
+    const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
+    const studentName =
+        s.studentName ?? s.student_name ?? s.name ?? (studentId ? String(studentId) : "");
+    return {
+        ...s,
+        studentId,
+        studentName,
+    };
+}
+
 export async function renderMastery(container) {
     currentContainer = container;
 
@@ -45,7 +56,7 @@ async function loadStudents() {
     const select = document.getElementById("student-select");
     try {
         const data = await MasteryAPI.getStudents();
-        const students = data.students || [];
+        const students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
 
         if (students.length === 0) {
             select.innerHTML = `<option value="">No students found</option>`;

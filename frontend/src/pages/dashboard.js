@@ -7,6 +7,17 @@
 
 import { MasteryAPI, AdaptiveAPI } from "../api/api.js";
 
+function normalizeStudent(s = {}) {
+    const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
+    const studentName =
+        s.studentName ?? s.student_name ?? s.name ?? (studentId ? String(studentId) : "");
+    return {
+        ...s,
+        studentId,
+        studentName,
+    };
+}
+
 export async function renderDashboard(container) {
     container.innerHTML = `
         <div class="dashboard-page">
@@ -37,7 +48,7 @@ async function loadDashboardStudents() {
     const select = document.getElementById("dashboard-student-select");
     try {
         const data = await MasteryAPI.getStudents();
-        const students = data.students || [];
+        const students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
 
         if (students.length === 0) {
             select.innerHTML = `<option value="">No students found</option>`;
@@ -58,7 +69,7 @@ async function loadDashboardStudents() {
     } catch (err) {
         select.innerHTML = `<option value="">Failed to load</option>`;
         document.getElementById("dashboard-content").innerHTML =
-            `<p style="color: var(--accent-orange); text-align: center;">Could not load student data</p>`;
+            `<p style="color: var(--accent-orange); text-align: center;">Could not load student data${err?.message ? `: ${err.message}` : ""}</p>`;
     }
 }
 
