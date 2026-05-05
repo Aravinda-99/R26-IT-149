@@ -25,6 +25,18 @@ function hideGameContainer() {
 }
 
 /**
+ * Clean up any mounted Phaser UI when leaving the Games page.
+ *
+ * Bug fix (post-test "Learn Again" flow):
+ * The Phaser container lives outside the page router (`#phaser-container` is not inside `#page-container`),
+ * so it can remain visible across navigation unless we explicitly hide/destroy it.
+ */
+export function disposeGames() {
+    destroyGame();
+    hideGameContainer();
+}
+
+/**
  * @param {"integer"|"float"|"char"|"string"} section — which block of the in-game menu to scroll to
  */
 function launchGame(section) {
@@ -33,6 +45,9 @@ function launchGame(section) {
     } else {
         sessionStorage.setItem(MENU_FOCUS_KEY, section);
     }
+    // Ensure we never stack/duplicate old game canvases when relaunching.
+    // This is UI cleanup only; it doesn't change scoring/logic.
+    destroyGame();
     showGameContainer();
     mountGame({ parent: "phaser-container" });
     document.getElementById("phaser-container")?.scrollIntoView({ behavior: "smooth", block: "start" });

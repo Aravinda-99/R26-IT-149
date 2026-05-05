@@ -43,6 +43,168 @@ CONCEPT_NAMES = {
 
 class MasteryService:
 
+    @staticmethod
+    def _map_current_level_to_schema_state(current_level: str):
+        """
+        Component 4 post-test uses labels like "Fragile Level".
+        Dashboard UI expects: Stable | Developing | Fragile | Misconception.
+        """
+        if not current_level:
+            return None
+        s = str(current_level).strip()
+        if s.endswith("Level"):
+            s = s.replace("Level", "").strip()
+        # Normalise common variants
+        mapping = {
+            "Stable": "Stable",
+            "Developing": "Developing",
+            "Fragile": "Fragile",
+            "Misconception": "Misconception",
+        }
+        return mapping.get(s, None)
+
+    # -----------------------------------------------------------------
+    # COMPONENT 4 IMPROVEMENT: Evidence + mandatory MCQ validation
+    # -----------------------------------------------------------------
+    @staticmethod
+    def _clamp01(x):
+        try:
+            return max(0.0, min(float(x), 1.0))
+        except Exception:
+            return 0.0
+
+    @staticmethod
+    def _compute_evidence_score(
+        pretest_score,
+        gamified_score,
+        attempt_score,
+        time_score,
+        error_severity_score,
+    ):
+        """
+        EvidenceScore combines prior components (no ML):
+          (0.25 × ConceptPreTestScore) +
+          (0.30 × GamifiedActivityScore) +
+          (0.15 × AttemptScore) +
+          (0.15 × TimeScore) +
+          (0.15 × ErrorSeverityScore)
+        All inputs are expected normalised to [0, 1].
+        """
+        p = MasteryService._clamp01(pretest_score)
+        g = MasteryService._clamp01(gamified_score)
+        a = MasteryService._clamp01(attempt_score)
+        t = MasteryService._clamp01(time_score)
+        e = MasteryService._clamp01(error_severity_score)
+        score = (0.25 * p) + (0.30 * g) + (0.15 * a) + (0.15 * t) + (0.15 * e)
+        return MasteryService._clamp01(score)
+
+    @staticmethod
+    def _confidence_summary(results):
+        """
+        Summarise confidence distribution and detect risky patterns:
+        - high_correct_low_confidence: correct but mostly low confidence → fragile
+        - wrong_high_confidence: wrong with high confidence → possible misconception
+        """
+        conf_counts = {"low": 0, "medium": 0, "high": 0}
+        wrong_high_conf = 0
+        correct_low_conf = 0
+        total = 0
+        for r in results or []:
+            c = str(r.get("confidence", "medium")).lower().strip()
+            if c not in conf_counts:
+                c = "medium"
+            conf_counts[c] += 1
+            total += 1
+            if not r.get("is_correct") and c == "high":
+                wrong_high_conf += 1
+            if r.get("is_correct") and c == "low":
+                correct_low_conf += 1
+
+        total = max(total, 1)
+        return {
+            "counts": conf_counts,
+            "ratios": {
+                "low": round(conf_counts["low"] / total, 4),
+                "medium": round(conf_counts["medium"] / total, 4),
+                "high": round(conf_counts["high"] / total, 4),
+            },
+            "wrong_high_confidence": wrong_high_conf,
+            "correct_low_confidence": correct_low_conf,
+        }
+
+    @staticmethod
+    def _classify_schema_from_score(final_schema_score):
+        """
+        Component 4 classification (same thresholds as schema states):
+          0.80–1.00 Stable, 0.60–0.79 Developing, 0.40–0.59 Fragile, else Misconception.
+        """
+        return classify_schema_state(MasteryService._clamp01(final_schema_score))
+
+    @staticmethod
+    def _final_decision(evidence_score, mcq_score, confidence_summary):
+        """
+        FinalSchemaScore = (0.40 × EvidenceScore) + (0.60 × MCQScore)
+
+        Mandatory validation rule:
+        Stable only if:
+          - FinalSchemaScore >= 0.80
+          - MCQScore >= 0.80
+          - confidence is not mostly low
+
+        If EvidenceScore is high but MCQScore is low, do not classify Stable.
+        """
+        ev = MasteryService._clamp01(evidence_score)
+        mcq = MasteryService._clamp01(mcq_score)
+        final_score = MasteryService._clamp01((0.40 * ev) + (0.60 * mcq))
+
+        mostly_low_conf = (confidence_summary or {}).get("ratios", {}).get("low", 0) >= 0.5
+        wrong_high_conf = (confidence_summary or {}).get("wrong_high_confidence", 0) > 0
+
+        # Base classification from combined score
+        state = MasteryService._classify_schema_from_score(final_score)
+
+        # Enforce "Stable requires MCQ >= 0.80"
+        if mcq < 0.80 and state == "Stable":
+            # Downgrade based on MCQ band
+            if mcq >= 0.60:
+                state = "Developing"
+            elif mcq >= 0.40:
+                state = "Fragile"
+            else:
+                state = "Misconception"
+
+        # Confidence validation: high MCQ but mostly low confidence → Fragile
+        if mcq >= 0.80 and mostly_low_conf:
+            state = "Fragile"
+
+        # If wrong answers have high confidence, treat as possible misconception signal.
+        # Do not jump straight to Misconception unless MCQ is already weak.
+        if wrong_high_conf and mcq < 0.60:
+            state = "Misconception"
+
+        # Recommendation messages (UI text only)
+        messages = {
+            "Stable": "Your learning activity performance and post-test answers show stable understanding. You can move to the next concept.",
+            "Developing": "You are improving, but your understanding is not fully stable yet. More practice is recommended.",
+            "Fragile": "Your activity performance and post-test result do not fully match. Please learn this concept again to strengthen your understanding.",
+            "Misconception": "Your answers show that this concept may be misunderstood. Please repeat the gamified lesson before trying again.",
+        }
+
+        # Post-test status / next action (kept consistent with the project's existing flow)
+        post_test_status = "PASSED" if mcq >= 0.60 else "FAILED"
+        next_action = "DONE" if post_test_status == "PASSED" and state in ("Stable", "Developing") else "LEARN_AGAIN"
+
+        return {
+            "evidenceScore": round(ev, 4),
+            "mcqScore": round(mcq, 4),
+            "finalSchemaScore": round(final_score, 4),
+            "schema_state": state,
+            "color": get_state_color(state),
+            "post_test_status": post_test_status,
+            "next_action": next_action,
+            "recommendation": messages.get(state, ""),
+        }
+
     # -----------------------------------------------------------------
     # COMPONENT 4 FEATURE: MCQ score -> level + feedback
     # -----------------------------------------------------------------
@@ -127,6 +289,32 @@ class MasteryService:
 
         student_data = doc.to_dict()
         result = process_student(student_data)
+
+        # Component 4 sync:
+        # If the student has completed a post-test for a concept, prefer the latest
+        # post-test "currentLevel" as the dashboard schema state for that concept.
+        # This does NOT change scoring or pass/fail logic — it only synchronizes
+        # what the dashboard shows.
+        if db:
+            for concept_key, concept_view in result.get("concepts", {}).items():
+                mcq_doc_id = f"{user_id}_{concept_key}"
+                mcq_doc = db.collection("mcq_posttest_results").document(mcq_doc_id).get()
+                if not mcq_doc.exists:
+                    continue
+                mcq = mcq_doc.to_dict() or {}
+                mapped_state = MasteryService._map_current_level_to_schema_state(
+                    mcq.get("currentLevel")
+                )
+                if not mapped_state:
+                    continue
+
+                concept_view["schema_state"] = mapped_state
+                concept_view["color"] = get_state_color(mapped_state)
+                concept_view["needs_posttest"] = needs_posttest(mapped_state)
+                # expose fields for UI/debugging (optional consumers)
+                concept_view["post_test_status"] = mcq.get("postTestStatus", "")
+                concept_view["mcq_score_percentage"] = mcq.get("scorePercentage", None)
+                concept_view["level_updated_at"] = mcq.get("updatedAt", "")
 
         now = timestamp_now()
         for concept_name, concept_result in result["concepts"].items():
@@ -421,7 +609,12 @@ class MasteryService:
         total_questions = len(answers)
         wrong_count = max(0, total_questions - correct_count)
         score_percentage = (correct_count / max(total_questions, 1)) * 100.0
+        # MCQScore is the mandatory validation signal for final state.
+        mcq_score = correct_count / max(total_questions, 1)  # normalised [0, 1]
         current_level = MasteryService._classify_mcq_level(score_percentage)
+
+        # Keep existing pass/fail message mapping (UI-only) but final schema state
+        # will be decided by EvidenceScore + MCQScore (below).
         passed = MasteryService._mcq_pass_fail(score_percentage)
         post_test_status = "PASSED" if passed else "FAILED"
         next_action = "DONE" if passed else "LEARN_AGAIN"
@@ -491,9 +684,24 @@ class MasteryService:
             db.collection("diagnostic_results").add(diagnostic_doc)
 
             mastery_doc_id = f"{user_id}_{concept}"
+            # Component 4 improvement:
+            # Final schema state must combine EvidenceScore (prior components)
+            # with the mandatory MCQScore, so we compute and save the improved decision here.
+            interaction = (diagnostic_result.get("breakdown", {}) or {}).get("interaction", {}) or {}
+            evidence_score = MasteryService._compute_evidence_score(
+                pretest_score=pretest_score,
+                gamified_score=gamified_score,
+                attempt_score=interaction.get("attempt_score", 0),
+                time_score=interaction.get("time_score", 0),
+                error_severity_score=interaction.get("error_severity_score", 0),
+            )
+            conf_summary = MasteryService._confidence_summary(results)
+            decision = MasteryService._final_decision(evidence_score, mcq_score, conf_summary)
+
             db.collection("schema_mastery").document(mastery_doc_id).update({
                 "diagnostic_validated": True,
-                "final_state": diagnostic_result["schema_state"],
+                # Use improved final decision (do not allow Stable without MCQ validation)
+                "final_state": decision["schema_state"],
                 "final_mastery_score": diagnostic_result["final_mastery_score"],
                 "progression_decision": diagnostic_result["progression_decision"],
                 "learning_gain": diagnostic_result["learning_gain"]["raw_gain"],
@@ -501,7 +709,12 @@ class MasteryService:
                 # Component 4 feature fields (MCQ validation level)
                 "mcq_score_percentage": round(score_percentage, 2),
                 "current_level": current_level,
-                "post_test_status": post_test_status,
+                # Use improved pass/fail (MCQ thresholds) for dashboard sync
+                "post_test_status": decision["post_test_status"],
+                # Store the new combined scoring signals (for dashboard / audit)
+                "evidence_score": decision["evidenceScore"],
+                "mcq_score": decision["mcqScore"],
+                "final_schema_score": decision["finalSchemaScore"],
             })
 
             # Component 4: store/update MCQ result per student+concept
@@ -516,18 +729,32 @@ class MasteryService:
                 created_at = prev.get("createdAt", now)
                 attempt_number = int(prev.get("attemptNumber", 0) or 0) + 1
 
+            prev_level = None
+            if existing.exists:
+                prev = existing.to_dict() or {}
+                prev_level = prev.get("currentLevel")
+
             mcq_ref.set({
                 "studentId": user_id,
                 "conceptName": CONCEPT_NAMES.get(concept, concept),
+                # Component 4 spec: keep previous level alongside current
+                "previousLevel": prev_level,
+                # Component 4 improvement: store combined decision evidence
+                "evidenceScore": decision["evidenceScore"],
+                "mcqScore": decision["mcqScore"],
+                "finalSchemaScore": decision["finalSchemaScore"],
                 "totalQuestions": total_questions,
                 "correctAnswers": correct_count,
                 "wrongAnswers": wrong_count,
                 "scorePercentage": round(score_percentage, 2),
-                "currentLevel": current_level,
-                "postTestStatus": post_test_status,
+                # Dashboard should display latest final decision level
+                "currentLevel": f"{decision['schema_state']} Level",
+                "postTestStatus": decision["post_test_status"],
+                "confidenceSummary": conf_summary,
+                "recommendation": decision["recommendation"],
                 "attemptNumber": attempt_number,
                 "submittedAnswers": results,
-                "nextAction": next_action,
+                "nextAction": decision["next_action"],
                 "createdAt": created_at,
                 "updatedAt": now,
             })
@@ -544,9 +771,10 @@ class MasteryService:
             "score_percentage": round(score_percentage, 2),
             "current_level": current_level,
             "feedback_message": feedback_message,
-            "post_test_status": post_test_status,
+            # Component 4 improvement: return improved decision outputs
+            "post_test_status": decision["post_test_status"] if db else post_test_status,
             "attempt_number": int(attempt_number) if db else 1,
-            "next_action": next_action,
+            "next_action": decision["next_action"] if db else next_action,
             "post_test_accuracy": post_acc,
             "average_confidence": diagnostic_result["breakdown"]["posttest"]["average_confidence"],
             "final_mastery_score": diagnostic_result["final_mastery_score"],
@@ -554,10 +782,15 @@ class MasteryService:
             "mastery_score": float(pretest_score),
             "mcq_accuracy": post_acc,
             "pre_test_state": pre_test_state,
-            "final_state": diagnostic_result["schema_state"],
-            "final_color": diagnostic_result["color"],
-            "schema_state": diagnostic_result["schema_state"],
-            "color": diagnostic_result["color"],
+            "final_state": decision["schema_state"] if db else diagnostic_result["schema_state"],
+            "final_color": decision["color"] if db else diagnostic_result["color"],
+            "schema_state": decision["schema_state"] if db else diagnostic_result["schema_state"],
+            "color": decision["color"] if db else diagnostic_result["color"],
+            "evidence_score": decision["evidenceScore"] if db else None,
+            "mcq_score": decision["mcqScore"] if db else None,
+            "final_schema_score": decision["finalSchemaScore"] if db else None,
+            "confidence_summary": conf_summary if db else None,
+            "recommendation": decision["recommendation"] if db else "",
             "progression_decision": diagnostic_result["progression_decision"],
             "learning_gain": diagnostic_result["learning_gain"],
             "rules_applied": diagnostic_result["rules_applied"],
