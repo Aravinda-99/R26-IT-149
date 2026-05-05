@@ -5,16 +5,18 @@
  * Uses a simple event-emitter pattern for cross-scene communication.
  */
 
+const TOTAL_LEVELS = 15;
+
 const DEFAULT_STATE = {
-  currentLevel: 0,       // 0 = menu, 1-12 = levels
+  currentLevel: 0,       // 0 = menu, 1-15 = levels
   score: 0,
   xp: 0,
   lives: 3,
   maxLives: 3,
   combo: 0,
-  levelsCompleted: [false, false, false, false, false, false, false, false, false, false, false, false],
-  levelAccuracy: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  levelAttempts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  levelsCompleted: new Array(TOTAL_LEVELS).fill(false),
+  levelAccuracy: new Array(TOTAL_LEVELS).fill(0),
+  levelAttempts: new Array(TOTAL_LEVELS).fill(0),
   badges: [],
 };
 
@@ -111,9 +113,9 @@ class _GameManager {
   resetAll() {
     this.state = {
       ...DEFAULT_STATE,
-      levelsCompleted: [false, false, false, false, false, false, false, false, false, false, false, false],
-      levelAccuracy: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      levelAttempts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      levelsCompleted: new Array(TOTAL_LEVELS).fill(false),
+      levelAccuracy: new Array(TOTAL_LEVELS).fill(0),
+      levelAttempts: new Array(TOTAL_LEVELS).fill(0),
       badges: [],
     };
     this._emit("reset");

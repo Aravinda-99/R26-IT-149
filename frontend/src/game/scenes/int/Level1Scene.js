@@ -511,9 +511,9 @@ export class Level1Scene extends Phaser.Scene {
     const container = this.add.container(x, -40).setDepth(50);
 
     // Background circle
-    const bgColor = isInteger ? 0x27ae60 : 0xe74c3c;
+    const bgColor = 0x27ae60;
     const circle = this.add.circle(0, 0, NUM_RADIUS, bgColor, 0.92);
-    circle.setStrokeStyle(2, isInteger ? 0x2ecc71 : 0xc0392b);
+    circle.setStrokeStyle(2, 0x2ecc71);
     container.add(circle);
 
     // Number text

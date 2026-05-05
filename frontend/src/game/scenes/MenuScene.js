@@ -1,7 +1,7 @@
 /**
  * MenuScene — Level Selection Menu
  * ==================================
- * Animated starfield background with 12 level cards in 4 modules.
+ * Animated starfield background with 15 level cards in 5 modules.
  * Locked/unlocked state based on GameManager progress.
  */
 
@@ -23,9 +23,9 @@ export class MenuScene extends Phaser.Scene {
     try {
       const saved = await ProgressTracker.loadProgress();
       if (saved && saved.levelsCompleted) {
-        while (saved.levelsCompleted.length < 12) saved.levelsCompleted.push(false);
-        while ((saved.levelAccuracy || []).length < 12) (saved.levelAccuracy = saved.levelAccuracy || []).push(0);
-        while ((saved.levelAttempts || []).length < 12) (saved.levelAttempts = saved.levelAttempts || []).push(0);
+        while (saved.levelsCompleted.length < 15) saved.levelsCompleted.push(false);
+        while ((saved.levelAccuracy || []).length < 15) (saved.levelAccuracy = saved.levelAccuracy || []).push(0);
+        while ((saved.levelAttempts || []).length < 15) (saved.levelAttempts = saved.levelAttempts || []).push(0);
 
         GameManager.set("levelsCompleted", saved.levelsCompleted);
         GameManager.set("xp", saved.xp || 0);
@@ -234,9 +234,52 @@ export class MenuScene extends Phaser.Scene {
       this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xf59e0b);
     });
 
+    // ── OPERATORS MODULE HEADER ──
+    this.add.text(400, 488, "── OPERATORS MODULE ──", {
+      fontFamily: "monospace",
+      fontSize: "10px",
+      color: "#ff6b6b",
+      fontStyle: "bold",
+    }).setOrigin(0.5);
+
+    const operatorLevels = [
+      {
+        title: "Level 13: Math Magic Academy",
+        phase: "ACCRETION",
+        desc: "Learn operator spells — arithmetic, comparison, logical & more!",
+        badge: BADGES.math_wizard,
+        scene: "Level13Scene",
+        index: 12,
+      },
+      {
+        title: "Level 14: Calculation Arena",
+        phase: "TUNING",
+        desc: "Battle enemies with math — speed and accuracy are your weapons!",
+        badge: BADGES.combat_calculator,
+        scene: "Level14Scene",
+        index: 13,
+      },
+      {
+        title: "Level 15: Code Builder Pro",
+        phase: "RESTRUCTURING",
+        desc: "Build real Java programs using operators — professional IDE coding!",
+        badge: BADGES.code_master,
+        scene: "Level15Scene",
+        index: 14,
+      },
+    ];
+
+    operatorLevels.forEach((lvl, i) => {
+      const y = 504 + i * 32;
+      const unlocked = GameManager.isLevelUnlocked(lvl.index);
+      const completed = GameManager.get("levelsCompleted")[lvl.index];
+      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xff6b6b);
+    });
+
     // ── XP display ──
     const xp = GameManager.get("xp");
-    this.add.text(400, 502, `Total XP: ${xp}`, {
+    this.add.text(400, 612, `Total XP: ${xp}`, {
       fontFamily: "monospace",
       fontSize: "13px",
       color: "#fbbf24",
@@ -245,7 +288,7 @@ export class MenuScene extends Phaser.Scene {
     // ── Completion badge ──
     const allDone = GameManager.get("levelsCompleted").every(Boolean);
     if (allDone) {
-      this.add.text(400, 486, "🏅 ALL MODULES COMPLETE!", {
+      this.add.text(400, 596, "🏅 ALL MODULES COMPLETE!", {
         fontFamily: "Arial",
         fontSize: "12px",
         color: "#fbbf24",
@@ -254,7 +297,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // ── Reset button ──
-    const resetBtn = this.add.text(760, 516, "Reset", {
+    const resetBtn = this.add.text(760, 628, "Reset", {
       fontFamily: "Inter, Arial, sans-serif",
       fontSize: "11px",
       color: "#475569",
@@ -276,6 +319,7 @@ export class MenuScene extends Phaser.Scene {
       if (focus === "float") this.cameras.main.setScroll(0, 90);
       else if (focus === "char") this.cameras.main.setScroll(0, 175);
       else if (focus === "string") this.cameras.main.setScroll(0, 265);
+      else if (focus === "operators") this.cameras.main.setScroll(0, 370);
     } catch { /* ignore */ }
   }
 

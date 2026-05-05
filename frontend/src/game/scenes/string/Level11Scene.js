@@ -1,7 +1,7 @@
 /**
  * Level11Scene — String Operations (Tuning Phase)
  * ═══════════════════════════════════════════════════════════════════════════
- * v3 — All 6 operations in one scene with unique mini-game per operation
+ * v4 — Gamified mechanics upgrade: unique interactive mini-games per operation
  *
  * Operations & Mechanics:
  * 1. length()           → Ruler Measure (drag notch to cut point)
@@ -219,6 +219,9 @@ export class Level11Scene extends Phaser.Scene {
     this.totalCorrect = 0;
     this.totalAttempted = 0;
     this.elements = [];
+    this.lives = 3;
+    this.combo = 0;
+    this._timerTween = null;
 
     this._createBackground();
     this._createParticleTextures();
@@ -507,8 +510,33 @@ export class Level11Scene extends Phaser.Scene {
 
   _handleWrong() {
     this.streak = 0;
+    this.combo = 0;
     this.totalAttempted++;
+    this.lives = Math.max(0, this.lives - 1);
     this._updateHUD();
+  }
+
+  _spawnScorePopup(x, y, pts, color = COLORS.success_green) {
+    const t = this.add.text(x, y, pts, {
+      fontFamily: "Arial", fontSize: "22px", color, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(300);
+    this.tweens.add({ targets: t, y: y - 65, alpha: 0, duration: 1100, ease: "Cubic.out", onComplete: () => t.destroy() });
+  }
+
+  _startTimer(sec, onExpire) {
+    this._stopTimer();
+    const bg = this.add.rectangle(W / 2, 4, W - 20, 7, C.purple_border).setDepth(500).setOrigin(0.5, 0);
+    const bar = this.add.rectangle(10, 4, W - 20, 7, C.success_green).setDepth(501).setOrigin(0, 0);
+    this._addEl(bg, bar);
+    this._timerTween = this.tweens.add({
+      targets: bar, scaleX: { from: 1, to: 0 }, duration: sec * 1000, ease: "Linear",
+      onUpdate: () => bar.setFillStyle(bar.scaleX > 0.5 ? C.success_green : bar.scaleX > 0.25 ? C.orange : C.error_red),
+      onComplete: onExpire
+    });
+  }
+
+  _stopTimer() {
+    if (this._timerTween) { this._timerTween.stop(); this._timerTween = null; }
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
@@ -653,122 +681,88 @@ export class Level11Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playLength() {
+    /* ── RULER DRAG: Drag the notch to the correct length position, then lock ── */
     const round = OPERATIONS[0].rounds[this.roundIndex];
-    const str = round.str;
-    const correctLen = parseInt(round.answer);
+    const str = round.str, correctLen = parseInt(round.answer);
+    const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2, ry = 220;
 
-    // Task bar
-    const taskTxt = this.add.text(W / 2, 75, `📏  "${str}".length() = ?`, {
-      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(this.add.text(W / 2, 82, `📏  Drag the notch to mark the length of "${str}"`, {
+      fontFamily: "Arial", fontSize: "15px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
 
-    // Character boxes
-    const boxes = this._charBoxes(str, W / 2, 160, { baseDelay: 100 });
+    const boxes = this._charBoxes(str, W / 2, 155, { baseDelay: 80 });
 
-    // Ruler
-    const rulerY = 220;
-    const totalW = str.length * (BOX_W + 4);
-    const startX = W / 2 - totalW / 2;
+    const rb = this.add.graphics().setDepth(95);
+    rb.fillStyle(C.purple_border, 1);
+    rb.fillRoundedRect(x0 - 14, ry - 5, str.length * step + 28, 10, 4);
+    this._addEl(rb);
 
-    const ruler = this.add.graphics().setDepth(98);
-    ruler.fillStyle(C.purple_border, 1);
-    ruler.fillRoundedRect(startX - 10, rulerY - 6, totalW + 20, 12, 4);
-    this._addEl(ruler);
-
-    // Tick labels
     for (let i = 0; i <= str.length; i++) {
-      const tx = startX + i * (BOX_W + 4) - 2;
-      const tick = this.add.graphics().setDepth(99);
-      tick.fillStyle(C.primary_purple, 1);
-      tick.fillRect(tx, rulerY - 8, 2, 16);
-
-      const lbl = this.add.text(tx + 1, rulerY + 15, i.toString(), {
-        fontFamily: "Arial", fontSize: "11px", color: COLORS.purple_dark, fontStyle: "bold"
-      }).setOrigin(0.5).setDepth(100);
-      this._addEl(tick, lbl);
+      const tx = x0 + i * step;
+      const tg = this.add.graphics().setDepth(96);
+      tg.fillStyle(C.primary_purple, 1); tg.fillRect(tx - 1, ry - 11, 2, 22);
+      this._addEl(tg, this.add.text(tx, ry + 18, `${i}`, {
+        fontFamily: "Arial", fontSize: "10px", color: COLORS.purple_dark, fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(97));
     }
 
-    // Answer input: clickable number selector
-    const selectorY = 300;
+    let pos = 0;
+    const nc = this.add.container(x0, ry - 40).setDepth(160);
+    const stem = this.add.graphics();
+    stem.fillStyle(C.primary_purple, 1); stem.fillRect(-1.5, 0, 3, 50);
+    const flag = this.add.graphics();
+    flag.fillStyle(C.primary_purple, 1); flag.fillRoundedRect(-22, -34, 44, 32, 8);
+    flag.lineStyle(2, C.purple_dark, 1); flag.strokeRoundedRect(-22, -34, 44, 32, 8);
+    const nt = this.add.text(0, -18, "0", {
+      fontFamily: "Arial", fontSize: "16px", color: COLORS.white, fontStyle: "bold"
+    }).setOrigin(0.5);
+    nc.add([stem, flag, nt]);
+    nc.setSize(44, 90).setInteractive({ draggable: true, useHandCursor: true });
+    this.input.setDraggable(nc);
+    const pulse = this.tweens.add({ targets: nc, scale: { from: 1, to: 1.07 }, duration: 700, yoyo: true, repeat: -1 });
 
-    const prompt = this.add.text(W / 2, selectorY - 30, "What is the length? Click the correct number:", {
-      fontFamily: "Arial", fontSize: "14px", color: COLORS.text_secondary
+    const cutLbl = this.add.text(W / 2, 268, "CUT AT: 0", {
+      fontFamily: "Courier New", fontSize: "15px", color: COLORS.purple_dark, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100);
-    this._addEl(prompt);
+    this._addEl(cutLbl, nc);
 
-    // Generate options (correct + 3 wrong)
-    const options = this._generateOptions(correctLen, 0, str.length + 2);
-
-    options.forEach((opt, i) => {
-      const ox = W / 2 - ((options.length - 1) * 60) / 2 + i * 60;
-      const optBg = this.add.graphics().setDepth(100);
-      optBg.fillStyle(C.white, 1);
-      optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-      optBg.lineStyle(2, C.purple_border, 1);
-      optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-
-      const optTxt = this.add.text(ox, selectorY, opt.toString(), {
-        fontFamily: "Courier New", fontSize: "20px", color: COLORS.text_primary, fontStyle: "bold"
-      }).setOrigin(0.5).setDepth(101);
-
-      const hitArea = this.add.rectangle(ox, selectorY, 48, 44).setAlpha(0.001)
-        .setInteractive({ useHandCursor: true }).setDepth(102);
-
-      hitArea.on("pointerover", () => {
-        optBg.clear();
-        optBg.fillStyle(C.purple_bg, 1);
-        optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-        optBg.lineStyle(2, C.primary_purple, 1);
-        optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
+    nc.on("drag", (_, dx) => {
+      pulse.stop(); nc.setScale(1);
+      pos = Phaser.Math.Clamp(Math.round((dx - x0) / step), 0, str.length);
+      nc.x = x0 + pos * step; nt.setText(`${pos}`); cutLbl.setText(`CUT AT: ${pos}`);
+      boxes.forEach((b, i) => {
+        b.drawBox(i < pos ? C.purple_bg : C.white, i < pos ? C.primary_purple : C.purple_border);
+        b.charTxt.setAlpha(i < pos ? 1 : 0.3);
       });
+      if (Math.random() < 0.3) {
+        const p = this.add.circle(nc.x, ry + 22, 3, C.primary_purple, 0.7).setDepth(200);
+        this.tweens.add({ targets: p, alpha: 0, y: p.y + 18, duration: 350, onComplete: () => p.destroy() });
+      }
+    });
 
-      hitArea.on("pointerout", () => {
-        optBg.clear();
-        optBg.fillStyle(C.white, 1);
-        optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-        optBg.lineStyle(2, C.purple_border, 1);
-        optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-      });
+    this._startTimer(20, () => {
+      this._stopTimer(); this._handleWrong();
+      this._showFeedback(false, `Time's up! Length = ${correctLen}`, "Count every character!", () => this._nextRound());
+    });
 
-      hitArea.on("pointerup", () => {
-        // Disable all options
-        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-
-        if (opt === correctLen) {
-          // Correct
-          optBg.clear();
-          optBg.fillStyle(C.success_bg, 1);
-          optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-          optBg.lineStyle(2, C.success_green, 1);
-          optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-          optTxt.setColor(COLORS.success_green);
-
-          // Highlight all boxes
+    this.time.delayedCall(400, () => {
+      this._btn(W / 2, 335, "🔒 Lock Answer", true, () => {
+        this._stopTimer();
+        if (pos === correctLen) {
+          flag.clear(); flag.fillStyle(C.success_green, 1); flag.fillRoundedRect(-22, -34, 44, 32, 8);
           boxes.forEach(b => b.drawBox(C.success_bg, C.success_green));
-
-          const pts = this._handleCorrect();
-          let sub = str.includes(" ") ? "Spaces count as characters too!" : null;
-          this._showFeedback(true, `"${str}" has ${correctLen} characters. +${pts} pts`, sub, () => this._nextRound());
+          this._spawnConfetti(nc.x, ry, 22);
+          const pts = this._handleCorrect(); this._spawnScorePopup(nc.x, ry - 60, `+${pts}`);
+          this._showFeedback(true, `"${str}".length() = ${correctLen} ✓  +${pts} pts`,
+            str.includes(" ") ? "Spaces count too!" : null, () => this._nextRound());
         } else {
-          // Wrong
-          optBg.clear();
-          optBg.fillStyle(C.error_bg, 1);
-          optBg.fillRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-          optBg.lineStyle(2, C.error_red, 1);
-          optBg.strokeRoundedRect(ox - 24, selectorY - 20, 48, 44, 10);
-          optTxt.setColor(COLORS.error_red);
-
-          this._handleWrong();
-          let hint = "";
-          if (opt === correctLen - 1) hint = "Remember: length counts the total, not the last index";
-          else if (opt === correctLen + 1) hint = "One too many — count again";
-          else if (str.includes(" ")) hint = "Spaces count as characters too!";
-          this._showFeedback(false, `Actual length: ${correctLen} (you picked ${opt})`, hint, () => this._nextRound());
+          flag.clear(); flag.fillStyle(C.error_red, 1); flag.fillRoundedRect(-22, -34, 44, 32, 8);
+          this.tweens.add({ targets: nc, x: nc.x + 6, duration: 55, yoyo: true, repeat: 7 });
+          this.cameras.main.shake(220, 0.004); this._handleWrong();
+          this._showFeedback(false, `Picked ${pos}, actual: ${correctLen}`,
+            pos < correctLen ? "Keep counting!" : "Too many — count again!", () => this._nextRound());
         }
       });
-
-      this._addEl(optBg, optTxt, hitArea);
     });
   }
 
@@ -776,82 +770,83 @@ export class Level11Scene extends Phaser.Scene {
    *  OPERATION 2: charAt(i) — INDEX JUMPER
    * ═══════════════════════════════════════════════════════════════════════ */
 
+
   _playCharAt() {
+    /* ── FROG HOP: Hop the frog to the target index using arrow buttons or keys ── */
     const round = OPERATIONS[1].rounds[this.roundIndex];
-    const str = round.str;
-    const idx = round.idx;
-    const correctChar = round.answer;
+    const str = round.str, idx = round.idx, correctChar = round.answer;
 
-    const taskTxt = this.add.text(W / 2, 75, `👆  "${str}".charAt(${idx}) = ?`, {
-      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(this.add.text(W / 2, 82, `🐸  Hop to index ${idx}, then Grab it!  "${str}".charAt(${idx}) = ?`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
 
-    const instruction = this.add.text(W / 2, 110, "Click the character at the highlighted index", {
-      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(instruction);
+    const boxes = this._charBoxes(str, W / 2, 195, { baseDelay: 80 });
 
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
-
-    // Highlight target index
-    this.time.delayedCall(300 + str.length * 80, () => {
-      boxes[idx].drawBox(C.purple_bg, C.primary_purple);
-
-      // Pulse animation on target index
-      this.tweens.add({
-        targets: boxes[idx].idxTxt,
-        scale: { from: 1, to: 1.5 }, yoyo: true,
-        duration: 500, repeat: -1, ease: "Sine.inOut"
-      });
-
-      // Arrow pointing to target
-      const arrow = this.add.text(boxes[idx].x, 145, "⬇", {
-        fontSize: "22px", color: COLORS.primary_purple
-      }).setOrigin(0.5).setDepth(102);
-
-      this.tweens.add({
-        targets: arrow, y: { from: 140, to: 150 },
-        duration: 600, yoyo: true, repeat: -1, ease: "Sine.inOut"
-      });
-
-      this._addEl(arrow);
+    // Lily pads under each box
+    boxes.forEach(b => {
+      this._addEl(
+        this.add.circle(b.x, b.y + 38, 22, 0x27AE60, 0.8).setDepth(94),
+        this.add.circle(b.x, b.y + 38, 14, 0x2ECC71, 0.5).setDepth(95)
+      );
     });
 
-    // Make each box clickable
-    boxes.forEach((b, i) => {
-      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
-        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
+    // Target arrow
+    const arr = this.add.text(boxes[idx].x, boxes[idx].y - 58, "🎯", { fontSize: "18px" }).setOrigin(0.5).setDepth(102);
+    this.tweens.add({ targets: arr, y: arr.y - 8, duration: 600, yoyo: true, repeat: -1 });
+    this._addEl(arr);
 
-      hitArea.on("pointerover", () => {
-        if (i !== idx) b.drawBox(C.purple_pale, C.purple_border);
-      });
-      hitArea.on("pointerout", () => {
-        if (i !== idx) b.drawBox(C.white, C.purple_border);
-      });
+    let frogPos = 0, hopping = false, hopCount = 0;
+    const frog = this.add.text(boxes[0].x, boxes[0].y - 42, "🐸", { fontSize: "30px" }).setOrigin(0.5).setDepth(200);
+    const hopLbl = this.add.text(W / 2, 262, "Hops: 0", {
+      fontFamily: "Arial", fontSize: "12px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(frog, hopLbl);
 
-      hitArea.on("pointerup", () => {
-        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-
-        const clickedChar = str[i];
-        if (clickedChar === correctChar) {
-          b.drawBox(C.success_bg, C.success_green);
-          this.tweens.add({ targets: b.charTxt, scale: { from: 1, to: 1.4 }, yoyo: true, duration: 300, ease: "Back.out" });
-          const pts = this._handleCorrect();
-          this._showFeedback(true,
-            `charAt(${idx}) → '${correctChar}' ✓  +${pts} pts`,
-            `Index ${idx} = the ${this._ordinal(idx + 1)} character`, () => this._nextRound());
-        } else {
-          b.drawBox(C.error_bg, C.error_red);
-          boxes[idx].drawBox(C.success_bg, C.success_green);
-          this._handleWrong();
-          this._showFeedback(false,
-            `You clicked '${clickedChar}' (index ${i}). Correct: '${correctChar}' at index ${idx}`,
-            "Remember: counting starts from 0, not 1!", () => this._nextRound());
+    let grabBtn;
+    const hopTo = (next) => {
+      if (hopping || next < 0 || next >= str.length) return;
+      hopping = true; hopCount++; hopLbl.setText(`Hops: ${hopCount}`);
+      this.tweens.add({
+        targets: frog, x: boxes[next].x, duration: 280, ease: "Linear",
+        onUpdate: (tw) => { frog.y = boxes[0].y - 42 - Math.sin(tw.progress * Math.PI) * 42; },
+        onComplete: () => {
+          frogPos = next; hopping = false;
+          grabBtn.setAlpha(frogPos === idx ? 1 : 0.45);
+          const sq = this.add.circle(boxes[next].x, boxes[next].y + 38, 24, 0x27AE60, 0.5).setDepth(94);
+          this.tweens.add({ targets: sq, scaleY: 0.55, duration: 90, yoyo: true, onComplete: () => sq.destroy() });
         }
       });
+    };
 
-      this._addEl(hitArea);
+    this._btn(W / 2 - 130, 330, "◀  Left", false, () => hopTo(frogPos - 1));
+    this._btn(W / 2 + 130, 330, "Right  ▶", false, () => hopTo(frogPos + 1));
+
+    grabBtn = this._btn(W / 2, 378, "🤚 Grab it!", true, () => {
+      this._stopTimer();
+      this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT");
+      if (frogPos === idx) {
+        this.tweens.add({ targets: frog, y: frog.y - 90, alpha: 0, scale: 1.5, duration: 450 });
+        boxes[idx].drawBox(C.success_bg, C.success_green);
+        this._spawnConfetti(frog.x, frog.y, 18);
+        const pts = this._handleCorrect(); this._spawnScorePopup(frog.x, frog.y - 20, `+${pts}`);
+        this._showFeedback(true, `charAt(${idx}) = '${correctChar}' ✓  +${pts} pts`,
+          `Index ${idx} = the ${this._ordinal(idx + 1)} character`, () => this._nextRound());
+      } else {
+        this.tweens.add({ targets: frog, x: frog.x + 8, duration: 60, yoyo: true, repeat: 5 });
+        this._handleWrong();
+        this._showFeedback(false, `Frog on index ${frogPos} ('${str[frogPos]}') — need index ${idx}!`,
+          "Counting starts at 0!", () => this._nextRound());
+      }
+    });
+    grabBtn.setAlpha(0.45);
+
+    this.input.keyboard.on("keydown-LEFT", () => hopTo(frogPos - 1));
+    this.input.keyboard.on("keydown-RIGHT", () => hopTo(frogPos + 1));
+    this._addEl({ destroy: () => { this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT"); } });
+
+    this._startTimer(22, () => {
+      this._stopTimer(); this._handleWrong();
+      this._showFeedback(false, `Time's up! charAt(${idx}) = '${correctChar}'`, "Index 0 is always the first character!", () => this._nextRound());
     });
   }
 
@@ -860,78 +855,77 @@ export class Level11Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playCaseChange() {
+    /* ── SWEEP LINE: Click letters to flip before the sweep line passes over them ── */
     const round = OPERATIONS[2].rounds[this.roundIndex];
-    const str = round.str;
-    const isUpper = round.op === "upper";
-    const correctAnswer = round.answer;
-    const methodName = isUpper ? "toUpperCase()" : "toLowerCase()";
+    const str = round.str, isUpper = round.op === "upper", correct = round.answer;
+    const method = isUpper ? "toUpperCase()" : "toLowerCase()";
 
-    const taskTxt = this.add.text(W / 2, 75, `🔄  "${str}".${methodName} = ?`, {
-      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(this.add.text(W / 2, 82, `🔄  "${str}".${method} — click letters BEFORE the sweep line!`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
 
-    const instruction = this.add.text(W / 2, 108, `Click each letter to flip it ${isUpper ? "UPPERCASE" : "lowercase"}. Then submit!`, {
-      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(instruction);
+    // Belt background
+    const bG = this.add.graphics().setDepth(90);
+    bG.fillStyle(C.purple_border, 0.18); bG.fillRect(0, 180, W, 80);
+    this._addEl(bG);
 
-    // Create mutable character boxes
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
-    const userChars = str.split("");
+    // Animated stripes
+    let sOff = 0;
+    const sG = this.add.graphics().setDepth(91);
+    const sEv = this.time.addEvent({
+      delay: 25, repeat: -1, callback: () => {
+        sOff = (sOff + 2) % 24; sG.clear(); sG.fillStyle(C.primary_purple, 0.07);
+        for (let x = sOff; x < W; x += 24) sG.fillRect(x, 181, 12, 78);
+      }
+    });
+    this._addEl(sG, { destroy: () => sEv.destroy() });
 
+    const boxes = this._charBoxes(str, W / 2, 220, { baseDelay: 0, animate: false });
+    const flipped = str.split("").map(c => !/[a-zA-Z]/.test(c)); // non-letters auto-pass
+
+    // Mark non-letters green immediately
     boxes.forEach((b, i) => {
-      if (!/[a-zA-Z]/.test(str[i])) return; // Only letters are flippable
-
-      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
-        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
-
-      hitArea.on("pointerup", () => {
-        // Toggle case
-        const current = userChars[i];
-        if (current === current.toUpperCase()) {
-          userChars[i] = current.toLowerCase();
-        } else {
-          userChars[i] = current.toUpperCase();
-        }
-
-        b.charTxt.setText(userChars[i]);
-
-        // Flash feedback
-        const isFlippedCorrect = userChars[i] === correctAnswer[i];
-        b.drawBox(isFlippedCorrect ? C.success_bg : C.purple_bg,
-                   isFlippedCorrect ? C.success_green : C.primary_purple);
-
-        this.tweens.add({
-          targets: b.charTxt, scale: { from: 1.3, to: 1 },
-          duration: 200, ease: "Back.out"
-        });
-      });
-
-      this._addEl(hitArea);
+      if (flipped[i]) b.drawBox(C.success_bg, C.success_green);
     });
 
-    // Submit button
-    this._btn(W / 2, 310, "Submit →", true, () => {
-      this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-      const userAnswer = userChars.join("");
+    // Click to flip
+    boxes.forEach((b, i) => {
+      if (flipped[i]) return;
+      const hit = this.add.rectangle(b.x, b.y, BOX_W, BOX_H).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(115);
+      this._addEl(hit);
+      hit.on("pointerup", () => {
+        if (flipped[i]) return;
+        flipped[i] = true;
+        b.charTxt.setText(isUpper ? str[i].toUpperCase() : str[i].toLowerCase());
+        b.drawBox(C.success_bg, C.success_green);
+        this.tweens.add({ targets: b.charTxt, scaleX: { from: 0, to: 1 }, duration: 200 });
+        for (let p = 0; p < 5; p++) {
+          const px = this.add.circle(b.x + (Math.random() - 0.5) * 30, b.y + (Math.random() - 0.5) * 20, 3, C.success_green, 0.8).setDepth(200);
+          this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 500, onComplete: () => px.destroy() });
+        }
+      });
+    });
 
-      if (userAnswer === correctAnswer) {
-        boxes.forEach(b => b.drawBox(C.success_bg, C.success_green));
-        const pts = this._handleCorrect();
-        this._showFeedback(true, `"${str}" → "${correctAnswer}" ✓  +${pts} pts`, null, () => this._nextRound());
-      } else {
-        // Show which chars were wrong
-        boxes.forEach((b, i) => {
-          if (userChars[i] !== correctAnswer[i]) {
-            b.drawBox(C.error_bg, C.error_red);
-          }
-        });
-        this._handleWrong();
-        this._showFeedback(false,
-          `Your answer: "${userAnswer}" → Correct: "${correctAnswer}"`,
-          "Every letter must be flipped. Symbols and numbers stay the same!",
-          () => this._nextRound());
+    // Sweep line
+    const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2;
+    const sweepLine = this.add.rectangle(x0 - 20, 220, 4, 80, C.primary_purple, 0.9).setDepth(120).setOrigin(0, 0.5);
+    this._addEl(sweepLine);
+
+    this.tweens.add({
+      targets: sweepLine, x: x0 + str.length * step + 20,
+      duration: Math.max(str.length * 900, 3500), ease: "Linear",
+      onComplete: () => {
+        this._stopTimer();
+        const allGood = flipped.every(Boolean);
+        if (allGood) {
+          const pts = this._handleCorrect();
+          this._spawnScorePopup(W / 2, 180, `+${pts}`); this._spawnConfetti(W / 2, 220, 20);
+          this._showFeedback(true, `"${str}" → "${correct}" ✓  +${pts} pts`, null, () => this._nextRound());
+        } else {
+          boxes.forEach((b, i) => { if (!flipped[i]) { b.charTxt.setText(correct[i]); b.drawBox(C.error_bg, C.error_red); } });
+          this._handleWrong();
+          this._showFeedback(false, `Correct: "${correct}"`, "Click every letter before the sweep line passes!", () => this._nextRound());
+        }
       }
     });
   }
@@ -941,398 +935,267 @@ export class Level11Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playConcat() {
+    /* ── MAGNET MERGE: Drag the right string to snap onto the left string ── */
     const round = OPERATIONS[3].rounds[this.roundIndex];
     const a = round.a, b = round.b, correct = round.answer;
+    const step = BOX_W + 4;
+    const leftW = a.length * step, rightW = b.length * step;
+    const leftX = W / 2 - leftW / 2 - rightW / 2 - 24;
+    const rightStartX = W / 2 + leftW / 2 + rightW / 2 + 24;
 
-    const taskTxt = this.add.text(W / 2, 75, `🧲  "${a}" + "${b}" = ?`, {
-      fontFamily: "Courier New", fontSize: "18px", color: COLORS.purple_darker, fontStyle: "bold"
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(this.add.text(W / 2, 82, `🧲  Drag the orange string to SNAP onto the purple string!`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
+    this._addEl(this.add.text(W / 2, 108, `"${a}" + "${b}" = ?`, {
+      fontFamily: "Courier New", fontSize: "14px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100));
 
-    const instruction = this.add.text(W / 2, 108, "Drag the right string to connect it to the left string", {
+    const leftBoxes = this._charBoxes(a, leftX, 210, { baseDelay: 80, fill: C.purple_bg, border: C.primary_purple });
+    const rightBoxes = this._charBoxes(b, rightStartX, 210, { baseDelay: 160, fill: 0xFFF4CC, border: C.orange });
+
+    const rc = this.add.container(rightStartX, 0).setDepth(150);
+    rc.setSize(rightW + 20, 80).setInteractive({ draggable: true, useHandCursor: true });
+    this.input.setDraggable(rc);
+    this._addEl(rc);
+
+    const proximityLbl = this.add.text(W / 2, 290, "Drag the string closer...", {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
-    this._addEl(instruction);
-
-    // Left string (fixed)
-    const leftBoxes = this._charBoxes(a, W / 2 - 120, 200, { baseDelay: 100, fill: C.purple_bg, border: C.primary_purple });
-
-    // Right string (draggable group)
-    const rightStartX = W / 2 + 120;
-    const rightBoxes = this._charBoxes(b, rightStartX, 200, { baseDelay: 200, fill: 0xFFF4CC, border: C.orange });
-
-    // Make right group draggable via a container
-    const rightContainer = this.add.container(0, 0).setDepth(110);
-    rightContainer.setSize(b.length * (BOX_W + 4), BOX_H + 20);
-    rightContainer.setPosition(rightStartX, 200);
-    rightContainer.setInteractive({ draggable: true, useHandCursor: true });
+    this._addEl(proximityLbl);
 
     let merged = false;
+    const snapTarget = leftX + leftW / 2 + rightW / 2 + step;
 
-    rightContainer.on("drag", (pointer, dragX) => {
+    rc.on("drag", (_, dx) => {
       if (merged) return;
-      const dx = dragX - rightStartX;
+      const delta = dx - rightStartX;
       rightBoxes.forEach(rb => {
-        rb.shadow.setX(rb.shadow.x !== undefined ? rb.x + dx - BOX_W/2 + 2 : rb.shadow.x);
-        rb.box.setPosition(rb.x + dx, rb.y);
-        rb.charTxt.setX(rb.x + dx);
-        rb.idxTxt.setX(rb.x + dx);
+        rb.box.x = rb.x + delta; rb.charTxt.x = rb.x + delta; rb.idxTxt.x = rb.x + delta;
       });
-    });
-
-    rightContainer.on("dragend", () => {
-      if (merged) return;
-
-      // Check if close enough to merge
-      const lastLeft = leftBoxes[leftBoxes.length - 1];
-      const firstRight = rightBoxes[0];
-      const distance = Math.abs(firstRight.charTxt.x - (lastLeft.x + BOX_W + 4));
-
-      if (distance < 40) {
-        merged = true;
-        rightContainer.disableInteractive();
-
-        // Snap into place
-        rightBoxes.forEach((rb, i) => {
-          const targetX = lastLeft.x + (i + 1) * (BOX_W + 4);
-          this.tweens.add({
-            targets: [rb.charTxt, rb.idxTxt],
-            x: targetX, duration: 200, ease: "Back.out"
-          });
-          rb.drawBox(C.success_bg, C.success_green);
-        });
-        leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
-
-        // Burst effect at connection point
-        this._spawnConfetti(lastLeft.x + BOX_W / 2, 200, 15);
-
-        const pts = this._handleCorrect();
-        this._showFeedback(true,
-          `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`,
-          "Strings join exactly as they are — including spaces!", () => this._nextRound());
-      } else {
-        // Spring back
-        rightBoxes.forEach(rb => {
-          this.tweens.add({
-            targets: [rb.charTxt, rb.idxTxt],
-            x: rb.x, duration: 300, ease: "Back.out"
-          });
-        });
+      const dist = Math.abs(rightBoxes[0].charTxt.x - (leftBoxes[leftBoxes.length - 1].charTxt.x + step));
+      proximityLbl.setText(dist < 30 ? "⚡ SNAP!" : dist < 80 ? "Almost there!" : "Drag closer...");
+      if (dist < 60 && Math.random() < 0.35) {
+        const cx = leftBoxes[leftBoxes.length - 1].charTxt.x + step / 2;
+        const px = this.add.circle(cx + (Math.random() - 0.5) * 30, 210 + (Math.random() - 0.5) * 30, 3, C.gold, 0.9).setDepth(200);
+        this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 400, onComplete: () => px.destroy() });
       }
     });
 
-    this._addEl(rightContainer);
+    rc.on("dragend", () => {
+      if (merged) return;
+      const lastLX = leftBoxes[leftBoxes.length - 1].charTxt.x;
+      const dist = Math.abs(rightBoxes[0].charTxt.x - (lastLX + step));
+      if (dist < 55) {
+        merged = true; rc.disableInteractive();
+        rightBoxes.forEach((rb, i) => {
+          const tx = lastLX + (i + 1) * step;
+          this.tweens.add({ targets: [rb.charTxt, rb.idxTxt], x: tx, duration: 200, ease: "Back.out" });
+          rb.drawBox(C.success_bg, C.success_green);
+        });
+        leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
+        this._spawnConfetti(lastLX + step, 210, 25);
+        proximityLbl.setText(`"${a}" + "${b}" = "${correct}" ✓`);
+        const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 170, `+${pts}`);
+        this.time.delayedCall(500, () => this._showFeedback(true,
+          `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`,
+          "Strings join exactly — every space matters!", () => this._nextRound()));
+      } else {
+        rightBoxes.forEach(rb => {
+          this.tweens.add({ targets: [rb.charTxt, rb.idxTxt], x: rb.x, duration: 300, ease: "Back.out" });
+        });
+        proximityLbl.setText("Not close enough — drag more!");
+        this.cameras.main.shake(100, 0.002);
+      }
+    });
 
-    // Also provide type-in fallback
-    const orText = this.add.text(W / 2, 280, "— or type the result —", {
-      fontFamily: "Arial", fontSize: "12px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(orText);
-
-    // Generate options
-    const options = [correct];
-    // Add wrong options
-    if (b.startsWith(" ")) options.push(a + b.trim());
-    else options.push(a + " " + b);
-    options.push(b + a);
-    if (options.length < 4) options.push(a);
-
-    const unique = [...new Set(options)].slice(0, 4).sort(() => Math.random() - 0.5);
-
-    unique.forEach((opt, i) => {
-      const ox = W / 2 - ((unique.length - 1) * 140) / 2 + i * 140;
-
-      const optBtn = this.add.container(ox, 330).setDepth(100);
-      const bg = this.add.graphics();
-      bg.fillStyle(C.white, 1);
-      bg.fillRoundedRect(-60, -18, 120, 36, 8);
-      bg.lineStyle(1.5, C.purple_border, 1);
-      bg.strokeRoundedRect(-60, -18, 120, 36, 8);
-      optBtn.add(bg);
-
-      const display = opt.replace(/ /g, "·");
-      const txt = this.add.text(0, 0, `"${display}"`, {
-        fontFamily: "Courier New", fontSize: "12px", color: COLORS.text_primary
-      }).setOrigin(0.5);
-      optBtn.add(txt);
-
-      optBtn.setSize(120, 36).setInteractive({ useHandCursor: true });
-
-      optBtn.on("pointerover", () => {
-        bg.clear();
-        bg.fillStyle(C.purple_bg, 1);
-        bg.fillRoundedRect(-60, -18, 120, 36, 8);
-        bg.lineStyle(1.5, C.primary_purple, 1);
-        bg.strokeRoundedRect(-60, -18, 120, 36, 8);
-      });
-      optBtn.on("pointerout", () => {
-        bg.clear();
-        bg.fillStyle(C.white, 1);
-        bg.fillRoundedRect(-60, -18, 120, 36, 8);
-        bg.lineStyle(1.5, C.purple_border, 1);
-        bg.strokeRoundedRect(-60, -18, 120, 36, 8);
-      });
-
-      optBtn.on("pointerup", () => {
-        if (merged) return;
-        merged = true;
-        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-
-        if (opt === correct) {
-          leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
-          rightBoxes.forEach(rb => rb.drawBox(C.success_bg, C.success_green));
-          const pts = this._handleCorrect();
-          this._showFeedback(true, `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`, null, () => this._nextRound());
-        } else {
-          this._handleWrong();
-          this._showFeedback(false,
-            `You picked "${opt}" → Correct: "${correct}"`,
-            'Strings concatenate exactly — every space and character matters!',
-            () => this._nextRound());
-        }
-      });
-
-      this._addEl(optBtn);
+    this._startTimer(25, () => {
+      this._stopTimer(); this._handleWrong();
+      this._showFeedback(false, `"${a}" + "${b}" = "${correct}"`, "Strings join end-to-end — every space matters!", () => this._nextRound());
     });
   }
+
 
   /* ═══════════════════════════════════════════════════════════════════════
    *  OPERATION 5: substring(a,b) — SLICE CUTTER
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playSubstring() {
+    /* ── LASER CUTTER: Drag two laser beams to slice out the correct substring ── */
     const round = OPERATIONS[4].rounds[this.roundIndex];
-    const str = round.str;
-    const a = round.a, b = round.b;
-    const correct = round.answer;
+    const str = round.str, a = round.a, b = round.b, correct = round.answer;
 
-    const taskTxt = this.add.text(W / 2, 75, `✂️  "${str}".substring(${a}, ${b}) = ?`, {
-      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
+    this._addEl(this.add.text(W / 2, 82, `✂️  Drag the lasers to cut  "${str}".substring(${a},${b})`, {
+      fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
+
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 80 });
+    const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2;
+    const bx = (i) => x0 + i * step - 2;
+
+    const prevLbl = this.add.text(W / 2, 290, `substring(0,${str.length}) = "${str}"`, {
+      fontFamily: "Courier New", fontSize: "12px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(prevLbl);
 
-    const instruction = this.add.text(W / 2, 108, `Click the characters from index ${a} to ${b - 1} (highlighted range)`, {
-      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(instruction);
+    let laserA = 0, laserB = str.length;
 
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
-
-    // Highlight the range
-    this.time.delayedCall(300 + str.length * 80, () => {
-      boxes.forEach((bx, i) => {
-        if (i >= a && i < b) {
-          bx.drawBox(C.purple_bg, C.primary_purple);
-          this.tweens.add({
-            targets: bx.charTxt, scale: { from: 1, to: 1.1 },
-            yoyo: true, duration: 500, repeat: 2, ease: "Sine.inOut"
-          });
-        } else {
-          bx.drawBox(C.white, C.purple_border);
-          bx.charTxt.setAlpha(0.4);
-          bx.idxTxt.setAlpha(0.4);
-        }
+    const updatePreview = () => {
+      const sub = laserA < laserB ? str.substring(laserA, laserB) : "";
+      prevLbl.setText(`substring(${laserA},${laserB}) = "${sub}"`);
+      boxes.forEach((box, i) => {
+        const inside = i >= laserA && i < laserB;
+        box.drawBox(inside ? C.purple_bg : C.white, inside ? C.error_red : C.purple_border);
+        box.charTxt.setAlpha(inside ? 1 : 0.3);
       });
+    };
 
-      // Range markers
-      const leftBlade = this.add.text(boxes[a].x - BOX_W / 2 - 2, 160, "✂", {
-        fontSize: "20px"
-      }).setOrigin(0.5).setDepth(102);
-      const rightBlade = this.add.text(boxes[b - 1].x + BOX_W / 2 + 2, 160, "✂", {
-        fontSize: "20px"
-      }).setOrigin(0.5).setDepth(102).setFlipX(true);
+    const makeLaser = (initBound, isLeft) => {
+      let cur = initBound;
+      const lc = this.add.container(bx(cur), 200).setDepth(155);
+      const glow = this.add.graphics(); glow.fillStyle(C.error_red, 0.2); glow.fillRect(-7, -55, 14, 110);
+      const beam = this.add.graphics(); beam.fillStyle(C.error_red, 0.9); beam.fillRect(-2, -55, 4, 110);
+      const handle = this.add.graphics(); handle.fillStyle(C.error_red, 1); handle.fillRoundedRect(-14, isLeft ? -68 : 56, 28, 20, 4);
+      const ht = this.add.text(0, isLeft ? -58 : 66, isLeft ? "A" : "B", {
+        fontFamily: "Arial", fontSize: "10px", color: COLORS.white, fontStyle: "bold"
+      }).setOrigin(0.5);
+      lc.add([glow, beam, handle, ht]);
+      lc.setSize(28, 120).setInteractive({ draggable: true, useHandCursor: true });
+      this.input.setDraggable(lc);
+      this._addEl(lc);
+      this.tweens.add({ targets: glow, alpha: { from: 0.2, to: 0.6 }, duration: 500, yoyo: true, repeat: -1 });
+      lc.on("drag", (_, dx) => {
+        const rawI = Math.round((dx - x0) / step);
+        if (isLeft) laserA = Phaser.Math.Clamp(rawI, 0, laserB - 1);
+        else laserB = Phaser.Math.Clamp(rawI, laserA + 1, str.length);
+        lc.x = bx(isLeft ? laserA : laserB);
+        updatePreview();
+      });
+      return lc;
+    };
 
-      this._addEl(leftBlade, rightBlade);
+    makeLaser(0, true);
+    makeLaser(str.length, false);
+    updatePreview();
+
+    this._startTimer(25, () => {
+      this._stopTimer(); this._handleWrong();
+      this._showFeedback(false, `Correct: "${correct}"`, `Start at ${a}, stop BEFORE ${b}`, () => this._nextRound());
     });
 
-    // Answer options
-    const selectorY = 300;
-    const prompt = this.add.text(W / 2, selectorY - 30, "What string does substring extract?", {
-      fontFamily: "Arial", fontSize: "14px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(prompt);
-
-    // Generate options
-    const wrongOptions = [];
-    if (a > 0) wrongOptions.push(str.substring(a - 1, b));
-    if (b < str.length) wrongOptions.push(str.substring(a, b + 1));
-    wrongOptions.push(str.substring(a + 1, b));
-    if (wrongOptions.length < 3) wrongOptions.push(str.substring(0, b));
-
-    const allOpts = [correct, ...wrongOptions.filter(w => w !== correct)].slice(0, 4);
-    const shuffled = allOpts.sort(() => Math.random() - 0.5);
-
-    shuffled.forEach((opt, i) => {
-      const ox = W / 2 - ((shuffled.length - 1) * 120) / 2 + i * 120;
-
-      const optContainer = this.add.container(ox, selectorY).setDepth(100);
-      const bg = this.add.graphics();
-      bg.fillStyle(C.white, 1);
-      bg.fillRoundedRect(-50, -20, 100, 40, 10);
-      bg.lineStyle(2, C.purple_border, 1);
-      bg.strokeRoundedRect(-50, -20, 100, 40, 10);
-      optContainer.add(bg);
-
-      const txt = this.add.text(0, 0, `"${opt}"`, {
-        fontFamily: "Courier New", fontSize: "14px", color: COLORS.text_primary, fontStyle: "bold"
-      }).setOrigin(0.5);
-      optContainer.add(txt);
-
-      optContainer.setSize(100, 40).setInteractive({ useHandCursor: true });
-      optContainer.on("pointerover", () => {
-        bg.clear();
-        bg.fillStyle(C.purple_bg, 1);
-        bg.fillRoundedRect(-50, -20, 100, 40, 10);
-        bg.lineStyle(2, C.primary_purple, 1);
-        bg.strokeRoundedRect(-50, -20, 100, 40, 10);
-      });
-      optContainer.on("pointerout", () => {
-        bg.clear();
-        bg.fillStyle(C.white, 1);
-        bg.fillRoundedRect(-50, -20, 100, 40, 10);
-        bg.lineStyle(2, C.purple_border, 1);
-        bg.strokeRoundedRect(-50, -20, 100, 40, 10);
-      });
-
-      optContainer.on("pointerup", () => {
-        this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-
-        if (opt === correct) {
-          boxes.forEach((bx, j) => {
-            if (j >= a && j < b) bx.drawBox(C.success_bg, C.success_green);
+    this.time.delayedCall(400, () => {
+      this._btn(W / 2, 348, "✂️  Cut!", true, () => {
+        this._stopTimer();
+        if (laserA === a && laserB === b) {
+          boxes.forEach((box, i) => {
+            if (i >= a && i < b) {
+              this.tweens.add({ targets: [box.box, box.charTxt, box.idxTxt], y: box.y - 30, duration: 400, ease: "Back.out" });
+              box.drawBox(C.success_bg, C.success_green);
+            } else {
+              this.tweens.add({ targets: [box.box, box.charTxt, box.idxTxt], alpha: 0, duration: 300 });
+            }
           });
-          const pts = this._handleCorrect();
-          this._showFeedback(true,
-            `substring(${a},${b}) → "${correct}" ✓  +${pts} pts`,
-            `Characters at indices ${a} through ${b - 1} were extracted`,
-            () => this._nextRound());
+          this._spawnConfetti(W / 2, 200, 22);
+          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 160, `+${pts}`);
+          this._showFeedback(true, `substring(${a},${b}) = "${correct}" ✓  +${pts} pts`,
+            `Indices ${a} through ${b - 1} extracted`, () => this._nextRound());
         } else {
-          this._handleWrong();
-          this._showFeedback(false,
-            `You picked "${opt}" → Correct: "${correct}"`,
-            `substring(${a},${b}) starts at index ${a}, stops BEFORE index ${b}`,
-            () => this._nextRound());
+          this.cameras.main.shake(200, 0.004); this._handleWrong();
+          this._showFeedback(false, `Got "${str.substring(laserA, laserB)}", need "${correct}"`,
+            `substring(${a},${b}): start at ${a}, stop BEFORE ${b}`, () => this._nextRound());
         }
       });
-
-      this._addEl(optContainer);
     });
   }
+
 
   /* ═══════════════════════════════════════════════════════════════════════
    *  OPERATION 6: trim() — SPACE SWEEPER
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playTrim() {
+    /* ── BROOM SWEEP: Move pointer over spaces to sweep them off the edges ── */
     const round = OPERATIONS[5].rounds[this.roundIndex];
-    const str = round.str;
-    const correct = round.answer;
+    const str = round.str, correct = round.answer;
 
-    const taskTxt = this.add.text(W / 2, 75, `🧹  "${str.replace(/ /g, "·")}".trim() = ?`, {
-      fontFamily: "Courier New", fontSize: "16px", color: COLORS.purple_darker, fontStyle: "bold"
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(taskTxt);
+    this._addEl(this.add.text(W / 2, 82, `🧹  "${str.replace(/ /g, '·')}".trim() — move broom over edge spaces to sweep!`, {
+      fontFamily: "Arial", fontSize: "12px", color: COLORS.purple_darker, fontStyle: "bold"
+    }).setOrigin(0.5).setDepth(100));
 
-    const instruction = this.add.text(W / 2, 108, "Click the space characters that trim() would REMOVE (start & end only)", {
-      fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(instruction);
-
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 100 });
-
-    // Track which spaces user has "swept"
+    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 80 });
+    const shouldSweep = new Array(str.length).fill(false);
+    let s = 0, e = str.length - 1;
+    while (s < str.length && str[s] === " ") { shouldSweep[s] = true; s++; }
+    while (e >= 0 && str[e] === " ") { shouldSweep[e] = true; e--; }
     const swept = new Array(str.length).fill(false);
 
-    // Determine which indices SHOULD be swept (leading + trailing spaces)
-    const shouldSweep = new Array(str.length).fill(false);
-    let start = 0, end = str.length - 1;
-    while (start < str.length && str[start] === " ") { shouldSweep[start] = true; start++; }
-    while (end >= 0 && str[end] === " ") { shouldSweep[end] = true; end--; }
-
     boxes.forEach((b, i) => {
-      if (str[i] !== " ") return; // Only spaces are clickable
-
-      const hitArea = this.add.rectangle(b.x, b.y, BOX_W, BOX_H)
-        .setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(102);
-
-      hitArea.on("pointerup", () => {
-        swept[i] = !swept[i];
-        if (swept[i]) {
-          // "Swept" — dim and cross out
-          b.drawBox(C.error_bg, C.error_red);
-          b.charTxt.setAlpha(0.3);
-
-          // Sweep particles
-          this.add.particles(b.x, b.y, "pt_circle", {
-            speed: { min: 40, max: 100 },
-            angle: { min: 0, max: 360 },
-            scale: { start: 0.4, end: 0 },
-            alpha: { start: 0.8, end: 0 },
-            lifespan: 500,
-            tint: C.purple_tinted_gray,
-            quantity: 6
-          }).setDepth(110).explode(6);
-
-          this.tweens.add({
-            targets: b.charTxt, scale: { from: 1.2, to: 1 },
-            duration: 200, ease: "Back.out"
-          });
-        } else {
-          // Un-swept
-          b.drawBox(C.white, C.purple_border);
-          b.charTxt.setAlpha(1);
-        }
-      });
-
-      this._addEl(hitArea);
-    });
-
-    // Submit button
-    this._btn(W / 2, 310, "Submit →", true, () => {
-      this.elements.filter(e => e.input && e.input.enabled).forEach(e => e.disableInteractive());
-
-      // Check if user swept the correct spaces
-      const isCorrect = swept.every((s, i) => s === shouldSweep[i]);
-
-      if (isCorrect) {
-        // Animate removal
-        boxes.forEach((b, i) => {
-          if (shouldSweep[i]) {
-            this.tweens.add({
-              targets: [b.box, b.charTxt, b.idxTxt, b.shadow],
-              alpha: 0, scale: 0.5, duration: 400, delay: i * 50, ease: "Back.in"
-            });
-          } else {
-            b.drawBox(C.success_bg, C.success_green);
-          }
-        });
-
-        const pts = this._handleCorrect();
-        this._showFeedback(true,
-          `trim() → "${correct}" ✓  +${pts} pts`,
-          "Only leading and trailing spaces are removed. Middle spaces stay!",
-          () => this._nextRound());
-      } else {
-        // Show correct answer
-        boxes.forEach((b, i) => {
-          if (shouldSweep[i]) {
-            b.drawBox(0xFFE0E0, C.error_red);
-            b.charTxt.setText("✕");
-          } else if (str[i] === " " && swept[i]) {
-            // User incorrectly swept a middle space
-            b.drawBox(0xFFF4CC, C.orange);
-          }
-        });
-
-        this._handleWrong();
-        let hint = "trim() only removes spaces from the START and END — middle spaces stay";
-        this._showFeedback(false,
-          `Correct result: "${correct}"`,
-          hint,
-          () => this._nextRound());
+      if (str[i] === " ") {
+        const dg = this.add.graphics().setDepth(102);
+        dg.fillStyle(0x888780, 0.35); dg.fillCircle(b.x, b.y, 20);
+        this._addEl(dg);
       }
     });
+
+    const infoLbl = this.add.text(W / 2, 268, "Move broom over spaces — only sweep the ones at the START and END", {
+      fontFamily: "Arial", fontSize: "11px", color: COLORS.text_secondary
+    }).setOrigin(0.5).setDepth(100);
+    this._addEl(infoLbl);
+
+    const broom = this.add.text(30, 200, "🧹", { fontSize: "30px" }).setOrigin(0.5).setDepth(210);
+    this._addEl(broom);
+
+    const sweepZone = this.add.rectangle(W / 2, 200, W - 40, 70).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(200);
+    this._addEl(sweepZone);
+
+    sweepZone.on("pointermove", (ptr) => {
+      broom.x = Phaser.Math.Clamp(ptr.x, 20, W - 20);
+      broom.y = Phaser.Math.Clamp(ptr.y, 170, 235);
+      boxes.forEach((b, i) => {
+        if (swept[i]) return;
+        if (Math.abs(broom.x - b.x) < BOX_W / 2 + 8 && Math.abs(broom.y - b.y) < 40 && str[i] === " ") {
+          swept[i] = true;
+          if (shouldSweep[i]) {
+            b.drawBox(C.success_bg, C.success_green); b.charTxt.setAlpha(0.2);
+            for (let p = 0; p < 6; p++) {
+              const px = this.add.circle(b.x + (Math.random()-0.5)*30, b.y + (Math.random()-0.5)*20, 3, 0x888780, 0.8).setDepth(220);
+              this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 400, onComplete: () => px.destroy() });
+            }
+          } else {
+            b.drawBox(0xFFF4CC, C.orange);
+            this.tweens.add({ targets: broom, x: broom.x - 25, duration: 80, yoyo: true });
+            infoLbl.setText("⚠️ Middle spaces stay! trim() only removes edge spaces.");
+          }
+        }
+      });
+    });
+
+    this._startTimer(20, () => {
+      this._stopTimer(); this._handleWrong();
+      this._showFeedback(false, `Correct: "${correct}"`, "Sweep edge spaces only — middle ones stay!", () => this._nextRound());
+    });
+
+    this.time.delayedCall(400, () => {
+      this._btn(W / 2, 345, "🧹 Done Sweeping!", true, () => {
+        this._stopTimer();
+        const ok = shouldSweep.every((should, i) => swept[i] === should);
+        if (ok) {
+          boxes.forEach((b, i) => {
+            if (shouldSweep[i]) this.tweens.add({ targets: [b.box, b.charTxt, b.idxTxt, b.shadow], alpha: 0, scale: 0.5, duration: 400, delay: i * 50, ease: "Back.in" });
+            else b.drawBox(C.success_bg, C.success_green);
+          });
+          this._spawnConfetti(W / 2, 200, 22);
+          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 160, `+${pts}`);
+          this._showFeedback(true, `trim() → "${correct}" ✓  +${pts} pts`, "Only edge spaces removed!", () => this._nextRound());
+        } else {
+          boxes.forEach((b, i) => { if (shouldSweep[i] && !swept[i]) { b.drawBox(0xFFE0E0, C.error_red); b.charTxt.setText("✕"); } });
+          this._handleWrong();
+          this._showFeedback(false, `Correct: "${correct}"`, "trim() removes START and END spaces only!", () => this._nextRound());
+        }
+      });
+    });
   }
+
+
 
   /* ═══════════════════════════════════════════════════════════════════════
    *  FINAL RESULTS

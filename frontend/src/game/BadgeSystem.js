@@ -114,6 +114,30 @@ export const BADGES = {
     level: 12,
     color: 0xfbbf24,
   },
+  math_wizard: {
+    id: "math_wizard",
+    name: "Math Wizard",
+    emoji: "🧙",
+    description: "Completed Level 13 — Operators Accretion (Math Magic Academy)",
+    level: 13,
+    color: 0xff6b6b,
+  },
+  combat_calculator: {
+    id: "combat_calculator",
+    name: "Combat Calculator",
+    emoji: "⚔️",
+    description: "Completed Level 14 — Operators Tuning (Calculation Arena)",
+    level: 14,
+    color: 0xffa500,
+  },
+  code_master: {
+    id: "code_master",
+    name: "Code Master",
+    emoji: "👑",
+    description: "Completed Level 15 — Operators Restructuring (Code Builder Pro)",
+    level: 15,
+    color: 0xffd700,
+  },
 };
 
 // In-memory cache of unlocked badges
