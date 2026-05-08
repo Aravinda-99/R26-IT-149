@@ -62,220 +62,262 @@ export class MenuScene extends Phaser.Scene {
       color: "#64748b",
     }).setOrigin(0.5);
 
-    // ── INTEGER MODULE HEADER ──
-    this.add.text(400, 54, "── INTEGER MODULE ──", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#38bdf8",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+    // Get active module filter (if any)
+    const activeModule = GameManager.get("activeModule");
 
-    const intLevels = [
-      {
-        title: "Level 1: Integer Discovery",
-        phase: "ACCRETION",
-        desc: "Catch falling integers — avoid decimals & fractions!",
-        badge: BADGES.integer_explorer,
-        scene: "Level1Scene",
-        index: 0,
-      },
-      {
-        title: "Level 2: Cyber Variable Arena",
-        phase: "TUNING",
-        desc: "Validate incoming data — ASSIGN valid ints, REJECT errors!",
-        badge: BADGES.math_warrior,
-        scene: "Level2Scene",
-        index: 1,
-      },
-      {
-        title: "Level 3: Integer Escape Facility",
-        phase: "RESTRUCTURING",
-        desc: "Hack terminals and solve int puzzles to escape!",
-        badge: BADGES.logic_master,
-        scene: "Level3Scene",
-        index: 2,
-      },
-    ];
+    // Only render the selected module's levels, or all if no active module set
+    const shouldShowInteger = !activeModule || activeModule === "integer";
+    const shouldShowFloat = !activeModule || activeModule === "float";
+    const shouldShowChar = !activeModule || activeModule === "char";
+    const shouldShowString = !activeModule || activeModule === "string";
+    const shouldShowOperators = !activeModule || activeModule === "operators";
 
-    intLevels.forEach((lvl, i) => {
-      const y = 66 + i * 32;
-      const unlocked = GameManager.isLevelUnlocked(lvl.index);
-      const completed = GameManager.get("levelsCompleted")[lvl.index];
-      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
-      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x38bdf8);
-    });
+    if (shouldShowInteger) {
+      // ── INTEGER MODULE HEADER ──
+      this.add.text(400, 54, "── INTEGER MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#38bdf8",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
 
-    // ── FLOAT MODULE HEADER ──
-    this.add.text(400, 160, "── FLOAT MODULE ──", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#4ade80",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+      const intLevels = [
+        {
+          title: "Level 1: Integer Discovery",
+          phase: "ACCRETION",
+          desc: "Catch falling integers — avoid decimals & fractions!",
+          badge: BADGES.integer_explorer,
+          scene: "Level1Scene",
+          index: 0,
+        },
+        {
+          title: "Level 2: Cyber Variable Arena",
+          phase: "TUNING",
+          desc: "Validate incoming data — ASSIGN valid ints, REJECT errors!",
+          badge: BADGES.math_warrior,
+          scene: "Level2Scene",
+          index: 1,
+        },
+        {
+          title: "Level 3: Integer Escape Facility",
+          phase: "RESTRUCTURING",
+          desc: "Hack terminals and solve int puzzles to escape!",
+          badge: BADGES.logic_master,
+          scene: "Level3Scene",
+          index: 2,
+        },
+      ];
 
-    const floatLevels = [
-      {
-        title: "Level 4: Decimal Ocean Dive",
-        phase: "ACCRETION",
-        desc: "Pilot a submarine — collect floats, avoid integers!",
-        badge: BADGES.float_explorer,
-        scene: "Level4Scene",
-        index: 3,
-      },
-      {
-        title: "Level 5: Rocket Launch Sequence",
-        phase: "TUNING",
-        desc: "Complete 5 precision systems to launch the rocket!",
-        badge: BADGES.precision_master,
-        scene: "Level5Scene",
-        index: 4,
-      },
-      {
-        title: "Level 6: Mission Control Calculator",
-        phase: "RESTRUCTURING",
-        desc: "Solve float arithmetic and real-world problems!",
-        badge: BADGES.calculation_wizard,
-        scene: "Level6Scene",
-        index: 5,
-      },
-    ];
+      intLevels.forEach((lvl, i) => {
+        const y = 66 + i * 32;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x38bdf8);
+      });
+    }
 
-    floatLevels.forEach((lvl, i) => {
-      const y = 176 + i * 32;
-      const unlocked = GameManager.isLevelUnlocked(lvl.index);
-      const completed = GameManager.get("levelsCompleted")[lvl.index];
-      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
-      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x4ade80);
-    });
+    if (shouldShowFloat) {
+      // ── FLOAT MODULE HEADER ──
+      const floatHeaderY = shouldShowInteger ? 160 : 54;
+      this.add.text(400, floatHeaderY, "── FLOAT MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#4ade80",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
 
-    // ── CHAR MODULE HEADER ──
-    this.add.text(400, 268, "── CHAR MODULE ──", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#c084fc",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+      const floatLevels = [
+        {
+          title: "Level 4: Decimal Ocean Dive",
+          phase: "ACCRETION",
+          desc: "Pilot a submarine — collect floats, avoid integers!",
+          badge: BADGES.float_explorer,
+          scene: "Level4Scene",
+          index: 3,
+        },
+        {
+          title: "Level 5: Rocket Launch Sequence",
+          phase: "TUNING",
+          desc: "Complete 5 precision systems to launch the rocket!",
+          badge: BADGES.precision_master,
+          scene: "Level5Scene",
+          index: 4,
+        },
+        {
+          title: "Level 6: Mission Control Calculator",
+          phase: "RESTRUCTURING",
+          desc: "Solve float arithmetic and real-world problems!",
+          badge: BADGES.calculation_wizard,
+          scene: "Level6Scene",
+          index: 5,
+        },
+      ];
 
-    const charLevels = [
-      {
-        title: "Level 7: Alphabet Nebula Explorer",
-        phase: "ACCRETION",
-        desc: "Fly through space — collect valid char particles!",
-        badge: BADGES.char_explorer,
-        scene: "Level7Scene",
-        index: 6,
-      },
-      {
-        title: "Level 8: Character Workshop",
-        phase: "TUNING",
-        desc: "Validate, sort & refine chars on the factory line!",
-        badge: BADGES.ascii_master,
-        scene: "Level8Scene",
-        index: 7,
-      },
-      {
-        title: "Level 9: Char Quest — Typing Adventure",
-        phase: "RESTRUCTURING",
-        desc: "Type char code through 8 rooms (2 per realm) — rescue the Kingdom!",
-        badge: BADGES.char_wizard,
-        scene: "Level9Scene",
-        index: 8,
-      },
-    ];
+      floatLevels.forEach((lvl, i) => {
+        const floatBaseY = shouldShowInteger ? 176 : 66;
+        const y = floatBaseY + i * 32;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x4ade80);
+      });
+    }
 
-    charLevels.forEach((lvl, i) => {
-      const y = 284 + i * 32;
-      const unlocked = GameManager.isLevelUnlocked(lvl.index);
-      const completed = GameManager.get("levelsCompleted")[lvl.index];
-      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
-      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xc084fc);
-    });
+    if (shouldShowChar) {
+      // ── CHAR MODULE HEADER ──
+      let charHeaderY = 268;
+      if (!shouldShowInteger && !shouldShowFloat) charHeaderY = 54;
+      else if (!shouldShowInteger) charHeaderY = 160;
+      else if (!shouldShowFloat) charHeaderY = 160;
 
-    // ── STRING MODULE HEADER ──
-    this.add.text(400, 378, "── STRING MODULE ──", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#f59e0b",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+      this.add.text(400, charHeaderY, "── CHAR MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#c084fc",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
 
-    const stringLevels = [
-      {
-        title: "Level 10: Message Garden Collector",
-        phase: "ACCRETION",
-        desc: "Collect valid double-quoted strings in the message garden!",
-        badge: BADGES.garden_keeper,
-        scene: "Level10Scene",
-        index: 9,
-      },
-      {
-        title: "Level 11: String Operations Lab",
-        phase: "TUNING",
-        desc: "Master 6 essential string methods: length, charAt, case, concat, substring, and trim!",
-        badge: BADGES.assembly_master,
-        scene: "Level11Scene",
-        index: 10,
-      },
-      {
-        title: "Level 12: Advanced String Master",
-        phase: "RESTRUCTURING",
-        desc: "Expert split, trim, slice, includes, repeat, indexOf!",
-        badge: BADGES.string_genius,
-        scene: "Level12Scene",
-        index: 11,
-      },
-    ];
+      const charLevels = [
+        {
+          title: "Level 7: Alphabet Nebula Explorer",
+          phase: "ACCRETION",
+          desc: "Fly through space — collect valid char particles!",
+          badge: BADGES.char_explorer,
+          scene: "Level7Scene",
+          index: 6,
+        },
+        {
+          title: "Level 8: Character Workshop",
+          phase: "TUNING",
+          desc: "Validate, sort & refine chars on the factory line!",
+          badge: BADGES.ascii_master,
+          scene: "Level8Scene",
+          index: 7,
+        },
+        {
+          title: "Level 9: Char Quest — Typing Adventure",
+          phase: "RESTRUCTURING",
+          desc: "Type char code through 8 rooms (2 per realm) — rescue the Kingdom!",
+          badge: BADGES.char_wizard,
+          scene: "Level9Scene",
+          index: 8,
+        },
+      ];
 
-    stringLevels.forEach((lvl, i) => {
-      const y = 394 + i * 32;
-      const unlocked = GameManager.isLevelUnlocked(lvl.index);
-      const completed = GameManager.get("levelsCompleted")[lvl.index];
-      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
-      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xf59e0b);
-    });
+      charLevels.forEach((lvl, i) => {
+        let charBaseY = 284;
+        if (!shouldShowInteger && !shouldShowFloat) charBaseY = 66;
+        else if (!shouldShowInteger) charBaseY = 176;
+        else if (!shouldShowFloat) charBaseY = 176;
 
-    // ── OPERATORS MODULE HEADER ──
-    this.add.text(400, 488, "── OPERATORS MODULE ──", {
-      fontFamily: "monospace",
-      fontSize: "10px",
-      color: "#ff6b6b",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
+        const y = charBaseY + i * 32;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xc084fc);
+      });
+    }
 
-    const operatorLevels = [
-      {
-        title: "Level 13: Math Magic Academy",
-        phase: "ACCRETION",
-        desc: "Learn operator spells — arithmetic, comparison, logical & more!",
-        badge: BADGES.math_wizard,
-        scene: "Level13Scene",
-        index: 12,
-      },
-      {
-        title: "Level 14: Calculation Arena",
-        phase: "TUNING",
-        desc: "Battle enemies with math — speed and accuracy are your weapons!",
-        badge: BADGES.combat_calculator,
-        scene: "Level14Scene",
-        index: 13,
-      },
-      {
-        title: "Level 15: Code Builder Pro",
-        phase: "RESTRUCTURING",
-        desc: "Build real Java programs using operators — professional IDE coding!",
-        badge: BADGES.code_master,
-        scene: "Level15Scene",
-        index: 14,
-      },
-    ];
+    if (shouldShowString) {
+      // ── STRING MODULE HEADER ──
+      let stringHeaderY = 378;
+      let modulesBeforeString = (shouldShowInteger ? 1 : 0) + (shouldShowFloat ? 1 : 0) + (shouldShowChar ? 1 : 0);
+      stringHeaderY = 54 + modulesBeforeString * 106;
 
-    operatorLevels.forEach((lvl, i) => {
-      const y = 504 + i * 32;
-      const unlocked = GameManager.isLevelUnlocked(lvl.index);
-      const completed = GameManager.get("levelsCompleted")[lvl.index];
-      const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
-      this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xff6b6b);
-    });
+      this.add.text(400, stringHeaderY, "── STRING MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#f59e0b",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const stringLevels = [
+        {
+          title: "Level 10: Message Garden Collector",
+          phase: "ACCRETION",
+          desc: "Collect valid double-quoted strings in the message garden!",
+          badge: BADGES.garden_keeper,
+          scene: "Level10Scene",
+          index: 9,
+        },
+        {
+          title: "Level 11: String Operations Lab",
+          phase: "TUNING",
+          desc: "Master 6 essential string methods: length, charAt, case, concat, substring, and trim!",
+          badge: BADGES.assembly_master,
+          scene: "Level11Scene",
+          index: 10,
+        },
+        {
+          title: "Level 12: Advanced String Master",
+          phase: "RESTRUCTURING",
+          desc: "Expert split, trim, slice, includes, repeat, indexOf!",
+          badge: BADGES.string_genius,
+          scene: "Level12Scene",
+          index: 11,
+        },
+      ];
+
+      stringLevels.forEach((lvl, i) => {
+        const stringBaseY = stringHeaderY + 16;
+        const y = stringBaseY + i * 32;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xf59e0b);
+      });
+    }
+
+    if (shouldShowOperators) {
+      // ── OPERATORS MODULE HEADER ──
+      let opsHeaderY = 488;
+      let modulesBeforeOps = (shouldShowInteger ? 1 : 0) + (shouldShowFloat ? 1 : 0) + (shouldShowChar ? 1 : 0) + (shouldShowString ? 1 : 0);
+      opsHeaderY = 54 + modulesBeforeOps * 106;
+
+      this.add.text(400, opsHeaderY, "── OPERATORS MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#ff6b6b",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const operatorLevels = [
+        {
+          title: "Level 13: Math Magic Academy",
+          phase: "ACCRETION",
+          desc: "Learn operator spells — arithmetic, comparison, logical & more!",
+          badge: BADGES.math_wizard,
+          scene: "Level13Scene",
+          index: 12,
+        },
+        {
+          title: "Level 14: Calculation Arena",
+          phase: "TUNING",
+          desc: "Battle enemies with math — speed and accuracy are your weapons!",
+          badge: BADGES.combat_calculator,
+          scene: "Level14Scene",
+          index: 13,
+        },
+        {
+          title: "Level 15: Code Builder Pro",
+          phase: "RESTRUCTURING",
+          desc: "Build real Java programs using operators — professional IDE coding!",
+          badge: BADGES.code_master,
+          scene: "Level15Scene",
+          index: 14,
+        },
+      ];
+
+      operatorLevels.forEach((lvl, i) => {
+        const opsBaseY = opsHeaderY + 16;
+        const y = opsBaseY + i * 32;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xff6b6b);
+      });
+    }
 
     // ── XP display ──
     const xp = GameManager.get("xp");
@@ -309,6 +351,7 @@ export class MenuScene extends Phaser.Scene {
       GameManager.resetAll();
       BadgeSystem.resetAll();
       ProgressTracker.clearProgress();
+      GameManager.set("activeModule", null);
       this.scene.restart();
     });
 
@@ -316,10 +359,17 @@ export class MenuScene extends Phaser.Scene {
     try {
       const focus = sessionStorage.getItem("codequest_menu_focus");
       if (focus) sessionStorage.removeItem("codequest_menu_focus");
-      if (focus === "float") this.cameras.main.setScroll(0, 90);
-      else if (focus === "char") this.cameras.main.setScroll(0, 175);
-      else if (focus === "string") this.cameras.main.setScroll(0, 265);
-      else if (focus === "operators") this.cameras.main.setScroll(0, 370);
+
+      // If activeModule is set, scroll to top to show the filtered module
+      if (activeModule) {
+        this.cameras.main.setScroll(0, 0);
+      } else {
+        // Original scroll behavior when viewing all modules
+        if (focus === "float") this.cameras.main.setScroll(0, 90);
+        else if (focus === "char") this.cameras.main.setScroll(0, 175);
+        else if (focus === "string") this.cameras.main.setScroll(0, 265);
+        else if (focus === "operators") this.cameras.main.setScroll(0, 370);
+      }
     } catch { /* ignore */ }
   }
 

@@ -6,6 +6,7 @@
  */
 
 import { mountGame, destroyGame } from "../game/main.js";
+import { GameManager } from "../game/GameManager.js";
 
 const MENU_FOCUS_KEY = "codequest_menu_focus";
 
@@ -33,6 +34,7 @@ function launchGame(section) {
     } else {
         sessionStorage.setItem(MENU_FOCUS_KEY, section);
     }
+    GameManager.set("activeModule", section);
     showGameContainer();
     mountGame({ parent: "phaser-container" });
     document.getElementById("phaser-container")?.scrollIntoView({ behavior: "smooth", block: "start" });
