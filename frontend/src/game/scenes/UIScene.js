@@ -47,21 +47,16 @@ export class UIScene extends Phaser.Scene {
       color: "#94a3b8",
     }).setDepth(903);
 
-    // ── Lives ──
-    this.livesText = this.add.text(700, 16, "♥♥♥", {
+    // ── Lives (numeric, no heart icons) ──
+    this.livesText = this.add.text(784, 16, "Lives: 0", {
       fontFamily: "monospace",
-      fontSize: "22px",
+      fontSize: "16px",
       color: "#f87171",
       shadow: { blur: 8, color: "#f87171", fill: true },
-    }).setDepth(903);
+    }).setOrigin(1, 0).setDepth(903);
 
-    // ── Combo indicator ──
-    this.comboText = this.add.text(700, 42, "", {
-      fontFamily: "monospace",
-      fontSize: "14px",
-      color: "#a78bfa",
-      fontStyle: "bold",
-    }).setDepth(903);
+    // ── Combo indicator (removed) ──
+    // Combo UI removed per request; update logic retained but disabled in _syncCombo().
 
     // ── Badge popup container (hidden) ──
     this.badgePopup = this.add.container(400, 300).setDepth(950).setAlpha(0);
@@ -100,9 +95,7 @@ export class UIScene extends Phaser.Scene {
 
   _syncLives() {
     const lives = GameManager.get("lives");
-    const max = GameManager.get("maxLives");
-    const hearts = "♥".repeat(lives) + "♡".repeat(max - lives);
-    this.livesText.setText(hearts);
+    this.livesText.setText(`Lives: ${lives}`);
 
     if (lives <= 1) {
       this.livesText.setColor("#ef4444");
@@ -112,14 +105,8 @@ export class UIScene extends Phaser.Scene {
   }
 
   _syncCombo() {
-    const combo = GameManager.get("combo");
-    const mult = GameManager.getComboMultiplier();
-    if (combo >= 2) {
-      this.comboText.setText(`${combo}x COMBO! (${mult}x XP)`);
-      this.comboText.setAlpha(1);
-    } else {
-      this.comboText.setAlpha(0);
-    }
+    // Combo UI hidden — no-op to avoid null references.
+    return;
   }
 
   _syncProgress() {

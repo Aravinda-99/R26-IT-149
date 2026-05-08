@@ -310,12 +310,6 @@ export class Level1Scene extends Phaser.Scene {
     }).setDepth(hudDepth);
 
     // ── Progress bar (top center) ──
-    this.add.text(W / 2, 68, "Integers Collected", {
-      fontFamily: "Arial",
-      fontSize: "13px",
-      color: "#34495e",
-      fontStyle: "bold",
-    }).setOrigin(0.5, 0).setDepth(hudDepth);
 
     this.progressBarBg = this.add.rectangle(W / 2, 92, 280, 18, 0x34495e, 0.3)
       .setStrokeStyle(1, 0x34495e).setDepth(hudDepth);
@@ -332,7 +326,7 @@ export class Level1Scene extends Phaser.Scene {
     // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
-      const heart = this.add.text(W - 30 - i * 35, 72, "❤️", {
+      const heart = this.add.text(W - 30 - i * 35, 80, "❤️", {
         fontSize: "24px",
       }).setOrigin(0.5).setDepth(hudDepth);
       this.livesIcons.push(heart);
@@ -363,48 +357,41 @@ export class Level1Scene extends Phaser.Scene {
       wordWrap: { width: 600 },
     }).setOrigin(0.5).setAlpha(0).setDepth(hudDepth + 10);
 
-    // ── Combo text ──
-    this.comboText = this.add.text(W / 2, 46, "", {
-      fontFamily: "Arial",
-      fontSize: "16px",
-      color: "#e67e22",
-      fontStyle: "bold",
-      stroke: "#ffffff",
-      strokeThickness: 2,
-    }).setOrigin(0.5).setAlpha(0).setDepth(hudDepth);
+    // ── Combo text (removed) ──
+    // Combo visual removed; update logic disabled in _updateCombo().
   }
 
   /* ═══════════════════════════════════════════════════════════════
    *  INSTRUCTION OVERLAY
    * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
+    const panelTop = 85;
+    const contentTop = panelTop + 28;
+    const titleGap = 14;
+    const descGap = 18;
+    const goalGap = 34;
+
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.82).setDepth(200);
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x1a2634, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 60, 640, 460, 16);
+    panelG.fillRoundedRect(W / 2 - 320, panelTop, 640, 460, 16);
     panelG.lineStyle(3, 0x27ae60);
-    panelG.strokeRoundedRect(W / 2 - 320, 60, 640, 460, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, panelTop, 640, 460, 16);
 
-    const title = this.add.text(W / 2, 100, "🌟 MISSION 1: INTEGER DISCOVERY", {
+    const title = this.add.text(W / 2, contentTop, "🌟 MISSION 1: INTEGER DISCOVERY", {
       fontFamily: "Arial Black, Arial, sans-serif",
       fontSize: "28px",
       color: "#27ae60",
       fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(202);
+    }).setOrigin(0.5, 0).setDepth(202);
 
-    const sub = this.add.text(W / 2, 140, "Number Line Adventure", {
-      fontFamily: "Arial",
-      fontSize: "18px",
-      color: "#87ceeb",
-      fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(202);
-
-    const desc = this.add.text(W / 2, 230,
+    const descY = title.y + title.height + titleGap;
+    const desc = this.add.text(W / 2, descY,
       "Integers are WHOLE NUMBERS: positive, negative, or zero.\n" +
       "Decimals (3.5) and fractions (1/2) are NOT integers!\n\n" +
-      "🟢  CATCH falling integers (green circles)\n" +
-      "🔴  AVOID non-integers (red circles)\n\n" +
+      "Gameplay: Catch the falling integers (whole numbers)! " +
+      "Dodge decimals and fractions.\n\n" +
       "Controls:\n" +
       "← → Arrow Keys or A/D to move\n" +
       "↑ or Space to jump",
@@ -413,25 +400,28 @@ export class Level1Scene extends Phaser.Scene {
         fontSize: "16px",
         color: "#bdc3c7",
         align: "center",
-        lineSpacing: 8,
+        lineSpacing: 10,
+        wordWrap: { width: 560 },
       }
-    ).setOrigin(0.5).setDepth(202);
+    ).setOrigin(0.5, 0).setDepth(202);
 
-    const goal = this.add.text(W / 2, 390, "Collect 20 integers with 80%+ accuracy\nto earn the Integer Explorer badge! 🏆", {
+    const goalY = desc.y + desc.height + descGap;
+    const goal = this.add.text(W / 2, goalY, "Collect 20 integers with 80%+ accuracy\nto earn the Integer Explorer badge! 🏆", {
       fontFamily: "Arial",
       fontSize: "15px",
       color: "#f1c40f",
       align: "center",
       fontStyle: "bold",
       lineSpacing: 6,
-    }).setOrigin(0.5).setDepth(202);
+    }).setOrigin(0.5, 0).setDepth(202);
 
     // Start button
-    const btnBg = this.add.rectangle(W / 2, 460, 240, 50, 0x27ae60, 1).setDepth(202);
+    const btnY = goal.y + goal.height + goalGap;
+    const btnBg = this.add.rectangle(W / 2, btnY, 210, 42, 0x27ae60, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0x2ecc71);
-    const btnTxt = this.add.text(W / 2, 460, "START ADVENTURE", {
+    const btnTxt = this.add.text(W / 2, btnY, "START ADVENTURE", {
       fontFamily: "Arial",
-      fontSize: "20px",
+      fontSize: "17px",
       color: "#ffffff",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
@@ -446,7 +436,7 @@ export class Level1Scene extends Phaser.Scene {
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1, scaleY: 1, duration: 120 });
     });
     btnBg.on("pointerup", () => {
-      [overlay, panelG, title, sub, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
+      [overlay, panelG, title, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
       this._startGame();
     });
   }
@@ -705,20 +695,8 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   _updateCombo() {
-    if (!this.comboText) return;
-    if (this.combo >= 2) {
-      const mult = GameManager.getComboMultiplier();
-      this.comboText.setText(`${this.combo}x COMBO!${mult > 1 ? ` (${mult}x XP)` : ""}`);
-      this.comboText.setAlpha(1);
-      this.tweens.add({
-        targets: this.comboText,
-        scaleX: 1.2, scaleY: 1.2,
-        yoyo: true,
-        duration: 150,
-      });
-    } else {
-      this.comboText.setAlpha(0);
-    }
+    // Combo UI removed; no-op to avoid updating a removed element.
+    return;
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -960,11 +938,11 @@ export class Level1Scene extends Phaser.Scene {
         color: "#e74c3c",
       }).setOrigin(0.5).setDepth(201);
 
-      this._createEndButton(W / 2 - 100, H / 2 + 90, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 115, H / 2 + 90, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, H / 2 + 90, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 115, H / 2 + 90, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
