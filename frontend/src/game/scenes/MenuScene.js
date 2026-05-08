@@ -109,7 +109,7 @@ export class MenuScene extends Phaser.Scene {
       ];
 
       intLevels.forEach((lvl, i) => {
-        const y = 66 + i * 32;
+        const y = 66 + i * 50;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -156,7 +156,7 @@ export class MenuScene extends Phaser.Scene {
 
       floatLevels.forEach((lvl, i) => {
         const floatBaseY = shouldShowInteger ? 176 : 66;
-        const y = floatBaseY + i * 32;
+        const y = floatBaseY + i * 50;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -211,7 +211,7 @@ export class MenuScene extends Phaser.Scene {
         else if (!shouldShowInteger) charBaseY = 176;
         else if (!shouldShowFloat) charBaseY = 176;
 
-        const y = charBaseY + i * 32;
+        const y = charBaseY + i * 50;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -261,7 +261,7 @@ export class MenuScene extends Phaser.Scene {
 
       stringLevels.forEach((lvl, i) => {
         const stringBaseY = stringHeaderY + 16;
-        const y = stringBaseY + i * 32;
+        const y = stringBaseY + i * 50;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -311,7 +311,7 @@ export class MenuScene extends Phaser.Scene {
 
       operatorLevels.forEach((lvl, i) => {
         const opsBaseY = opsHeaderY + 16;
-        const y = opsBaseY + i * 32;
+        const y = opsBaseY + i * 50;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
