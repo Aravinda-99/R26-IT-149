@@ -121,6 +121,23 @@ export async function renderGames(container) {
             </div>
         </div>
 
+        <!-- Operator Mastery Module -->
+        <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #ff6b6b; margin-bottom: 1rem;">
+            <div>
+                <h3 style="color: #ff6b6b; font-size: 1.15rem; margin-bottom: 0.35rem;">⚡ Operator Mastery Module</h3>
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                    3-Level Schema Theory Course: <b>Math Magic Academy</b> → <b>Calculation Arena</b> → <b>Code Builder Pro</b>
+                </p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                    Badges: 🧙 Math Wizard &nbsp; ⚔️ Combat Calculator &nbsp; 👨‍💼 Code Master
+                </p>
+            </div>
+            <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="btn btn-primary" id="launch-operators-module-btn" style="background: #ff6b6b;">Launch Module</button>
+                <button class="btn" id="close-operators-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+            </div>
+        </div>
+
         <div class="grid-3" id="games-grid"></div>
     `;
 
@@ -128,4 +145,5 @@ export async function renderGames(container) {
     wireModuleButtons("launch-float-module-btn", "close-float-module-btn", "float");
     wireModuleButtons("launch-char-module-btn", "close-char-module-btn", "char");
     wireModuleButtons("launch-string-module-btn", "close-string-module-btn", "string");
+    wireModuleButtons("launch-operators-module-btn", "close-operators-module-btn", "operators");
 }
