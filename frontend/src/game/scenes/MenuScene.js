@@ -156,7 +156,7 @@ export class MenuScene extends Phaser.Scene {
 
       floatLevels.forEach((lvl, i) => {
         const floatBaseY = shouldShowInteger ? 220 : 100;
-        const y = floatBaseY + i * 50;
+        const y = floatBaseY + i * 60;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -211,7 +211,7 @@ export class MenuScene extends Phaser.Scene {
         else if (!shouldShowInteger) charBaseY = 220;
         else if (!shouldShowFloat) charBaseY = 220;
 
-        const y = charBaseY + i * 50;
+        const y = charBaseY + i * 60;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -261,7 +261,7 @@ export class MenuScene extends Phaser.Scene {
 
       stringLevels.forEach((lvl, i) => {
         const stringBaseY = stringHeaderY + 16;
-        const y = stringBaseY + i * 50;
+        const y = stringBaseY + i * 60;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -311,7 +311,7 @@ export class MenuScene extends Phaser.Scene {
 
       operatorLevels.forEach((lvl, i) => {
         const opsBaseY = opsHeaderY + 16;
-        const y = opsBaseY + i * 50;
+        const y = opsBaseY + i * 60;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -387,7 +387,7 @@ export class MenuScene extends Phaser.Scene {
     const cardColor = unlocked ? 0x1e293b : 0x111827;
     const borderColor = completed ? 0x4ade80 : (unlocked ? 0x334155 : 0x1f2937);
 
-    const card = this.add.rectangle(400, y, 680, 44, cardColor, 0.95);
+    const card = this.add.rectangle(400, y, 680, 48, cardColor, 0.95);
     card.setStrokeStyle(2, borderColor);
 
     // Status indicator
@@ -396,36 +396,36 @@ export class MenuScene extends Phaser.Scene {
 
     if (completed) {
       this.add.text(80, y, "✓", {
-        fontSize: "10px", color: "#000000", fontStyle: "bold",
+        fontSize: "11px", color: "#000000", fontStyle: "bold",
       }).setOrigin(0.5);
     } else if (!unlocked) {
-      this.add.text(80, y, "🔒", { fontSize: "11px" }).setOrigin(0.5);
+      this.add.text(80, y, "🔒", { fontSize: "12px" }).setOrigin(0.5);
     }
 
     // Title
     const titleColor = unlocked ? "#e2e8f0" : "#475569";
-    this.add.text(100, y - 12, lvl.title, {
+    this.add.text(100, y - 8, lvl.title, {
       fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "12px",
+      fontSize: "14px",
       color: titleColor,
       fontStyle: "bold",
-    });
+    }).setOrigin(0, 0.5);
 
-    this.add.text(100, y + 4, `${lvl.phase}  ·  ${lvl.desc}`, {
+    this.add.text(100, y + 8, `${lvl.phase}  ·  ${lvl.desc}`, {
       fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "10px",
+      fontSize: "11px",
       color: "#94a3b8",
-    });
+    }).setOrigin(0, 0.5);
 
     // Badge
     if (badgeUnlocked) {
-      this.add.text(690, y - 8, lvl.badge.emoji, {
-        fontSize: "20px",
+      this.add.text(690, y - 7, lvl.badge.emoji, {
+        fontSize: "21px",
       }).setOrigin(0.5);
 
-      this.add.text(690, y + 12, lvl.badge.name, {
+      this.add.text(690, y + 10, lvl.badge.name, {
         fontFamily: "Inter, Arial, sans-serif",
-        fontSize: "8px",
+        fontSize: "9px",
         color: "#fbbf24",
       }).setOrigin(0.5);
     }
