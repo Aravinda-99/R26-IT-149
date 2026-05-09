@@ -1,77 +1,73 @@
 /**
- * Post-Test Page — Stage 2 Diagnostic MCQ
- * =========================================
- * Triggered when a student's schema state is Developing, Fragile, or Misconception.
- * Shows 3 MCQ questions per concept (output prediction, code tracing, conceptual reasoning).
- * Submits answers to the backend and displays the final schema state.
+ * Post-Test Page — Component 4: Understanding Check (MCQ)
+ * ========================================================
+ * Concept-specific MCQ check shown after the student completes a gamified lesson.
+ * Uses student-friendly language throughout — no research terminology visible.
+ *
+ * MCQ answer interpretation (internal):
+ *   Correct answer       → 1.0 (good understanding)
+ *   Nearly correct       → 0.5 (partial understanding)
+ *   Wrong answer         → 0.0 (weak understanding)
+ *   Clearly wrong        → 0.0 (serious confusion)
+ *
+ * The backend handles scoring. This file handles:
+ *   - Clean question-by-question MCQ flow
+ *   - Smooth answer selection UX
+ *   - Student-friendly result screen
  */
 
 import { MasteryAPI } from "../api/api.js";
 
-// State
+// ── State ───────────────────────────────────────────────────────────
 let currentStudentId = "";
 let currentConcept = "";
 let currentPreTestSchemaState = "Unknown";
 let currentOnBack = null;
 let questions = [];
+let currentQuestionIndex = 0;
 let selectedAnswers = {};
 let testResult = null;
 
+// ── Concept display names ───────────────────────────────────────────
+const conceptNames = {
+    variables: "Variables",
+    operators: "Operators",
+    loops: "Loops",
+    arrays: "Arrays",
+    methods: "Methods",
+};
+
 /**
- * Render the post-test page.
- * @param {HTMLElement} container - The page container
- * @param {object} opts - Options: { studentId, concept, masteryScore, schemaState, onBack }
+ * Entry point: render the understanding check page.
  */
 export async function renderPostTest(container, opts = {}) {
     currentStudentId = opts.studentId || "STU001";
     currentConcept = opts.concept || "variables";
     currentPreTestSchemaState = opts.schemaState || "Unknown";
-    const masteryScore = opts.masteryScore || 0;
-    const schemaState = currentPreTestSchemaState;
-    const onBack = opts.onBack || null;
-    currentOnBack = onBack;
+    currentOnBack = opts.onBack || null;
     selectedAnswers = {};
     testResult = null;
+    currentQuestionIndex = 0;
 
-    // Concept display names
-    const conceptNames = {
-        variables: "Variables & Data Types",
-        operators: "Operators & Expressions",
-        loops: "Loops & Iteration",
-        arrays: "Arrays & Lists",
-        methods: "Methods & Functions",
-    };
     const conceptName = conceptNames[currentConcept] || currentConcept;
 
     container.innerHTML = `
-        <div class="posttest-page">
-            <div class="posttest-header">
-                <button class="btn posttest-back-btn" id="posttest-back-btn">
-                    <span>&#8592;</span> Back to Mastery
+        <div class="posttest-page c4-check-page">
+            <div class="c4-check-header">
+                <button class="btn c4-back-btn" id="posttest-back-btn">
+                    ← Back
                 </button>
-                <div class="posttest-title-section">
-                    <h1>Diagnostic Post-Test</h1>
-                    <p class="posttest-subtitle">Validating your understanding of <strong>${conceptName}</strong></p>
-                </div>
-                <div class="posttest-meta">
-                    <div class="posttest-meta-item">
-                        <span class="posttest-meta-label">Current State</span>
-                        <span class="posttest-state-badge" data-state="${schemaState}">${schemaState}</span>
-                    </div>
-                    <div class="posttest-meta-item">
-                        <span class="posttest-meta-label">Mastery Score</span>
-                        <span class="posttest-score">${(masteryScore * 100).toFixed(1)}%</span>
-                    </div>
+                <div class="c4-check-title-section">
+                    <h1>Understanding Check</h1>
+                    <p class="c4-check-subtitle">Let's check what you learned about <strong>${conceptName}</strong></p>
                 </div>
             </div>
 
-            <div class="posttest-info-banner">
-                <div class="posttest-info-icon">&#9432;</div>
+            <div class="c4-check-info">
+                <span class="c4-check-info-icon"><i class="fa-solid fa-list-check"></i></span>
                 <div>
-                    <strong>Why this test?</strong>
-                    Your schema state for ${conceptName} is <strong>${schemaState}</strong>.
-                    This diagnostic test checks whether you truly understand the concept.
-                    Answer 3 questions: output prediction, code tracing, and conceptual reasoning.
+                    <strong>How it works</strong>
+                    <p>Answer ${questions.length || 10} questions about ${conceptName}. Take your time and pick the best answer for each question.</p>
                 </div>
             </div>
 
@@ -82,32 +78,21 @@ export async function renderPostTest(container, opts = {}) {
                 </div>
             </div>
 
-            <div id="posttest-actions" class="posttest-actions hidden">
-                <div class="posttest-progress-text" id="posttest-progress-text">0 / 3 answered</div>
-                <button class="btn btn-primary posttest-submit-btn" id="posttest-submit-btn" disabled>
-                    Submit Answers
-                </button>
-            </div>
-
             <div id="posttest-result" class="hidden"></div>
         </div>
     `;
 
     // Back button
-    const backBtn = document.getElementById("posttest-back-btn");
-    if (backBtn) {
-        backBtn.addEventListener("click", () => {
-            if (onBack) onBack();
-        });
-    }
+    document.getElementById("posttest-back-btn")?.addEventListener("click", () => {
+        if (currentOnBack) currentOnBack();
+    });
 
-    // Load questions
-    await loadQuestions();
+    await loadQuestions(container);
 }
 
-async function loadQuestions() {
+// ── Load questions and render the first one ─────────────────────────
+async function loadQuestions(container) {
     const questionsContainer = document.getElementById("posttest-questions-container");
-    const actionsContainer = document.getElementById("posttest-actions");
 
     try {
         const data = await MasteryAPI.getQuestions(currentConcept);
@@ -116,67 +101,19 @@ async function loadQuestions() {
         if (questions.length === 0) {
             questionsContainer.innerHTML = `
                 <div class="posttest-empty">
-                    <p>No diagnostic questions available for this concept.</p>
+                    <p>No questions available for this topic yet.</p>
                 </div>
             `;
             return;
         }
 
-        // Question type labels and icons
-        const typeLabels = {
-            output_prediction: { label: "Output Prediction", icon: "&#128424;", desc: "What does this code print?" },
-            code_tracing: { label: "Code Tracing", icon: "&#128270;", desc: "Step through the code carefully" },
-            conceptual_reasoning: { label: "Conceptual Reasoning", icon: "&#128161;", desc: "Explain the underlying concept" },
-        };
+        // Update info text with actual question count
+        const infoP = document.querySelector(".c4-check-info p");
+        if (infoP) {
+            infoP.textContent = `Answer ${questions.length} questions about ${conceptNames[currentConcept] || currentConcept}. Take your time and pick the best answer for each question.`;
+        }
 
-        questionsContainer.innerHTML = questions.map((q, index) => {
-            const typeInfo = typeLabels[q.type] || { label: q.type, icon: "", desc: "" };
-            const optionKeys = Object.keys(q.options);
-
-            return `
-                <div class="posttest-question-card" id="question-card-${index}">
-                    <div class="posttest-question-header">
-                        <span class="posttest-question-number">Question ${index + 1}</span>
-                        <span class="posttest-question-type" data-type="${q.type}">
-                            <span class="posttest-type-icon">${typeInfo.icon}</span>
-                            ${typeInfo.label}
-                        </span>
-                    </div>
-
-                    <div class="posttest-question-body">
-                        <p class="posttest-question-text">${q.question}</p>
-                        ${q.code ? `
-                            <div class="posttest-code-block">
-                                <div class="posttest-code-header">
-                                    <span>JAVA</span>
-                                </div>
-                                <pre><code>${escapeHtml(q.code)}</code></pre>
-                            </div>
-                        ` : ""}
-                    </div>
-
-                    <div class="posttest-options" id="options-${index}">
-                        ${optionKeys.map(key => `
-                            <button class="posttest-option" data-question="${index}" data-qid="${q.id}" data-option="${key}" id="opt-${index}-${key}">
-                                <span class="posttest-option-key">${key}</span>
-                                <span class="posttest-option-text">${q.options[key]}</span>
-                            </button>
-                        `).join("")}
-                    </div>
-                </div>
-            `;
-        }).join("");
-
-        // Show actions bar
-        actionsContainer.classList.remove("hidden");
-
-        // Attach option click handlers
-        document.querySelectorAll(".posttest-option").forEach(btn => {
-            btn.addEventListener("click", () => handleOptionClick(btn));
-        });
-
-        // Submit button
-        document.getElementById("posttest-submit-btn").addEventListener("click", submitTest);
+        renderQuestion(0);
 
     } catch (err) {
         questionsContainer.innerHTML = `
@@ -187,41 +124,127 @@ async function loadQuestions() {
     }
 }
 
-function handleOptionClick(btn) {
-    if (testResult) return; // Don't allow changes after submission
+// ── Render a single question (one at a time flow) ───────────────────
+function renderQuestion(index) {
+    currentQuestionIndex = index;
+    const questionsContainer = document.getElementById("posttest-questions-container");
+    const q = questions[index];
+    if (!q) return;
 
-    const questionIndex = btn.dataset.question;
-    const questionId = btn.dataset.qid;
-    const selectedOption = btn.dataset.option;
+    const total = questions.length;
+    const progressPct = ((index) / total) * 100;
+    const optionKeys = Object.keys(q.options);
+    const isLast = index === total - 1;
 
-    // Deselect other options for this question
-    document.querySelectorAll(`.posttest-option[data-question="${questionIndex}"]`).forEach(opt => {
-        opt.classList.remove("selected");
+    questionsContainer.innerHTML = `
+        <div class="c4-question-wrapper" style="animation: fadeSlideIn 0.3s ease-out;">
+            <!-- Progress bar -->
+            <div class="c4-question-progress">
+                <div class="c4-question-progress-label">
+                    <span>Question ${index + 1} of ${total}</span>
+                    <span>${conceptNames[currentConcept] || currentConcept}</span>
+                </div>
+                <div class="c4-question-progress-bar">
+                    <div class="c4-question-progress-fill" style="width: ${progressPct}%;"></div>
+                </div>
+            </div>
+
+            <!-- Question card -->
+            <div class="c4-question-card">
+                <p class="c4-question-text">${q.question}</p>
+                ${q.code ? `
+                    <div class="posttest-code-block">
+                        <div class="posttest-code-header"><span>JAVA</span></div>
+                        <pre><code>${escapeHtml(q.code)}</code></pre>
+                    </div>
+                ` : ""}
+
+                <div class="c4-options" id="c4-options-${index}">
+                    ${optionKeys.map(key => `
+                        <button class="c4-option ${selectedAnswers[q.id] === key ? 'selected' : ''}"
+                                data-question="${index}"
+                                data-qid="${q.id}"
+                                data-option="${key}">
+                            <span class="c4-option-key">${key}</span>
+                            <span class="c4-option-text">${q.options[key]}</span>
+                        </button>
+                    `).join("")}
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="c4-question-nav">
+                ${index > 0 ? `<button class="btn c4-nav-btn" id="c4-prev-btn">← Previous</button>` : `<div></div>`}
+                ${isLast
+                    ? `<button class="btn btn-primary c4-nav-btn c4-submit-btn" id="c4-submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''}>Submit Answers</button>`
+                    : `<button class="btn btn-primary c4-nav-btn" id="c4-next-btn" ${!selectedAnswers[q.id] ? 'disabled' : ''}>Next →</button>`
+                }
+            </div>
+
+            <!-- Question dots -->
+            <div class="c4-question-dots">
+                ${questions.map((_, i) => {
+                    const qId = questions[i].id;
+                    let dotClass = "c4-dot";
+                    if (i === index) dotClass += " active";
+                    if (selectedAnswers[qId]) dotClass += " answered";
+                    return `<span class="${dotClass}" data-dot-index="${i}"></span>`;
+                }).join("")}
+            </div>
+        </div>
+    `;
+
+    // ── Option click handlers ────────────────────────────────────
+    document.querySelectorAll(`#c4-options-${index} .c4-option`).forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (testResult) return;
+
+            const qId = btn.dataset.qid;
+            const option = btn.dataset.option;
+
+            // Deselect all for this question
+            document.querySelectorAll(`#c4-options-${index} .c4-option`).forEach(o => o.classList.remove("selected"));
+            btn.classList.add("selected");
+
+            selectedAnswers[qId] = option;
+
+            // Enable next/submit button
+            const nextBtn = document.getElementById("c4-next-btn");
+            const submitBtn = document.getElementById("c4-submit-btn");
+            if (nextBtn) nextBtn.disabled = false;
+            if (submitBtn) submitBtn.disabled = Object.keys(selectedAnswers).length < questions.length;
+
+            // Update dots
+            document.querySelectorAll(".c4-dot").forEach((dot, i) => {
+                if (selectedAnswers[questions[i].id]) {
+                    dot.classList.add("answered");
+                }
+            });
+        });
     });
 
-    // Select this option
-    btn.classList.add("selected");
-    selectedAnswers[questionId] = selectedOption;
+    // ── Navigation handlers ──────────────────────────────────────
+    document.getElementById("c4-prev-btn")?.addEventListener("click", () => renderQuestion(index - 1));
+    document.getElementById("c4-next-btn")?.addEventListener("click", () => renderQuestion(index + 1));
+    document.getElementById("c4-submit-btn")?.addEventListener("click", submitTest);
 
-    // Update progress
-    const answered = Object.keys(selectedAnswers).length;
-    const total = questions.length;
-    const progressText = document.getElementById("posttest-progress-text");
-    if (progressText) progressText.textContent = `${answered} / ${total} answered`;
-
-    // Enable submit if all answered
-    const submitBtn = document.getElementById("posttest-submit-btn");
-    if (submitBtn) submitBtn.disabled = answered < total;
+    // ── Dot click handlers (jump to question) ────────────────────
+    document.querySelectorAll(".c4-dot").forEach(dot => {
+        dot.addEventListener("click", () => {
+            const i = parseInt(dot.dataset.dotIndex);
+            if (!isNaN(i)) renderQuestion(i);
+        });
+    });
 }
 
+// ── Submit the test ─────────────────────────────────────────────────
 async function submitTest() {
-    const submitBtn = document.getElementById("posttest-submit-btn");
+    const submitBtn = document.getElementById("c4-submit-btn");
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.textContent = "Submitting...";
+        submitBtn.textContent = "Checking...";
     }
 
-    // Build answers array
     const answersPayload = Object.entries(selectedAnswers).map(([qId, option]) => ({
         question_id: qId,
         selected_option: option,
@@ -243,59 +266,179 @@ async function submitTest() {
             submitBtn.disabled = false;
             submitBtn.textContent = "Submit Answers";
         }
-        alert("Failed to submit: " + err.message);
+        alert("Something went wrong. Please try again.");
     }
 }
 
-/**
- * Map API fields to what the results UI expects (backend uses schema_state, color, etc.).
- */
+// ── Normalize backend response ──────────────────────────────────────
 function normalizeDiagnosticResult(raw) {
-    const breakdown = raw.breakdown || {};
-    const pretest = breakdown.pretest_score ?? raw.pretest_score;
-    const masteryRaw =
-        raw.mastery_score ?? pretest ?? 0;
-    const masteryNum =
-        typeof masteryRaw === "number" && !Number.isNaN(masteryRaw)
-            ? masteryRaw
-            : parseFloat(masteryRaw) || 0;
     const accRaw = raw.mcq_accuracy ?? raw.post_test_accuracy ?? 0;
-    const accNum =
-        typeof accRaw === "number" && !Number.isNaN(accRaw)
-            ? accRaw
-            : parseFloat(accRaw) || 0;
+    const accNum = typeof accRaw === "number" && !Number.isNaN(accRaw) ? accRaw : parseFloat(accRaw) || 0;
 
     return {
         ...raw,
-        pre_test_state:
-            raw.pre_test_state ?? currentPreTestSchemaState ?? "Unknown",
+        pre_test_state: raw.pre_test_state ?? currentPreTestSchemaState ?? "Unknown",
         final_state: raw.final_state ?? raw.schema_state ?? "Unknown",
         final_color: raw.final_color ?? raw.color ?? "#8899aa",
-        mastery_score: masteryNum,
         mcq_accuracy: accNum,
         wrong: raw.wrong ?? Math.max(0, (raw.total ?? 0) - (raw.correct ?? 0)),
-        score_percentage:
-            raw.score_percentage ??
-            (raw.total ? ((raw.correct ?? 0) / raw.total) * 100 : 0),
+        score_percentage: raw.score_percentage ?? (raw.total ? ((raw.correct ?? 0) / raw.total) * 100 : 0),
         current_level: raw.current_level ?? "Unknown",
         feedback_message: raw.feedback_message ?? "",
         post_test_status: raw.post_test_status ?? "",
-        attempt_number: raw.attempt_number ?? 1,
         next_action: raw.next_action ?? "",
     };
 }
 
-function isPassed(result) {
-    const pct = Number(result.score_percentage);
-    if (!Number.isNaN(pct) && pct > 0) return pct >= 60;
-    const total = Number(result.total) || 0;
-    const correct = Number(result.correct) || 0;
-    return total ? (correct / total) * 100 >= 60 : false;
+// ── Student-friendly level from score_percentage ────────────────────
+function getFriendlyLevel(scorePct) {
+    const s = scorePct / 100;
+    if (s >= 0.80) return { label: "Strong Understanding", color: "#10b981", icon: '<i class="fa-solid fa-trophy"></i>', title: "Great Work!" };
+    if (s >= 0.60) return { label: "Good Progress", color: "#3b82f6", icon: '<i class="fa-solid fa-arrow-trend-up"></i>', title: "Good Progress!" };
+    if (s >= 0.40) return { label: "Needs More Practice", color: "#f97316", icon: '<i class="fa-solid fa-book-open"></i>', title: "Keep Practicing" };
+    return { label: "Learn Again", color: "#ef4444", icon: '<i class="fa-solid fa-rotate-left"></i>', title: "Let's Learn Again" };
 }
 
+function getFriendlyMessage(scorePct) {
+    const s = scorePct / 100;
+    if (s >= 0.80) return "You understood this topic well and can continue to the next step.";
+    if (s >= 0.60) return "You understood most parts of this topic. A little more practice will help you improve.";
+    if (s >= 0.40) return "You are close, but this topic still needs more practice. Try the game lesson again.";
+    return "This topic is still difficult. Go through the game lesson again and try once more.";
+}
+
+// ── Show results screen ─────────────────────────────────────────────
+function showResults(result) {
+    result = normalizeDiagnosticResult(result);
+
+    // Hide question area
+    const questionsContainer = document.getElementById("posttest-questions-container");
+    if (questionsContainer) questionsContainer.innerHTML = "";
+
+    const scorePct = Number(result.score_percentage) || 0;
+    const level = getFriendlyLevel(scorePct);
+    const message = getFriendlyMessage(scorePct);
+    const passed = scorePct >= 60;
+    const conceptName = conceptNames[currentConcept] || currentConcept;
+
+    const resultContainer = document.getElementById("posttest-result");
+    if (!resultContainer) return;
+
+    resultContainer.innerHTML = `
+        <div class="c4-result-card" style="animation: fadeSlideIn 0.4s ease-out;">
+            <!-- Header -->
+            <div class="c4-result-header" style="border-bottom-color: ${level.color}30;">
+                <span class="c4-result-icon">${level.icon}</span>
+                <h2 class="c4-result-title">${level.title}</h2>
+                <p class="c4-result-concept">${conceptName}</p>
+            </div>
+
+            <!-- Score circle -->
+            <div class="c4-result-score-section">
+                <div class="c4-result-circle" style="border-color: ${level.color};">
+                    <span class="c4-result-pct">${Math.round(scorePct)}%</span>
+                </div>
+                <span class="c4-result-badge" style="background: ${level.color}15; color: ${level.color}; border: 1px solid ${level.color}30;">
+                    ${level.label}
+                </span>
+            </div>
+
+            <!-- Summary stats -->
+            <div class="c4-result-stats">
+                <div class="c4-result-stat">
+                    <span class="c4-result-stat-value" style="color: #10b981;">${result.correct || 0}</span>
+                    <span class="c4-result-stat-label">Correct</span>
+                </div>
+                <div class="c4-result-stat-divider"></div>
+                <div class="c4-result-stat">
+                    <span class="c4-result-stat-value" style="color: var(--text-secondary);">${result.total || 0}</span>
+                    <span class="c4-result-stat-label">Total</span>
+                </div>
+                <div class="c4-result-stat-divider"></div>
+                <div class="c4-result-stat">
+                    <span class="c4-result-stat-value" style="color: ${result.wrong > 0 ? '#ef4444' : 'var(--text-secondary)'};">${result.wrong || 0}</span>
+                    <span class="c4-result-stat-label">Incorrect</span>
+                </div>
+            </div>
+
+            <!-- Message -->
+            <div class="c4-result-message" style="border-left-color: ${level.color};">
+                <p>${message}</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="c4-result-actions">
+                ${passed
+                    ? `<button class="btn c4-action-btn c4-btn-done" id="posttest-done-btn"><i class="fa-solid fa-check"></i> Done</button>`
+                    : `<button class="btn btn-primary c4-action-btn" id="posttest-learn-again-btn"><i class="fa-solid fa-rotate-left"></i> Learn Again</button>`
+                }
+            </div>
+
+            <!-- Answer review toggle -->
+            <button class="btn c4-review-toggle" id="c4-review-toggle">
+                Show Answers
+            </button>
+            <div class="c4-review-section hidden" id="c4-review-section">
+                ${renderAnswerReview(result)}
+            </div>
+        </div>
+    `;
+
+    resultContainer.classList.remove("hidden");
+    resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // Done handler
+    document.getElementById("posttest-done-btn")?.addEventListener("click", () => {
+        if (currentOnBack) currentOnBack();
+    });
+
+    // Learn Again handler
+    document.getElementById("posttest-learn-again-btn")?.addEventListener("click", () => {
+        redirectToGamifiedLesson(currentConcept);
+    });
+
+    // Review toggle
+    document.getElementById("c4-review-toggle")?.addEventListener("click", () => {
+        const section = document.getElementById("c4-review-section");
+        const toggle = document.getElementById("c4-review-toggle");
+        if (section && toggle) {
+            section.classList.toggle("hidden");
+            toggle.textContent = section.classList.contains("hidden") ? "Show Answers" : "Hide Answers";
+        }
+    });
+}
+
+// ── Render answer review (collapsible) ──────────────────────────────
+function renderAnswerReview(result) {
+    if (!result.results || result.results.length === 0) return "";
+
+    return result.results.map((r, i) => {
+        const q = questions[i];
+        if (!q) return "";
+
+        return `
+            <div class="c4-review-item ${r.is_correct ? 'correct' : 'incorrect'}">
+                <div class="c4-review-item-header">
+                    <span class="c4-review-q-num">Q${i + 1}</span>
+                    <span class="c4-review-status ${r.is_correct ? 'correct' : 'incorrect'}">
+                        ${r.is_correct ? '<i class="fa-solid fa-check"></i> Correct' : '<i class="fa-solid fa-xmark"></i> Incorrect'}
+                    </span>
+                </div>
+                <p class="c4-review-question">${q.question}</p>
+                ${!r.is_correct ? `
+                    <div class="c4-review-answers">
+                        <div class="c4-review-your-answer">Your answer: <strong>${r.selected}</strong> – ${q.options[r.selected] || ""}</div>
+                        <div class="c4-review-correct-answer">Correct: <strong>${r.correct}</strong> – ${q.options[r.correct] || ""}</div>
+                    </div>
+                ` : ""}
+                ${r.explanation ? `<p class="c4-review-explanation">${r.explanation}</p>` : ""}
+            </div>
+        `;
+    }).join("");
+}
+
+// ── Navigate to gamified lesson ─────────────────────────────────────
 function redirectToGamifiedLesson(concept) {
-    // Minimal integration with existing stack: go to Games page and auto-launch
-    // the most relevant module section. This keeps the flow within the app.
     const conceptToSection = {
         variables: "integer",
         operators: "integer",
@@ -309,7 +452,6 @@ function redirectToGamifiedLesson(concept) {
     const gamesLink = document.querySelector('.nav-link[data-page="games"]');
     gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
-    // After the Games page renders, click launch for the chosen module.
     const launchIdBySection = {
         integer: "launch-int-module-btn",
         float: "launch-float-module-btn",
@@ -321,179 +463,14 @@ function redirectToGamifiedLesson(concept) {
     const startedAt = Date.now();
     const tryClick = () => {
         const btn = document.getElementById(launchId);
-        if (btn) {
-            btn.click();
-            return;
-        }
+        if (btn) { btn.click(); return; }
         if (Date.now() - startedAt > 4000) return;
         setTimeout(tryClick, 100);
     };
     setTimeout(tryClick, 0);
 }
 
-function showResults(result) {
-    result = normalizeDiagnosticResult(result);
-    // Hide submit actions
-    const actionsContainer = document.getElementById("posttest-actions");
-    if (actionsContainer) actionsContainer.classList.add("hidden");
-
-    // Mark correct/incorrect on each question
-    if (result.results) {
-        result.results.forEach((r, index) => {
-            const card = document.getElementById(`question-card-${index}`);
-            if (!card) return;
-
-            // Mark options
-            const options = card.querySelectorAll(".posttest-option");
-            options.forEach(opt => {
-                const optKey = opt.dataset.option;
-                opt.classList.add("revealed");
-
-                if (optKey === r.correct) {
-                    opt.classList.add("correct");
-                }
-                if (optKey === r.selected && !r.is_correct) {
-                    opt.classList.add("incorrect");
-                }
-            });
-
-            // Add explanation
-            const explanationHtml = `
-                <div class="posttest-explanation ${r.is_correct ? 'correct' : 'incorrect'}">
-                    <span class="posttest-explanation-icon">${r.is_correct ? '&#10004;' : '&#10008;'}</span>
-                    <div>
-                        <strong>${r.is_correct ? 'Correct!' : 'Incorrect'}</strong>
-                        <p>${r.explanation}</p>
-                    </div>
-                </div>
-            `;
-            card.insertAdjacentHTML("beforeend", explanationHtml);
-        });
-    }
-
-    // Show result summary
-    const resultContainer = document.getElementById("posttest-result");
-    if (resultContainer) {
-        const stateChanged = result.pre_test_state !== result.final_state;
-        const improved = getStateRank(result.final_state) > getStateRank(result.pre_test_state);
-        const passed = isPassed(result);
-        const title = passed ? "Passed" : "Try Again";
-        const actionLabel = passed ? "Done" : "Learn Again";
-        const actionId = passed ? "posttest-done-btn" : "posttest-learn-again-btn";
-
-        resultContainer.innerHTML = `
-            <div class="posttest-result-card">
-                <h2>${title}</h2>
-
-                <div class="posttest-result-score">
-                    <div class="posttest-result-circle" style="--score-color: ${result.final_color}">
-                        <span class="posttest-result-fraction">${result.correct}/${result.total}</span>
-                        <span class="posttest-result-label">Correct</span>
-                    </div>
-                </div>
-
-                <div class="posttest-result-details" style="margin-top: 1rem;">
-                    <div class="posttest-detail-row">
-                        <span>Total Questions</span>
-                        <span>${result.total}</span>
-                    </div>
-                    <div class="posttest-detail-row">
-                        <span>Correct Answers</span>
-                        <span>${result.correct}</span>
-                    </div>
-                    <div class="posttest-detail-row">
-                        <span>Wrong Answers</span>
-                        <span>${result.wrong}</span>
-                    </div>
-                    <div class="posttest-detail-row">
-                        <span>Score</span>
-                        <span>${Number(result.score_percentage).toFixed(0)}%</span>
-                    </div>
-                    <div class="posttest-detail-row">
-                        <span>Current Level</span>
-                        <span class="posttest-state-badge large" data-state="${result.current_level}">${result.current_level}</span>
-                    </div>
-                </div>
-
-                ${result.feedback_message ? `
-                    <div class="posttest-state-change neutral" style="margin-top: 0.75rem;">
-                        ${result.feedback_message}
-                    </div>
-                ` : ""}
-
-                <div class="posttest-actions" style="margin-top: 1rem; display:flex; justify-content:flex-end;">
-                    <button class="btn btn-primary" id="${actionId}">
-                        ${actionLabel}
-                    </button>
-                </div>
-
-                <div class="posttest-result-states">
-                    <div class="posttest-state-block">
-                        <span class="posttest-state-label">Before</span>
-                        <span class="posttest-state-badge" data-state="${result.pre_test_state}">${result.pre_test_state}</span>
-                    </div>
-                    <div class="posttest-state-arrow">${stateChanged ? '&#10132;' : '&#8212;'}</div>
-                    <div class="posttest-state-block">
-                        <span class="posttest-state-label">After</span>
-                        <span class="posttest-state-badge large" data-state="${result.final_state}">${result.final_state}</span>
-                    </div>
-                </div>
-
-                ${stateChanged ? `
-                    <div class="posttest-state-change ${improved ? 'improved' : 'declined'}">
-                        ${improved
-                            ? 'Your understanding has been validated! Schema state improved.'
-                            : 'The diagnostic suggests your understanding may need reinforcement.'}
-                    </div>
-                ` : `
-                    <div class="posttest-state-change neutral">
-                        Your schema state remains ${result.final_state}. ${
-                            result.final_state === 'Stable'
-                                ? 'Great job!'
-                                : 'Keep practicing to improve your mastery.'
-                        }
-                    </div>
-                `}
-
-                <div class="posttest-result-details">
-                    <div class="posttest-detail-row">
-                        <span>Mastery Score (Stage 1)</span>
-                        <span>${(result.mastery_score * 100).toFixed(1)}%</span>
-                    </div>
-                    <div class="posttest-detail-row">
-                        <span>MCQ Accuracy (Stage 2)</span>
-                        <span>${(result.mcq_accuracy * 100).toFixed(1)}%</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        resultContainer.classList.remove("hidden");
-        resultContainer.scrollIntoView({ behavior: "smooth", block: "start" });
-
-        const doneBtn = document.getElementById("posttest-done-btn");
-        if (doneBtn) {
-            doneBtn.addEventListener("click", () => {
-                if (currentOnBack) currentOnBack();
-            });
-        }
-        const learnAgainBtn = document.getElementById("posttest-learn-again-btn");
-        if (learnAgainBtn) {
-            learnAgainBtn.addEventListener("click", () => redirectToGamifiedLesson(currentConcept));
-        }
-    }
-}
-
-function getStateRank(state) {
-    const ranks = {
-        Misconception: 1,
-        Fragile: 2,
-        Developing: 3,
-        Stable: 4,
-        Unknown: 0,
-    };
-    return ranks[state] ?? 0;
-}
-
+// ── Utility ─────────────────────────────────────────────────────────
 function escapeHtml(text) {
     const div = document.createElement("div");
     div.textContent = text;

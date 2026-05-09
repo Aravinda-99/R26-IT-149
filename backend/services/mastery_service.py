@@ -315,6 +315,19 @@ class MasteryService:
                 concept_view["post_test_status"] = mcq.get("postTestStatus", "")
                 concept_view["mcq_score_percentage"] = mcq.get("scorePercentage", None)
                 concept_view["level_updated_at"] = mcq.get("updatedAt", "")
+                
+                concept_view["postTestCompleted"] = True
+                concept_view["mcqPostTestScore"] = mcq.get("mcqScore", 0.0)
+                concept_view["finalSchemaScore"] = mcq.get("finalSchemaScore", 0.0)
+                if "evidenceScore" in mcq:
+                    concept_view["evidenceScore"] = mcq.get("evidenceScore")
+                    
+            # Ensure evidenceScore is present and needs_posttest is set
+            for concept_key, concept_view in result.get("concepts", {}).items():
+                if "evidenceScore" not in concept_view:
+                    concept_view["evidenceScore"] = concept_view.get("mastery_score", 0.0)
+                if "postTestCompleted" not in concept_view:
+                    concept_view["postTestCompleted"] = False
 
         now = timestamp_now()
         for concept_name, concept_result in result["concepts"].items():

@@ -575,21 +575,26 @@ def calculate_mastery_score(concept_data):
     attempt_score = min(1.0 / attempts, 1.0)
     quiz_score = min(quiz_marks / quiz_total, 1.0)
     error_pattern_score = max(0.0, min(error_pattern, 1.0))
+    gamified_score = min(concept_data.get("gamifiedScore", correctness_score), 1.0)
 
-    mastery_score = (
-        (0.4 * correctness_score)
-        + (0.2 * attempt_score)
-        + (0.2 * quiz_score)
-        + (0.2 * (1.0 - error_pattern_score))
+    # Calculate EvidenceScore using the requested formula
+    evidence_score = (
+        (0.25 * correctness_score)
+        + (0.20 * attempt_score)
+        + (0.20 * gamified_score)
+        + (0.20 * quiz_score)
+        + (0.15 * (1.0 - error_pattern_score))
     )
-    mastery_score = max(0.0, min(mastery_score, 1.0))
+    evidence_score = max(0.0, min(evidence_score, 1.0))
 
     return {
         "correctness_score": round(correctness_score, 4),
         "attempt_score": round(attempt_score, 4),
         "quiz_score": round(quiz_score, 4),
         "error_pattern_score": round(error_pattern_score, 4),
-        "mastery_score": round(mastery_score, 4),
+        "gamified_score": round(gamified_score, 4),
+        "evidence_score": round(evidence_score, 4),
+        "mastery_score": round(evidence_score, 4), # Keep mastery_score mapped to evidence_score for backward compat
     }
 
 
@@ -597,15 +602,9 @@ def needs_posttest(schema_state):
     """
     Determine whether a diagnostic post-test should be triggered.
 
-    The post-test is triggered for any state other than Stable.
-
-    Args:
-        schema_state (str): Current schema state classification.
-
-    Returns:
-        bool: True if post-test is needed.
+    Post-test is ALWAYS required before confirming Stable Schema.
     """
-    return schema_state != "Stable"
+    return True
 
 
 def determine_final_state(mastery_score, mcq_correct, mcq_total):
