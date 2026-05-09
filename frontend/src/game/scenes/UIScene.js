@@ -40,13 +40,6 @@ export class UIScene extends Phaser.Scene {
       shadow: { blur: 6, color: "#fbbf24", fill: true },
     }).setDepth(903);
 
-    // ── Score Counter ──
-    this.scoreText = this.add.text(16, 40, "Score: 0", {
-      fontFamily: "monospace",
-      fontSize: "14px",
-      color: "#94a3b8",
-    }).setDepth(903);
-
     // ── Lives (numeric, no heart icons) ──
     this.livesText = this.add.text(784, 16, "Lives: 0", {
       fontFamily: "monospace",
@@ -90,7 +83,8 @@ export class UIScene extends Phaser.Scene {
   }
 
   _syncScore() {
-    this.scoreText.setText(`Score: ${GameManager.get("score")}`);
+    // Score display removed from the HUD.
+    return;
   }
 
   _syncLives() {

@@ -372,29 +372,26 @@ export class Level3Scene extends Phaser.Scene {
 
     const pg = this.add.graphics().setDepth(d + 1);
     pg.fillStyle(0x0d1530, 0.98);
-    pg.fillRoundedRect(W / 2 - 300, 50, 600, 490, 16);
+    pg.fillRoundedRect(W / 2 - 300, 70, 600, 490, 16);
     pg.lineStyle(3, 0xa78bfa);
-    pg.strokeRoundedRect(W / 2 - 300, 50, 600, 490, 16);
+    pg.strokeRoundedRect(W / 2 - 300, 70, 600, 490, 16);
     els.push(pg);
 
-    els.push(this.add.text(W / 2, 85, "🧠 FINAL MISSION: INTEGER ESCAPE", {
+    els.push(this.add.text(W / 2, 105, "🧠 FINAL MISSION: INTEGER ESCAPE", {
       fontFamily: "Arial Black, Arial", fontSize: "22px",
       color: "#a78bfa", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(d + 2));
 
-    els.push(this.add.text(W / 2, 115, "Restructuring Phase — Apply Your int Knowledge", {
+    els.push(this.add.text(W / 2, 135, "Restructuring Phase — Apply Your int Knowledge", {
       fontFamily: "Arial", fontSize: "13px", color: "#c4b5fd", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(d + 2));
 
-    els.push(this.add.text(W / 2, 230,
+    els.push(this.add.text(W / 2, 260,
       "You are trapped in the Integer Escape Facility!\n" +
       "3 locked gates block your path to the EXIT.\n\n" +
       "🤖 Move your robot with Arrow Keys / WASD\n" +
       "💻 Walk to a Security Terminal, press [E]\n" +
       "🔐 Solve the int-based puzzle to open the gate\n\n" +
-      "Terminal 1: Type a valid integer assignment\n" +
-      "Terminal 2: Calculate an arithmetic expression\n" +
-      "Terminal 3: Choose the safe integer value\n\n" +
       "⚠️ No decimals, no strings — INTEGERS ONLY!",
       {
         fontFamily: "Arial", fontSize: "13px",
@@ -402,16 +399,16 @@ export class Level3Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(d + 2));
 
-    els.push(this.add.text(W / 2, 420,
+    els.push(this.add.text(W / 2, 440,
       "Open all 3 gates and reach the EXIT\nto earn the Master of Integers badge! 🧠", {
         fontFamily: "Arial", fontSize: "13px",
         color: "#fbbf24", align: "center", fontStyle: "bold", lineSpacing: 5,
       }
     ).setOrigin(0.5).setDepth(d + 2));
 
-    const btnBg = this.add.rectangle(W / 2, 480, 240, 46, 0x7c3aed).setDepth(d + 2);
+    const btnBg = this.add.rectangle(W / 2, 500, 240, 46, 0x7c3aed).setDepth(d + 2);
     btnBg.setStrokeStyle(2, 0xa78bfa);
-    const btnTxt = this.add.text(W / 2, 480, "ENTER FACILITY", {
+    const btnTxt = this.add.text(W / 2, 500, "ENTER FACILITY", {
       fontFamily: "Arial", fontSize: "18px", color: "#fff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(d + 3);
     els.push(btnBg, btnTxt);
@@ -534,18 +531,21 @@ export class Level3Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(d + 2));
 
     // Code block
-    els.push(this.add.text(W / 2, 200, "int accessCode = _______ ;", {
-      fontFamily: "Courier New, monospace", fontSize: "20px", color: "#4ade80",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(d + 2));
-
-    els.push(this.add.text(W / 2, 235, "Type a whole number (e.g. 404, -10, 0)", {
-      fontFamily: "Arial", fontSize: "11px", color: "#64748b",
-    }).setOrigin(0.5).setDepth(d + 2));
+    const codeLines1 = [
+      "int a = ???;",
+      "int b = 10;",
+      "System.out.print(a + b); output = 17"
+    ];
+    codeLines1.forEach((line, i) => {
+      const color = line.startsWith("//") ? "#64748b" : "#4ade80";
+      els.push(this.add.text(240, 180 + i * 24, line, {
+        fontFamily: "Courier New, monospace", fontSize: "16px", color,
+      }).setDepth(d + 2));
+    });
 
     // DOM input field
     const inputEl = this.add.dom(W / 2, 280).createFromHTML(
-      `<input type="text" id="t1-input" placeholder="Enter an integer..." 
+      `<input type="text" id="t1-input" placeholder="a = ?" 
        style="width:220px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
@@ -588,15 +588,14 @@ export class Level3Scene extends Phaser.Scene {
       const val = inputField.value.trim();
 
       // Validate: must be a valid integer (no decimals, no text)
-      if (val === "" || !/^-?\d+$/.test(val)) {
-        errTxt.setText('❌ Syntax Error: Expected int, not "' + val + '"');
+      if (val !== "7") {
+        errTxt.setText('❌ Wrong! a + 10 = 17, so a = 7');
         this.cameras.main.shake(150, 0.01);
         return;
       }
 
-      // Success!
       els.forEach(e => e.destroy());
-      this._gateOpen(0, `int accessCode = ${val}; // ✓ Valid integer`);
+      this._gateOpen(0, "int a = 7; // 7 + 10 = 17 ✓");
     });
 
     // Focus the input after a tiny delay
@@ -630,21 +629,20 @@ export class Level3Scene extends Phaser.Scene {
 
     // Code block
     const codeLines = [
-      "int a = 15;",
-      "int b = 5;",
-      "int result = a - b;",
-      "// Enter the value of result:",
+      "int x = 4;",
+      "int y = ???;",
+      "System.out.print(x * y); output = 32"
     ];
     codeLines.forEach((line, i) => {
-      const color = i === 3 ? "#64748b" : "#4ade80";
+      const color = line.startsWith("//") ? "#64748b" : "#4ade80";
       els.push(this.add.text(240, 170 + i * 24, line, {
-        fontFamily: "Courier New, monospace", fontSize: "15px", color,
+        fontFamily: "Courier New, monospace", fontSize: "16px", color,
       }).setDepth(d + 2));
     });
 
     // DOM input
     const inputEl = this.add.dom(W / 2, 290).createFromHTML(
-      `<input type="text" id="t2-input" placeholder="result = ?" 
+      `<input type="text" id="t2-input" placeholder="y = ?" 
        style="width:180px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
@@ -657,10 +655,7 @@ export class Level3Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(d + 2);
     els.push(errTxt);
 
-    // Hint
-    els.push(this.add.text(W / 2, 355, "💡 Hint: a - b = 15 - 5 = ?", {
-      fontFamily: "Arial", fontSize: "11px", color: "#475569",
-    }).setOrigin(0.5).setDepth(d + 2));
+    // Hint removed to increase difficulty
 
     // Submit
     const btnBg = this.add.rectangle(W / 2, 395, 180, 42, 0x0e7490).setDepth(d + 2);
@@ -691,14 +686,14 @@ export class Level3Scene extends Phaser.Scene {
       if (!inp) return;
       const val = inp.value.trim();
 
-      if (val !== "10") {
-        errTxt.setText(`❌ Wrong! result = a - b = 15 - 5 ≠ ${val}`);
+      if (val !== "8") {
+        errTxt.setText(`❌ Wrong! 4 * y = 32, so y = 8`);
         this.cameras.main.shake(150, 0.01);
         return;
       }
 
       els.forEach(e => e.destroy());
-      this._gateOpen(1, "int result = 15 - 5; // result = 10 ✓");
+      this._gateOpen(1, "int y = 8; // 4 * 8 = 32 ✓");
     });
 
     this.time.delayedCall(100, () => {
@@ -721,7 +716,7 @@ export class Level3Scene extends Phaser.Scene {
     pg.strokeRoundedRect(W / 2 - 280, 70, 560, 440, 14);
     els.push(pg);
 
-    els.push(this.add.text(W / 2, 98, "💻 TERMINAL 3: Validation & Constraint", {
+    els.push(this.add.text(W / 2, 98, "💻 TERMINAL 3: Logic & Constraints", {
       fontFamily: "monospace", fontSize: "15px", color: "#fbbf24", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(d + 2));
 
@@ -731,27 +726,23 @@ export class Level3Scene extends Phaser.Scene {
 
     // Code block
     const cLines = [
-      "int maxCapacity = 50;",
-      "int currentLoad = 40;",
-      "",
-      "// How much more can we safely add?",
-      "// safeLoad must be an int and",
-      "// currentLoad + safeLoad <= maxCapacity",
-      "",
-      "int safeLoad = ???;",
+      "int target = 100;",
+      "int score = 85;",
+      "int bonus = ???;",
+      "score + bonus == target"
     ];
     cLines.forEach((line, i) => {
       const color = line.startsWith("//") ? "#64748b" : (line === "" ? "#000" : "#4ade80");
-      els.push(this.add.text(230, 150 + i * 20, line, {
-        fontFamily: "Courier New, monospace", fontSize: "13px", color,
+      els.push(this.add.text(240, 160 + i * 20, line, {
+        fontFamily: "Courier New, monospace", fontSize: "14px", color,
       }).setDepth(d + 2));
     });
 
     // Options as buttons
     const options = [
-      { label: "10.5", value: "10.5", hint: "decimal — not an int!" },
-      { label: "15",   value: "15",   hint: "40 + 15 = 55 > 50 — overflow!" },
-      { label: "10",   value: "10",   hint: "40 + 10 = 50 ≤ 50 ✓" },
+      { label: "15.5", value: "15.5", hint: "decimal — not an int!" },
+      { label: "25",   value: "25",   hint: "85 + 25 = 110 ≠ 100" },
+      { label: "15",   value: "15",   hint: "85 + 15 = 100 ✓" },
     ];
 
     els.push(this.add.text(W / 2, 325, "Select the correct safeLoad value:", {
@@ -786,9 +777,9 @@ export class Level3Scene extends Phaser.Scene {
         this.tweens.add({ targets: [bg, txt, sub], scaleX: 1, scaleY: 1, duration: 80 });
       });
       bg.on("pointerup", () => {
-        if (opt.value === "10") {
+        if (opt.value === "15") {
           els.forEach(e => e.destroy());
-          this._gateOpen(2, "int safeLoad = 10; // 40 + 10 = 50 ≤ 50 ✓");
+          this._gateOpen(2, "int bonus = 15; // 85 + 15 = 100 ✓");
         } else {
           errTxt.setText(`❌ ${opt.hint}`);
           this.cameras.main.shake(150, 0.01);
@@ -949,24 +940,14 @@ export class Level3Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(d + 1);
 
-    // Badges display
-    const allBadges = BadgeSystem.getUnlockedBadges();
-    const badgeStr = allBadges.map(id => {
-      const b = BadgeSystem.getBadge(id);
-      return b ? `${b.emoji} ${b.name}` : id;
-    }).join("   ");
-    this.add.text(W / 2, 300, badgeStr || "No badges", {
-      fontFamily: "Arial", fontSize: "15px", color: "#fbbf24",
-    }).setOrigin(0.5).setDepth(d + 1);
+    // Badges display removed
 
     // Summary
-    this.add.text(W / 2, 350,
-      "✅ You mastered the int data type!\n" +
-      "• Level 1: Identified integers vs decimals/fractions\n" +
-      "• Level 2: Validated int assignments vs type errors\n" +
-      "• Level 3: Applied int logic in real scenarios", {
-        fontFamily: "Arial", fontSize: "13px", color: "#94a3b8",
-        align: "center", lineSpacing: 6,
+    this.add.text(W / 2, 320,
+      "✅ You mastered the int data type!\n\n" +
+      "You have successfully learned what an integer is.", {
+        fontFamily: "Arial", fontSize: "16px", color: "#4ade80",
+        align: "center", lineSpacing: 8,
       }
     ).setOrigin(0.5).setDepth(d + 1);
 

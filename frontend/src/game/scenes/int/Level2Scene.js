@@ -23,9 +23,7 @@ import { ProgressTracker } from "../../ProgressTracker.js";
 const W = 800;
 const H = 600;
 const TOTAL_ENEMIES = 15;
-const PLAYER_MAX_HP = 500;
 const ENEMY_BASE_SPEED = 1800; // ms for approach tween (gets faster)
-const DMG_ON_WRONG = 50;
 
 /* Values pool — each has a raw value, display string, and whether it's a valid int */
 const DATA_VALUES = [
@@ -94,7 +92,6 @@ export class Level2Scene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#060b18");
 
     /* ── State ── */
-    this.playerHP = PLAYER_MAX_HP;
     this.currentIndex = 0;
     this.combo = 0;
     this.score = 0;
@@ -328,14 +325,6 @@ export class Level2Scene extends Phaser.Scene {
     }).setOrigin(0.5);
     this.enemyContainer.add(valTxt);
 
-    // Type indicator
-    const typeLabel = data.isInt ? "int?" : (data.reason === "String" ? "String?" : "double?");
-    const typeTxt = this.add.text(0, 28, typeLabel, {
-      fontFamily: "monospace", fontSize: "9px",
-      color: "#94a3b8",
-    }).setOrigin(0.5);
-    this.enemyContainer.add(typeTxt);
-
     // Legs / wheels
     const wL = this.add.circle(-20, 55, 8, 0x334155);
     const wR = this.add.circle(20, 55, 8, 0x334155);
@@ -375,15 +364,15 @@ export class Level2Scene extends Phaser.Scene {
   _createHUD() {
     const dp = 100;
 
-    // Player HP bar
-    this.add.text(16, 68, "COMPILER HP", {
+    // Progress bar
+    this.add.text(16, 56, "PROGRESS", {
       fontFamily: "monospace", fontSize: "9px", color: "#22d3ee",
     }).setDepth(dp);
     this.playerHPBarBg = this.add.rectangle(16, 82, 200, 14, 0x1e293b)
       .setOrigin(0, 0.5).setStrokeStyle(1, 0x334155).setDepth(dp);
-    this.playerHPFill = this.add.rectangle(16, 82, 200, 12, 0x22d3ee)
+    this.playerHPFill = this.add.rectangle(16, 82, 0, 12, 0x22d3ee)
       .setOrigin(0, 0.5).setDepth(dp + 1);
-    this.playerHPText = this.add.text(116, 82, `${PLAYER_MAX_HP}/${PLAYER_MAX_HP}`, {
+    this.playerHPText = this.add.text(116, 82, `0/${TOTAL_ENEMIES}`, {
       fontFamily: "monospace", fontSize: "9px", color: "#fff",
     }).setOrigin(0.5).setDepth(dp + 2);
 
@@ -449,50 +438,50 @@ export class Level2Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(d + 1);
     panelG.fillStyle(0x0d1530, 0.98);
-    panelG.fillRoundedRect(W / 2 - 310, 40, 620, 510, 16);
+    panelG.fillRoundedRect(W / 2 - 310, 70, 620, 510, 16);
     panelG.lineStyle(3, 0x22d3ee);
-    panelG.strokeRoundedRect(W / 2 - 310, 40, 620, 510, 16);
+    panelG.strokeRoundedRect(W / 2 - 310, 70, 620, 510, 16);
     els.push(panelG);
 
-    const t1 = this.add.text(W / 2, 78, "🛡️ MISSION 2: CYBER VARIABLE ARENA", {
+    const t1 = this.add.text(W / 2, 110, "🛡️ MISSION 2: CYBER VARIABLE ARENA", {
       fontFamily: "Arial Black, Arial", fontSize: "22px",
       color: "#22d3ee", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(d + 2);
     els.push(t1);
 
-    const t2 = this.add.text(W / 2, 105, "Data Validation Combat — Tune Your int Schema", {
+    const t2 = this.add.text(W / 2, 140, "Data Validation Combat — Tune Your int Schema", {
       fontFamily: "Arial", fontSize: "14px", color: "#38bdf8", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(d + 2);
     els.push(t2);
 
-    const desc = this.add.text(W / 2, 225,
+    const descY = t2.y + t2.height + 30;
+    const desc = this.add.text(W / 2, descY,
       "You are THE COMPILER. You control the Integer Memory Core.\n" +
       "Incoming Data Packets approach — decide their type!\n\n" +
       "📥  ASSIGN  →  Value IS a valid integer (e.g. 7, -15, 0)\n" +
       "🚫  REJECT  →  Value is NOT an integer (e.g. 3.14, \"Hello\")\n\n" +
-      "✅ Correct ASSIGN of int  →  Allocation Beam destroys enemy!\n" +
-      "✅ Correct REJECT of non-int  →  Firewall Shield deflects!\n" +
-      "❌ Wrong choice  →  Glitch explosion! You take damage!\n\n" +
       "⚡ 3-streak combo = 2x    ⏱ Answer < 3s = Quick Compile Bonus",
       {
         fontFamily: "Arial", fontSize: "13px",
         color: "#bdc3c7", align: "center", lineSpacing: 6,
       }
-    ).setOrigin(0.5).setDepth(d + 2);
+    ).setOrigin(0.5, 0).setDepth(d + 2);
     els.push(desc);
 
-    const goal = this.add.text(W / 2, 410,
+    const goalY = desc.y + desc.height + 22;
+    const goal = this.add.text(W / 2, goalY,
       "Validate 15 data packets to earn\nthe Data Guardian badge! ⚔️", {
         fontFamily: "Arial", fontSize: "14px",
         color: "#fbbf24", align: "center", fontStyle: "bold", lineSpacing: 6,
       }
-    ).setOrigin(0.5).setDepth(d + 2);
+    ).setOrigin(0.5, 0).setDepth(d + 2);
     els.push(goal);
 
     // Start button
-    const btnBg = this.add.rectangle(W / 2, 475, 250, 48, 0x0e7490).setDepth(d + 2);
+    const btnY = 500;
+    const btnBg = this.add.rectangle(W / 2, btnY, 250, 48, 0x0e7490).setDepth(d + 2);
     btnBg.setStrokeStyle(2, 0x22d3ee);
-    const btnTxt = this.add.text(W / 2, 475, "INITIALIZE COMPILER", {
+    const btnTxt = this.add.text(W / 2, btnY, "INITIALIZE COMPILER", {
       fontFamily: "Arial", fontSize: "18px", color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(d + 3);
     els.push(btnBg, btnTxt);
@@ -706,6 +695,7 @@ export class Level2Scene extends Phaser.Scene {
       "#4ade80"
     );
     this._updateScore();
+    this._updateProgress();
     this._updateCombo();
 
     // Next enemy after animation
@@ -720,8 +710,8 @@ export class Level2Scene extends Phaser.Scene {
   _onWrong(choice, data) {
     this.combo = 0;
     GameManager.resetCombo();
-    this.playerHP = Math.max(0, this.playerHP - DMG_ON_WRONG);
     GameManager.loseLife();
+    const currentLives = GameManager.get("lives");
 
     // ── Code panel ──
     if (choice === "ASSIGN" && !data.isInt) {
@@ -745,14 +735,14 @@ export class Level2Scene extends Phaser.Scene {
 
     this._showFeedback(
       choice === "ASSIGN"
-        ? `✗ ${data.display} is NOT an integer! −${DMG_ON_WRONG} HP`
-        : `✗ ${data.display} IS a valid integer! −${DMG_ON_WRONG} HP`,
+        ? `✗ ${data.display} is NOT an integer! −1 LIFE`
+        : `✗ ${data.display} IS a valid integer! −1 LIFE`,
       "#ef4444"
     );
-    this._updatePlayerHP();
+    this._updateProgress();
     this._updateCombo();
 
-    if (this.playerHP <= 0) {
+    if (currentLives <= 0) {
       this.time.delayedCall(800, () => this._gameOver());
       return;
     }
@@ -890,7 +880,7 @@ export class Level2Scene extends Phaser.Scene {
     }
 
     // Damage popup
-    const dp = this.add.text(130, 150, `−${DMG_ON_WRONG} HP`, {
+    const dp = this.add.text(130, 150, `−1 LIFE`, {
       fontFamily: "Arial", fontSize: "20px", color: "#ef4444",
       fontStyle: "bold", stroke: "#000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(100);
@@ -945,13 +935,11 @@ export class Level2Scene extends Phaser.Scene {
   /* ═══════════════════════════════════════════
    *  HUD UPDATES
    * ═══════════════════════════════════════════ */
-  _updatePlayerHP() {
-    const pct = Math.max(0, this.playerHP / PLAYER_MAX_HP);
+  _updateProgress() {
+    const pct = Math.min(1, this.correctCount / TOTAL_ENEMIES);
     this.tweens.add({ targets: this.playerHPFill, displayWidth: 200 * pct, duration: 300 });
-    this.playerHPText.setText(`${this.playerHP}/${PLAYER_MAX_HP}`);
-    if (pct > 0.5) this.playerHPFill.setFillStyle(0x22d3ee);
-    else if (pct > 0.25) this.playerHPFill.setFillStyle(0xfbbf24);
-    else this.playerHPFill.setFillStyle(0xef4444);
+    this.playerHPText.setText(`${this.correctCount}/${TOTAL_ENEMIES}`);
+    this.playerHPFill.setFillStyle(0x22d3ee);
   }
 
   _updateScore() {
@@ -1046,7 +1034,7 @@ export class Level2Scene extends Phaser.Scene {
       `Accuracy: ${accuracy}%`,
       `Final Score: ${this.score}`,
       `Max Combo: ${this.combo}`,
-      `Compiler HP Remaining: ${this.playerHP} / ${PLAYER_MAX_HP}`,
+      `Lives Remaining: ${GameManager.get('lives')} / 3`,
     ];
     stats.forEach((s, i) => {
       this.add.text(W / 2, 185 + i * 26, s, {
