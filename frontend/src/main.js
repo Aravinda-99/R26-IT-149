@@ -9,7 +9,8 @@ import { initFirebase } from "./config/firebase.js";
 import { initAuthListener, onAuthChange, logout } from "./utils/auth.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderLearningPath } from "./pages/learning-path.js";
-import { renderGames } from "./pages/games.js";
+import { renderQuizLab } from "./pages/quiz-lab.js";
+import { renderGames, disposeGames } from "./pages/games.js";
 import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderMastery } from "./pages/mastery.js";
 import { renderLogin } from "./pages/login.js";
@@ -21,6 +22,7 @@ initAuthListener();
 const pages = {
     dashboard: renderDashboard,
     "learning-path": renderLearningPath,
+    "quiz-lab": renderQuizLab,
     games: renderGames,
     "error-analysis": renderErrorAnalysis,
     mastery: renderMastery,
@@ -34,6 +36,12 @@ const authPages = {
 let currentPage = "dashboard";
 
 function navigateTo(page) {
+    // Bug fix: ensure the gamified (Phaser) UI is fully removed when navigating away.
+    // `#phaser-container` lives outside `#page-container`, so it won't unmount automatically.
+    if (currentPage === "games" && page !== "games") {
+        disposeGames();
+    }
+
     currentPage = page;
 
     document.querySelectorAll(".nav-link").forEach((link) => {
@@ -48,6 +56,9 @@ function navigateTo(page) {
         container.innerHTML = `<h2>Page not found</h2>`;
     }
 }
+
+// expose navigateTo globally so page modules can programmatically navigate
+window.navigateTo = navigateTo;
 
 function updateNavForUser(user) {
     const actionsEl = document.getElementById("nav-actions");

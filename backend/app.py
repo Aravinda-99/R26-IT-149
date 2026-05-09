@@ -42,8 +42,19 @@ def create_app():
     return app
 
 
+"""
+Expose an `app` instance for `flask run`.
+
+Cursor/Windows users often start the backend with:
+  flask --app app run
+which requires a module-level `app` variable.
+"""
+
+# For `flask --app app run` (and similar), create the app at import time.
+app = create_app()
+
+
 if __name__ == "__main__":
-    app = create_app()
     port = Config.FLASK_PORT
     print(f"\n  Server running at http://localhost:{port}")
     print(f"  Health check:    http://localhost:{port}/api/health\n")

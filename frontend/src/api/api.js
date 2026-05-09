@@ -1,11 +1,25 @@
 /**
  * API Client
- * ===========
  * Centralized fetch wrapper for all backend API calls.
  * Vite proxy sends /api/* requests to Flask at localhost:5000.
  */
 
 const API_BASE = "/api";
+const DEV_FALLBACK_BASE = "http://localhost:5000/api";
+
+function shouldTryDevFallback(response, endpoint) {
+    // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.
+    // In dev, retry directly against the Flask server.
+    try {
+        const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
+        if (!isDev) return false;
+        if (!response || response.status !== 404) return false;
+        if (!endpoint?.startsWith("/")) return false;
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 async function apiRequest(endpoint, method = "GET", body = null) {
     const options = {
@@ -14,8 +28,25 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     };
     if (body) options.body = JSON.stringify(body);
 
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
-    const data = await response.json();
+    let response = await fetch(`${API_BASE}${endpoint}`, options);
+    if (shouldTryDevFallback(response, endpoint)) {
+        response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+    }
+
+    const text = await response.text();
+    let data = {};
+    if (text) {
+        try {
+            data = JSON.parse(text);
+        } catch {
+            data = {
+                error:
+                    response.status === 404
+                        ? `Not found (${endpoint}) — is the API running and is the URL correct?`
+                        : `API error ${response.status}`,
+            };
+        }
+    }
     if (!response.ok) throw new Error(data.error || `API error ${response.status}`);
     return data;
 }
@@ -45,7 +76,9 @@ export const GamificationAPI = {
 // --- Component 4: Mastery Tracker ---
 export const MasteryAPI = {
     getStatus: (userId) => apiRequest(`/mastery/status/${userId}`),
+    getStudents: () => apiRequest("/mastery/students"),
     update: (data) => apiRequest("/mastery/update", "POST", data),
+    getQuestions: (concept) => apiRequest(`/mastery/questions/${concept}`),
     submitDiagnostic: (data) => apiRequest("/mastery/diagnostic", "POST", data),
     getHistory: (userId, schema) => apiRequest(`/mastery/history/${userId}/${schema}`),
 };
