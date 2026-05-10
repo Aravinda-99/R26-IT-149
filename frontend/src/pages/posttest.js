@@ -324,6 +324,31 @@ function showResults(result) {
     const resultContainer = document.getElementById("posttest-result");
     if (!resultContainer) return;
 
+    // ── Mock calculation data for prototype demo ────────────────────
+    const mockActivity = {
+        activityScore: 0.80,
+        attemptEfficiency: 0.80,
+        completionScore: 1.00,
+        timeEfficiency: 0.83,
+    };
+    const mockMCQ = {
+        correct: 6,
+        nearlyCorrect: 2,
+        wrong: 2,
+        total: 10,
+    };
+    const learningActivityScore = (mockActivity.activityScore + mockActivity.attemptEfficiency + mockActivity.completionScore + mockActivity.timeEfficiency) / 4;
+    const mcqUnderstandingScore = ((mockMCQ.correct * 1.0) + (mockMCQ.nearlyCorrect * 0.5)) / mockMCQ.total;
+    const finalUnderstandingScore = (0.40 * learningActivityScore) + (0.60 * mcqUnderstandingScore);
+
+    function getCalcLevel(score) {
+        if (score >= 0.80) return { label: "Strong Understanding", color: "#10b981" };
+        if (score >= 0.60) return { label: "Good Progress", color: "#3b82f6" };
+        if (score >= 0.40) return { label: "Needs More Practice", color: "#f97316" };
+        return { label: "Learn Again", color: "#ef4444" };
+    }
+    const calcLevel = getCalcLevel(finalUnderstandingScore);
+
     resultContainer.innerHTML = `
         <div class="c4-result-card" style="animation: fadeSlideIn 0.4s ease-out;">
             <!-- Header -->
@@ -374,6 +399,151 @@ function showResults(result) {
                 }
             </div>
 
+            <!-- Calculation Breakdown Toggle -->
+            <button class="btn c4-calc-toggle" id="c4-calc-toggle">
+                <i class="fa-solid fa-calculator"></i> How your level was calculated
+            </button>
+            <div class="c4-calc-breakdown hidden" id="c4-calc-breakdown">
+
+                <!-- Step 1: Learning Activity Data -->
+                <div class="c4-calc-card">
+                    <div class="c4-calc-card-header">
+                        <span class="c4-calc-step">1</span>
+                        <h4>Learning Activity Data</h4>
+                    </div>
+                    <div class="c4-calc-grid">
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Activity Score</span>
+                            <span class="c4-calc-metric-value">${(mockActivity.activityScore * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Attempt Efficiency</span>
+                            <span class="c4-calc-metric-value">${(mockActivity.attemptEfficiency * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Completion Score</span>
+                            <span class="c4-calc-metric-value">${(mockActivity.completionScore * 100).toFixed(0)}%</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Time Efficiency</span>
+                            <span class="c4-calc-metric-value">${(mockActivity.timeEfficiency * 100).toFixed(0)}%</span>
+                        </div>
+                    </div>
+                    <div class="c4-calc-formula">
+                        <span class="c4-calc-formula-label">Formula</span>
+                        <code>(${(mockActivity.activityScore * 100).toFixed(0)} + ${(mockActivity.attemptEfficiency * 100).toFixed(0)} + ${(mockActivity.completionScore * 100).toFixed(0)} + ${(mockActivity.timeEfficiency * 100).toFixed(0)}) ÷ 4</code>
+                    </div>
+                    <div class="c4-calc-result-row">
+                        <span>Learning Activity Score</span>
+                        <span class="c4-calc-result-value" style="color: var(--accent-blue);">${(learningActivityScore * 100).toFixed(2)}%</span>
+                    </div>
+                </div>
+
+                <!-- Step 2: MCQ Understanding Data -->
+                <div class="c4-calc-card">
+                    <div class="c4-calc-card-header">
+                        <span class="c4-calc-step">2</span>
+                        <h4>MCQ Understanding Data</h4>
+                    </div>
+                    <div class="c4-calc-grid">
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Correct Answers</span>
+                            <span class="c4-calc-metric-value" style="color: #10b981;">${mockMCQ.correct}</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Nearly Correct</span>
+                            <span class="c4-calc-metric-value" style="color: #f59e0b;">${mockMCQ.nearlyCorrect}</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Wrong Answers</span>
+                            <span class="c4-calc-metric-value" style="color: #ef4444;">${mockMCQ.wrong}</span>
+                        </div>
+                        <div class="c4-calc-metric">
+                            <span class="c4-calc-metric-label">Total Questions</span>
+                            <span class="c4-calc-metric-value">${mockMCQ.total}</span>
+                        </div>
+                    </div>
+                    <div class="c4-calc-marking">
+                        <span class="c4-calc-mark"><i class="fa-solid fa-check" style="color: #10b981;"></i> Correct = 1.0</span>
+                        <span class="c4-calc-mark"><i class="fa-solid fa-minus" style="color: #f59e0b;"></i> Nearly Correct = 0.5</span>
+                        <span class="c4-calc-mark"><i class="fa-solid fa-xmark" style="color: #ef4444;"></i> Wrong = 0</span>
+                    </div>
+                    <div class="c4-calc-formula">
+                        <span class="c4-calc-formula-label">Formula</span>
+                        <code>((${mockMCQ.correct} × 1.0) + (${mockMCQ.nearlyCorrect} × 0.5)) ÷ ${mockMCQ.total}</code>
+                    </div>
+                    <div class="c4-calc-result-row">
+                        <span>MCQ Understanding Score</span>
+                        <span class="c4-calc-result-value" style="color: var(--accent-purple);">${(mcqUnderstandingScore * 100).toFixed(0)}%</span>
+                    </div>
+                </div>
+
+                <!-- Step 3: Final Understanding Score -->
+                <div class="c4-calc-card">
+                    <div class="c4-calc-card-header">
+                        <span class="c4-calc-step">3</span>
+                        <h4>Final Understanding Score</h4>
+                    </div>
+                    <div class="c4-calc-weight-row">
+                        <div class="c4-calc-weight-item">
+                            <span class="c4-calc-weight-pct">40%</span>
+                            <span class="c4-calc-weight-label">Learning Activity</span>
+                            <span class="c4-calc-weight-val" style="color: var(--accent-blue);">${(learningActivityScore * 100).toFixed(2)}%</span>
+                        </div>
+                        <span class="c4-calc-weight-plus">+</span>
+                        <div class="c4-calc-weight-item">
+                            <span class="c4-calc-weight-pct">60%</span>
+                            <span class="c4-calc-weight-label">MCQ Understanding</span>
+                            <span class="c4-calc-weight-val" style="color: var(--accent-purple);">${(mcqUnderstandingScore * 100).toFixed(0)}%</span>
+                        </div>
+                    </div>
+                    <div class="c4-calc-formula">
+                        <span class="c4-calc-formula-label">Formula</span>
+                        <code>(0.40 × ${(learningActivityScore * 100).toFixed(2)}) + (0.60 × ${(mcqUnderstandingScore * 100).toFixed(0)})</code>
+                    </div>
+                    <div class="c4-calc-result-row c4-calc-result-final">
+                        <span>Final Understanding Score</span>
+                        <span class="c4-calc-result-value">${(finalUnderstandingScore * 100).toFixed(1)}%</span>
+                    </div>
+                </div>
+
+                <!-- Step 4: Final Level -->
+                <div class="c4-calc-card c4-calc-final-card" style="border-color: ${calcLevel.color}40;">
+                    <div class="c4-calc-card-header">
+                        <span class="c4-calc-step" style="background: ${calcLevel.color};">4</span>
+                        <h4>Final Level</h4>
+                    </div>
+                    <div class="c4-calc-level-scale">
+                        <div class="c4-calc-level-row ${finalUnderstandingScore >= 0.80 ? 'active' : ''}">
+                            <span class="c4-calc-level-range">80% – 100%</span>
+                            <span class="c4-calc-level-name" style="color: #10b981;">Strong Understanding</span>
+                        </div>
+                        <div class="c4-calc-level-row ${finalUnderstandingScore >= 0.60 && finalUnderstandingScore < 0.80 ? 'active' : ''}">
+                            <span class="c4-calc-level-range">60% – 79%</span>
+                            <span class="c4-calc-level-name" style="color: #3b82f6;">Good Progress</span>
+                        </div>
+                        <div class="c4-calc-level-row ${finalUnderstandingScore >= 0.40 && finalUnderstandingScore < 0.60 ? 'active' : ''}">
+                            <span class="c4-calc-level-range">40% – 59%</span>
+                            <span class="c4-calc-level-name" style="color: #f97316;">Needs More Practice</span>
+                        </div>
+                        <div class="c4-calc-level-row ${finalUnderstandingScore < 0.40 ? 'active' : ''}">
+                            <span class="c4-calc-level-range">0% – 39%</span>
+                            <span class="c4-calc-level-name" style="color: #ef4444;">Learn Again</span>
+                        </div>
+                    </div>
+                    <div class="c4-calc-final-result" style="background: ${calcLevel.color}10; border-color: ${calcLevel.color}30;">
+                        <div class="c4-calc-final-score" style="color: ${calcLevel.color};">${(finalUnderstandingScore * 100).toFixed(1)}%</div>
+                        <div class="c4-calc-final-label" style="color: ${calcLevel.color};">${calcLevel.label}</div>
+                    </div>
+                </div>
+
+                <!-- Prototype Note -->
+                <div class="c4-calc-note">
+                    <i class="fa-solid fa-flask"></i>
+                    <p>These values are shown for prototype demonstration. In real testing, they will be calculated from actual student activity data.</p>
+                </div>
+            </div>
+
             <!-- Answer review toggle -->
             <button class="btn c4-review-toggle" id="c4-review-toggle">
                 Show Answers
@@ -395,6 +565,18 @@ function showResults(result) {
     // Learn Again handler
     document.getElementById("posttest-learn-again-btn")?.addEventListener("click", () => {
         redirectToGamifiedLesson(currentConcept);
+    });
+
+    // Calculation breakdown toggle
+    document.getElementById("c4-calc-toggle")?.addEventListener("click", () => {
+        const section = document.getElementById("c4-calc-breakdown");
+        const toggle = document.getElementById("c4-calc-toggle");
+        if (section && toggle) {
+            section.classList.toggle("hidden");
+            toggle.innerHTML = section.classList.contains("hidden")
+                ? '<i class="fa-solid fa-calculator"></i> How your level was calculated'
+                : '<i class="fa-solid fa-chevron-up"></i> Hide calculation breakdown';
+        }
     });
 
     // Review toggle
