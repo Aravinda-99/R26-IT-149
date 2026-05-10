@@ -1,0 +1,218 @@
+/* =============================================
+   Demo Flow — PP1 Presentation Screens
+   ============================================= */
+
+/* --- Animations --- */
+@keyframes df-fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes df-fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes df-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes df-spin { to { transform: rotate(360deg); } }
+@keyframes df-countUp { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes df-checkPop { 0% { transform: scale(0); } 60% { transform: scale(1.2); } 100% { transform: scale(1); } }
+@keyframes df-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* --- Layout --- */
+.df-page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; animation: df-fadeUp 0.5s ease-out; }
+.df-page--wide { max-width: 1100px; }
+.df-center { text-align: center; }
+
+/* --- Stepper --- */
+.df-stepper { display: flex; align-items: center; justify-content: center; gap: 0; margin-bottom: 2.5rem; padding: 1rem 0; flex-wrap: wrap; }
+.df-step { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); transition: all 0.3s; }
+.df-step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; border: 2px solid var(--border-color); background: var(--bg-secondary); color: var(--text-secondary); transition: all 0.3s; flex-shrink: 0; }
+.df-step.active .df-step-circle { border-color: #6366f1; background: #6366f1; color: #fff; box-shadow: 0 0 12px rgba(99,102,241,0.4); }
+.df-step.done .df-step-circle { border-color: #22c55e; background: #22c55e; color: #fff; }
+.df-step.active .df-step-label { color: var(--text-primary); font-weight: 600; }
+.df-step.done .df-step-label { color: #22c55e; }
+.df-step-line { width: 32px; height: 2px; background: var(--border-color); margin: 0 4px; flex-shrink: 0; }
+.df-step-line.done { background: #22c55e; }
+
+/* --- Welcome / Intro --- */
+.df-welcome-hero { 
+    position: relative; 
+    min-height: 85vh; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 4rem 2rem; 
+    margin: -2rem -1.5rem 0; /* Offset page padding */
+    border-radius: 0 0 40px 40px;
+    overflow: hidden;
+    background: #0b0f1a;
+}
+.df-welcome-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.4;
+    filter: blur(2px) brightness(0.8);
+    z-index: 1;
+}
+.df-welcome-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    text-align: center;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 3rem;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: df-fadeUp 0.8s ease-out;
+}
+.df-welcome-brand { font-size: 2.8rem; font-weight: 800; color: #fff; margin-bottom: 1rem; letter-spacing: -0.02em; }
+.df-welcome-brand i { color: #6366f1; margin-right: 0.75rem; text-shadow: 0 0 20px rgba(99,102,241,0.5); }
+.df-welcome-sub { color: #e2e8f0; font-size: 1.2rem; max-width: 600px; line-height: 1.6; margin: 0 auto 2.5rem; }
+.df-welcome-image-container { display: none; } /* Replaced by full bg */
+
+.df-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; text-align: left; }
+.df-feature-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 1.25rem; transition: all 0.3s ease; display: flex; align-items: flex-start; gap: 1rem; }
+.df-feature-card:hover { transform: translateY(-5px); background: rgba(255, 255, 255, 0.06); border-color: #6366f1; }
+.df-feature-card i { font-size: 1.4rem; color: #818cf8; margin-top: 0.2rem; }
+.df-feature-card-text h4 { font-size: 0.95rem; margin-bottom: 0.25rem; color: #f1f5f9; font-weight: 600; }
+.df-feature-card-text p { font-size: 0.8rem; color: #94a3b8; line-height: 1.4; }
+
+/* --- Card (generic centered card) --- */
+.df-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2.5rem; text-align: center; animation: df-fadeUp 0.4s ease-out; }
+.df-card-icon { font-size: 2.5rem; color: #6366f1; margin-bottom: 1rem; }
+.df-card h2 { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text-primary); }
+.df-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; max-width: 480px; margin: 0 auto; }
+
+/* --- Chips --- */
+.df-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1.2rem 0; }
+.df-chip { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500; background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); }
+
+/* --- Buttons --- */
+.df-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.8rem; border: none; border-radius: 10px; font-family: var(--font); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.df-btn-primary { background: #6366f1; color: #fff; }
+.df-btn-primary:hover { background: #4f46e5; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.35); }
+.df-btn-success { background: #22c55e; color: #fff; }
+.df-btn-success:hover { background: #16a34a; }
+.df-btn-warning { background: #f59e0b; color: #1e1e1e; }
+.df-btn-warning:hover { background: #d97706; }
+.df-btn-danger { background: #ef4444; color: #fff; }
+.df-btn-danger:hover { background: #dc2626; }
+.df-btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
+.df-btn-outline:hover { background: var(--bg-card); border-color: #6366f1; }
+.df-btn-lg { padding: 0.9rem 2.4rem; font-size: 1.05rem; }
+
+/* --- Quiz --- */
+.df-quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+.df-quiz-concept { font-size: 0.8rem; color: #a5b4fc; background: rgba(99,102,241,0.12); padding: 0.3rem 0.8rem; border-radius: 16px; }
+.df-quiz-counter { font-size: 0.85rem; color: var(--text-secondary); }
+.df-quiz-progress { height: 6px; background: var(--bg-secondary); border-radius: 3px; margin-bottom: 1.5rem; overflow: hidden; }
+.df-quiz-progress-fill { height: 100%; background: #6366f1; border-radius: 3px; transition: width 0.4s ease; }
+.df-quiz-question { font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; color: var(--text-primary); text-align: left; }
+.df-quiz-code { background: #0d1117; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.2rem; font-family: "Fira Code", "Consolas", monospace; font-size: 0.85rem; color: #c9d1d9; margin-bottom: 1.5rem; text-align: left; overflow-x: auto; white-space: pre; }
+.df-quiz-options { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; }
+.df-quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem 1.2rem; background: var(--bg-secondary); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-align: left; font-size: 0.9rem; color: var(--text-primary); }
+.df-quiz-option:hover { border-color: #6366f1; background: rgba(99,102,241,0.06); }
+.df-quiz-option.selected { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+.df-quiz-option-letter { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.8rem; background: var(--bg-card); border: 1px solid var(--border-color); flex-shrink: 0; }
+.df-quiz-option.selected .df-quiz-option-letter { background: #6366f1; color: #fff; border-color: #6366f1; }
+.df-quiz-nav { display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+/* --- Analysis Loading --- */
+.df-analysis { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 3rem 1rem; }
+.df-analysis-spinner { width: 56px; height: 56px; border: 4px solid var(--border-color); border-top-color: #6366f1; border-radius: 50%; animation: df-spin 0.8s linear infinite; }
+.df-analysis-steps { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 360px; }
+.df-analysis-step { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); opacity: 0; animation: df-fadeUp 0.4s ease-out forwards; }
+.df-analysis-step.done { color: #22c55e; }
+.df-analysis-step i { width: 20px; text-align: center; }
+
+/* --- Recommendation --- */
+.df-rec-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; max-width: 560px; margin: 0 auto; }
+.df-rec-concept { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1.2rem; border-radius: 20px; font-weight: 600; font-size: 0.95rem; background: rgba(99,102,241,0.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); margin-bottom: 1rem; }
+.df-rec-reason { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.2rem; line-height: 1.5; }
+.df-rec-activity { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: var(--bg-secondary); border-radius: 10px; margin-bottom: 1.5rem; }
+.df-rec-activity i { font-size: 1.5rem; color: #22c55e; }
+.df-rec-activity-info h4 { font-size: 0.95rem; color: var(--text-primary); }
+.df-rec-activity-info p { font-size: 0.8rem; color: var(--text-secondary); }
+
+/* --- Game Demo --- */
+.df-game { max-width: 640px; margin: 0 auto; }
+.df-game-area { background: #0d1117; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; min-height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 1.5rem; position: relative; }
+.df-game-area i { font-size: 4rem; color: #6366f1; opacity: 0.5; margin-bottom: 1rem; }
+.df-game-stats { display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem; }
+.df-game-stat { padding: 0.5rem 1rem; background: var(--bg-card); border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 0.4rem; }
+.df-game-stat i { color: #f59e0b; }
+
+/* --- Result --- */
+.df-result { max-width: 520px; margin: 0 auto; }
+.df-result-score { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; margin: 0 auto 1rem; border: 4px solid; animation: df-countUp 0.6s ease-out; }
+.df-result-badge { display: inline-block; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
+.df-result-stats { display: flex; gap: 1rem; justify-content: center; margin: 1.2rem 0; flex-wrap: wrap; }
+.df-result-stat { background: var(--bg-secondary); border-radius: 10px; padding: 0.8rem 1.2rem; text-align: center; min-width: 100px; }
+.df-result-stat .val { font-size: 1.3rem; font-weight: 700; display: block; }
+.df-result-stat .lbl { font-size: 0.75rem; color: var(--text-secondary); }
+
+/* --- Dashboard Summary --- */
+.df-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.df-dash-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.2rem; display: flex; align-items: center; gap: 1rem; transition: transform 0.2s; }
+.df-dash-card:hover { transform: translateY(-2px); }
+.df-dash-card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+.df-dash-card-info h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
+.df-dash-card-info .df-dash-status { font-size: 0.75rem; font-weight: 500; }
+
+/* --- Wrong Answer Review --- */
+.df-review-section { max-width: 700px; margin: 0 auto; text-align: left; }
+.df-review-section h3 { font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.df-review-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: 0.75rem; overflow: hidden; animation: df-fadeUp 0.4s ease-out both; }
+.df-review-card-header { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.2rem; cursor: pointer; transition: background 0.2s; gap: 0.75rem; }
+.df-review-card-header:hover { background: rgba(99,102,241,0.04); }
+.df-review-card-left { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.df-review-qnum { font-weight: 600; font-size: 0.85rem; color: var(--text-primary); }
+.df-review-concept-badge { font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 12px; background: rgba(99,102,241,0.12); color: #a5b4fc; font-weight: 500; }
+.df-review-mistake-tag { font-size: 0.65rem; padding: 0.2rem 0.55rem; border-radius: 10px; background: rgba(245,158,11,0.12); color: #fbbf24; font-weight: 500; }
+.df-review-chevron { font-size: 0.8rem; color: var(--text-secondary); transition: transform 0.3s; flex-shrink: 0; }
+.df-review-card.open .df-review-chevron { transform: rotate(180deg); }
+.df-review-card-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s ease; padding: 0 1.2rem; }
+.df-review-card.open .df-review-card-body { max-height: 600px; padding: 0 1.2rem 1.2rem; }
+.df-review-q-text { font-size: 0.9rem; color: var(--text-primary); margin-bottom: 0.75rem; line-height: 1.5; }
+.df-review-code { background: #0d1117; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.8rem 1rem; font-family: "Fira Code","Consolas",monospace; font-size: 0.8rem; color: #c9d1d9; margin-bottom: 1rem; overflow-x: auto; white-space: pre; }
+.df-review-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+.df-review-ans-box { padding: 0.7rem 0.9rem; border-radius: 8px; font-size: 0.85rem; }
+.df-review-ans-box.wrong { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+.df-review-ans-box.correct { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+.df-review-ans-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.35rem; }
+.df-review-ans-label.wrong { color: #f87171; }
+.df-review-ans-label.correct { color: #4ade80; }
+.df-review-ans-value { color: var(--text-primary); font-weight: 500; }
+.df-review-reason { background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15); border-radius: 8px; padding: 0.75rem 0.9rem; }
+.df-review-reason-title { font-size: 0.75rem; font-weight: 600; color: #818cf8; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.35rem; }
+.df-review-reason-text { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* --- Recommended Game (in analysis) --- */
+.df-game-rec { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.5rem; max-width: 700px; margin: 2rem auto 0; animation: df-fadeUp 0.5s ease-out 0.2s both; }
+.df-game-rec h3 { font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.df-game-rec-inner { display: flex; gap: 1.2rem; align-items: flex-start; }
+.df-game-rec-icon { width: 56px; height: 56px; border-radius: 12px; background: rgba(99,102,241,0.12); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #6366f1; flex-shrink: 0; }
+.df-game-rec-info { flex: 1; }
+.df-game-rec-info h4 { font-size: 1rem; margin-bottom: 0.25rem; }
+.df-game-rec-info > p { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+.df-game-rec-focus { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.df-game-rec-focus li { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; }
+.df-game-rec-focus li i { color: #22c55e; font-size: 0.65rem; }
+
+/* --- Summary Stats Row --- */
+.df-summary-row { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.df-summary-pill { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; font-size: 0.8rem; }
+.df-summary-pill i { font-size: 1rem; }
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+    .df-page { padding: 1rem; }
+    .df-card { padding: 1.5rem; }
+    .df-features { grid-template-columns: 1fr 1fr; }
+    .df-stepper { gap: 0; }
+    .df-step-label { display: none; }
+    .df-step-line { width: 16px; }
+    .df-btn-lg { width: 100%; justify-content: center; }
+    .df-quiz-option { padding: 0.75rem 1rem; }
+    .df-result-stats { flex-direction: column; align-items: center; }
+    .df-dash-grid { grid-template-columns: 1fr; }
+    .df-review-answers { grid-template-columns: 1fr; }
+    .df-game-rec-inner { flex-direction: column; }
+}
