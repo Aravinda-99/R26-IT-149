@@ -420,6 +420,34 @@ textarea.input-field {
     min-height: 1px;
 }
 
+.lp-code-block {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-left: 3px solid #6366f1;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    margin: 0.6rem 0 0.8rem 0;
+    overflow-x: auto;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.87rem;
+    line-height: 1.75;
+    color: #cdd9e5;
+    white-space: pre;
+}
+
+.lp-opt-code {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.86rem;
+    letter-spacing: 0.01em;
+}
+
+.lp-option.is-code .lp-opt-label {
+    background: rgba(99, 102, 241, 0.22);
+    color: #a5b4fc;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+    font-size: 0.72rem;
+}
+
 .lp-quiz-actions {
     margin-top: 1rem;
     display: flex;

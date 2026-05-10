@@ -13,7 +13,12 @@ import { renderQuizLab } from "./pages/quiz-lab.js";
 import { renderGames, disposeGames } from "./pages/games.js";
 import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderMastery } from "./pages/mastery.js";
+
+import { renderQuizResults } from "./pages/quiz-results.js";
+import { renderQuizSummary } from "./pages/quiz-summary.js";
+
 import { renderDemoFlow } from "./pages/demo-flow.js";
+
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
 
@@ -27,7 +32,11 @@ const pages = {
     games: renderGames,
     "error-analysis": renderErrorAnalysis,
     mastery: renderMastery,
+    "quiz-results": renderQuizResults,
+    "quiz-summary": renderQuizSummary,
+
     "demo-flow": renderDemoFlow,
+
 };
 
 const authPages = {
@@ -35,7 +44,8 @@ const authPages = {
     register: (c) => renderRegister(c, navigateTo),
 };
 
-let currentPage = "dashboard";
+// CHANGED DEFAULT PAGE
+let currentPage = "learning-path";
 
 function navigateTo(page) {
     // Bug fix: ensure the gamified (Phaser) UI is fully removed when navigating away.
@@ -52,6 +62,7 @@ function navigateTo(page) {
 
     const container = document.getElementById("page-container");
     const renderFn = pages[page] || authPages[page];
+
     if (renderFn) {
         renderFn(container);
     } else {
@@ -59,26 +70,46 @@ function navigateTo(page) {
     }
 }
 
-// expose navigateTo globally so page modules can programmatically navigate
+// expose navigateTo globally
 window.navigateTo = navigateTo;
 
 function updateNavForUser(user) {
     const actionsEl = document.getElementById("nav-actions");
+
     if (!actionsEl) return;
 
     if (user) {
         actionsEl.innerHTML = `
-            <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 0.5rem;">${user.email}</span>
-            <button class="btn" id="logout-btn" style="background: var(--border-color); color: var(--text-primary); font-size: 0.8rem;">Logout</button>
+            <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 0.5rem;">
+                ${user.email}
+            </span>
+
+            <button 
+                class="btn" 
+                id="logout-btn"
+                style="background: var(--border-color); color: var(--text-primary); font-size: 0.8rem;"
+            >
+                Logout
+            </button>
         `;
+
         document.getElementById("logout-btn").addEventListener("click", async () => {
             await logout();
             navigateTo("login");
         });
+
     } else {
+
         actionsEl.innerHTML = `
-            <button class="btn btn-primary" id="nav-login-btn" style="font-size: 0.8rem;">Sign In</button>
+            <button 
+                class="btn btn-primary" 
+                id="nav-login-btn"
+                style="font-size: 0.8rem;"
+            >
+                Sign In
+            </button>
         `;
+
         document.getElementById("nav-login-btn").addEventListener("click", () => {
             navigateTo("login");
         });
@@ -99,5 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateNavForUser(user);
     });
 
-    navigateTo("dashboard");
+    // LOAD HOME PAGE FIRST
+    navigateTo("learning-path");
 });
