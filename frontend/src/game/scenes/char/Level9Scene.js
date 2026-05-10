@@ -1,10 +1,8 @@
 /**
- * Level9Scene — "Char Quest: The Typing Adventure" (Restructuring Phase)
- * =======================================================================
- * Adventure RPG: type Java-style char solutions to clear 8 rooms (2 per zone)
- * across Castle → Forest → Mountain → Volcano. DOM code editor + story panels.
- *
- * Schema Theory: Restructuring — applying char knowledge in practical code
+ * Level9Scene — "Char Code Assessment Terminal" (Restructuring Phase)
+ * ===================================================================
+ * Complete 6 focused programming tasks about char declarations and
+ * escape sequences using a lightweight DOM editor panel.
  */
 
 import Phaser from "phaser";
@@ -14,12 +12,12 @@ import { ProgressTracker } from "../../ProgressTracker.js";
 
 const W = 800;
 const H = 600;
-const TOTAL_ROOMS = 8;
+const TOTAL_QUESTIONS = 6; // Updated to 6
 const SKIP_PENALTY = 50;
 const ACCURACY_THRESHOLD = 75;
 const BONUS_FINAL = 500;
 
-/* ── Room validators: full-line flexible (whitespace-tolerant) ── */
+/* ── Validators: full-line flexible (whitespace-tolerant) ── */
 function stripComments(s) {
   return s.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 }
@@ -39,22 +37,15 @@ function mustMatchAll(res) {
   };
 }
 
-/**
- * ROOMS 1–8 — two rooms per zone (Castle, Forest, Mountain, Volcano).
- */
-const ROOMS = [
+const QUESTIONS = [
   {
     id: 1,
-    zone: "castle",
-    title: "🏰 The Entrance Gate",
-    story: "A guard blocks your path:\n\"Declare a char variable named password with the value 'A'!\"",
-    starter: `// Declare char variable 'password' with value 'A'\nchar password = `,
-    validate: mustMatch(/char\s+password\s*=\s*'A'\s*;/),
+    title: "Task 1: Basic Declaration",
+    instruction: "Declare a char variable named 'grade' with the value 'A'.",
+    starter: `// Declare char 'grade' with value 'A'\nchar grade = `,
+    validate: mustMatch(/char\s+grade\s*=\s*'A'\s*;/),
     points: 50,
-    hints: [
-      "Use single quotes around one letter: 'A'",
-      "Full line: char password = 'A';",
-    ],
+    hints: ["Use single quotes around one letter: 'A'"],
     wrong: [
       { test: (c) => /"/.test(c) && !/'/.test(c), msg: "Double quotes make a String — use single quotes for char!" },
       { test: (c) => /'AB'/.test(compact(c)), msg: "A char holds exactly ONE character inside quotes." },
@@ -62,97 +53,55 @@ const ROOMS = [
   },
   {
     id: 2,
-    zone: "castle",
-    title: "📚 The Royal Library",
-    story: "A magical book asks:\n\"The first letter is 'A'. What comes next in the alphabet?\"",
-    starter: `char first = 'A';\nchar second = `,
-    validate: mustMatch(/char\s+first\s*=\s*'A'\s*;\s*char\s+second\s*=\s*'B'\s*;/),
-    points: 50,
-    hints: ["After 'A' comes 'B'.", "char second = 'B';"],
-    wrong: [],
+    title: "Task 2: Digit Characters",
+    instruction: "Store the number 7 as a character symbol, not an integer.",
+    starter: `// Store '7' as a char\nchar luckyNumber = `,
+    validate: mustMatch(/char\s+luckyNumber\s*=\s*'7'\s*;/),
+    points: 100,
+    hints: ["Put single quotes around the number 7.", "char luckyNumber = '7';"],
+    wrong: [{ test: (c) => /=\s*7\s*;/.test(c), msg: "That's an integer! Wrap it in single quotes: '7'" }],
   },
   {
     id: 3,
-    zone: "forest",
-    title: "🌲 The Newline Bridge",
-    story: "Repair the bridge with a NEWLINE character — it splits text to the next line!",
-    starter: `// Escape sequences start with \\\nchar newline = `,
-    validate: mustMatch(/char\s+newline\s*=\s*'\\n'\s*;/),
+    title: "Task 3: The Space Character",
+    instruction: "A space is a valid character. Assign a single space to 'blank'.",
+    starter: `char blank = `,
+    validate: mustMatch(/char\s+blank\s*=\s*'\s'\s*;/),
     points: 100,
-    hints: ["Newline in char: '\\n' (backslash + n)", "char newline = '\\n';"],
-    wrong: [],
+    hints: ["Type a space inside single quotes: ' '"],
+    wrong: [{ test: (c) => /''/.test(c), msg: "Empty quotes are invalid. You need exactly one space inside!" }],
   },
   {
     id: 4,
-    zone: "forest",
-    title: "🪓 The Backslash Puzzle",
-    story: "Store a single backslash. In source code you must escape it: '\\\\' → one \\.",
-    starter: `// Two backslashes between quotes = one \\ char\nchar backslash = `,
-    validate: mustMatch(/char\s+backslash\s*=\s*'\\\\'\s*;/),
+    title: "Task 4: Escape Sequence - Newline",
+    instruction: "Declare a char named 'newline' that acts as a line break.",
+    starter: `// Escape sequences start with \\\nchar newline = `,
+    validate: mustMatch(/char\s+newline\s*=\s*'\\n'\s*;/),
     points: 100,
-    hints: ["Literal backslash char is written '\\' in Java/C++ style.", "char backslash = '\\\\';"],
+    hints: ["Use '\\n' (backslash + n)", "char newline = '\\n';"],
     wrong: [],
   },
   {
     id: 5,
-    zone: "mountain",
-    title: "⛰️ The Name Carver",
-    story: "Spell CAT — three chars, letter by letter.",
-    starter: `// Spell "CAT"\nchar letter1 = \nchar letter2 = \nchar letter3 = `,
-    validate: mustMatchAll([
-      /char\s+letter1\s*=\s*'C'\s*;/,
-      /char\s+letter2\s*=\s*'A'\s*;/,
-      /char\s+letter3\s*=\s*'T'\s*;/,
-    ]),
-    points: 100,
-    hints: ["Three lines: 'C', 'A', 'T'", "letter1 = 'C'; letter2 = 'A'; letter3 = 'T';"],
+    title: "Task 5: Escape Sequence - Single Quote",
+    instruction: "Store a literal single quote. Escape it so it doesn't end the char early!",
+    starter: `char singleQuote = `,
+    validate: mustMatch(/char\s+singleQuote\s*=\s*'\\''\s*;/),
+    points: 150,
+    hints: ["char singleQuote = '\\'';"],
     wrong: [],
   },
   {
     id: 6,
-    zone: "mountain",
-    title: "🔠 Case Cavern",
-    story: "Uppercase and lowercase are DIFFERENT chars. Show both 'A' and 'a'.",
-    starter: `char upper = \nchar lower = `,
-    validate: mustMatchAll([
-      /char\s+upper\s*=\s*'A'\s*;/,
-      /char\s+lower\s*=\s*'a'\s*;/,
-    ]),
-    points: 100,
-    hints: ["'A' ≠ 'a' — they are two different char values.", "char upper = 'A';\nchar lower = 'a';"],
-    wrong: [],
-  },
-  {
-    id: 7,
-    zone: "volcano",
-    title: "🔥 The Error Detector",
-    story: "Buggy code used double quotes. Write the FIXED declaration with single quotes.",
-    starter: `// WRONG: char bad = \"X\";\n// Your fix:\nchar fixed = `,
-    validate: mustMatch(/char\s+fixed\s*=\s*'X'\s*;/),
-    points: 150,
-    hints: ["char fixed = 'X'; — single quotes only!"],
-    wrong: [],
-  },
-  {
-    id: 8,
-    zone: "volcano",
-    title: "🔥 FINAL — Char Master",
-    story: "Combine everything: quotes, newlines, and backslash — declare all five specials.",
-    starter: `// Fill ALL five lines exactly:\nchar quote = \nchar quote2 = \nchar newline1 = \nchar backslash = \nchar newline2 = `,
-    validate: mustMatchAll([
-      /char\s+quote\s*=\s*'\\''\s*;/,
-      /char\s+quote2\s*=\s*'\\''\s*;/,
-      /char\s+newline1\s*=\s*'\\n'\s*;/,
-      /char\s+backslash\s*=\s*'\\\\'\s*;/,
-      /char\s+newline2\s*=\s*'\\n'\s*;/,
-    ]),
+    title: "Task 6: FINAL - Firewall Bypass",
+    instruction: "MISSION: The system is locked! To hack the final firewall, you need to format an override command.\n\nTASK: Declare a char named 'tab' (to align the injection) and a char named 'quote' (to break the security loop). Use proper escape sequences!",
+    starter: `// Inject the override payload\nchar tab = \nchar quote = `,
+    validate: mustMatchAll([/char\s+tab\s*=\s*'\\t'\s*;/, /char\s+quote\s*=\s*'\\''\s*;/]),
     points: 500,
-    hints: [
-      "quote lines: '\\''",
-      "newlines: '\\n'",
-      "backslash literal: '\\\\'",
+    hints: ["Use '\\t' for the tab space.", "Use '\\'' to escape the single quote.", "char tab = '\\t';\nchar quote = '\\'';"],
+    wrong: [
+      { test: (c) => /"/.test(c), msg: "Use single quotes for chars, not double quotes!" }
     ],
-    wrong: [],
   },
 ];
 
@@ -165,7 +114,7 @@ export class Level9Scene extends Phaser.Scene {
   create() {
     this.physics.world.gravity.y = 0;
 
-    this.currentRoom = 0;
+    this.currentQuestion = 0;
     this.score = 0;
     this.hintsUsed = 0;
     this.hintIdx = 0;
@@ -182,12 +131,11 @@ export class Level9Scene extends Phaser.Scene {
     this._drawWorld();
     this._generateTextures();
     this._createParticles();
-    this._createMapMarkers();
     this._createHeroHud();
 
     const uiScene = this.scene.get("UIScene");
     if (uiScene?.setLevelLabel) {
-      uiScene.setLevelLabel("Level 9: Restructuring — Char Quest!");
+      uiScene.setLevelLabel("Level 9: Restructuring — Char Code Assessment");
     }
 
     this._showIntro();
@@ -209,14 +157,14 @@ export class Level9Scene extends Phaser.Scene {
       g.fillRect(0, (H * i) / 50, W, H / 50 + 1);
     }
 
-    this.add.text(W / 2, 22, "CHAR QUEST", {
+    this.add.text(W / 2, 22, "CODE ASSESSMENT", {
       fontFamily: "Georgia, serif",
       fontSize: "22px",
       color: "#fbbf24",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(5);
 
-    this.add.text(W / 2, 44, "Kingdom of Code", {
+    this.add.text(W / 2, 44, "Char Programming Terminal", {
       fontFamily: "Georgia, serif",
       fontSize: "12px",
       color: "#94a3b8",
@@ -244,40 +192,19 @@ export class Level9Scene extends Phaser.Scene {
     }).setDepth(200);
   }
 
-  _createMapMarkers() {
-    const zones = [
-      { emoji: "🏰", label: "Castle", range: "1-2", x: 120, y: 115, c: 0x6366f1 },
-      { emoji: "🌲", label: "Forest", range: "3-4", x: 310, y: 115, c: 0x22c55e },
-      { emoji: "⛰️", label: "Mountain", range: "5-6", x: 500, y: 115, c: 0x94a3b8 },
-      { emoji: "🔥", label: "Volcano", range: "7-8", x: 690, y: 115, c: 0xef4444 },
-    ];
-    this.zoneLabels = [];
-    zones.forEach(z => {
-      const r = this.add.rectangle(z.x, z.y, 150, 64, z.c, 0.15).setDepth(3).setStrokeStyle(1, z.c, 0.4);
-      const t = this.add.text(z.x, z.y - 8, `${z.emoji}\n${z.label}\n[${z.range}]`, {
-        fontFamily: "monospace",
-        fontSize: "10px",
-        color: "#e2e8f0",
-        align: "center",
-      }).setOrigin(0.5).setDepth(4);
-      this.zoneLabels.push({ r, t, ...z });
-    });
-
-    this.heroMarker = this.add.text(W / 2, 168, "🧙", { fontSize: "28px" }).setOrigin(0.5).setDepth(6);
-    this.roomHudText = this.add.text(W / 2, 198, "Room 0 / 8", {
-      fontFamily: "monospace",
-      fontSize: "13px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(6);
-  }
-
   _createHeroHud() {
     this.scoreTxt = this.add.text(16, 72, "Score: 0", {
       fontFamily: "monospace",
       fontSize: "14px",
       color: "#86efac",
     }).setDepth(10);
+
+    this.roomHudText = this.add.text(W / 2, 72, "Task 0 / 6", {
+      fontFamily: "monospace",
+      fontSize: "13px",
+      color: "#fbbf24",
+      fontStyle: "bold",
+    }).setOrigin(0.5, 0).setDepth(10);
 
     this.hintStatTxt = this.add.text(W - 16, 72, "Hints: 0", {
       fontFamily: "monospace",
@@ -291,11 +218,11 @@ export class Level9Scene extends Phaser.Scene {
 
     const panel = this.add.graphics().setDepth(101);
     panel.fillStyle(0x0f172a, 0.98);
-    panel.fillRoundedRect(40, 40, W - 80, H - 80, 14);
+    panel.fillRoundedRect(100, 100, 600, 400, 14);
     panel.lineStyle(2, 0xfbbf24);
-    panel.strokeRoundedRect(40, 40, W - 80, H - 80, 14);
+    panel.strokeRoundedRect(100, 100, 600, 400, 14);
 
-    const title = this.add.text(W / 2, 85, "⌨️ CHAR QUEST: THE TYPING ADVENTURE", {
+    const title = this.add.text(W / 2, 140, "💻 CHAR CODE ASSESSMENT", {
       fontFamily: "Arial Black, Arial",
       fontSize: "20px",
       color: "#fbbf24",
@@ -303,10 +230,10 @@ export class Level9Scene extends Phaser.Scene {
 
     const st = this.add.text(
       W / 2,
-      200,
-      "You are a Programming Hero rescuing the Kingdom of Code.\n\n" +
-        "8 rooms, 2 in each realm — each needs correct char declarations in the editor.\n" +
-        "Java/C-style syntax: char name = 'X';  Escape: '\\\\n'  '\\\\t'  '\\\\\\\\'  '\\\\''\n\n" +
+      250,
+      "You are accessing the main terminal.\n\n" +
+        "Complete 6 programming tasks focusing on 'char' declarations and escape sequences.\n\n" +
+        "Java/C-style syntax required: char letter = 'A';\n\n" +
         "Submit when ready · Hints cost nothing · Skip costs -50 pts",
       {
         fontFamily: "monospace",
@@ -319,8 +246,8 @@ export class Level9Scene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(102);
 
-    const btn = this.add.rectangle(W / 2, 480, 220, 48, 0x7c3aed, 1).setDepth(102).setInteractive({ useHandCursor: true });
-    const bt = this.add.text(W / 2, 480, "BEGIN QUEST", {
+    const btn = this.add.rectangle(W / 2, 430, 220, 48, 0x7c3aed, 1).setDepth(102).setInteractive({ useHandCursor: true });
+    const bt = this.add.text(W / 2, 430, "BEGIN ASSESSMENT", {
       fontFamily: "monospace",
       fontSize: "18px",
       color: "#fff",
@@ -336,24 +263,22 @@ export class Level9Scene extends Phaser.Scene {
       st.destroy();
       btn.destroy();
       bt.destroy();
-      this._startQuest();
+      this._startAssessment();
     });
   }
 
-  _startQuest() {
+  _startAssessment() {
     this.gameStarted = true;
     this.startTime = this.time.now;
     GameManager.set("lives", 3);
-    this.currentRoom = 1;
+    this.currentQuestion = 1;
     this._mountEditor();
-    this._loadRoom(1);
+    this._loadQuestion(1);
   }
 
   _mountEditor() {
     const wrap = document.createElement("div");
-    wrap.id = "l9-char-quest-root";
-    /* Fit inside 800×600 canvas: Phaser positions this node — do NOT set left/transform
-       (they fight Phaser’s matrix() and clip the panel on the right). */
+    wrap.id = "l9-char-assessment-root";
     const gw = this.game?.config?.width ?? W;
     const panelW = Math.max(280, Math.min(752, gw - 24));
 
@@ -392,51 +317,32 @@ export class Level9Scene extends Phaser.Scene {
     document.getElementById("l9-skip").addEventListener("click", () => this._skip());
   }
 
-  _loadRoom(n) {
-    const room = ROOMS[n - 1];
-    if (!room) return;
+  _loadQuestion(n) {
+    const question = QUESTIONS[n - 1];
+    if (!question) return;
 
     this.hintIdx = 0;
     const story = document.getElementById("l9-story");
     const ta = document.getElementById("l9-code");
     if (story) {
-      story.innerHTML = `<strong style="color:#fbbf24">${room.title}</strong><br/><span style="color:#cbd5e1">${room.story.replace(/\n/g, "<br/>")}</span>`;
+      story.innerHTML = `<strong style="color:#fbbf24">${question.title}</strong><br/><span style="color:#cbd5e1">${question.instruction}</span>`;
     }
     if (ta) {
-      const start = room.starterFull || room.starter;
+      const start = question.starterFull || question.starter;
       ta.value = typeof start === "string" ? start : "";
       ta.focus();
     }
     if (this.feedbackEl()) this.feedbackEl().textContent = "";
 
-    this.roomHudText.setText(`Room ${n} / ${TOTAL_ROOMS}`);
-    this._pulseHero(n);
-
-    const zt = { castle: "🏰", forest: "🌲", mountain: "⛰️", volcano: "🔥" };
-    this.heroMarker.setText(`🧙 ${zt[room.zone] || "✨"}`);
-  }
-
-  _pulseHero(room) {
-    this.tweens.add({
-      targets: this.heroMarker,
-      scale: 1.15,
-      duration: 200,
-      yoyo: true,
-    });
-    this.zoneLabels.forEach(zl => {
-      const [lo, hi] = zl.range.split("-").map(Number);
-      const on = room >= lo && room <= hi;
-      zl.r.setStrokeStyle(on ? 3 : 1, zl.c, on ? 1 : 0.4);
-      zl.r.setFillStyle(zl.c, on ? 0.35 : 0.12);
-    });
+    this.roomHudText.setText(`Task ${n} / ${TOTAL_QUESTIONS}`);
   }
 
   _submit() {
     if (this.isComplete) return;
-    const room = ROOMS[this.currentRoom - 1];
+    const question = QUESTIONS[this.currentQuestion - 1];
     const code = this.codeEl()?.value || "";
 
-    for (const w of room.wrong || []) {
+    for (const w of question.wrong || []) {
       if (w.test(code)) {
         this.wrongSubs++;
         this._setFeedback(w.msg, false);
@@ -444,18 +350,18 @@ export class Level9Scene extends Phaser.Scene {
       }
     }
 
-    if (room.validate(code)) {
+    if (question.validate(code)) {
       this.correctSubs++;
-      const pts = room.points;
+      const pts = question.points;
       this.score += pts;
       GameManager.addXP(pts);
       GameManager.addScore(pts);
       this.scoreTxt.setText(`Score: ${this.score}`);
-      this._setFeedback(`✓ Correct! +${pts} pts — ${room.title}`, true);
+      this._setFeedback(`✓ Correct! +${pts} pts — ${question.title}`, true);
       this.spark.emitParticleAt(W / 2, 320, 20);
       this.cameras.main.flash(200, 52, 211, 76);
 
-      if (this.currentRoom === TOTAL_ROOMS) {
+      if (this.currentQuestion === TOTAL_QUESTIONS) {
         this.bossBonusEarned = true;
         this.score += BONUS_FINAL;
         GameManager.addXP(BONUS_FINAL);
@@ -463,8 +369,8 @@ export class Level9Scene extends Phaser.Scene {
         this.time.delayedCall(900, () => this._victory());
       } else {
         this.time.delayedCall(650, () => {
-          this.currentRoom++;
-          this._loadRoom(this.currentRoom);
+          this.currentQuestion++;
+          this._loadQuestion(this.currentQuestion);
         });
       }
     } else {
@@ -483,11 +389,11 @@ export class Level9Scene extends Phaser.Scene {
   }
 
   _hint() {
-    const room = ROOMS[this.currentRoom - 1];
-    if (!room?.hints?.length) return;
+    const question = QUESTIONS[this.currentQuestion - 1];
+    if (!question?.hints?.length) return;
     this.hintsUsed++;
     this.hintStatTxt.setText(`Hints: ${this.hintsUsed}`);
-    const h = room.hints[Math.min(this.hintIdx, room.hints.length - 1)];
+    const h = question.hints[Math.min(this.hintIdx, question.hints.length - 1)];
     this.hintIdx++;
     this._setFeedback(`💡 Hint: ${h}`, true);
   }
@@ -500,12 +406,12 @@ export class Level9Scene extends Phaser.Scene {
     this.scoreTxt.setText(`Score: ${this.score}`);
     this._setFeedback(`Skipped (−${SKIP_PENALTY} pts).`, false);
 
-    if (this.currentRoom === TOTAL_ROOMS) {
+    if (this.currentQuestion === TOTAL_QUESTIONS) {
       this.time.delayedCall(400, () => this._victory());
     } else {
       this.time.delayedCall(400, () => {
-        this.currentRoom++;
-        this._loadRoom(this.currentRoom);
+        this.currentQuestion++;
+        this._loadQuestion(this.currentQuestion);
       });
     }
   }
@@ -514,14 +420,14 @@ export class Level9Scene extends Phaser.Scene {
     this.isComplete = true;
     const total = this.correctSubs + this.wrongSubs;
     const acc = total > 0 ? Math.round((this.correctSubs / total) * 100) : 0;
-    const minCorrect = Math.ceil(TOTAL_ROOMS * 0.75);
+    const minCorrect = Math.ceil(TOTAL_QUESTIONS * 0.75);
     const passed = acc >= ACCURACY_THRESHOLD && this.correctSubs >= minCorrect;
     const elapsed = Math.round((this.time.now - this.startTime) / 1000);
     const mm = Math.floor(elapsed / 60);
     const ss = String(elapsed % 60).padStart(2, "0");
 
     if (passed) {
-      GameManager.completeLevel(8, acc);
+      GameManager.completeLevel(8, acc); // ID doesn't change, matches your progress tracker setup
       BadgeSystem.unlock("char_wizard");
       ProgressTracker.saveProgress(GameManager.getState());
       this.cameras.main.flash(500, 255, 215, 100);
@@ -537,7 +443,7 @@ export class Level9Scene extends Phaser.Scene {
       this.domRoot = null;
     }
 
-    this._showEndScreen(acc >= ACCURACY_THRESHOLD, acc, `${mm}:${ss}`);
+    this._showEndScreen(passed, acc, `${mm}:${ss}`);
   }
 
   _showEndScreen(passed, acc, timeStr) {
@@ -545,13 +451,13 @@ export class Level9Scene extends Phaser.Scene {
 
     const g = this.add.graphics().setDepth(301);
     g.fillStyle(0x0f172a, 0.98);
-    g.fillRoundedRect(30, 30, W - 60, H - 60, 14);
+    g.fillRoundedRect(100, 80, 600, 450, 14);
     g.lineStyle(2, 0xfbbf24);
-    g.strokeRoundedRect(30, 30, W - 60, H - 60, 14);
+    g.strokeRoundedRect(100, 80, 600, 450, 14);
 
-    const title = passed ? "🏆 CHAR MASTER — QUEST COMPLETE!" : "QUEST ENDED";
+    const title = passed ? "🏆 ASSESSMENT PASSED!" : "ASSESSMENT FAILED";
     this.add
-      .text(W / 2, 70, title, {
+      .text(W / 2, 120, title, {
         fontFamily: "Arial Black",
         fontSize: "22px",
         color: passed ? "#fbbf24" : "#f87171",
@@ -560,8 +466,8 @@ export class Level9Scene extends Phaser.Scene {
       .setDepth(302);
 
     const lines = [
-      `Correct submissions: ${this.correctSubs} / ${TOTAL_ROOMS}`,
-      `Score: ${this.score}${this.bossBonusEarned ? ` (includes +${BONUS_FINAL} final-room bonus)` : ""}`,
+      `Correct submissions: ${this.correctSubs} / ${TOTAL_QUESTIONS}`,
+      `Score: ${this.score}${this.bossBonusEarned ? ` (includes +${BONUS_FINAL} final-task bonus)` : ""}`,
       `Accuracy: ${acc}%`,
       `Time: ${timeStr}`,
       `Hints used: ${this.hintsUsed}`,
@@ -570,7 +476,7 @@ export class Level9Scene extends Phaser.Scene {
 
     lines.forEach((line, i) => {
       this.add
-        .text(W / 2, 120 + i * 26, line, {
+        .text(W / 2, 160 + i * 24, line, {
           fontFamily: "monospace",
           fontSize: "14px",
           color: "#e2e8f0",
@@ -579,7 +485,7 @@ export class Level9Scene extends Phaser.Scene {
         .setDepth(302);
     });
 
-    const learnY = 300;
+    const learnY = 330;
     if (passed) {
       this.add
         .text(W / 2, learnY, "Badge: Char Champion — char_wizard unlocked!", {
@@ -606,14 +512,14 @@ export class Level9Scene extends Phaser.Scene {
         .text(
           W / 2,
           learnY,
-          `Need ${ACCURACY_THRESHOLD}%+ accuracy and ≥${Math.ceil(TOTAL_ROOMS * 0.75)} correct submissions.`,
+          `Need ${ACCURACY_THRESHOLD}%+ accuracy and ≥${Math.ceil(TOTAL_QUESTIONS * 0.75)} correct submissions.`,
           { fontSize: "13px", color: "#fca5a5" }
         )
         .setOrigin(0.5)
         .setDepth(302);
     }
 
-    const by = 480;
+    const by = 470;
     if (passed) {
       this._endBtn(W / 2 - 110, by, "MAIN MENU", 0x7c3aed, () => {
         this.scene.stop("UIScene");

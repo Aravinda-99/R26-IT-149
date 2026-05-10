@@ -501,9 +501,9 @@ export class Level10Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x1a3a1a, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 30, 640, 530, 16);
+    panelG.fillRoundedRect(W / 2 - 320, 50, 640, 530, 16);
     panelG.lineStyle(3, 0xff69b4);
-    panelG.strokeRoundedRect(W / 2 - 320, 30, 640, 530, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, 50, 640, 530, 16);
 
     const title = this.add.text(W / 2, 68, "🌸 MISSION 10: STRING DISCOVERY", {
       fontFamily: "Arial Black, Arial, sans-serif",
@@ -511,15 +511,9 @@ export class Level10Scene extends Phaser.Scene {
       color: "#ff69b4",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
+    title.setY(90);
 
-    const sub = this.add.text(W / 2, 100, "Message Garden Collector", {
-      fontFamily: "Arial",
-      fontSize: "16px",
-      color: "#90ee90",
-      fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(202);
-
-    const desc = this.add.text(W / 2, 210,
+    const desc = this.add.text(W / 2, 260,
       "A STRING is a sequence of characters wrapped in DOUBLE quotes!\n\n" +
       "✅ VALID STRINGS (collect these):\n" +
       '"Hello"  "123"  ""  "Hi World!"  "!"  " "\n\n' +
@@ -538,7 +532,7 @@ export class Level10Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 418, "Collect 30 valid strings with 85%+ accuracy\nto earn the Garden Keeper badge! 🌸", {
+    const goal = this.add.text(W / 2, 440, "Collect 30 valid strings with 85%+ accuracy\nto earn the Garden Keeper badge! 🌸", {
       fontFamily: "Arial",
       fontSize: "13px",
       color: "#f1c40f",
@@ -547,9 +541,9 @@ export class Level10Scene extends Phaser.Scene {
       lineSpacing: 4,
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 475, 280, 48, 0x228b22, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 500, 280, 48, 0x228b22, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0xff69b4);
-    const btnTxt = this.add.text(W / 2, 475, "BEGIN HARVEST", {
+    const btnTxt = this.add.text(W / 2, 500, "BEGIN HARVEST", {
       fontFamily: "Arial",
       fontSize: "20px",
       color: "#ffffff",
@@ -569,7 +563,7 @@ export class Level10Scene extends Phaser.Scene {
     const dismissAndStart = () => {
       if (dismissed) return;
       dismissed = true;
-      [overlay, panelG, title, sub, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
+      [overlay, panelG, title, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
       this._startGame();
     };
 

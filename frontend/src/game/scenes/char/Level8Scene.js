@@ -688,21 +688,21 @@ export class Level8Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x0d1b2a, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 30, 640, 530, 16);
+    panelG.fillRoundedRect(W / 2 - 320, 60, 640, 530, 16);
     panelG.lineStyle(3, 0xffd93d);
-    panelG.strokeRoundedRect(W / 2 - 320, 30, 640, 530, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, 60, 640, 530, 16);
 
-    const title = this.add.text(W / 2, 68, "🏭 MISSION 8: CHARACTER WORKSHOP", {
+    const title = this.add.text(W / 2, 98, "🏭 MISSION 8: CHARACTER WORKSHOP", {
       fontFamily: "Arial Black, Arial, sans-serif",
       fontSize: "23px", color: "#ffd93d", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 98, "Quality Control Engineer Reporting for Duty", {
+    const sub = this.add.text(W / 2, 128, "Quality Control Engineer Reporting for Duty", {
       fontFamily: "Arial", fontSize: "15px",
       color: "#4ecdc4", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 215,
+    const desc = this.add.text(W / 2, 245,
       "Process incoming characters on the factory line!\n\n" +
       "STEP 1: VALIDATE — Is it a valid char?\n" +
       "   ✓ Valid:  'A'  'z'  '5'  '@'  ' '  '\\n'\n" +
@@ -719,18 +719,18 @@ export class Level8Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 415, "Process 50 characters with 85%+ accuracy\nto earn the ASCII Master badge! 🔤", {
+    const goal = this.add.text(W / 2, 445, "Process 50 characters with 85%+ accuracy\nto earn the ASCII Master badge! 🔤", {
       fontFamily: "Arial", fontSize: "13px",
       color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 5,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 460, "⚠ 3 lives — wrong answers cost lives!", {
+    const warn = this.add.text(W / 2, 490, "⚠ 3 lives — wrong answers cost lives!", {
       fontFamily: "Arial", fontSize: "11px", color: "#e74c3c",
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 505, 280, 48, 0x8B6914, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 535, 280, 48, 0x8B6914, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0xffd93d);
-    const btnTxt = this.add.text(W / 2, 505, "START SHIFT", {
+    const btnTxt = this.add.text(W / 2, 535, "START SHIFT", {
       fontFamily: "Courier New, monospace",
       fontSize: "20px", color: "#ffd93d", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
@@ -764,11 +764,11 @@ export class Level8Scene extends Phaser.Scene {
    *  WAVE SYSTEM
    * ═══════════════════════════════════════════════════════════════ */
   _getTimerDuration() {
-    if (this.waveNumber <= 10) return 4000;
-    if (this.waveNumber <= 20) return 3000;
-    if (this.waveNumber <= 30) return 3000;
-    if (this.waveNumber <= 40) return 2000;
-    return 1500;
+    if (this.waveNumber <= 10) return 7000;
+    if (this.waveNumber <= 20) return 6000;
+    if (this.waveNumber <= 30) return 5000;
+    if (this.waveNumber <= 40) return 4000;
+    return 3000;
   }
 
   _nextWave() {
@@ -1332,7 +1332,7 @@ export class Level8Scene extends Phaser.Scene {
     });
 
     this.currentElements.push(counterText, charText, arrow);
-    this._startTimer(2000, () => {
+    this._startTimer(3500, () => {
       this._onTimerExpired();
       this.time.delayedCall(500, () => this._rapidFireNext());
     });
@@ -1662,11 +1662,11 @@ export class Level8Scene extends Phaser.Scene {
       }).setOrigin(0.5).setDepth(202);
       sy += 35;
 
-      this._createEndButton(W / 2 - 100, sy, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, sy, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, sy, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, sy, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -1733,11 +1733,11 @@ export class Level8Scene extends Phaser.Scene {
         },
       });
 
-      this._createEndButton(W / 2 - 100, H / 2 + 100, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, H / 2 + 100, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, H / 2 + 100, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, H / 2 + 100, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });

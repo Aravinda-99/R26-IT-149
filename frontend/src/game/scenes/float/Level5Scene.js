@@ -30,7 +30,7 @@ const PLAYER_SPEED = 250;
 const BOOST_SPEED = 400;
 const BOOST_COOLDOWN = 3000;
 const OXYGEN_MAX = 100;
-const OXYGEN_DECAY_PER_SEC = 0.6;
+const OXYGEN_DECAY_PER_SEC = 1.8;
 const OXYGEN_PENALTY_INT = 5;
 const OXYGEN_PENALTY_CHAR = 15;
 const OXYGEN_REWARD = 5;
@@ -108,6 +108,9 @@ export class Level5Scene extends Phaser.Scene {
     const uiScene = this.scene.get("UIScene");
     if (uiScene?.setLevelLabel) {
       uiScene.setLevelLabel("Level 5: Tuning — Deep Type Dive!");
+      if (uiScene.setLivesVisible) {
+        uiScene.setLivesVisible(false);
+      }
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -295,9 +298,9 @@ export class Level5Scene extends Phaser.Scene {
       fontFamily: "Arial", fontSize: "11px", color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(dp + 2);
 
-    this.add.text(W - 170, 64, "O2", {
-      fontFamily: "Arial", fontSize: "14px", color: "#2ecc71", fontStyle: "bold",
-    }).setDepth(dp);
+    this.add.text(W - 165, 80, "O2", {
+      fontFamily: "Arial", fontSize: "16px", color: "#2ecc71", fontStyle: "bold",
+    }).setOrigin(1, 0.5).setDepth(dp);
 
     this.oxygenBarBg = this.add.rectangle(W - 85, 80, 140, 16, 0x0d2137, 0.7)
       .setStrokeStyle(1, 0x1a6b8a).setDepth(dp);
@@ -365,19 +368,19 @@ export class Level5Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x001a2e, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 40, 640, 500, 16);
+    panelG.fillRoundedRect(W / 2 - 320, 70, 640, 500, 16);
     panelG.lineStyle(3, 0x00d4ff);
-    panelG.strokeRoundedRect(W / 2 - 320, 40, 640, 500, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, 70, 640, 500, 16);
 
-    const title = this.add.text(W / 2, 80, "MISSION 5: FLOAT TUNING", {
+    const title = this.add.text(W / 2, 100, "MISSION 5: FLOAT TUNING", {
       fontFamily: "Arial Black", fontSize: "26px", color: "#00d4ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 115, "Deep Type Dive — Danger Zone", {
+    const sub = this.add.text(W / 2, 130, "Deep Type Dive — Danger Zone", {
       fontFamily: "Arial", fontSize: "17px", color: "#5dade2", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 230,
+    const desc = this.add.text(W / 2, 280,
       "You've learned what floats are. Now PROVE IT!\n" +
       "Three data types are drifting in the deep...\n\n" +
       "CYAN  = FLOAT bubbles (3.14, -0.5, 9.99) — COLLECT!\n" +
@@ -393,14 +396,14 @@ export class Level5Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 420, "Collect 25 floats with 85%+ accuracy\nto earn the Precision Master badge!", {
+    const goal = this.add.text(W / 2, 440, "Collect 25 floats with 85%+ accuracy\nto earn the Precision Master badge!", {
       fontFamily: "Arial", fontSize: "14px", color: "#f1c40f",
       align: "center", fontStyle: "bold", lineSpacing: 6,
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 480, 240, 48, 0x00688a, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 510, 240, 48, 0x00688a, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0x00d4ff);
-    const btnTxt = this.add.text(W / 2, 480, "DIVE DEEPER!", {
+    const btnTxt = this.add.text(W / 2, 510, "DIVE DEEPER!", {
       fontFamily: "Arial", fontSize: "20px", color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
 
@@ -456,26 +459,25 @@ export class Level5Scene extends Phaser.Scene {
 
     const probs = this._getSpawnProbabilities();
     const roll = Math.random();
-    let bubbleType, value, displayText, bubbleColor, glowColor;
+    let bubbleType, value, displayText;
+    const bubbleColor = 0x00d4ff;
+    const glowColor = 0x00d4ff;
+    const fillAlpha = 0.25;
+    const strokeColor = "#003f5c";
+    const glowAlpha = 0.15;
 
     if (roll < probs.float) {
       bubbleType = TYPE_FLOAT;
       value = Phaser.Utils.Array.GetRandom(FLOAT_VALUES);
       displayText = String(value);
-      bubbleColor = 0x00d4ff;
-      glowColor = 0x00d4ff;
     } else if (roll < probs.float + probs.int) {
       bubbleType = TYPE_INT;
       value = Phaser.Utils.Array.GetRandom(INT_VALUES);
       displayText = String(value);
-      bubbleColor = 0xff9f43;
-      glowColor = 0xff6b35;
     } else {
       bubbleType = TYPE_CHAR;
       value = Phaser.Utils.Array.GetRandom(CHAR_VALUES);
       displayText = value;
-      bubbleColor = 0x39ff14;
-      glowColor = 0x9b59b6;
     }
 
     const spawnX = Phaser.Math.Between(60, W - 60);
@@ -483,18 +485,9 @@ export class Level5Scene extends Phaser.Scene {
 
     const container = this.add.container(spawnX, spawnY).setDepth(40);
 
-    // Outer glow — stronger for CHAR (toxic)
-    const glowAlpha = bubbleType === TYPE_CHAR ? 0.3 : 0.15;
     const outerGlow = this.add.circle(0, 0, BUBBLE_RADIUS + 6, glowColor, glowAlpha);
     container.add(outerGlow);
 
-    // Second glow ring for CHAR
-    if (bubbleType === TYPE_CHAR) {
-      const toxicRing = this.add.circle(0, 0, BUBBLE_RADIUS + 12, 0x9b59b6, 0.1);
-      container.add(toxicRing);
-    }
-
-    const fillAlpha = bubbleType === TYPE_FLOAT ? 0.25 : bubbleType === TYPE_INT ? 0.3 : 0.35;
     const circle = this.add.circle(0, 0, BUBBLE_RADIUS, bubbleColor, fillAlpha);
     circle.setStrokeStyle(2, bubbleColor, 0.85);
     container.add(circle);
@@ -503,28 +496,12 @@ export class Level5Scene extends Phaser.Scene {
     container.add(highlight);
 
     const fontSize = displayText.length > 4 ? "13px" : "17px";
-    const strokeColor = bubbleType === TYPE_FLOAT ? "#003f5c"
-      : bubbleType === TYPE_INT ? "#7f3300"
-      : "#2d0a4e";
 
     const txt = this.add.text(0, 0, displayText, {
       fontFamily: "Courier New, monospace", fontSize, color: "#ffffff",
       fontStyle: "bold", stroke: strokeColor, strokeThickness: 2,
     }).setOrigin(0.5);
     container.add(txt);
-
-    // Type label below bubble
-    const typeLabel = bubbleType === TYPE_FLOAT ? "float"
-      : bubbleType === TYPE_INT ? "int"
-      : "char";
-    const labelColor = bubbleType === TYPE_FLOAT ? "#88ddff"
-      : bubbleType === TYPE_INT ? "#ffbb77"
-      : "#88ff44";
-
-    const lbl = this.add.text(0, BUBBLE_RADIUS + 9, typeLabel, {
-      fontFamily: "Arial", fontSize: "9px", color: labelColor, fontStyle: "bold",
-    }).setOrigin(0.5);
-    container.add(lbl);
 
     // Physics
     this.physics.add.existing(container);
@@ -541,13 +518,6 @@ export class Level5Scene extends Phaser.Scene {
 
     container.setScale(0);
     this.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 300, ease: "Back.out" });
-
-    // Toxic pulse animation for CHAR bubbles
-    if (bubbleType === TYPE_CHAR) {
-      this.tweens.add({
-        targets: outerGlow, alpha: 0.05, yoyo: true, repeat: -1, duration: 600,
-      });
-    }
 
     this.physics.add.overlap(this.player, container, () => {
       this._onCollectBubble(container);
@@ -835,11 +805,11 @@ export class Level5Scene extends Phaser.Scene {
         this.scene.restart();
       });
     } else {
-      this._createEndButton(W / 2 - 100, btnY, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, btnY, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, btnY, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, btnY, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -891,11 +861,11 @@ export class Level5Scene extends Phaser.Scene {
         fontFamily: "Arial", fontSize: "16px", color: "#e74c3c",
       }).setOrigin(0.5).setDepth(201);
 
-      this._createEndButton(W / 2 - 100, H / 2 + 80, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, H / 2 + 80, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, H / 2 + 80, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, H / 2 + 80, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -1014,5 +984,9 @@ export class Level5Scene extends Phaser.Scene {
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.bubbles = [];
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) {
+      uiScene.setLivesVisible(true);
+    }
   }
 }

@@ -27,7 +27,7 @@ const PLAYER_SPEED = 250;
 const BOOST_SPEED = 400;
 const BOOST_COOLDOWN = 3000;
 const OXYGEN_MAX = 100;
-const OXYGEN_DECAY_PER_SEC = 0.5;
+const OXYGEN_DECAY_PER_SEC = 1.5;
 const OXYGEN_PENALTY = 10;
 const OXYGEN_REWARD = 5;
 const SPAWN_INTERVAL = 2500;
@@ -140,6 +140,9 @@ export class Level4Scene extends Phaser.Scene {
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 4: Accretion — Decimal Ocean Dive!");
+    }
+    if (uiScene && uiScene.setLivesVisible) {
+      uiScene.setLivesVisible(false); // Hide lives for the Oxygen level
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -397,12 +400,12 @@ export class Level4Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(dp + 2);
 
     // Oxygen bar (top-right)
-    this.add.text(W - 170, 64, "O₂", {
+    this.add.text(W - 165, 80, "O₂", {
       fontFamily: "Arial",
-      fontSize: "14px",
+      fontSize: "16px",
       color: "#2ecc71",
       fontStyle: "bold",
-    }).setDepth(dp);
+    }).setOrigin(1, 0.5).setDepth(dp);
 
     this.oxygenBarBg = this.add.rectangle(W - 85, 80, 140, 16, 0x1a5276, 0.6)
       .setStrokeStyle(1, 0x2980b9).setDepth(dp);
@@ -457,33 +460,33 @@ export class Level4Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x003345, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 50, 640, 480, 16);
+    panelG.fillRoundedRect(W / 2 - 320, 70, 640, 480, 16);
     panelG.lineStyle(3, 0x00d4ff);
-    panelG.strokeRoundedRect(W / 2 - 320, 50, 640, 480, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, 70, 640, 480, 16);
 
-    const title = this.add.text(W / 2, 90, "🌊 MISSION 4: FLOAT DISCOVERY", {
+    const title = this.add.text(W / 2, 100, "🌊 MISSION 4: FLOAT DISCOVERY", {
       fontFamily: "Arial Black, Arial, sans-serif",
       fontSize: "26px",
       color: "#00d4ff",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 125, "Decimal Ocean Dive", {
-      fontFamily: "Arial",
-      fontSize: "18px",
-      color: "#5dade2",
-      fontStyle: "italic",
-    }).setOrigin(0.5).setDepth(202);
+    // const sub = this.add.text(W / 2, 110, "Decimal Ocean Dive", {
+    //   fontFamily: "Arial",
+    //   fontSize: "18px",
+    //   color: "#5dade2",
+    //   fontStyle: "italic",
+    // }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 225,
+    const desc = this.add.text(W / 2, 280,
       "Floats are numbers with DECIMAL POINTS!\n" +
       "They represent fractions and precise values.\n\n" +
-      "🔵  COLLECT float bubbles (3.14, 0.5, 9.99)\n" +
-      "🟠  AVOID integer bubbles (5, -3, 100)\n\n" +
+      "  COLLECT float bubbles (3.14, 0.5, 9.99)\n" +
+      "  AVOID integer bubbles (5, -3, 100)\n\n" +
       "Controls:\n" +
       "← → ↑ ↓  or  WASD  to swim\n" +
       "SPACE  for speed boost (3s cooldown)\n\n" +
-      "⚠ Watch your OXYGEN — it drains over time!\n" +
+      "⚠ Watch your OXYGEN — it drains over time!\n\n" +
       "Correct catches restore O₂, mistakes drain it!",
       {
         fontFamily: "Arial",
@@ -494,7 +497,7 @@ export class Level4Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 410, "Collect 25 floats with 85%+ accuracy\nto earn the Float Explorer badge! 🌊", {
+    const goal = this.add.text(W / 2, 450, "Collect 25 floats with 85%+ accuracy\nto earn the Float Explorer badge! 🌊", {
       fontFamily: "Arial",
       fontSize: "14px",
       color: "#f1c40f",
@@ -503,9 +506,9 @@ export class Level4Scene extends Phaser.Scene {
       lineSpacing: 6,
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 470, 240, 48, 0x00a8cc, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 480, 240, 48, 0x00a8cc, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0x00d4ff);
-    const btnTxt = this.add.text(W / 2, 470, "DIVE IN!", {
+    const btnTxt = this.add.text(W / 2, 480, "DIVE IN!", {
       fontFamily: "Arial",
       fontSize: "20px",
       color: "#ffffff",
@@ -522,7 +525,7 @@ export class Level4Scene extends Phaser.Scene {
       this.tweens.add({ targets: [btnBg, btnTxt], scaleX: 1, scaleY: 1, duration: 120 });
     });
     btnBg.on("pointerup", () => {
-      [overlay, panelG, title, sub, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
+      [overlay, panelG, title, desc, goal, btnBg, btnTxt].forEach(e => e.destroy());
       this._startGame();
     });
   }
@@ -583,7 +586,7 @@ export class Level4Scene extends Phaser.Scene {
       value = Phaser.Utils.Array.GetRandom(INTEGERS);
       displayText = String(value);
       category = null;
-      bubbleColor = 0xff6b35;
+      bubbleColor = 0x3498db;
     }
 
     // Spawn position — deeper = more complex
@@ -620,7 +623,7 @@ export class Level4Scene extends Phaser.Scene {
       fontSize,
       color: "#ffffff",
       fontStyle: "bold",
-      stroke: isFloat ? "#003f5c" : "#7f1d1d",
+      stroke: "#003f5c",
       strokeThickness: 2,
     }).setOrigin(0.5);
     container.add(txt);
@@ -973,11 +976,11 @@ export class Level4Scene extends Phaser.Scene {
         this.scene.restart();
       });
     } else {
-      this._createEndButton(W / 2 - 100, btnY, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, btnY, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, btnY, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, btnY, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -1040,11 +1043,11 @@ export class Level4Scene extends Phaser.Scene {
         color: "#e74c3c",
       }).setOrigin(0.5).setDepth(201);
 
-      this._createEndButton(W / 2 - 100, H / 2 + 80, "TRY AGAIN", 0xe74c3c, () => {
+      this._createEndButton(W / 2 - 110, H / 2 + 80, "TRY AGAIN", 0xe74c3c, () => {
         GameManager.resetLevel();
         this.scene.restart();
       });
-      this._createEndButton(W / 2 + 100, H / 2 + 80, "MENU", 0x34495e, () => {
+      this._createEndButton(W / 2 + 110, H / 2 + 80, "MENU", 0x34495e, () => {
         this.scene.stop("UIScene");
         this.scene.start("MenuScene");
       });
@@ -1186,5 +1189,10 @@ export class Level4Scene extends Phaser.Scene {
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.bubbles = [];
+    // Restore lives visibility for other levels
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) {
+      uiScene.setLivesVisible(true);
+    }
   }
 }
