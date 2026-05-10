@@ -13,6 +13,7 @@ import { renderQuizLab } from "./pages/quiz-lab.js";
 import { renderGames, disposeGames } from "./pages/games.js";
 import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderMastery } from "./pages/mastery.js";
+import { renderDemoFlow } from "./pages/demo-flow.js";
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
 
@@ -26,6 +27,7 @@ const pages = {
     games: renderGames,
     "error-analysis": renderErrorAnalysis,
     mastery: renderMastery,
+    "demo-flow": renderDemoFlow,
 };
 
 const authPages = {
