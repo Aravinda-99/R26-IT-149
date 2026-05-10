@@ -2,9 +2,6 @@ import { QUIZ_BANK } from "./data.js";
 
 /**
  * Initialize the quiz UI within a given root element.
- * Pass a DOM element `root` that contains the following elements (relative selectors):
- * - .quiz-box, .quiz-counter, .quiz-score-mini, .quiz-progress-bar, .prev-quiz-btn, .next-quiz-btn
- * If `root` is omitted, document will be used (legacy IDs still work).
  */
 export function setupQuizUI(root = document) {
     const state = {
@@ -26,6 +23,20 @@ export function setupQuizUI(root = document) {
         return state.selectedAnswers.reduce((acc, ans, i) => {
             return acc + (ans === QUIZ_BANK[i].correctIndex ? 1 : 0);
         }, 0);
+    }
+
+    function getTopicBreakdown() {
+        const breakdown = {};
+        QUIZ_BANK.forEach((q, idx) => {
+            if (!breakdown[q.topic]) {
+                breakdown[q.topic] = { correct: 0, total: 0 };
+            }
+            breakdown[q.topic].total++;
+            if (state.selectedAnswers[idx] === q.correctIndex) {
+                breakdown[q.topic].correct++;
+            }
+        });
+        return breakdown;
     }
 
     function renderQuestion() {
@@ -108,7 +119,11 @@ export function setupQuizUI(root = document) {
                           percent >= 60 ? "Good progress. Review a few topics and try again." :
                           "Keep going. Repetition builds confidence."}
                     </p>
-                    <button id="retry-quiz-btn" class="btn btn-primary" style="margin-top: 1rem;">Retry 25 Questions</button>
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+                        <button id="retry-quiz-btn" class="btn btn-primary" style="margin-top: 0;">Retry 25 Questions</button>
+                        <button id="view-details-btn" class="btn btn-secondary" style="margin-top: 0;">View Details</button>
+                        <button id="finish-quiz-btn" class="btn btn-primary" style="margin-top: 0;">Finish</button>
+                    </div>
                 </article>
             `;
 
@@ -119,12 +134,39 @@ export function setupQuizUI(root = document) {
             nextBtn.textContent = "Review Again";
 
             const retryBtn = (root === document) ? document.getElementById("retry-quiz-btn") : root.querySelector("#retry-quiz-btn");
+            const viewDetailsBtn = (root === document) ? document.getElementById("view-details-btn") : root.querySelector("#view-details-btn");
+            const finishBtn = (root === document) ? document.getElementById("finish-quiz-btn") : root.querySelector("#finish-quiz-btn");
+
             if (retryBtn) {
                 retryBtn.addEventListener("click", () => {
                     state.current = 0;
                     state.selectedAnswers = Array(QUIZ_BANK.length).fill(null);
                     state.submitted = false;
                     renderQuestion();
+                });
+            }
+
+            if (viewDetailsBtn) {
+                viewDetailsBtn.addEventListener("click", () => {
+                    sessionStorage.setItem("quiz-results", JSON.stringify({
+                        score,
+                        percent,
+                        topicBreakdown: getTopicBreakdown(),
+                        answeredCount: state.selectedAnswers.filter(a => a !== null).length,
+                    }));
+                    window.navigateTo("quiz-results");
+                });
+            }
+
+            if (finishBtn) {
+                finishBtn.addEventListener("click", () => {
+                    sessionStorage.setItem("quiz-results", JSON.stringify({
+                        score,
+                        percent,
+                        topicBreakdown: getTopicBreakdown(),
+                        answeredCount: state.selectedAnswers.filter(a => a !== null).length,
+                    }));
+                    window.navigateTo("quiz-summary");
                 });
             }
             return;
@@ -143,6 +185,98 @@ export function setupQuizUI(root = document) {
     });
 
     renderQuestion();
+}
+
+/**
+ * Open quiz details overlay with comprehensive statistics
+ */
+export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
+    const overlay = document.createElement("div");
+    overlay.className = "quiz-details-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.background = "rgba(0, 0, 0, 0.7)";
+    overlay.style.display = "flex";
+    overlay.style.alignItems = "center";
+    overlay.style.justifyContent = "center";
+    overlay.style.zIndex = "1300";
+
+    const topicDetailsHTML = Object.entries(topicBreakdown)
+        .map(([topic, data]) => {
+            const accuracy = Math.round((data.correct / data.total) * 100);
+            const statusColor = accuracy >= 80 ? "#22c55e" : accuracy >= 60 ? "#f59e0b" : "#ef4444";
+            return `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: center; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 0.6rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="font-weight: 600; color: white; margin-bottom: 0.3rem;">${topic}</div>
+                        <div style="font-size: 0.85rem; color: rgba(224,230,237,0.6);">${data.correct} of ${data.total} correct</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: ${statusColor};">${accuracy}%</div>
+                    </div>
+                </div>
+            `;
+        })
+        .join("");
+
+    overlay.innerHTML = `
+        <div style="background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 2rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 style="margin: 0; color: white; font-size: 1.5rem;">Quiz Details Overview</h2>
+                <button id="close-details-btn" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+
+            <!-- Overall Score -->
+            <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 0.8rem; padding: 2rem; text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8); margin-bottom: 0.5rem;">Overall Score</div>
+                <div style="font-size: 3rem; font-weight: 800; color: white; margin-bottom: 0.5rem;">${score} / ${QUIZ_BANK.length}</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: white;">${percent}%</div>
+                <div style="font-size: 0.9rem; color: rgba(255,255,255,0.8); margin-top: 1rem;">
+                    ${percent >= 80 ? "🌟 Excellent Performance!" :
+                      percent >= 60 ? "👍 Good Job!" :
+                      "📚 Keep Practicing!"}
+                </div>
+            </div>
+
+            <!-- Topic Breakdown -->
+            <div>
+                <h3 style="margin: 0 0 1.5rem 0; color: white; font-size: 1.1rem;">Performance by Topic</h3>
+                ${topicDetailsHTML}
+            </div>
+
+            <!-- Stats Summary -->
+            <div style="background: rgba(255,255,255,0.03); border-radius: 0.8rem; padding: 1.5rem; margin-top: 2rem;">
+                <h4 style="margin: 0 0 1rem 0; color: white;">Summary</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: rgba(224,230,237,0.6); margin-bottom: 0.3rem;">Correct Answers</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #22c55e;">${score}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: rgba(224,230,237,0.6); margin-bottom: 0.3rem;">Incorrect Answers</div>
+                        <div style="font-size: 1.3rem; font-weight: 700; color: #ef4444;">${QUIZ_BANK.length - score}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Close Button -->
+            <button id="close-details-footer-btn" style="width: 100%; padding: 0.8rem; margin-top: 2rem; background: rgba(99,102,241,0.2); color: #6366f1; border: 1px solid #6366f1; border-radius: 0.6rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                Close
+            </button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closeBtn = overlay.querySelector("#close-details-btn");
+    const closeFooterBtn = overlay.querySelector("#close-details-footer-btn");
+
+    closeBtn.addEventListener("click", () => overlay.remove());
+    closeFooterBtn.addEventListener("click", () => overlay.remove());
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
 }
 
 /**

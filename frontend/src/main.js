@@ -13,6 +13,8 @@ import { renderQuizLab } from "./pages/quiz-lab.js";
 import { renderGames } from "./pages/games.js";
 import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderMastery } from "./pages/mastery.js";
+import { renderQuizResults } from "./pages/quiz-results.js";
+import { renderQuizSummary } from "./pages/quiz-summary.js";
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
 
@@ -26,6 +28,8 @@ const pages = {
     games: renderGames,
     "error-analysis": renderErrorAnalysis,
     mastery: renderMastery,
+    "quiz-results": renderQuizResults,
+    "quiz-summary": renderQuizSummary,
 };
 
 const authPages = {
