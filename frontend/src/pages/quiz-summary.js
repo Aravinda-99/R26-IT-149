@@ -98,5 +98,5 @@ export function renderQuizSummary(container) {
 
     container.querySelector("#back-to-results-btn").addEventListener("click", () => window.navigateTo("quiz-results"));
     container.querySelector("#retry-from-summary-btn").addEventListener("click", () => window.navigateTo("quiz-lab"));
-    container.querySelector("#done-btn").addEventListener("click", () => window.navigateTo("learning-path"));
+    container.querySelector("#done-btn").addEventListener("click", () => window.navigateTo("error-analysis"));
 }

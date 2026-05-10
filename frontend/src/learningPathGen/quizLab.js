@@ -1,5 +1,53 @@
 import { QUIZ_BANK } from "./data.js";
 
+// Splits a question into { intro, code } — code is null for non-code questions.
+function parseQuestion(text) {
+    // "text: code"  e.g. "What is the output of: int x = 5; ..."
+    const m1 = text.match(/^(.+?:\s*)([a-z].+[;{}].*)$/);
+    if (m1) return { intro: m1[1].trimEnd(), code: m1[2] };
+
+    // "text? code"  e.g. "How many times does this loop run? for (...) { }"
+    const m2 = text.match(/^(.+\?)\s+([a-z].+[;{}].*)$/);
+    if (m2) return { intro: m2[1], code: m2[2] };
+
+    // Inline code embedded before "?"  e.g. "What is the output of System.out.println(7 % 3);?"
+    const m3 = text.match(/^(.*?)\s+([A-Za-z][\w.]*\(.*\);)\??$/);
+    if (m3 && /[().]/.test(m3[2])) return { intro: m3[1] + ':', code: m3[2] };
+
+    return { intro: text, code: null };
+}
+
+// Splits a code string into lines on statement boundaries (respects parenthesis depth).
+function splitCodeIntoLines(code) {
+    const lines = [];
+    let current = '';
+    let depth = 0;
+
+    for (let i = 0; i < code.length; i++) {
+        const ch = code[i];
+        if (ch === '(') depth++;
+        else if (ch === ')') depth--;
+
+        current += ch;
+
+        if (ch === ';' && depth === 0 && i + 1 < code.length && code[i + 1] === ' ') {
+            lines.push(current.trim());
+            current = '';
+            i++;
+        }
+    }
+
+    if (current.trim()) lines.push(current.trim());
+    return lines;
+}
+
+// Returns true when an option string looks like a code snippet.
+function looksLikeCode(str) {
+    if (/[;{}\[\]]/.test(str)) return true;
+    if (/^(int|double|float|long|short|byte|char|boolean|String|static|void|new|array)\b/.test(str)) return true;
+    return false;
+}
+
 /**
  * Initialize the quiz UI within a given root element.
  */
@@ -42,6 +90,8 @@ export function setupQuizUI(root = document) {
     function renderQuestion() {
         const q = QUIZ_BANK[state.current];
         const selected = state.selectedAnswers[state.current];
+        const { intro, code } = parseQuestion(q.question);
+        const codeLines = code ? splitCodeIntoLines(code) : [];
 
         counter.textContent = `Question ${state.current + 1} of ${QUIZ_BANK.length}`;
         progressBar.style.width = `${((state.current + 1) / QUIZ_BANK.length) * 100}%`;
@@ -53,13 +103,16 @@ export function setupQuizUI(root = document) {
                     <span class="lp-topic-tag">${q.topic}</span>
                     <span class="lp-id-tag">Q${q.id}</span>
                 </div>
-                <h4 class="lp-question">${q.question}</h4>
+                <h4 class="lp-question">${intro}</h4>
+                ${code ? `<pre class="lp-code-block"><code>${codeLines.join('\n')}</code></pre>` : ''}
                 <div class="lp-options">
                     ${q.options
                         .map((opt, idx) => {
                             const isSelected = selected === idx;
                             const isCorrect = q.correctIndex === idx;
+                            const isCode = looksLikeCode(opt);
                             let cls = "lp-option";
+                            if (isCode) cls += " is-code";
                             if (state.submitted) {
                                 if (isCorrect) cls += " correct";
                                 else if (isSelected && !isCorrect) cls += " wrong";
@@ -70,7 +123,7 @@ export function setupQuizUI(root = document) {
                             return `
                                 <button class="${cls}" data-opt-index="${idx}">
                                     <span class="lp-opt-label">${String.fromCharCode(65 + idx)}</span>
-                                    <span>${opt}</span>
+                                    <span ${isCode ? 'class="lp-opt-code"' : ''}>${opt}</span>
                                 </button>
                             `;
                         })
