@@ -29,7 +29,7 @@ const BOOST_SPEED = 550;
 const BOOST_DURATION = 800;
 const BOOST_COOLDOWN = 3000;
 const OXYGEN_MAX = 100;
-const OXYGEN_DECAY_PER_SEC = 0.5;
+const OXYGEN_DECAY_PER_SEC = 1.5;
 const OXYGEN_PENALTY = 10;
 const OXYGEN_REWARD = 5;
 const SPAWN_INTERVAL = 2200;
@@ -177,6 +177,7 @@ export class Level7Scene extends Phaser.Scene {
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 7: Accretion — Alphabet Nebula Explorer!");
+      if (uiScene.setLivesVisible) uiScene.setLivesVisible(false);
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -473,12 +474,7 @@ export class Level7Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(dp + 2);
 
     // Oxygen bar (top-right)
-    this.add.text(W - 170, 64, "O₂", {
-      fontFamily: "Arial",
-      fontSize: "14px",
-      color: "#2ecc71",
-      fontStyle: "bold",
-    }).setDepth(dp);
+    this.add.text(W - 165, 80, "O₂", { fontFamily: "Arial", fontSize: "16px", color: "#2ecc71", fontStyle: "bold" }).setOrigin(1, 0.5).setDepth(dp);
 
     this.oxygenBarBg = this.add.rectangle(W - 85, 80, 140, 16, 0x1a0040, 0.6)
       .setStrokeStyle(1, 0x6a0dad).setDepth(dp);
@@ -593,25 +589,25 @@ export class Level7Scene extends Phaser.Scene {
 
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x0e0030, 0.98);
-    panelG.fillRoundedRect(W / 2 - 320, 40, 640, 510, 16);
+    panelG.fillRoundedRect(W / 2 - 320, 70, 640, 510, 16);
     panelG.lineStyle(3, 0xc084fc);
-    panelG.strokeRoundedRect(W / 2 - 320, 40, 640, 510, 16);
+    panelG.strokeRoundedRect(W / 2 - 320, 70, 640, 510, 16);
 
-    const title = this.add.text(W / 2, 78, "🌌 MISSION 7: CHAR DISCOVERY", {
+    const title = this.add.text(W / 2, 100, "🌌 MISSION 7: CHAR DISCOVERY", {
       fontFamily: "Arial Black, Arial, sans-serif",
       fontSize: "26px",
       color: "#c084fc",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 112, "Alphabet Nebula Explorer", {
+    const sub = this.add.text(W / 2, 130, "Alphabet Nebula Explorer", {
       fontFamily: "Arial",
       fontSize: "18px",
       color: "#818cf8",
       fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 210,
+    const desc = this.add.text(W / 2, 275,
       "A char holds exactly ONE character in single quotes!\n\n" +
       "✅  VALID chars:   'A'  'z'  '5'  '@'  ' '\n" +
       "❌  INVALID:  \"ABC\" (string)  123 (number)  '' (empty)  'AB' (multi)\n\n" +
@@ -630,7 +626,7 @@ export class Level7Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 410, "Collect 30 valid chars with 85%+ accuracy\nto earn the Char Explorer badge! 🌌", {
+    const goal = this.add.text(W / 2, 440, "Collect 30 valid chars with 85%+ accuracy\nto earn the Char Explorer badge! 🌌", {
       fontFamily: "Arial",
       fontSize: "14px",
       color: "#f1c40f",
@@ -639,9 +635,9 @@ export class Level7Scene extends Phaser.Scene {
       lineSpacing: 6,
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 475, 280, 48, 0x6a0dad, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 500, 280, 48, 0x6a0dad, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0xc084fc);
-    const btnTxt = this.add.text(W / 2, 475, "BEGIN EXPLORATION", {
+    const btnTxt = this.add.text(W / 2, 500, "BEGIN EXPLORATION", {
       fontFamily: "Arial",
       fontSize: "20px",
       color: "#ffffff",
@@ -827,39 +823,6 @@ export class Level7Scene extends Phaser.Scene {
       strokeThickness: 2,
     }).setOrigin(0.5);
     container.add(txt);
-
-    // SPACE label for space character
-    if (isValid && value === " ") {
-      const spaceLbl = this.add.text(0, ORB_RADIUS + 10, "SPACE", {
-        fontFamily: "Arial",
-        fontSize: "9px",
-        color: "#cccccc",
-        fontStyle: "bold",
-      }).setOrigin(0.5);
-      container.add(spaceLbl);
-    }
-
-    // Category label for valid chars
-    if (isValid && category !== "Space") {
-      const catLabel = this.add.text(0, ORB_RADIUS + 10, category, {
-        fontFamily: "Arial",
-        fontSize: "9px",
-        color: "#aaaacc",
-        fontStyle: "bold",
-      }).setOrigin(0.5);
-      container.add(catLabel);
-    }
-
-    // Invalid type label
-    if (!isValid) {
-      const warnLabel = this.add.text(0, ORB_RADIUS + 10, "⚠ " + (invalidType === "string" ? "STRING" : invalidType === "number" ? "NUMBER" : invalidType === "empty" ? "EMPTY" : "MULTI"), {
-        fontFamily: "Arial",
-        fontSize: "8px",
-        color: "#ff6666",
-        fontStyle: "bold",
-      }).setOrigin(0.5);
-      container.add(warnLabel);
-    }
 
     // Physics
     this.physics.add.existing(container);
@@ -1540,5 +1503,8 @@ export class Level7Scene extends Phaser.Scene {
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.orbs = [];
+
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(true);
   }
 }

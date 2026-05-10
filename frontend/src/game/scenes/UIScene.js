@@ -129,6 +129,16 @@ export class UIScene extends Phaser.Scene {
     this.levelLabel.setText(text);
   }
 
+  /**
+   * Toggle visibility of the lives display.
+   * Used by gameplay scenes that replace lives with alternate mechanics (e.g., Oxygen).
+   */
+  setLivesVisible(isVisible) {
+    if (this.livesText) {
+      this.livesText.setVisible(isVisible);
+    }
+  }
+
   // ── Badge Popup ──
 
   _showBadgePopup(badge) {

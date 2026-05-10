@@ -50,7 +50,10 @@ export class Level6Scene extends Phaser.Scene {
     this._createParticles();
 
     const ui = this.scene.get("UIScene");
-    if (ui?.setLevelLabel) ui.setLevelLabel("Level 6: Restructuring — Neon Cyber-Core!");
+    if (ui) {
+      if (ui.setLevelLabel) ui.setLevelLabel("Level 6: Restructuring — Neon Cyber-Core!");
+      if (ui.setLivesVisible) ui.setLivesVisible(false);
+    }
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys({
@@ -290,15 +293,15 @@ export class Level6Scene extends Phaser.Scene {
 
     const pg = track(this.add.graphics().setDepth(201));
     pg.fillStyle(0x0a0f1a, 0.98);
-    pg.fillRoundedRect(70, 45, 660, 490, 16);
+    pg.fillRoundedRect(70, 70, 660, 490, 16);
     pg.lineStyle(3, 0x4ade80);
-    pg.strokeRoundedRect(70, 45, 660, 490, 16);
+    pg.strokeRoundedRect(70, 70, 660, 490, 16);
 
-    track(this.add.text(400, 80, "MISSION 6: CYBER-CORE RESTORATION", {
+    track(this.add.text(400, 105, "MISSION 6: CYBER-CORE RESTORATION", {
       fontFamily: "Arial Black", fontSize: "22px", color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202));
 
-    track(this.add.text(400, 112, "Float Restructuring Phase", {
+    track(this.add.text(400, 137, "Float Restructuring Phase", {
       fontFamily: "Arial", fontSize: "16px", color: "#86efac", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202));
 
@@ -312,14 +315,14 @@ export class Level6Scene extends Phaser.Scene {
       "Solve the code challenge to restore each system.\n\n" +
       "Restore ALL 3 terminals to bring the Core online!";
 
-    track(this.add.text(400, 160, desc, {
+    track(this.add.text(400, 185, desc, {
       fontFamily: "Arial", fontSize: "13px", color: "#cbd5e1",
       align: "center", lineSpacing: 6, wordWrap: { width: 560 },
     }).setOrigin(0.5, 0).setDepth(202));
 
-    const btnBg = track(this.add.rectangle(400, 492, 220, 44, 0x166534).setDepth(210));
+    const btnBg = track(this.add.rectangle(400, 517, 220, 44, 0x166534).setDepth(210));
     btnBg.setStrokeStyle(2, 0x4ade80);
-    track(this.add.text(400, 492, ">>  BEGIN MISSION", {
+    track(this.add.text(400, 517, ">>  BEGIN MISSION", {
       fontFamily: "Arial", fontSize: "17px", color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(211));
 
@@ -753,5 +756,10 @@ export class Level6Scene extends Phaser.Scene {
       this.hintTxt.setText(nearTerminal ? "Walk into the terminal to interact!" : "Walk to a terminal to interact");
       this.hintTxt.setColor(nearTerminal ? "#4ade80" : "#475569");
     }
+  }
+
+  shutdown() {
+    const ui = this.scene.get("UIScene");
+    if (ui && ui.setLivesVisible) ui.setLivesVisible(true);
   }
 }
