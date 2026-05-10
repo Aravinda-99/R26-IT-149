@@ -8,6 +8,7 @@ import { ErrorAPI } from "../api/api.js";
 
 export async function renderErrorAnalysis(container) {
     const studentId = "demo_student";
+    let latestAnalysisResponse = null;
 
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
@@ -88,6 +89,34 @@ export async function renderErrorAnalysis(container) {
                         <p style="color: var(--text-secondary); max-width: 300px;">Submit code from the Lab to generate real-time diagnostic insights.</p>
                     </div>
 
+                    <div id="invalid-view" class="hidden" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: left;">
+                        <div class="card" style="background: rgba(239, 68, 68, 0.05); border: 2px solid #ef4444; padding: 2rem; max-width: 500px; border-radius: 12px;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem; text-align: center;">⚠️</div>
+                            <h3 style="color: #ef4444; margin-top: 0; text-align: center;">Invalid Java Input</h3>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5; margin-bottom: 1rem; text-align: center;">The detector is trained for Java beginner code submissions. Please enter a valid Java code snippet.</p>
+                            
+                            <div style="font-size: 0.8rem; color: var(--text-primary);">
+                                <strong style="color: var(--accent-green);">Examples of accepted inputs:</strong>
+                                <ul style="margin-top: 0.3rem; margin-bottom: 1rem; padding-left: 1.2rem; color: var(--text-secondary);">
+                                    <li><code>public class Main { ... }</code></li>
+                                    <li><code>int x = 5;</code></li>
+                                    <li><code>int[] arr = {1,2,3};</code></li>
+                                    <li><code>for(int i=0; i&lt;5; i++) { }</code></li>
+                                    <li><code>while(i &lt; 5) { }</code></li>
+                                    <li><code>static int add(int a, int b) { return a + b; }</code></li>
+                                </ul>
+                                
+                                <strong style="color: var(--accent-orange);">Examples rejected:</strong>
+                                <ul style="margin-top: 0.3rem; margin-bottom: 0; padding-left: 1.2rem; color: var(--text-secondary);">
+                                    <li>hiii</li>
+                                    <li>hello</li>
+                                    <li>random words</li>
+                                    <li>12345</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="result-view" class="hidden" style="display: flex; flex-direction: column; gap: 1.2rem;">
                         <!-- Top Header -->
                         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
@@ -109,9 +138,11 @@ export async function renderErrorAnalysis(container) {
                                     <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-purple);">REASON DIAGNOSIS</h4>
                                 </div>
                                 <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
-                                    <strong>Broad Error:</strong> <span id="diag-broad-error">---</span><br>
-                                    <strong>Reason Group:</strong> <span id="diag-reason-group">---</span>
+                                    <strong>Original Broad Prediction:</strong> <span id="diag-broad-error">---</span><br>
+                                    <strong>Final Diagnosis:</strong> <span id="diag-final-label">---</span><br>
+                                    <strong>Final Reason Group:</strong> <span id="diag-reason-group">---</span>
                                 </div>
+                                <div id="diag-badges" style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap;"></div>
                                 <p id="diag-reason" style="font-size: 0.9rem; line-height: 1.5; color: var(--text-primary);"></p>
                                 <div style="margin-top: 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-secondary);">
                                     "Misconception: <span id="diag-miscon"></span>"
@@ -128,6 +159,12 @@ export async function renderErrorAnalysis(container) {
                                     <strong>Step:</strong> <span id="diag-next-step"></span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Transparency Buttons -->
+                        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem;">
+                            <button id="btn-pipeline" class="btn" style="background: rgba(74, 144, 226, 0.1); color: #4a90e2; border: 1px solid #4a90e2; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">View Analysis Pipeline</button>
+                            <button id="btn-payload" class="btn" style="background: rgba(167, 139, 250, 0.1); color: #a78bfa; border: 1px solid #a78bfa; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">View API Payload</button>
                         </div>
 
                         <!-- ML Trace & Evidence Cards -->
@@ -202,14 +239,26 @@ export async function renderErrorAnalysis(container) {
                         </div>
                     </div>
 
-                    <div class="card" style="background: rgba(167, 139, 250, 0.05);">
-                        <h4 style="font-size: 0.8rem; margin: 0 0 0.8rem 0; color: var(--accent-purple);">MASTERY ENGINE</h4>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                            <span id="mastery-concept" style="font-size: 0.85rem; font-weight: 700;">---</span>
-                            <span id="mastery-status" class="badge" style="font-size: 0.65rem;">---</span>
-                        </div>
-                        <div id="mastery-evidence" style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">Waiting for analysis...</div>
-                    </div>
+                </div>
+                </div>
+            </div>
+
+            <!-- Modals -->
+            <div id="pipeline-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+                <div class="card glass-card" style="width: 600px; max-height: 80vh; background: #0d1117; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column;">
+                    <button id="close-pipeline" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">&times;</button>
+                    <h2 style="margin-top: 0; color: #4a90e2;">Backend Analysis Pipeline</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Model 1 predicts WHAT type of error occurred. Model 2 predicts WHY category or reason group. Feedback templates translate the predicted reason group into beginner-friendly learning feedback.</p>
+                    <div id="pipeline-timeline" style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 10px;"></div>
+                </div>
+            </div>
+
+            <div id="payload-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+                <div class="card glass-card" style="width: 700px; max-height: 80vh; background: #0d1117; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column;">
+                    <button id="close-payload" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">&times;</button>
+                    <h2 style="margin-top: 0; color: #a78bfa;">Backend API Response</h2>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">This payload shows the structured response returned by the backend after ML analysis.</p>
+                    <pre id="payload-content" style="flex: 1; overflow-y: auto; background: #000; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.8rem; color: #a5d6ff; margin: 0; border: 1px solid #30363d;"></pre>
                 </div>
             </div>
         </div>
@@ -246,10 +295,18 @@ export async function renderErrorAnalysis(container) {
             });
 
             if (res.success) {
+                latestAnalysisResponse = res;
                 welcomeView.classList.add("hidden");
+                const invalidView = document.getElementById("invalid-view");
+                if (invalidView) invalidView.classList.add("hidden");
                 resultView.classList.remove("hidden");
                 updateInsightEngine(res);
                 refreshGlobalState(studentId);
+            } else if (res.error_type === "INVALID_JAVA_INPUT") {
+                welcomeView.classList.add("hidden");
+                resultView.classList.add("hidden");
+                const invalidView = document.getElementById("invalid-view");
+                if (invalidView) invalidView.classList.remove("hidden");
             } else {
                 alert("Diagnostic Error: " + res.error);
             }
@@ -266,7 +323,58 @@ export async function renderErrorAnalysis(container) {
     document.getElementById("clear-btn").addEventListener("click", () => {
         codeInput.value = "";
         resultView.classList.add("hidden");
+        const invalidView = document.getElementById("invalid-view");
+        if (invalidView) invalidView.classList.add("hidden");
         welcomeView.classList.remove("hidden");
+    });
+
+    document.getElementById("btn-pipeline").addEventListener("click", () => {
+        if (!latestAnalysisResponse) return;
+        const d = latestAnalysisResponse;
+        
+        const isAdjusted = d.reason_group_adjusted;
+        const isOverridden = d.override_applied;
+
+        const steps = [
+            { step: "1. Java Input Received", status: "Completed", statusColor: "#34d399", details: "Submitted Java code was received from the Code Lab." },
+            { step: "2. Input Validation", status: "Passed", statusColor: "#34d399", details: "Input was accepted for Java code analysis." },
+            { step: "3. Preprocessing", status: "Completed", statusColor: "#34d399", details: "Comments, imports, package statements, and extra whitespace are removed before ML prediction." },
+            { step: "4. TF-IDF Feature Extraction", status: "Completed", statusColor: "#34d399", details: "The cleaned Java code is converted into numerical TF-IDF features inside the saved ML pipeline." },
+            { step: "5. Broad Error Prediction", status: "Completed", statusColor: "#34d399", details: `Model 1 predicts the broad error category.<br/><strong>Predicted:</strong> ${d.model_trace?.broad_prediction || d.broad_label || 'N/A'}` },
+            { step: "6. Reason Group Prediction", status: "Completed", statusColor: "#34d399", details: `Model 2 predicts the reason group.<br/><strong>Predicted:</strong> ${d.model_trace?.reason_prediction || d.reason_group_original || d.reason_group || 'N/A'}` },
+            { step: "7. Reason Consistency Validation", status: isAdjusted ? "Adjusted" : "Passed", statusColor: isAdjusted ? "#f59e0b" : "#34d399", details: isAdjusted ? "Original reason group was adjusted to match the final broad label." : "Reason group is consistent with the broad label." },
+            { step: "8. Safety Validation", status: isOverridden ? "Applied" : "Skipped", statusColor: isOverridden ? "#f59e0b" : "#4a90e2", details: isOverridden ? (d.override_reason || "Rule-based correction applied") : "No rule-based correction was required." },
+            { step: "9. Feedback Generation", status: "Completed", statusColor: "#34d399", details: "Predicted reason group is converted into beginner-friendly explanation, misconception, and repair strategy." },
+            { step: "10. Gamification Recommendation", status: "Completed", statusColor: "#34d399", details: `Recommended activity: ${d.gamification_payload?.recommended_activity || 'N/A'}` },
+            { step: "11. Schema Mastery Update", status: "Completed", statusColor: "#34d399", details: `Schema status: ${d.schema_mastery_payload?.schema_status || 'N/A'}` }
+        ];
+
+        document.getElementById("pipeline-timeline").innerHTML = steps.map(s => `
+            <div style="border-left: 2px solid #30363d; padding-left: 1rem; position: relative; padding-bottom: 1rem;">
+                <div style="position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: ${s.statusColor}; box-shadow: 0 0 5px ${s.statusColor};"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <strong style="color: var(--text-primary); font-size: 0.9rem;">${s.step}</strong>
+                    <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: ${s.statusColor};">${s.status}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-secondary);">${s.details}</div>
+            </div>
+        `).join("");
+
+        document.getElementById("pipeline-modal").classList.remove("hidden");
+    });
+
+    document.getElementById("btn-payload").addEventListener("click", () => {
+        if (!latestAnalysisResponse) return;
+        document.getElementById("payload-content").textContent = JSON.stringify(latestAnalysisResponse, null, 2);
+        document.getElementById("payload-modal").classList.remove("hidden");
+    });
+
+    document.getElementById("close-pipeline").addEventListener("click", () => {
+        document.getElementById("pipeline-modal").classList.add("hidden");
+    });
+    
+    document.getElementById("close-payload").addEventListener("click", () => {
+        document.getElementById("payload-modal").classList.add("hidden");
     });
 }
 
@@ -294,8 +402,18 @@ function updateInsightEngine(data) {
     
     document.getElementById("diag-concept").textContent = `Concept: ${pred.concept}`;
     
-    document.getElementById("diag-broad-error").textContent = data.broad_label || pred.label;
-    document.getElementById("diag-reason-group").textContent = data.reason_group || "N/A";
+    document.getElementById("diag-broad-error").textContent = data.original_ml_label || data.broad_label || "N/A";
+    document.getElementById("diag-final-label").textContent = data.final_label || data.prediction?.label || "N/A";
+    document.getElementById("diag-reason-group").textContent = data.reason_group_final || data.reason_group || "N/A";
+    
+    let badgesHtml = "";
+    if (data.override_applied) {
+        badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Corrected by Safety Validation</span>`;
+    }
+    if (data.reason_group_adjusted) {
+        badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Reason Group Adjusted</span>`;
+    }
+    document.getElementById("diag-badges").innerHTML = badgesHtml;
     
     const trace = data.model_trace;
     if (trace) {
@@ -341,13 +459,6 @@ function updateInsightEngine(data) {
 
     document.getElementById("diag-alignment").textContent = data.pretest_alignment.message;
 
-    // Mastery Sidebar
-    document.getElementById("mastery-concept").textContent = schema.concept;
-    const masteryStatus = document.getElementById("mastery-status");
-    masteryStatus.textContent = schema.schema_status;
-    masteryStatus.style.background = schema.schema_status === "Stable" ? "rgba(34, 197, 94, 0.1)" : "rgba(239, 68, 68, 0.1)";
-    masteryStatus.style.color = schema.schema_status === "Stable" ? "#22c55e" : "#ef4444";
-    document.getElementById("mastery-evidence").textContent = schema.evidence;
 }
 
 async function refreshGlobalState(studentId) {

@@ -73,6 +73,40 @@ class ErrorService:
         code = re.sub(r'\s+', ' ', code)
         return code.strip()
 
+    @staticmethod
+    def validate_java_submission(code):
+        if not code or not code.strip():
+            return {
+                "valid": False,
+                "reason": "Empty input."
+            }
+
+        text = code.strip()
+
+        java_patterns = [
+            r"\bpublic\s+class\b",
+            r"\bclass\s+\w+",
+            r"\bpublic\s+static\s+void\s+main\b",
+            r"\bstatic\s+(int|void|double|float|String|boolean|char)\s+\w+\s*\(",
+            r"\b(int|double|float|String|boolean|char)\s+\w+\s*=",
+            r"\bint\s*\[\]\s+\w+\s*=",
+            r"\bfor\s*\(",
+            r"\bwhile\s*\(",
+            r"\bSystem\.out\.println\s*\("
+        ]
+
+        for pattern in java_patterns:
+            if re.search(pattern, text):
+                return {
+                    "valid": True,
+                    "reason": "Java-like structure detected."
+                }
+
+        return {
+            "valid": False,
+            "reason": "Input does not contain recognizable Java code structure."
+        }
+
     # ------------------------------------------------------------------
     # Rule-Based Safety Layer
     # ------------------------------------------------------------------
@@ -209,8 +243,16 @@ class ErrorService:
         code = data.get("code", "")
         pretest = data.get("pretest_results", {})
 
-        if not code:
-            return {"success": False, "error": "No code provided"}
+        validation = cls.validate_java_submission(code)
+
+        if not validation["valid"]:
+            return {
+                "success": False,
+                "error_type": "INVALID_JAVA_INPUT",
+                "error": "The submitted text does not appear to be valid Java code.",
+                "message": "Please enter a valid Java class, method, variable declaration, loop, array declaration, or Java code snippet.",
+                "validation_reason": validation["reason"]
+            }
 
         model_1, model_2 = cls._load_models()
         if not model_1 or not model_2:
@@ -326,7 +368,6 @@ class ErrorService:
             "broad_label": ml_label,
             "reason_group": reason_group_final,
             "reason_group_original": reason_group_original,
-            "reason_group_final": reason_group_final,
             "reason_group_adjusted": reason_group_adjusted,
             "reason_group_adjustment_reason": reason_group_adjustment_reason,
             "model_trace": model_trace,
@@ -368,7 +409,7 @@ class ErrorService:
         # ------------------------------------------------------------------
         cls._history.append({
             "student_id": student_id,
-            "code": code[:100] + "...",
+            "code": code if len(code) <= 100 else code[:100] + "...",
             "label": final_label,
             "original_ml_label": original_ml_label,
             "override_applied": override_applied,

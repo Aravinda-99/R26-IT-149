@@ -41,7 +41,7 @@ def train_and_save():
 
     # 6. Save trained model to model.pkl
     joblib.dump(model, MODEL_PATH)
-    print(f"Model saved → {MODEL_PATH}")
+    print(f"Model saved -> {MODEL_PATH}")
     return model
 
 if __name__ == '__main__':
