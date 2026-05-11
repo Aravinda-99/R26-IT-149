@@ -55,6 +55,13 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   /* ═══════════════════════════════════════════════════════════════
+   *  PRELOAD
+   * ═══════════════════════════════════════════════════════════════ */
+  preload() {
+    this.load.image("foozleRobot", "/assets/images/Foozle_2DC0001_Cute_Robot/Assets/Idle/Armature_Idle_00.png");
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
    *  CREATE
    * ═══════════════════════════════════════════════════════════════ */
   create() {
@@ -221,15 +228,7 @@ export class Level1Scene extends Phaser.Scene {
       gfx.lineTo(tx, lineY + tickH);
       gfx.strokePath();
 
-      // Label major ticks
-      if (i % 5 === 0) {
-        this.add.text(tx, lineY + 16, i.toString(), {
-          fontFamily: "Arial",
-          fontSize: "14px",
-          color: "#2c3e50",
-          fontStyle: "bold",
-        }).setOrigin(0.5, 0).setDepth(2);
-      }
+      // Label major ticks removed as per user request
     }
 
     // Player glow (follows player)
@@ -240,8 +239,9 @@ export class Level1Scene extends Phaser.Scene {
    *  PLAYER
    * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
-    // Create the player sprite from our generated texture
-    this.player = this.physics.add.sprite(W / 2, GROUND_Y - PLAYER_H / 2 + 10, "playerBody");
+    // Create the player sprite from our loaded Foozle image
+    this.player = this.physics.add.sprite(W / 2, GROUND_Y - PLAYER_H / 2 + 10, "foozleRobot");
+    this.player.setScale(0.12); // Scale down the large image
     this.player.setCollideWorldBounds(true);
     this.player.setBounce(0.1);
     this.player.setGravityY(800); // player-specific gravity

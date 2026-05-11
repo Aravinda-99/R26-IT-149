@@ -301,7 +301,7 @@ export class Level2Scene extends Phaser.Scene {
     this.enemyContainer = this.add.container(startX, 210).setDepth(10);
 
     // Outer shell
-    const borderColor = data.isInt ? 0x4ade80 : 0xef4444;
+    const borderColor = 0x4ade80; // Always green so players must evaluate the value
     const shell = this.add.rectangle(0, 0, 80, 90, 0x1e293b, 0.95);
     shell.setStrokeStyle(2, borderColor);
     this.enemyContainer.add(shell);
@@ -321,7 +321,7 @@ export class Level2Scene extends Phaser.Scene {
     const fontSize = data.display.length > 5 ? "14px" : "20px";
     const valTxt = this.add.text(0, 0, data.display, {
       fontFamily: "Courier New, monospace", fontSize,
-      color: data.isInt ? "#4ade80" : "#f87171", fontStyle: "bold",
+      color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5);
     this.enemyContainer.add(valTxt);
 
@@ -370,8 +370,9 @@ export class Level2Scene extends Phaser.Scene {
     }).setDepth(dp);
     this.playerHPBarBg = this.add.rectangle(16, 82, 200, 14, 0x1e293b)
       .setOrigin(0, 0.5).setStrokeStyle(1, 0x334155).setDepth(dp);
-    this.playerHPFill = this.add.rectangle(16, 82, 0, 12, 0x22d3ee)
+    this.playerHPFill = this.add.rectangle(16, 82, 200, 12, 0x4ade80)
       .setOrigin(0, 0.5).setDepth(dp + 1);
+    this.playerHPFill.scaleX = 0;
     this.playerHPText = this.add.text(116, 82, `0/${TOTAL_ENEMIES}`, {
       fontFamily: "monospace", fontSize: "9px", color: "#fff",
     }).setOrigin(0.5).setDepth(dp + 2);
@@ -582,7 +583,7 @@ export class Level2Scene extends Phaser.Scene {
     // ── REJECT button ──
     const rejectBg = this.add.rectangle(W / 2 + 130, 410, 220, 55, 0x4a1525, 1).setDepth(50);
     rejectBg.setStrokeStyle(2, 0xef4444);
-    const rejectTxt = this.add.text(W / 2 + 130, 400, "🚫  REJECT", {
+    const rejectTxt = this.add.text(W / 2 + 130, 400, "🚫 can not assign", {
       fontFamily: "Courier New, monospace", fontSize: "20px",
       color: "#ef4444", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(51);
@@ -937,9 +938,9 @@ export class Level2Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════ */
   _updateProgress() {
     const pct = Math.min(1, this.correctCount / TOTAL_ENEMIES);
-    this.tweens.add({ targets: this.playerHPFill, displayWidth: 200 * pct, duration: 300 });
+    this.tweens.add({ targets: this.playerHPFill, scaleX: pct, duration: 300 });
     this.playerHPText.setText(`${this.correctCount}/${TOTAL_ENEMIES}`);
-    this.playerHPFill.setFillStyle(0x22d3ee);
+    this.playerHPFill.setFillStyle(0x4ade80);
   }
 
   _updateScore() {
