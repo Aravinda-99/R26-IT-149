@@ -283,7 +283,6 @@ async function loadMasteryStatus(studentId) {
                 `;
             } else {
                 // After check: show combined summary
-                const finalPct = pct;
                 breakdownHTML = `
                     <div class="c4-breakdown">
                         <div class="c4-breakdown-row">
