@@ -39,12 +39,12 @@ const BUBBLE_RISE_SPEED = 55;
 
 /* ───────── Type Pools ───────── */
 const FLOAT_VALUES = [3.14, -0.5, 9.99, 1.25, 0.75, -2.5, 6.28, 0.01, -1.75, 4.50, 2.718, 0.333, -3.14, 7.77, 0.125];
-const INT_VALUES   = [5, 100, -42, 0, 7, -3, 12, -8, 25, -15, 1, 50];
-const CHAR_VALUES  = ["'s'", "'k'", "'A'", "'#'", "'Z'", "'9'", "'!'", "'m'"];
+const INT_VALUES = [5, 100, -42, 0, 7, -3, 12, -8, 25, -15, 1, 50];
+const CHAR_VALUES = ["'s'", "'k'", "'A'", "'#'", "'Z'", "'9'", "'!'", "'m'"];
 
 const TYPE_FLOAT = "float";
-const TYPE_INT   = "int";
-const TYPE_CHAR  = "char";
+const TYPE_INT = "int";
+const TYPE_CHAR = "char";
 
 /* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
@@ -724,7 +724,7 @@ export class Level5Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(4, accuracy);
       BadgeSystem.unlock("precision_master");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 0, 200, 255);
 
       for (let i = 0; i < 8; i++) {

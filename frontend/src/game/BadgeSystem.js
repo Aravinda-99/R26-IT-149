@@ -187,50 +187,17 @@ export const BadgeSystem = {
     // Emit event for UIScene to display notification
     GameManager._emit("badgeUnlocked", badge);
 
-    // Persist to Firestore
-    try {
-      const uid = auth?.currentUser?.uid;
-      if (uid && db) {
-        const { setDoc, doc } = await import("firebase/firestore");
-        await setDoc(doc(db, "users", uid, "badges", badgeId), {
-          ...badge,
-          unlockedAt: new Date().toISOString(),
-        });
-      }
-    } catch (err) {
-      console.warn("[BadgeSystem] Firestore save failed:", err.message);
-    }
-
-    // Also persist in localStorage
-    try {
-      localStorage.setItem("codequest_badges", JSON.stringify([...unlockedBadges]));
-    } catch { /* ignore */ }
+    // Persist immediately via ProgressTracker
+    const { ProgressTracker } = await import("./ProgressTracker.js");
+    ProgressTracker.saveProgress(GameManager.getState());
 
     return true;
   },
 
-  /**
-   * Load badges from Firestore or localStorage.
-   */
   async loadBadges() {
-    // Try Firestore
-    try {
-      const uid = auth?.currentUser?.uid;
-      if (uid && db) {
-        const { collection, getDocs } = await import("firebase/firestore");
-        const snap = await getDocs(collection(db, "users", uid, "badges"));
-        snap.forEach(doc => unlockedBadges.add(doc.id));
-        if (unlockedBadges.size > 0) return;
-      }
-    } catch { /* ignore */ }
-
-    // Fallback: localStorage
-    try {
-      const raw = localStorage.getItem("codequest_badges");
-      if (raw) {
-        JSON.parse(raw).forEach(id => unlockedBadges.add(id));
-      }
-    } catch { /* ignore */ }
+    unlockedBadges.clear();
+    const current = GameManager.get("badges") || [];
+    current.forEach(id => unlockedBadges.add(id));
   },
 
   /**
@@ -238,6 +205,5 @@ export const BadgeSystem = {
    */
   resetAll() {
     unlockedBadges.clear();
-    try { localStorage.removeItem("codequest_badges"); } catch { /* ignore */ }
   },
 };

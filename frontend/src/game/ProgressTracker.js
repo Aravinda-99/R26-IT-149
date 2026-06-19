@@ -43,13 +43,6 @@ export const ProgressTracker = {
    * Save the full game state.
    */
   async saveProgress(state) {
-    // Always save to localStorage first (instant)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        ...state,
-        savedAt: Date.now(),
-      }));
-    } catch { /* quota exceeded — ignore */ }
 
     // Try Firestore
     const uid = getCurrentUserId();
@@ -58,7 +51,7 @@ export const ProgressTracker = {
     try {
       const ready = await ensureFirestore();
       if (!ready) return;
-      await _setDoc(_doc(_firestore, "users", uid, "gameProgress", "integerModule"), {
+      await _setDoc(_doc(_firestore, "players", uid), {
         ...state,
         savedAt: new Date().toISOString(),
       }, { merge: true });
@@ -78,19 +71,17 @@ export const ProgressTracker = {
       try {
         const ready = await ensureFirestore();
         if (ready) {
-          const snap = await _getDoc(_doc(_firestore, "users", uid, "gameProgress", "integerModule"));
-          if (snap.exists()) return snap.data();
+          const snap = await _getDoc(_doc(_firestore, "players", uid));
+          if (snap.exists()) {
+            return snap.data();
+          } else {
+            return "NEW_USER";
+          }
         }
       } catch (err) {
         console.warn("[ProgressTracker] Firestore load failed:", err.message);
       }
     }
-
-    // Fallback: localStorage
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch { /* corrupted — ignore */ }
 
     return null;
   },
@@ -109,7 +100,6 @@ export const ProgressTracker = {
    * Clear all saved progress.
    */
   async clearProgress() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
 
     const uid = getCurrentUserId();
     if (!uid) return;
@@ -118,7 +108,7 @@ export const ProgressTracker = {
       const ready = await ensureFirestore();
       if (!ready) return;
       const { deleteDoc } = await import("firebase/firestore");
-      await deleteDoc(_doc(_firestore, "users", uid, "gameProgress", "integerModule"));
+      await deleteDoc(_doc(_firestore, "players", uid));
     } catch { /* ignore */ }
   },
 };

@@ -19,22 +19,8 @@ export class MenuScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#0a0a1a");
     this.stars = [];
 
-    // Load saved progress
-    try {
-      const saved = await ProgressTracker.loadProgress();
-      if (saved && saved.levelsCompleted) {
-        while (saved.levelsCompleted.length < 15) saved.levelsCompleted.push(false);
-        while ((saved.levelAccuracy || []).length < 15) (saved.levelAccuracy = saved.levelAccuracy || []).push(0);
-        while ((saved.levelAttempts || []).length < 15) (saved.levelAttempts = saved.levelAttempts || []).push(0);
-
-        GameManager.set("levelsCompleted", saved.levelsCompleted);
-        GameManager.set("xp", saved.xp || 0);
-        GameManager.set("badges", saved.badges || []);
-        if (saved.levelAccuracy) GameManager.set("levelAccuracy", saved.levelAccuracy);
-        if (saved.levelAttempts) GameManager.set("levelAttempts", saved.levelAttempts);
-      }
-      await BadgeSystem.loadBadges();
-    } catch { /* first time — no saved data */ }
+    // Load badges from memory
+    await BadgeSystem.loadBadges();
 
     // ── Starfield ──
     this.stars = [];

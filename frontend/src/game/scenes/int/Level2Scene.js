@@ -1007,7 +1007,7 @@ export class Level2Scene extends Phaser.Scene {
 
     GameManager.completeLevel(1, accuracy);
     BadgeSystem.unlock("math_warrior");
-    ProgressTracker.saveProgress(GameManager.getState());
+    /* saved by GameManager */
 
     this.cameras.main.flash(600, 30, 200, 220);
     this.roundElements.forEach(e => { if (e && e.active) e.destroy(); });

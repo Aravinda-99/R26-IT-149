@@ -295,7 +295,7 @@ export class Level13Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(12, acc);
       BadgeSystem.unlock("math_wizard");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 100, 255, 100);
     }
 

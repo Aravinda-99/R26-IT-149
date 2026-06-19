@@ -774,7 +774,7 @@ export class Level1Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(0, accuracy);
       BadgeSystem.unlock("integer_explorer");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 100, 255, 100);
 
       // Confetti
@@ -802,9 +802,9 @@ export class Level1Scene extends Phaser.Scene {
     const panelColor = passed ? 0x14532d : 0x4a1e1e;
     const borderColor = passed ? 0x27ae60 : 0xe74c3c;
     panelG.fillStyle(panelColor, 0.95);
-    panelG.fillRoundedRect(W / 2 - 280, 80, 560, 430, 16);
+    panelG.fillRoundedRect(W / 2 - 280, 80, 560, 460, 16);
     panelG.lineStyle(3, borderColor);
-    panelG.strokeRoundedRect(W / 2 - 280, 80, 560, 430, 16);
+    panelG.strokeRoundedRect(W / 2 - 280, 80, 560, 460, 16);
 
     const titleText = passed ? "🎉 LEVEL 1 COMPLETE!" : "❌ NOT ENOUGH ACCURACY";
     const titleColor = passed ? "#2ecc71" : "#e74c3c";
@@ -854,7 +854,7 @@ export class Level1Scene extends Phaser.Scene {
     }
 
     // Buttons
-    const btnY = 440;
+    const btnY = 475;
 
     if (passed) {
       // Next Level button

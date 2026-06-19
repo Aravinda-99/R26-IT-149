@@ -463,9 +463,9 @@ export class Level11Scene extends Phaser.Scene {
   _createHUD(op) {
     const pill = this.add.graphics().setDepth(50);
     pill.fillStyle(C.white, 0.9);
-    pill.fillRoundedRect(15, 8, W - 30, 42, 21);
+    pill.fillRoundedRect(15, 64, W - 30, 42, 21);
     pill.lineStyle(1, C.purple_border, 1);
-    pill.strokeRoundedRect(15, 8, W - 30, 42, 21);
+    pill.strokeRoundedRect(15, 64, W - 30, 42, 21);
     this._addEl(pill);
 
     const items = [
@@ -477,8 +477,8 @@ export class Level11Scene extends Phaser.Scene {
 
     this.hudRefs = {};
     items.forEach((it, idx) => {
-      const icon = this.add.text(it.x - 30, 29, it.icon, { fontSize: "16px" }).setOrigin(0.5).setDepth(51);
-      const txt = this.add.text(it.x, 29, it.label, {
+      const icon = this.add.text(it.x - 30, 85, it.icon, { fontSize: "16px" }).setOrigin(0.5).setDepth(51);
+      const txt = this.add.text(it.x, 85, it.label, {
         fontFamily: "Arial", fontSize: "12px", color: COLORS.text_primary, fontStyle: "bold"
       }).setOrigin(0, 0.5).setDepth(51);
       if (idx === 1) this.hudRefs.round = txt;
@@ -525,8 +525,8 @@ export class Level11Scene extends Phaser.Scene {
 
   _startTimer(sec, onExpire) {
     this._stopTimer();
-    const bg = this.add.rectangle(W / 2, 4, W - 20, 7, C.purple_border).setDepth(500).setOrigin(0.5, 0);
-    const bar = this.add.rectangle(10, 4, W - 20, 7, C.success_green).setDepth(501).setOrigin(0, 0);
+    const bg = this.add.rectangle(W / 2, 60, W - 20, 7, C.purple_border).setDepth(500).setOrigin(0.5, 0);
+    const bar = this.add.rectangle(10, 60, W - 20, 7, C.success_green).setDepth(501).setOrigin(0, 0);
     this._addEl(bg, bar);
     this._timerTween = this.tweens.add({
       targets: bar, scaleX: { from: 1, to: 0 }, duration: sec * 1000, ease: "Linear",
@@ -613,22 +613,22 @@ export class Level11Scene extends Phaser.Scene {
     const tut = op.tutorial;
 
     // Title
-    const title = this.add.text(W / 2, 50, `${op.emoji}  Learn: ${op.name}`, {
+    const title = this.add.text(W / 2, 86, `${op.emoji}  Learn: ${op.name}`, {
       fontFamily: "Arial", fontSize: "24px", color: COLORS.purple_dark, fontStyle: "bold"
     }).setOrigin(0.5).setAlpha(0).setDepth(100);
-    this.tweens.add({ targets: title, alpha: 1, y: { from: 30, to: 50 }, duration: 500 });
+    this.tweens.add({ targets: title, alpha: 1, y: { from: 66, to: 86 }, duration: 500 });
     this._addEl(title);
 
     // Code display
     const codeBg = this.add.graphics().setDepth(99);
     codeBg.fillStyle(C.purple_light, 1);
-    codeBg.fillRoundedRect(W / 2 - 160, 85, 320, 38, 12);
+    codeBg.fillRoundedRect(W / 2 - 160, 121, 320, 38, 12);
     codeBg.fillStyle(C.primary_purple, 0.5);
-    codeBg.fillRoundedRect(W / 2 - 160, 104, 320, 19, { tl: 0, tr: 0, bl: 12, br: 12 });
+    codeBg.fillRoundedRect(W / 2 - 160, 140, 320, 19, { tl: 0, tr: 0, bl: 12, br: 12 });
     codeBg.lineStyle(2, C.purple_dark, 1);
-    codeBg.strokeRoundedRect(W / 2 - 160, 85, 320, 38, 12);
+    codeBg.strokeRoundedRect(W / 2 - 160, 121, 320, 38, 12);
 
-    const codeTxt = this.add.text(W / 2, 104, tut.code, {
+    const codeTxt = this.add.text(W / 2, 140, tut.code, {
       fontFamily: "Courier New", fontSize: "16px", color: COLORS.white, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100).setAlpha(0);
 
@@ -636,10 +636,10 @@ export class Level11Scene extends Phaser.Scene {
     this._addEl(codeBg, codeTxt);
 
     // Demo string
-    const boxes = this._charBoxes(tut.demo_str, W / 2, 190, { baseDelay: 500 });
+    const boxes = this._charBoxes(tut.demo_str, W / 2, 226, { baseDelay: 500 });
 
     // Steps text
-    let stepY = 260;
+    let stepY = 296;
     tut.steps.forEach((step, i) => {
       const st = this.add.text(W / 2, stepY + i * 32, `• ${step}`, {
         fontFamily: "Arial", fontSize: "13px", color: COLORS.text_primary,
@@ -663,7 +663,7 @@ export class Level11Scene extends Phaser.Scene {
     }
 
     // Skip & Got it buttons
-    const skipBtn = this._btn(W - 70, 50, "Skip →", false, () => {
+    const skipBtn = this._btn(W - 70, 86, "Skip →", false, () => {
       this._clear();
       this._startRound();
     });
@@ -684,13 +684,13 @@ export class Level11Scene extends Phaser.Scene {
     /* ── RULER DRAG: Drag the notch to the correct length position, then lock ── */
     const round = OPERATIONS[0].rounds[this.roundIndex];
     const str = round.str, correctLen = parseInt(round.answer);
-    const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2, ry = 220;
+    const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2, ry = 256;
 
-    this._addEl(this.add.text(W / 2, 82, `📏  Drag the notch to mark the length of "${str}"`, {
+    this._addEl(this.add.text(W / 2, 118, `📏  Drag the notch to mark the length of "${str}"`, {
       fontFamily: "Arial", fontSize: "15px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
-    const boxes = this._charBoxes(str, W / 2, 155, { baseDelay: 80 });
+    const boxes = this._charBoxes(str, W / 2, 191, { baseDelay: 80 });
 
     const rb = this.add.graphics().setDepth(95);
     rb.fillStyle(C.purple_border, 1);
@@ -721,7 +721,7 @@ export class Level11Scene extends Phaser.Scene {
     this.input.setDraggable(nc);
     const pulse = this.tweens.add({ targets: nc, scale: { from: 1, to: 1.07 }, duration: 700, yoyo: true, repeat: -1 });
 
-    const cutLbl = this.add.text(W / 2, 268, "CUT AT: 0", {
+    const cutLbl = this.add.text(W / 2, 304, "CUT AT: 0", {
       fontFamily: "Courier New", fontSize: "15px", color: COLORS.purple_dark, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100);
     this._addEl(cutLbl, nc);
@@ -746,7 +746,7 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     this.time.delayedCall(400, () => {
-      this._btn(W / 2, 335, "🔒 Lock Answer", true, () => {
+      this._btn(W / 2, 371, "🔒 Lock Answer", true, () => {
         this._stopTimer();
         if (pos === correctLen) {
           flag.clear(); flag.fillStyle(C.success_green, 1); flag.fillRoundedRect(-22, -34, 44, 32, 8);
@@ -776,11 +776,11 @@ export class Level11Scene extends Phaser.Scene {
     const round = OPERATIONS[1].rounds[this.roundIndex];
     const str = round.str, idx = round.idx, correctChar = round.answer;
 
-    this._addEl(this.add.text(W / 2, 82, `🐸  Hop to index ${idx}, then Grab it!  "${str}".charAt(${idx}) = ?`, {
+    this._addEl(this.add.text(W / 2, 118, `🐸  Hop to index ${idx}, then Grab it!  "${str}".charAt(${idx}) = ?`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
-    const boxes = this._charBoxes(str, W / 2, 195, { baseDelay: 80 });
+    const boxes = this._charBoxes(str, W / 2, 231, { baseDelay: 80 });
 
     // Lily pads under each box
     boxes.forEach(b => {
@@ -797,7 +797,7 @@ export class Level11Scene extends Phaser.Scene {
 
     let frogPos = 0, hopping = false, hopCount = 0;
     const frog = this.add.text(boxes[0].x, boxes[0].y - 42, "🐸", { fontSize: "30px" }).setOrigin(0.5).setDepth(200);
-    const hopLbl = this.add.text(W / 2, 262, "Hops: 0", {
+    const hopLbl = this.add.text(W / 2, 298, "Hops: 0", {
       fontFamily: "Arial", fontSize: "12px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
     this._addEl(frog, hopLbl);
@@ -818,10 +818,10 @@ export class Level11Scene extends Phaser.Scene {
       });
     };
 
-    this._btn(W / 2 - 130, 330, "◀  Left", false, () => hopTo(frogPos - 1));
-    this._btn(W / 2 + 130, 330, "Right  ▶", false, () => hopTo(frogPos + 1));
+    this._btn(W / 2 - 130, 366, "◀  Left", false, () => hopTo(frogPos - 1));
+    this._btn(W / 2 + 130, 366, "Right  ▶", false, () => hopTo(frogPos + 1));
 
-    grabBtn = this._btn(W / 2, 378, "🤚 Grab it!", true, () => {
+    grabBtn = this._btn(W / 2, 414, "🤚 Grab it!", true, () => {
       this._stopTimer();
       this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT");
       if (frogPos === idx) {
@@ -860,13 +860,13 @@ export class Level11Scene extends Phaser.Scene {
     const str = round.str, isUpper = round.op === "upper", correct = round.answer;
     const method = isUpper ? "toUpperCase()" : "toLowerCase()";
 
-    this._addEl(this.add.text(W / 2, 82, `🔄  "${str}".${method} — click letters BEFORE the sweep line!`, {
+    this._addEl(this.add.text(W / 2, 118, `🔄  "${str}".${method} — click letters BEFORE the sweep line!`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
     // Belt background
     const bG = this.add.graphics().setDepth(90);
-    bG.fillStyle(C.purple_border, 0.18); bG.fillRect(0, 180, W, 80);
+    bG.fillStyle(C.purple_border, 0.18); bG.fillRect(0, 216, W, 80);
     this._addEl(bG);
 
     // Animated stripes
@@ -875,12 +875,12 @@ export class Level11Scene extends Phaser.Scene {
     const sEv = this.time.addEvent({
       delay: 25, repeat: -1, callback: () => {
         sOff = (sOff + 2) % 24; sG.clear(); sG.fillStyle(C.primary_purple, 0.07);
-        for (let x = sOff; x < W; x += 24) sG.fillRect(x, 181, 12, 78);
+        for (let x = sOff; x < W; x += 24) sG.fillRect(x, 217, 12, 78);
       }
     });
     this._addEl(sG, { destroy: () => sEv.destroy() });
 
-    const boxes = this._charBoxes(str, W / 2, 220, { baseDelay: 0, animate: false });
+    const boxes = this._charBoxes(str, W / 2, 256, { baseDelay: 0, animate: false });
     const flipped = str.split("").map(c => !/[a-zA-Z]/.test(c)); // non-letters auto-pass
 
     // Mark non-letters green immediately
@@ -908,7 +908,7 @@ export class Level11Scene extends Phaser.Scene {
 
     // Sweep line
     const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2;
-    const sweepLine = this.add.rectangle(x0 - 20, 220, 4, 80, C.primary_purple, 0.9).setDepth(120).setOrigin(0, 0.5);
+    const sweepLine = this.add.rectangle(x0 - 20, 256, 4, 80, C.primary_purple, 0.9).setDepth(120).setOrigin(0, 0.5);
     this._addEl(sweepLine);
 
     this.tweens.add({
@@ -919,7 +919,7 @@ export class Level11Scene extends Phaser.Scene {
         const allGood = flipped.every(Boolean);
         if (allGood) {
           const pts = this._handleCorrect();
-          this._spawnScorePopup(W / 2, 180, `+${pts}`); this._spawnConfetti(W / 2, 220, 20);
+          this._spawnScorePopup(W / 2, 216, `+${pts}`); this._spawnConfetti(W / 2, 256, 20);
           this._showFeedback(true, `"${str}" → "${correct}" ✓  +${pts} pts`, null, () => this._nextRound());
         } else {
           boxes.forEach((b, i) => { if (!flipped[i]) { b.charTxt.setText(correct[i]); b.drawBox(C.error_bg, C.error_red); } });
@@ -943,22 +943,22 @@ export class Level11Scene extends Phaser.Scene {
     const leftX = W / 2 - leftW / 2 - rightW / 2 - 24;
     const rightStartX = W / 2 + leftW / 2 + rightW / 2 + 24;
 
-    this._addEl(this.add.text(W / 2, 82, `🧲  Drag the orange string to SNAP onto the purple string!`, {
+    this._addEl(this.add.text(W / 2, 118, `🧲  Drag the orange string to SNAP onto the purple string!`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
-    this._addEl(this.add.text(W / 2, 108, `"${a}" + "${b}" = ?`, {
+    this._addEl(this.add.text(W / 2, 144, `"${a}" + "${b}" = ?`, {
       fontFamily: "Courier New", fontSize: "14px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100));
 
-    const leftBoxes = this._charBoxes(a, leftX, 210, { baseDelay: 80, fill: C.purple_bg, border: C.primary_purple });
-    const rightBoxes = this._charBoxes(b, rightStartX, 210, { baseDelay: 160, fill: 0xFFF4CC, border: C.orange });
+    const leftBoxes = this._charBoxes(a, leftX, 246, { baseDelay: 80, fill: C.purple_bg, border: C.primary_purple });
+    const rightBoxes = this._charBoxes(b, rightStartX, 246, { baseDelay: 160, fill: 0xFFF4CC, border: C.orange });
 
     const rc = this.add.container(rightStartX, 0).setDepth(150);
     rc.setSize(rightW + 20, 80).setInteractive({ draggable: true, useHandCursor: true });
     this.input.setDraggable(rc);
     this._addEl(rc);
 
-    const proximityLbl = this.add.text(W / 2, 290, "Drag the string closer...", {
+    const proximityLbl = this.add.text(W / 2, 326, "Drag the string closer...", {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
     this._addEl(proximityLbl);
@@ -976,7 +976,7 @@ export class Level11Scene extends Phaser.Scene {
       proximityLbl.setText(dist < 30 ? "⚡ SNAP!" : dist < 80 ? "Almost there!" : "Drag closer...");
       if (dist < 60 && Math.random() < 0.35) {
         const cx = leftBoxes[leftBoxes.length - 1].charTxt.x + step / 2;
-        const px = this.add.circle(cx + (Math.random() - 0.5) * 30, 210 + (Math.random() - 0.5) * 30, 3, C.gold, 0.9).setDepth(200);
+        const px = this.add.circle(cx + (Math.random() - 0.5) * 30, 246 + (Math.random() - 0.5) * 30, 3, C.gold, 0.9).setDepth(200);
         this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 400, onComplete: () => px.destroy() });
       }
     });
@@ -993,9 +993,9 @@ export class Level11Scene extends Phaser.Scene {
           rb.drawBox(C.success_bg, C.success_green);
         });
         leftBoxes.forEach(lb => lb.drawBox(C.success_bg, C.success_green));
-        this._spawnConfetti(lastLX + step, 210, 25);
+        this._spawnConfetti(lastLX + step, 246, 25);
         proximityLbl.setText(`"${a}" + "${b}" = "${correct}" ✓`);
-        const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 170, `+${pts}`);
+        const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 206, `+${pts}`);
         this.time.delayedCall(500, () => this._showFeedback(true,
           `"${a}" + "${b}" = "${correct}" ✓  +${pts} pts`,
           "Strings join exactly — every space matters!", () => this._nextRound()));
@@ -1024,15 +1024,15 @@ export class Level11Scene extends Phaser.Scene {
     const round = OPERATIONS[4].rounds[this.roundIndex];
     const str = round.str, a = round.a, b = round.b, correct = round.answer;
 
-    this._addEl(this.add.text(W / 2, 82, `✂️  Drag the lasers to cut  "${str}".substring(${a},${b})`, {
+    this._addEl(this.add.text(W / 2, 118, `✂️  Drag the lasers to cut  "${str}".substring(${a},${b})`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 80 });
+    const boxes = this._charBoxes(str, W / 2, 236, { baseDelay: 80 });
     const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2;
     const bx = (i) => x0 + i * step - 2;
 
-    const prevLbl = this.add.text(W / 2, 290, `substring(0,${str.length}) = "${str}"`, {
+    const prevLbl = this.add.text(W / 2, 326, `substring(0,${str.length}) = "${str}"`, {
       fontFamily: "Courier New", fontSize: "12px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
     this._addEl(prevLbl);
@@ -1051,7 +1051,7 @@ export class Level11Scene extends Phaser.Scene {
 
     const makeLaser = (initBound, isLeft) => {
       let cur = initBound;
-      const lc = this.add.container(bx(cur), 200).setDepth(155);
+      const lc = this.add.container(bx(cur), 236).setDepth(155);
       const glow = this.add.graphics(); glow.fillStyle(C.error_red, 0.2); glow.fillRect(-7, -55, 14, 110);
       const beam = this.add.graphics(); beam.fillStyle(C.error_red, 0.9); beam.fillRect(-2, -55, 4, 110);
       const handle = this.add.graphics(); handle.fillStyle(C.error_red, 1); handle.fillRoundedRect(-14, isLeft ? -68 : 56, 28, 20, 4);
@@ -1083,7 +1083,7 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     this.time.delayedCall(400, () => {
-      this._btn(W / 2, 348, "✂️  Cut!", true, () => {
+      this._btn(W / 2, 384, "✂️  Cut!", true, () => {
         this._stopTimer();
         if (laserA === a && laserB === b) {
           boxes.forEach((box, i) => {
@@ -1094,8 +1094,8 @@ export class Level11Scene extends Phaser.Scene {
               this.tweens.add({ targets: [box.box, box.charTxt, box.idxTxt], alpha: 0, duration: 300 });
             }
           });
-          this._spawnConfetti(W / 2, 200, 22);
-          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 160, `+${pts}`);
+          this._spawnConfetti(W / 2, 236, 22);
+          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 196, `+${pts}`);
           this._showFeedback(true, `substring(${a},${b}) = "${correct}" ✓  +${pts} pts`,
             `Indices ${a} through ${b - 1} extracted`, () => this._nextRound());
         } else {
@@ -1117,11 +1117,11 @@ export class Level11Scene extends Phaser.Scene {
     const round = OPERATIONS[5].rounds[this.roundIndex];
     const str = round.str, correct = round.answer;
 
-    this._addEl(this.add.text(W / 2, 82, `🧹  "${str.replace(/ /g, '·')}".trim() — move broom over edge spaces to sweep!`, {
+    this._addEl(this.add.text(W / 2, 118, `🧹  "${str.replace(/ /g, '·')}".trim() — move broom over edge spaces to sweep!`, {
       fontFamily: "Arial", fontSize: "12px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
-    const boxes = this._charBoxes(str, W / 2, 200, { baseDelay: 80 });
+    const boxes = this._charBoxes(str, W / 2, 236, { baseDelay: 80 });
     const shouldSweep = new Array(str.length).fill(false);
     let s = 0, e = str.length - 1;
     while (s < str.length && str[s] === " ") { shouldSweep[s] = true; s++; }
@@ -1136,20 +1136,20 @@ export class Level11Scene extends Phaser.Scene {
       }
     });
 
-    const infoLbl = this.add.text(W / 2, 268, "Move broom over spaces — only sweep the ones at the START and END", {
+    const infoLbl = this.add.text(W / 2, 304, "Move broom over spaces — only sweep the ones at the START and END", {
       fontFamily: "Arial", fontSize: "11px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
     this._addEl(infoLbl);
 
-    const broom = this.add.text(30, 200, "🧹", { fontSize: "30px" }).setOrigin(0.5).setDepth(210);
+    const broom = this.add.text(30, 236, "🧹", { fontSize: "30px" }).setOrigin(0.5).setDepth(210);
     this._addEl(broom);
 
-    const sweepZone = this.add.rectangle(W / 2, 200, W - 40, 70).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(200);
+    const sweepZone = this.add.rectangle(W / 2, 236, W - 40, 70).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(200);
     this._addEl(sweepZone);
 
     sweepZone.on("pointermove", (ptr) => {
       broom.x = Phaser.Math.Clamp(ptr.x, 20, W - 20);
-      broom.y = Phaser.Math.Clamp(ptr.y, 170, 235);
+      broom.y = Phaser.Math.Clamp(ptr.y, 206, 271);
       boxes.forEach((b, i) => {
         if (swept[i]) return;
         if (Math.abs(broom.x - b.x) < BOX_W / 2 + 8 && Math.abs(broom.y - b.y) < 40 && str[i] === " ") {
@@ -1175,7 +1175,7 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     this.time.delayedCall(400, () => {
-      this._btn(W / 2, 345, "🧹 Done Sweeping!", true, () => {
+      this._btn(W / 2, 381, "🧹 Done Sweeping!", true, () => {
         this._stopTimer();
         const ok = shouldSweep.every((should, i) => swept[i] === should);
         if (ok) {
@@ -1183,8 +1183,8 @@ export class Level11Scene extends Phaser.Scene {
             if (shouldSweep[i]) this.tweens.add({ targets: [b.box, b.charTxt, b.idxTxt, b.shadow], alpha: 0, scale: 0.5, duration: 400, delay: i * 50, ease: "Back.in" });
             else b.drawBox(C.success_bg, C.success_green);
           });
-          this._spawnConfetti(W / 2, 200, 22);
-          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 160, `+${pts}`);
+          this._spawnConfetti(W / 2, 236, 22);
+          const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 196, `+${pts}`);
           this._showFeedback(true, `trim() → "${correct}" ✓  +${pts} pts`, "Only edge spaces removed!", () => this._nextRound());
         } else {
           boxes.forEach((b, i) => { if (shouldSweep[i] && !swept[i]) { b.drawBox(0xFFE0E0, C.error_red); b.charTxt.setText("✕"); } });
