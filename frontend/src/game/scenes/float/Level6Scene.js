@@ -630,7 +630,7 @@ export class Level6Scene extends Phaser.Scene {
     // Save progress
     GameManager.completeLevel(5, 100);
     BadgeSystem.unlock("calculation_wizard");
-    ProgressTracker.saveProgress(GameManager.getState());
+    /* saved by GameManager */
     GameManager.addXP(500);
 
     this.time.delayedCall(1500, () => this._showVictoryScreen());

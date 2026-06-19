@@ -828,7 +828,7 @@ export class Level12Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(11, accuracy);
       BadgeSystem.unlock("string_genius");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(800, 255, 100, 255);
 
       for (let i = 0; i < 12; i++) {

@@ -129,6 +129,7 @@ export class Level4Scene extends Phaser.Scene {
     this.boostAvailable = true;
     this.isBoosting = false;
     this.boostTimer = null;
+    this.lastSpawnTime = 0;
 
     this._drawOceanBackground();
     this._generateTextures();
@@ -536,9 +537,9 @@ export class Level4Scene extends Phaser.Scene {
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
+    this.lastSpawnTime = this.time.now;
     GameManager.set("lives", 3);
     this.boostText.setAlpha(0.6);
-    this._scheduleSpawn();
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -556,13 +557,7 @@ export class Level4Scene extends Phaser.Scene {
     return 2;
   }
 
-  _scheduleSpawn() {
-    if (this.isComplete) return;
-    this.spawnTimer = this.time.delayedCall(SPAWN_INTERVAL, () => {
-      this._spawnBubble();
-      this._scheduleSpawn();
-    });
-  }
+  // _scheduleSpawn removed. Spawning moved to update()
 
   _spawnBubble() {
     if (this.isComplete) return;
@@ -871,7 +866,6 @@ export class Level4Scene extends Phaser.Scene {
 
   _levelComplete(accuracy) {
     this.isComplete = true;
-    if (this.spawnTimer) this.spawnTimer.destroy();
 
     this.bubbles.forEach(b => {
       if (b && b.active) {
@@ -889,7 +883,7 @@ export class Level4Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(3, accuracy);
       BadgeSystem.unlock("float_explorer");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 0, 200, 255);
 
       for (let i = 0; i < 8; i++) {
@@ -1009,7 +1003,6 @@ export class Level4Scene extends Phaser.Scene {
 
   _gameOver() {
     this.isComplete = true;
-    if (this.spawnTimer) this.spawnTimer.destroy();
 
     this.bubbles.forEach(b => {
       if (b && b.active) {
@@ -1061,6 +1054,11 @@ export class Level4Scene extends Phaser.Scene {
     if (!this.gameStarted || this.isComplete) {
       this._updateAmbient(time);
       return;
+    }
+
+    if (time > this.lastSpawnTime + SPAWN_INTERVAL) {
+      this._spawnBubble();
+      this.lastSpawnTime = time;
     }
 
     const dt = delta / 1000;
@@ -1141,9 +1139,11 @@ export class Level4Scene extends Phaser.Scene {
         const baseX = b.getData("wobbleBase");
         b.x = baseX + Math.sin(t * 1.5) * 20;
 
-        // Scale pulse
-        const pulse = 1 + Math.sin(t * 3) * 0.04;
-        b.setScale(pulse);
+        // Scale pulse (only after scale-in tween completes)
+        if (t > 0.3) {
+          const pulse = 1 + Math.sin(t * 3) * 0.04;
+          b.setScale(pulse);
+        }
 
         // Remove if off top of screen
         if (b.y < -60) {
@@ -1187,7 +1187,6 @@ export class Level4Scene extends Phaser.Scene {
    *  SHUTDOWN
    * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
-    if (this.spawnTimer) this.spawnTimer.destroy();
     this.bubbles = [];
     // Restore lives visibility for other levels
     const uiScene = this.scene.get("UIScene");

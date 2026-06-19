@@ -837,23 +837,24 @@ export class Level8Scene extends Phaser.Scene {
       stroke: "#0d1b2a", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(60);
 
-    /* Scale-in animation */
+    /* Scale-in animation chained to pulsing glow */
     charText.setScale(0);
     this.tweens.add({
       targets: charText,
       scaleX: 1, scaleY: 1,
       duration: 250,
       ease: "Back.out",
-    });
-
-    /* Pulsing glow */
-    this.tweens.add({
-      targets: charText,
-      scaleX: 1.06, scaleY: 1.06,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: "Sine.inOut",
+      onComplete: () => {
+        if (!charText.active) return;
+        this.tweens.add({
+          targets: charText,
+          scaleX: 1.06, scaleY: 1.06,
+          duration: 800,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.inOut",
+        });
+      }
     });
 
     this.currentElements.push(charText);
@@ -900,11 +901,14 @@ export class Level8Scene extends Phaser.Scene {
       scaleX: 1, scaleY: 1,
       duration: 250,
       ease: "Back.out",
-    });
-    this.tweens.add({
-      targets: charText,
-      scaleX: 1.06, scaleY: 1.06,
-      duration: 800, yoyo: true, repeat: -1, ease: "Sine.inOut",
+      onComplete: () => {
+        if (!charText.active) return;
+        this.tweens.add({
+          targets: charText,
+          scaleX: 1.06, scaleY: 1.06,
+          duration: 800, yoyo: true, repeat: -1, ease: "Sine.inOut",
+        });
+      }
     });
 
     this.currentElements.push(charText);
@@ -1427,7 +1431,7 @@ export class Level8Scene extends Phaser.Scene {
     this.timerBarFill.width = 200;
     this.timerBarFill.setFillStyle(0x00ffff, 0.7);
 
-    if (this.timerBarTween) this.timerBarTween.destroy();
+    if (this.timerBarTween) { this.timerBarTween.stop(); this.timerBarTween.remove(); }
     this.timerBarTween = this.tweens.add({
       targets: this.timerBarFill,
       width: 0,
@@ -1445,7 +1449,7 @@ export class Level8Scene extends Phaser.Scene {
   }
 
   _stopTimer() {
-    if (this.timerBarTween) { this.timerBarTween.destroy(); this.timerBarTween = null; }
+    if (this.timerBarTween) { this.timerBarTween.stop(); this.timerBarTween.remove(); this.timerBarTween = null; }
     if (this.timerEvent) { this.timerEvent.destroy(); this.timerEvent = null; }
     this.timerBarBg.setAlpha(0);
     this.timerBarFill.setAlpha(0);
@@ -1549,7 +1553,7 @@ export class Level8Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(7, accuracy);
       BadgeSystem.unlock("ascii_master");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 255, 215, 0);
 
       for (let i = 0; i < 8; i++) {

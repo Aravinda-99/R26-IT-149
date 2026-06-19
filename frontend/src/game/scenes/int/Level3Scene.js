@@ -899,7 +899,7 @@ export class Level3Scene extends Phaser.Scene {
     const accuracy = 100;
     GameManager.completeLevel(2, accuracy);
     BadgeSystem.unlock("logic_master");
-    ProgressTracker.saveProgress(GameManager.getState());
+    /* saved by GameManager */
 
     this.cameras.main.flash(800, 167, 139, 250);
 
