@@ -57,6 +57,7 @@ export class MenuScene extends Phaser.Scene {
     const shouldShowChar = !activeModule || activeModule === "char";
     const shouldShowString = !activeModule || activeModule === "string";
     const shouldShowOperators = !activeModule || activeModule === "operators";
+    const shouldShowLoops = !activeModule || activeModule === "loops";
 
     if (shouldShowInteger) {
       // ── INTEGER MODULE HEADER ──
@@ -302,6 +303,47 @@ export class MenuScene extends Phaser.Scene {
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
         this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0xff6b6b);
+      });
+    }
+
+    if (shouldShowLoops) {
+      // ── LOOPS MODULE HEADER ──
+      const loopsModulesBefore = (shouldShowInteger ? 1 : 0) + (shouldShowFloat ? 1 : 0) + (shouldShowChar ? 1 : 0) + (shouldShowString ? 1 : 0) + (shouldShowOperators ? 1 : 0);
+      const loopsHeaderY = 80 + loopsModulesBefore * 120;
+
+      this.add.text(400, loopsHeaderY, "── FOR LOOPS MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#14b8a6",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const loopLevels = [
+        {
+          title: "Level 16: Loop Train Express",
+          phase: "ACCRETION",
+          desc: "Configure for loops to drive a cyberpunk train through stations!",
+          badge: BADGES.loop_engineer,
+          scene: "Level16Scene",
+          index: 15,
+        },
+        {
+          title: "Level 17: Iteration Arena",
+          phase: "TUNING",
+          desc: "Rapid-fire for-loop challenges in a neon combat arena — defeat the Bug Drone!",
+          badge: BADGES.loop_detective,
+          scene: "Level17Scene",
+          index: 16,
+        },
+      ];
+
+      loopLevels.forEach((lvl, i) => {
+        const loopsBaseY = loopsHeaderY + 16;
+        const y = loopsBaseY + i * 60;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x14b8a6);
       });
     }
 

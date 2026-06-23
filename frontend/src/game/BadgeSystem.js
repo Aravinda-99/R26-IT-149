@@ -138,6 +138,22 @@ export const BADGES = {
     level: 15,
     color: 0xffd700,
   },
+  loop_engineer: {
+    id: "loop_engineer",
+    name: "Loop Engineer",
+    emoji: "🔄",
+    description: "Completed Level 16 — For Loop Accretion (Loop Train Express)",
+    level: 16,
+    color: 0x14b8a6,
+  },
+  loop_detective: {
+    id: "loop_detective",
+    name: "Loop Detective",
+    emoji: "🔁",
+    description: "Completed Level 17 — For Loop Tuning (Iteration Arena)",
+    level: 17,
+    color: 0x0891b2,
+  },
 };
 
 // In-memory cache of unlocked badges

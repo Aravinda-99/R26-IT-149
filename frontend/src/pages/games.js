@@ -88,11 +88,11 @@ function renderCategoryView(container) {
             </div>
 
             <!-- Loops Category -->
-            <div class="card" id="category-loops" style="cursor: pointer; border-color: #14b8a6; opacity: 0.6; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: grayscale(50%);">🔄</div>
+            <div class="card" id="category-loops" style="cursor: pointer; border-color: #14b8a6; transition: all 0.2s; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔄</div>
                 <h3 style="color: #14b8a6; font-size: 1.25rem; margin-bottom: 0.5rem;">Loops</h3>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Master iteration patterns</p>
-                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">Coming Soon</p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">1 Mastery Module • 2 Levels</p>
             </div>
 
             <!-- Arrays Category -->
@@ -116,9 +116,10 @@ function renderCategoryView(container) {
     // Add hover effects and click listeners
     document.getElementById("category-variables")?.addEventListener("click", () => showCategoryModules(container, "variables"));
     document.getElementById("category-operators")?.addEventListener("click", () => showCategoryModules(container, "operators"));
+    document.getElementById("category-loops")?.addEventListener("click", () => showCategoryModules(container, "loops"));
 
     // Add visual feedback on hover for available categories
-    ["category-variables", "category-operators"].forEach(id => {
+    ["category-variables", "category-operators", "category-loops"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener("mouseover", () => el.style.transform = "translateY(-4px)");
@@ -218,12 +219,32 @@ function renderModuleView(container, category) {
                         3-Level Schema Theory Course: <b>Math Magic Academy</b> → <b>Calculation Arena</b> → <b>Code Builder Pro</b>
                     </p>
                     <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🧙 Math Wizard &nbsp; ⚔️ Combat Calculator &nbsp; 👨‍💼 Code Master
+                        Badges: 🧙 Math Wizard &nbsp; ⚔️ Combat Calculator &nbsp; 👑 Code Master
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-operators-module-btn" style="background: #ff6b6b;">Launch Module</button>
                     <button class="btn" id="close-operators-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+        `;
+    } else if (category === "loops") {
+        html += `
+            <!-- For Loop Mastery Module -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #14b8a6; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #14b8a6; font-size: 1.15rem; margin-bottom: 0.35rem;">🔄 For Loop Mastery Module</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        2-Level Schema Theory Course — Accretion → Tuning:<br>
+                        <b>Loop Train Express</b> (configure loops) &amp; <b>Iteration Arena</b> (rapid-fire combat challenges)
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🔄 Loop Engineer &amp; 🔁 Loop Detective
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-loops-module-btn" style="background: #14b8a6;">Launch Module</button>
+                    <button class="btn" id="close-loops-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
         `;
@@ -246,6 +267,7 @@ function renderModuleView(container, category) {
     wireModuleButtons("launch-char-module-btn", "close-char-module-btn", "char");
     wireModuleButtons("launch-string-module-btn", "close-string-module-btn", "string");
     wireModuleButtons("launch-operators-module-btn", "close-operators-module-btn", "operators");
+    wireModuleButtons("launch-loops-module-btn", "close-loops-module-btn", "loops");
 
     // Wire back button
     document.getElementById("back-to-categories-btn")?.addEventListener("click", () => {
