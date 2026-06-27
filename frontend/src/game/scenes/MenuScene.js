@@ -58,6 +58,7 @@ export class MenuScene extends Phaser.Scene {
     const shouldShowString = !activeModule || activeModule === "string";
     const shouldShowOperators = !activeModule || activeModule === "operators";
     const shouldShowLoops = !activeModule || activeModule === "loops";
+    const shouldShowWhileLoops = !activeModule || activeModule === "whileloops";
 
     if (shouldShowInteger) {
       // ── INTEGER MODULE HEADER ──
@@ -335,11 +336,68 @@ export class MenuScene extends Phaser.Scene {
           scene: "Level17Scene",
           index: 16,
         },
+        {
+          title: "Level 18: Loop Architect",
+          phase: "RESTRUCTURING",
+          desc: "Build for-loops from scratch with drag-and-drop blocks to solve 8 real projects!",
+          badge: BADGES.loop_architect,
+          scene: "Level18Scene",
+          index: 17,
+        },
       ];
 
       loopLevels.forEach((lvl, i) => {
         const loopsBaseY = loopsHeaderY + 16;
         const y = loopsBaseY + i * 60;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x14b8a6);
+      });
+    }
+
+    if (shouldShowWhileLoops) {
+      // ── WHILE LOOPS MODULE HEADER ──
+      const whileModulesBefore = (shouldShowInteger ? 1 : 0) + (shouldShowFloat ? 1 : 0) + (shouldShowChar ? 1 : 0) + (shouldShowString ? 1 : 0) + (shouldShowOperators ? 1 : 0) + (shouldShowLoops ? 1 : 0);
+      const whileHeaderY = 80 + whileModulesBefore * 120;
+
+      this.add.text(400, whileHeaderY, "── WHILE LOOPS MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#14b8a6",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const whileLevels = [
+        {
+          title: "Level 19: Power Core Charger",
+          phase: "ACCRETION",
+          desc: "Charge power cores using while loops — 10 rounds of condition-driven iteration!",
+          badge: BADGES.while_schema,
+          scene: "Level19Scene",
+          index: 18,
+        },
+        {
+          title: "Level 20: Debug Dimension",
+          phase: "TUNING",
+          desc: "15 rapid-fire while-loop challenges — predict, fix, trace, and debug before the Glitch Anomaly strikes!",
+          badge: BADGES.loop_debugger,
+          scene: "Level20Scene",
+          index: 19,
+        },
+        {
+          title: "Level 21: Data Stream Processor",
+          phase: "RESTRUCTURING",
+          desc: "Build while loops from scratch with drag-and-drop blocks to solve 8 real-world data processing projects!",
+          badge: BADGES.stream_architect,
+          scene: "Level21Scene",
+          index: 20,
+        },
+      ];
+
+      whileLevels.forEach((lvl, i) => {
+        const whileBaseY = whileHeaderY + 16;
+        const y = whileBaseY + i * 60;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);

@@ -18,6 +18,10 @@ import { Level14Scene } from "./scenes/operators/Level14Scene.js";
 import { Level15Scene } from "./scenes/operators/Level15Scene.js";
 import { Level16Scene } from "./scenes/forloops/Level16Scene.js";
 import { Level17Scene } from "./scenes/forloops/Level17Scene.js";
+import { Level18Scene } from "./scenes/forloops/Level18Scene.js";
+import { Level19Scene } from "./scenes/whileloop/Level19Scene.js";
+import { Level20Scene } from "./scenes/whileloop/Level20Scene.js";
+import { Level21Scene } from "./scenes/whileloop/Level21Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -47,6 +51,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, UIScene],
   };
 }

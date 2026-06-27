@@ -90,9 +90,17 @@ function renderCategoryView(container) {
             <!-- Loops Category -->
             <div class="card" id="category-loops" style="cursor: pointer; border-color: #14b8a6; transition: all 0.2s; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔄</div>
-                <h3 style="color: #14b8a6; font-size: 1.25rem; margin-bottom: 0.5rem;">Loops</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Master iteration patterns</p>
-                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">1 Mastery Module • 2 Levels</p>
+                <h3 style="color: #14b8a6; font-size: 1.25rem; margin-bottom: 0.5rem;">For Loops</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Master counted iteration with for loops</p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">1 Mastery Module • 3 Levels</p>
+            </div>
+
+            <!-- While Loops Category -->
+            <div class="card" id="category-whileloops" style="cursor: pointer; border-color: #0891b2; transition: all 0.2s; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">∞</div>
+                <h3 style="color: #0891b2; font-size: 1.25rem; margin-bottom: 0.5rem;">While Loops</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Master condition-driven iteration with while loops</p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">1 Mastery Module • 3 Levels</p>
             </div>
 
             <!-- Arrays Category -->
@@ -117,9 +125,10 @@ function renderCategoryView(container) {
     document.getElementById("category-variables")?.addEventListener("click", () => showCategoryModules(container, "variables"));
     document.getElementById("category-operators")?.addEventListener("click", () => showCategoryModules(container, "operators"));
     document.getElementById("category-loops")?.addEventListener("click", () => showCategoryModules(container, "loops"));
+    document.getElementById("category-whileloops")?.addEventListener("click", () => showCategoryModules(container, "whileloops"));
 
     // Add visual feedback on hover for available categories
-    ["category-variables", "category-operators", "category-loops"].forEach(id => {
+    ["category-variables", "category-operators", "category-loops", "category-whileloops"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener("mouseover", () => el.style.transform = "translateY(-4px)");
