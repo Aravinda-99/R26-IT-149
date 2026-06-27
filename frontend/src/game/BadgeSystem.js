@@ -154,6 +154,38 @@ export const BADGES = {
     level: 17,
     color: 0x0891b2,
   },
+  loop_architect: {
+    id: "loop_architect",
+    name: "Loop Architect",
+    emoji: "⚙",
+    description: "Completed Level 18 — For Loop Restructuring (Loop Architect)",
+    level: 18,
+    color: 0x0891b2,
+  },
+  while_schema: {
+    id: "while_schema",
+    name: "While Schema",
+    emoji: "∞",
+    description: "Completed Level 19 — While Loop Accretion (Power Core Charger)",
+    level: 19,
+    color: 0x14b8a6,
+  },
+  loop_debugger: {
+    id: "loop_debugger",
+    name: "Loop Debugger",
+    emoji: "⚡",
+    description: "Completed Level 20 — While Loop Tuning (Debug Dimension)",
+    level: 20,
+    color: 0xff00ff,
+  },
+  stream_architect: {
+    id: "stream_architect",
+    name: "Stream Architect",
+    emoji: "🌊",
+    description: "Completed Level 21 — While Loop Restructuring (Data Stream Processor)",
+    level: 21,
+    color: 0x00e5ff,
+  },
 };
 
 // In-memory cache of unlocked badges
