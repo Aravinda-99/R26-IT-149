@@ -7,7 +7,7 @@
 
 import { ProgressTracker } from "./ProgressTracker.js";
 
-const TOTAL_LEVELS = 21;
+const TOTAL_LEVELS = 31;
 
 const DEFAULT_STATE = {
   currentLevel: 0,       // 0 = menu, 1-15 = levels

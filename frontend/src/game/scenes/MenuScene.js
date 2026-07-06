@@ -59,6 +59,7 @@ export class MenuScene extends Phaser.Scene {
     const shouldShowOperators = !activeModule || activeModule === "operators";
     const shouldShowLoops = !activeModule || activeModule === "loops";
     const shouldShowWhileLoops = !activeModule || activeModule === "whileloops";
+    const shouldShowArrays = !activeModule || activeModule === "arrays";
 
     if (shouldShowInteger) {
       // ── INTEGER MODULE HEADER ──
@@ -402,6 +403,55 @@ export class MenuScene extends Phaser.Scene {
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
         this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x14b8a6);
+      });
+    }
+
+    if (shouldShowArrays) {
+      // ── ARRAYS MODULE HEADER ──
+      const arraysModulesBefore = (shouldShowInteger ? 1 : 0) + (shouldShowFloat ? 1 : 0) + (shouldShowChar ? 1 : 0) + (shouldShowString ? 1 : 0) + (shouldShowOperators ? 1 : 0) + (shouldShowLoops ? 1 : 0) + (shouldShowWhileLoops ? 1 : 0);
+      const arraysHeaderY = 80 + arraysModulesBefore * 120;
+
+      this.add.text(400, arraysHeaderY, "── ARRAYS MODULE ──", {
+        fontFamily: "monospace",
+        fontSize: "10px",
+        color: "#06b6d4",
+        fontStyle: "bold",
+      }).setOrigin(0.5);
+
+      const arrayLevels = [
+        {
+          title: "Level 22: Memory Vault",
+          phase: "ACCRETION",
+          desc: "Store and access data in a high-security vault — learn zero-based indexing and .length!",
+          badge: BADGES.array_schema,
+          scene: "Level22Scene",
+          index: 21,
+        },
+        {
+          title: "Level 23: Index Interceptor",
+          phase: "TUNING",
+          desc: "15 rapid-fire challenges — judge, predict, fix, and interpret array operations before the packet lands!",
+          badge: BADGES.index_expert,
+          scene: "Level23Scene",
+          index: 22,
+        },
+        {
+          title: "Level 24: Array Forge",
+          phase: "RESTRUCTURING",
+          desc: "Build array-processing programs from scratch with drag-and-drop blocks to solve 8 real-world projects!",
+          badge: BADGES.array_smith,
+          scene: "Level24Scene",
+          index: 23,
+        },
+      ];
+
+      arrayLevels.forEach((lvl, i) => {
+        const arraysBaseY = arraysHeaderY + 16;
+        const y = arraysBaseY + i * 60;
+        const unlocked = GameManager.isLevelUnlocked(lvl.index);
+        const completed = GameManager.get("levelsCompleted")[lvl.index];
+        const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
+        this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, 0x06b6d4);
       });
     }
 

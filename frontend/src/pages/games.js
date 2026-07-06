@@ -104,11 +104,11 @@ function renderCategoryView(container) {
             </div>
 
             <!-- Arrays Category -->
-            <div class="card" id="category-arrays" style="cursor: pointer; border-color: #06b6d4; opacity: 0.6; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: grayscale(50%);">📊</div>
+            <div class="card" id="category-arrays" style="cursor: pointer; border-color: #06b6d4; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">📊</div>
                 <h3 style="color: #06b6d4; font-size: 1.25rem; margin-bottom: 0.5rem;">Arrays</h3>
                 <p style="color: var(--text-secondary); font-size: 0.9rem;">Master collection & indexing</p>
-                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">Coming Soon</p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">1 Mastery Module • 3 Levels</p>
             </div>
 
             <!-- Methods Category -->
@@ -126,9 +126,10 @@ function renderCategoryView(container) {
     document.getElementById("category-operators")?.addEventListener("click", () => showCategoryModules(container, "operators"));
     document.getElementById("category-loops")?.addEventListener("click", () => showCategoryModules(container, "loops"));
     document.getElementById("category-whileloops")?.addEventListener("click", () => showCategoryModules(container, "whileloops"));
+    document.getElementById("category-arrays")?.addEventListener("click", () => showCategoryModules(container, "arrays"));
 
     // Add visual feedback on hover for available categories
-    ["category-variables", "category-operators", "category-loops", "category-whileloops"].forEach(id => {
+    ["category-variables", "category-operators", "category-loops", "category-whileloops", "category-arrays"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener("mouseover", () => el.style.transform = "translateY(-4px)");
@@ -257,6 +258,44 @@ function renderModuleView(container, category) {
                 </div>
             </div>
         `;
+    } else if (category === "whileloops") {
+        html += `
+            <!-- While Loop Mastery Module -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #0891b2; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #0891b2; font-size: 1.15rem; margin-bottom: 0.35rem;">∞ While Loop Mastery Module</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3-Level Schema Theory Course: <b>Power Core Charger</b> → <b>Debug Dimension</b> → <b>Data Stream Processor</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: ⚙️ While Schema &nbsp; 🛠️ Loop Debugger &nbsp; 🌊 Stream Architect
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-whileloops-module-btn" style="background: #0891b2;">Launch Module</button>
+                    <button class="btn" id="close-whileloops-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+        `;
+    } else if (category === "arrays") {
+        html += `
+            <!-- Array Mastery Module -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #06b6d4; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #06b6d4; font-size: 1.15rem; margin-bottom: 0.35rem;">📊 Array Mastery Module</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3-Level Schema Theory Course: <b>Memory Vault</b> → <b>Index Interceptor</b> → <b>Array Forge</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🗃️ Array Schema &nbsp; 🎯 Index Expert &nbsp; ⚒️ Array Smith
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-arrays-module-btn" style="background: #06b6d4;">Launch Module</button>
+                    <button class="btn" id="close-arrays-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+        `;
     } else {
         html += `
             <div class="card" style="padding: 3rem; text-align: center; border-color: var(--border-color);">
@@ -277,6 +316,8 @@ function renderModuleView(container, category) {
     wireModuleButtons("launch-string-module-btn", "close-string-module-btn", "string");
     wireModuleButtons("launch-operators-module-btn", "close-operators-module-btn", "operators");
     wireModuleButtons("launch-loops-module-btn", "close-loops-module-btn", "loops");
+    wireModuleButtons("launch-whileloops-module-btn", "close-whileloops-module-btn", "whileloops");
+    wireModuleButtons("launch-arrays-module-btn", "close-arrays-module-btn", "arrays");
 
     // Wire back button
     document.getElementById("back-to-categories-btn")?.addEventListener("click", () => {
@@ -290,6 +331,7 @@ function getCategoryTitle(category) {
         variables: "📦 Variables Category",
         operators: "⚡ Operators Category",
         loops: "🔄 Loops Category",
+        whileloops: "∞ While Loops Category",
         arrays: "📊 Arrays Category",
         methods: "🔧 Methods Category"
     };
@@ -301,6 +343,7 @@ function getCategoryDescription(category) {
         variables: "Master the fundamental data types: integers, floats, characters, and strings",
         operators: "Learn arithmetic, comparison, and logical operations",
         loops: "Master iteration and repetition patterns",
+        whileloops: "Master condition-driven iteration with while loops",
         arrays: "Learn collections and indexing",
         methods: "Master function design and reuse"
     };
