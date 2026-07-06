@@ -22,6 +22,16 @@ import { Level18Scene } from "./scenes/forloops/Level18Scene.js";
 import { Level19Scene } from "./scenes/whileloop/Level19Scene.js";
 import { Level20Scene } from "./scenes/whileloop/Level20Scene.js";
 import { Level21Scene } from "./scenes/whileloop/Level21Scene.js";
+import { Level22Scene } from "./scenes/array/Level22Scene.js";
+import { Level23Scene } from "./scenes/array/Level23Scene.js";
+import { Level24Scene } from "./scenes/array/Level24Scene.js";
+import { Level25Scene } from "./scenes/methods/StringMethods/Level25Scene.js";
+import { Level26Scene } from "./scenes/methods/StringMethods/Level26Scene.js";
+import { Level27Scene } from "./scenes/methods/StringMethods/Level27Scene.js";
+import { Level28Scene } from "./scenes/methods/StringMethods/Level28Scene.js";
+import { Level29Scene } from "./scenes/methods/StringMethods/Level29Scene.js";
+import { Level30Scene } from "./scenes/methods/StringMethods/Level30Scene.js";
+import { Level31Scene } from "./scenes/methods/StringMethods/Level31Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -51,6 +61,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, UIScene],
   };
 }
