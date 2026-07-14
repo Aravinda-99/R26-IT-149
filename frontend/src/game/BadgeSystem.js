@@ -354,6 +354,30 @@ export const BADGES = {
     level: 42,
     color: 0xffd740,
   },
+  printf_schema: {
+    id: "printf_schema",
+    name: "printf() Schema",
+    emoji: "🖨️",
+    description: "Completed Level 43 — Output Methods Accretion (The Composing Room). Learned printf()'s format-string slots — the third and final Output Wing method opens!",
+    level: 43,
+    color: 0x4fc3f7,
+  },
+  printf_schema_tuned: {
+    id: "printf_schema_tuned",
+    name: "printf() Schema Tuned",
+    emoji: "🗞️",
+    description: "Completed Level 44 — Output Methods Tuning (The Presses). Mastered printf()'s specifier fluency, precision rounding, and the format-string runtime exceptions under pressure!",
+    level: 44,
+    color: 0xffd740,
+  },
+  printf_mastery: {
+    id: "printf_mastery",
+    name: "printf() Mastery",
+    emoji: "🖨️",
+    description: "Completed Level 45 — Output Methods Restructuring (The Print Floor). printf() trilogy complete AND the Output Wing sealed — 9 levels, 3 methods, one production-ready output schema!",
+    level: 45,
+    color: 0xffd740,
+  },
 };
 
 // In-memory cache of unlocked badges
