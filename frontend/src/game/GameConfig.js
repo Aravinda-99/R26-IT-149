@@ -32,6 +32,17 @@ import { Level28Scene } from "./scenes/methods/StringMethods/Level28Scene.js";
 import { Level29Scene } from "./scenes/methods/StringMethods/Level29Scene.js";
 import { Level30Scene } from "./scenes/methods/StringMethods/Level30Scene.js";
 import { Level31Scene } from "./scenes/methods/StringMethods/Level31Scene.js";
+import { Level32Scene } from "./scenes/methods/StringMethods/Level32Scene.js";
+import { Level33Scene } from "./scenes/methods/StringMethods/Level33Scene.js";
+import { Level34Scene } from "./scenes/methods/scannerMethods/Level34Scene.js";
+import { Level35Scene } from "./scenes/methods/scannerMethods/Level35Scene.js";
+import { Level36Scene } from "./scenes/methods/scannerMethods/Level36Scene.js";
+import { Level37Scene } from "./scenes/methods/outputMethods/Level37Scene.js";
+import { Level38Scene } from "./scenes/methods/outputMethods/Level38Scene.js";
+import { Level39Scene } from "./scenes/methods/outputMethods/Level39Scene.js";
+import { Level40Scene } from "./scenes/methods/outputMethods/Level40Scene.js";
+import { Level41Scene } from "./scenes/methods/outputMethods/Level41Scene.js";
+import { Level42Scene } from "./scenes/methods/outputMethods/Level42Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -61,6 +72,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, Level32Scene, Level33Scene, Level34Scene, Level35Scene, Level36Scene, Level37Scene, Level38Scene, Level39Scene, Level40Scene, Level41Scene, Level42Scene, UIScene],
   };
 }
