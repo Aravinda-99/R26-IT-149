@@ -634,6 +634,14 @@ export const BADGES = {
     level: 75,
     color: 0xff9800,
   },
+  double_parseDouble_mastery: {
+    id: "double_parseDouble_mastery",
+    name: "Chief Assayer",
+    emoji: "⚖️",
+    description: "Completed Level 76 — Type Conversion Restructuring (The Decimal Works). Built complete measurement-processing programs: parser discrimination across mixed int/double records, the dissolve-then-cast pattern, and a full assay-report capstone exercising both parseInt and parseDouble together. Closes the parseDouble() trilogy — Accretion, Tuning, Restructuring.",
+    level: 76,
+    color: 0xffd740,
+  },
 };
 
 // In-memory cache of unlocked badges

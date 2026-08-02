@@ -75,6 +75,7 @@ import { Level72Scene } from "./scenes/methods/ArrayListMethods/Level72Scene.js"
 import { Level73Scene } from "./scenes/methods/ArrayListMethods/Level73Scene.js";
 import { Level74Scene } from "./scenes/methods/ArrayListMethods/Level74Scene.js";
 import { Level75Scene } from "./scenes/methods/ArrayListMethods/Level75Scene.js";
+import { Level76Scene } from "./scenes/methods/ArrayListMethods/Level76Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
@@ -104,6 +105,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, Level32Scene, Level33Scene, Level34Scene, Level35Scene, Level36Scene, Level37Scene, Level38Scene, Level39Scene, Level40Scene, Level41Scene, Level42Scene, Level43Scene, Level44Scene, Level45Scene, Level46Scene, Level47Scene, Level48Scene, Level49Scene, Level50Scene, Level51Scene, Level52Scene, Level53Scene, Level54Scene, Level55Scene, Level56Scene, Level57Scene, Level58Scene, Level60Scene, Level61Scene, Level62Scene, Level63Scene, Level64Scene, Level65Scene, Level66Scene, Level67Scene, Level68Scene, Level69Scene, Level70Scene, Level71Scene, Level72Scene, Level73Scene, Level74Scene, Level75Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, Level32Scene, Level33Scene, Level34Scene, Level35Scene, Level36Scene, Level37Scene, Level38Scene, Level39Scene, Level40Scene, Level41Scene, Level42Scene, Level43Scene, Level44Scene, Level45Scene, Level46Scene, Level47Scene, Level48Scene, Level49Scene, Level50Scene, Level51Scene, Level52Scene, Level53Scene, Level54Scene, Level55Scene, Level56Scene, Level57Scene, Level58Scene, Level60Scene, Level61Scene, Level62Scene, Level63Scene, Level64Scene, Level65Scene, Level66Scene, Level67Scene, Level68Scene, Level69Scene, Level70Scene, Level71Scene, Level72Scene, Level73Scene, Level74Scene, Level75Scene, Level76Scene, UIScene],
   };
 }
