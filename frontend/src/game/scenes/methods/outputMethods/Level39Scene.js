@@ -1303,6 +1303,7 @@ export class Level39Scene extends Phaser.Scene {
     this.parkAllCameos();
     this.updateManifestStrip("");
     this.showOnAir("idle");
+    this.inputLocked = false;
   }
 
   clearMission() {

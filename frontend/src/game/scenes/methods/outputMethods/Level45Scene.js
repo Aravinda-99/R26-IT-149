@@ -1586,6 +1586,7 @@ export class Level45Scene extends Phaser.Scene {
     this.loadMiniTape(mission.tests[0].input);
     this.updateManifestStrip("");
     this.setProduction(false);
+    this.inputLocked = false;
   }
 
   clearMission() {

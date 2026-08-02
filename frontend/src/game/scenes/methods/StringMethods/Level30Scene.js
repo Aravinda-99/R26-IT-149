@@ -1264,6 +1264,7 @@ export class Level30Scene extends Phaser.Scene {
     this.rigLamp.setFillStyle(C_GRAY);
     this.clearTicker();
     this.buildMiniTileRow(mission.tests[0].input || "");
+    this.inputLocked = false;
   }
 
   clearMission() {

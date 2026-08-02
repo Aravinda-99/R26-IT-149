@@ -1390,7 +1390,7 @@ export class Level41Scene extends Phaser.Scene {
     if (correct) {
       this.updateScore(this.scoreForAttempt(timePctUsed));
       this.updateCombo(true);
-      if (this.roundAttempts === 0) this.correctFirstTry++;
+      if (this.roundAttempts === 1) this.correctFirstTry++;
       await this.delay(250);
       this.advanceRound();
     } else {
@@ -1470,7 +1470,7 @@ export class Level41Scene extends Phaser.Scene {
     if (correct) {
       this.updateScore(this.scoreForAttempt(timePctUsed));
       this.updateCombo(true);
-      if (this.roundAttempts === 0) this.correctFirstTry++;
+      if (this.roundAttempts === 1) this.correctFirstTry++;
       await this.delay(250);
       this.advanceRound();
     } else {

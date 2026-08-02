@@ -1175,6 +1175,7 @@ export class Level33Scene extends Phaser.Scene {
     this.clearTicker();
     this.buildMiniTileRow(mission.tests[0].input || "", true);
     [this.stationCase, this.stationPress, this.stationClaw].forEach((s) => this._setStationActive(s, false));
+    this.inputLocked = false;
   }
 
   clearMission() {
