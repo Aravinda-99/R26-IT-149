@@ -1433,6 +1433,7 @@ export class Level36Scene extends Phaser.Scene {
     this.loadMiniTape(mission.tests[0].input);
     [this.miniMachine.nozzles.int, this.miniMachine.nozzles.double, this.miniMachine.nozzles.line].forEach((n) => this.tweens.killTweensOf(n.glow));
     this.updateManifestStrip("");
+    this.inputLocked = false;
   }
 
   clearMission() {
