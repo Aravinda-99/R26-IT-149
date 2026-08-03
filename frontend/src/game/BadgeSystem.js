@@ -642,6 +642,46 @@ export const BADGES = {
     level: 76,
     color: 0xffd740,
   },
+  string_valueOf_schema: {
+    id: "string_valueOf_schema",
+    name: "valueOf() Schema",
+    emoji: "🖨️",
+    description: "Completed Level 77 — Type Conversion Accretion (The Inscription Press). Opened the wing's third instrument: String.valueOf() stamps ANY value — int, double, boolean, char — onto a String, running the reverse direction from parseInt/parseDouble and never throwing an exception.",
+    level: 77,
+    color: 0xe0d6b8,
+  },
+  string_valueOf_tuned: {
+    id: "string_valueOf_tuned",
+    name: "valueOf() Schema Tuned",
+    emoji: "🕯️",
+    description: "Completed Level 78 — Type Conversion Tuning (The Inscription Trials). Drilled the full conversion triangle at speed against a cooling wax seal: direction verdicts, round trips through String↔int↔String and String↔double↔String, nested conversions, and the two everyday valueOf() bugs — direction confusion and concat-as-arithmetic.",
+    level: 78,
+    color: 0xffd740,
+  },
+  string_valueOf_mastery: {
+    id: "string_valueOf_mastery",
+    name: "Grand Assayer",
+    emoji: "⛓️",
+    description: "Completed Level 79 — Type Conversion Restructuring (The Assay Bureau), closing the valueOf() trilogy. Built complete conversion-and-display programs: composite labels from mixed types, the full parse-compute-inscribe triangle, the compute-then-convert pattern, and a grand capstone firing all three wing instruments — parseInt, parseDouble, and valueOf — on one rig.",
+    level: 79,
+    color: 0xffd740,
+  },
+  type_conversion_wing_seal: {
+    id: "type_conversion_wing_seal",
+    name: "Type Conversion Wing — Complete",
+    emoji: "🏛️",
+    description: "Sealed the Type Conversion Wing — 9 levels, 3 methods (parseInt, parseDouble, valueOf), three instruments (the Integer Furnace, the Decimal Crucible, the Inscription Press) mastered from first prediction to final production workflow. The curriculum's seventh wing seal.",
+    level: 79,
+    color: 0xffd740,
+  },
+  character_isDigit_schema: {
+    id: "character_isDigit_schema",
+    name: "isDigit() Schema",
+    emoji: "🔎",
+    description: "Completed Level 80 — Character Methods Accretion (The Numeral Loupe), opening the curriculum's eighth and final wing. Learned the classification-not-conversion distinction: Character.isDigit(char) INSPECTS a single character and returns boolean — true or false — without ever changing it, unlike every prior conversion instrument.",
+    level: 80,
+    color: 0x4fc3f7,
+  },
 };
 
 // In-memory cache of unlocked badges
