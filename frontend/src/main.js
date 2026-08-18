@@ -10,7 +10,7 @@ import { initAuthListener, onAuthChange, logout } from "./utils/auth.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderLearningPath } from "./pages/learning-path.js";
 import { renderQuizLab } from "./pages/quiz-lab.js";
-import { renderGames, disposeGames } from "./pages/games.js";
+import { renderGames, disposeGames, launchModuleFromQuery } from "./pages/games.js";
 import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderMastery } from "./pages/mastery.js";
 
@@ -129,6 +129,21 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthChange((user) => {
         updateNavForUser(user);
     });
+
+    // If this tab was opened via a "Launch Module" button (new-tab flow from
+    // the Games page), show only the game itself — skip rendering the Games
+    // category/module cards behind it.
+    const launchModule = new URLSearchParams(window.location.search).get("launchModule");
+    if (launchModule) {
+        currentPage = "games";
+        document.querySelectorAll(".nav-link").forEach((link) => {
+            link.classList.toggle("active", link.dataset.page === "games");
+        });
+        document.getElementById("page-container").innerHTML = "";
+        launchModuleFromQuery(launchModule);
+        window.history.replaceState({}, "", window.location.pathname);
+        return;
+    }
 
     // LOAD HOME PAGE FIRST
     navigateTo("learning-path");

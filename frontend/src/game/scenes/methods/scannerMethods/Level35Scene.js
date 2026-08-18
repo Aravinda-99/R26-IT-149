@@ -326,7 +326,7 @@ export class Level35Scene extends Phaser.Scene {
     ring.strokeCircle(0, 0, 46);
     const wedges = this.add.graphics();
     this._drawIrisWedges(wedges, 1);
-    const plate = this.add.text(0, -62, "FROM OUTSIDE", { font: "bold 9px Arial", color: HEX_GREEN }).setOrigin(0.5);
+    const plate = this.add.text(0, -62, "FROM OUTSIDE", { font: "bold 11px Arial", color: HEX_GREEN }).setOrigin(0.5);
     c.add([outer, ring, wedges, plate]);
     this.portRing = ring;
     this.port = { c, wedges, outer };
@@ -393,7 +393,7 @@ export class Level35Scene extends Phaser.Scene {
     ring.strokeCircle(0, 0, 22);
     this.clockMinuteHand = this.add.graphics();
     this.clockHourHand = this.add.graphics();
-    const label = this.add.text(0, 36, "NIGHT SHIFT", { font: "bold 9px Arial", color: HEX_GREEN }).setOrigin(0.5).setAlpha(0.4);
+    const label = this.add.text(0, 36, "NIGHT SHIFT", { font: "bold 11px Arial", color: HEX_GREEN }).setOrigin(0.5).setAlpha(0.4);
     clock.add([ring, this.clockHourHand, this.clockMinuteHand, label]);
     this.shiftClock = clock;
 
@@ -438,7 +438,7 @@ export class Level35Scene extends Phaser.Scene {
     g.fillRoundedRect(-75, -15, 150, 30, 6);
     g.lineStyle(1, C_GREEN, 0.25);
     g.strokeRoundedRect(-75, -15, 150, 30, 6);
-    const t = this.add.text(0, 0, "INTAKE WING", { font: "bold 11px Arial", color: HEX_GREEN }).setOrigin(0.5).setAlpha(0.5);
+    const t = this.add.text(0, 0, "INTAKE WING", { font: "bold 13px Arial", color: HEX_GREEN }).setOrigin(0.5).setAlpha(0.5);
     c.add([g, t]);
     this.dockSign = c;
   }
@@ -557,7 +557,7 @@ export class Level35Scene extends Phaser.Scene {
     this.tapeState.forEach((cell, i) => {
       const x = startX + i * cellW + cellW / 2;
       const t = this.add.text(x, TAPE_Y, this._cellDisplay(cell), {
-        font: cell.kind === "newline" ? "bold 16px Courier New" : "bold 13px Courier New",
+        font: cell.kind === "newline" ? "bold 18px Courier New" : "bold 15px Courier New",
         color: this._cellColor(cell.kind),
       }).setOrigin(0.5);
       if (animateIn) { t.setAlpha(0); this.tweens.add({ targets: t, alpha: 1, duration: 180, delay: i * 12 }); }
@@ -599,7 +599,7 @@ export class Level35Scene extends Phaser.Scene {
     body.fillRoundedRect(-MACHINE_W / 2, -MACHINE_H / 2, MACHINE_W, MACHINE_H, 14);
     body.lineStyle(2, C_GREEN, 1);
     body.strokeRoundedRect(-MACHINE_W / 2, -MACHINE_H / 2, MACHINE_W, MACHINE_H, 14);
-    const nameplate = this.add.text(0, -MACHINE_H / 2 + 14, "SCANNER sc", { font: "bold 11px Courier New", color: HEX_GREEN }).setOrigin(0.5);
+    const nameplate = this.add.text(0, -MACHINE_H / 2 + 14, "SCANNER sc", { font: "bold 13px Courier New", color: HEX_GREEN }).setOrigin(0.5);
 
     const mouth = this.add.graphics();
     mouth.fillStyle(0x050a05, 1);
@@ -625,7 +625,7 @@ export class Level35Scene extends Phaser.Scene {
       ng.fillRoundedRect(MACHINE_W / 2 - 4, ny - 9, 32, 18, 4);
       ng.lineStyle(2, def.ring, 0.5);
       ng.strokeRoundedRect(MACHINE_W / 2 - 4, ny - 9, 32, 18, 4);
-      const lbl = this.add.text(MACHINE_W / 2 + 40, ny, def.label, { font: "8px Courier New", color: "#607d8b" }).setOrigin(0, 0.5);
+      const lbl = this.add.text(MACHINE_W / 2 + 40, ny, def.label, { font: "10px Courier New", color: "#607d8b" }).setOrigin(0, 0.5);
       const glow = this.add.rectangle(MACHINE_W / 2 + 12, ny, 32, 18, def.ring, 0).setOrigin(0.5);
       c.add([ng, lbl, glow]);
       nozzles[def.key] = { g: ng, glow, ring: def.ring, y: def.y };
@@ -722,7 +722,7 @@ export class Level35Scene extends Phaser.Scene {
     const displayValue = assignmentWidened ? Number(result.rawValue).toFixed(1) : result.valueDisplay;
     const color = assignmentWidened ? C_DOUBLE : result.returnType === "int" ? C_INT : result.returnType === "double" ? C_DOUBLE : C_LINE;
 
-    const slug = this.add.text(MACHINE_X, MACHINE_Y, displayValue, { font: "bold 14px Courier New", color: Phaser.Display.Color.IntegerToColor(color).rgba }).setOrigin(0.5).setDepth(12).setScale(0.5).setAlpha(0);
+    const slug = this.add.text(MACHINE_X, MACHINE_Y, displayValue, { font: "bold 16px Courier New", color: Phaser.Display.Color.IntegerToColor(color).rgba }).setOrigin(0.5).setDepth(12).setScale(0.5).setAlpha(0);
     this.tweens.add({ targets: slug, scale: 1, alpha: 1, duration: 130 });
     await this.delay(130);
     if (!this._alive) return;
@@ -738,7 +738,7 @@ export class Level35Scene extends Phaser.Scene {
   }
 
   async wideningSparkle(slug) {
-    const spark = this.add.text(slug.x + 14, slug.y, "✦", { font: "12px Arial", color: HEX_GOLD }).setDepth(13).setAlpha(0);
+    const spark = this.add.text(slug.x + 14, slug.y, "✦", { font: "14px Arial", color: HEX_GOLD }).setDepth(13).setAlpha(0);
     this.tweens.add({ targets: spark, alpha: 1, duration: 130, yoyo: true, onComplete: () => spark.destroy() });
     await this.delay(160);
   }
@@ -759,7 +759,7 @@ export class Level35Scene extends Phaser.Scene {
     const strobeTween = this.tweens.add({ targets: this.machine.strobe, angle: 360, fillAlpha: { from: 0.8, to: 0.3 }, duration: 220, repeat: 2 });
     await this.delay(120);
     if (!this._alive) return;
-    const stamp = this.add.text(MACHINE_X, MACHINE_Y - 10, "InputMismatchException", { font: "bold 13px Courier New", color: HEX_RED }).setOrigin(0.5).setDepth(30).setAlpha(0).setScale(1.3);
+    const stamp = this.add.text(MACHINE_X, MACHINE_Y - 10, "InputMismatchException", { font: "bold 15px Courier New", color: HEX_RED }).setOrigin(0.5).setDepth(30).setAlpha(0).setScale(1.3);
     this.tweens.add({ targets: stamp, alpha: 1, scale: 1, duration: 180 });
     await this.delay(1100);
     if (!this._alive) return;
@@ -770,7 +770,7 @@ export class Level35Scene extends Phaser.Scene {
   }
 
   showCompileErrorStamp() {
-    const stamp = this.add.text(MACHINE_X, MACHINE_Y - 40, "COMPILE ERROR", { font: "bold 18px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(30).setAngle(-6).setScale(1.6).setAlpha(0);
+    const stamp = this.add.text(MACHINE_X, MACHINE_Y - 40, "COMPILE ERROR", { font: "bold 19px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(30).setAngle(-6).setScale(1.6).setAlpha(0);
     this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 180 });
     this.time.delayedCall(1300, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
     this.screenShake(0.003, 140);
@@ -795,10 +795,10 @@ export class Level35Scene extends Phaser.Scene {
       const pillBg = this.add.graphics();
       pillBg.fillStyle(def.color, 1);
       pillBg.fillRoundedRect(-22, -8, 44, 16, 8);
-      const pillText = this.add.text(0, 0, def.label, { font: "bold 9px Arial", color: "#0a120c" }).setOrigin(0.5);
+      const pillText = this.add.text(0, 0, def.label, { font: "bold 11px Arial", color: "#0a120c" }).setOrigin(0.5);
       pill.add([pillBg, pillText]);
-      const varPlate = this.add.text(-CONTAINER_W / 2 + 10, 4, "—", { font: "10px Arial", color: "#607d8b" }).setOrigin(0, 0.5);
-      const valueText = this.add.text(CONTAINER_W / 2 - 12, 4, "", { font: "bold 15px Courier New", color: Phaser.Display.Color.IntegerToColor(def.color).rgba }).setOrigin(1, 0.5);
+      const varPlate = this.add.text(-CONTAINER_W / 2 + 10, 4, "—", { font: "12px Arial", color: "#607d8b" }).setOrigin(0, 0.5);
+      const valueText = this.add.text(CONTAINER_W / 2 - 12, 4, "", { font: "bold 17px Courier New", color: Phaser.Display.Color.IntegerToColor(def.color).rgba }).setOrigin(1, 0.5);
       c.add([g, pill, varPlate, valueText]);
       this.containers[def.key] = { c, g, pill, varPlate, valueText, color: def.color, x: CONTAINER_X, y: def.y };
     });
@@ -818,7 +818,7 @@ export class Level35Scene extends Phaser.Scene {
   async flashContainerError(targetKey, sourceType, sourceColorHex) {
     const container = this.containers[targetKey];
     this.tweens.add({ targets: container.g, alpha: 0.5, duration: 90, yoyo: true, repeat: 3 });
-    const ghost = this.add.text(container.x, container.y - 50, sourceType, { font: "bold 14px Courier New", color: sourceColorHex }).setOrigin(0.5).setDepth(30).setAlpha(0);
+    const ghost = this.add.text(container.x, container.y - 50, sourceType, { font: "bold 16px Courier New", color: sourceColorHex }).setOrigin(0.5).setDepth(30).setAlpha(0);
     this.tweens.add({ targets: ghost, alpha: 0.85, y: container.y - 20, duration: 260 });
     if (!this._noteLeak) {
       this._noteLeak = true;
@@ -830,7 +830,7 @@ export class Level35Scene extends Phaser.Scene {
   }
 
   createSourcePlate() {
-    this.add.text(80, 700, "Scanner sc = new Scanner(System.in);", { font: "10px Courier New", color: "#2e4a2e" }).setDepth(15);
+    this.add.text(80, 700, "Scanner sc = new Scanner(System.in);", { font: "12px Courier New", color: "#2e4a2e" }).setDepth(15);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -887,7 +887,7 @@ export class Level35Scene extends Phaser.Scene {
     });
 
     const qy = h / 2 - 16;
-    const qt = this.add.text(0, qy, questionText, { font: "13px Arial", color: "#e0e0e0" }).setOrigin(0.5);
+    const qt = this.add.text(0, qy, questionText, { font: "15px Arial", color: "#e0e0e0" }).setOrigin(0.5);
     this.manifestContainer.add(qt);
 
     this.manifestContainer.y = MANIFEST_Y - 40;
@@ -906,7 +906,7 @@ export class Level35Scene extends Phaser.Scene {
   async stampManifest(kind) {
     const label = kind === "processed" ? "PROCESSED" : kind === "misread" ? "MISREAD" : "DELIVERY REFUSED";
     const color = kind === "processed" ? HEX_GREEN_BRIGHT : HEX_RED;
-    const stamp = this.add.text(0, 0, label, { font: "bold 20px Arial", color }).setOrigin(0.5).setAngle(-8).setScale(1.6).setAlpha(0).setDepth(30);
+    const stamp = this.add.text(0, 0, label, { font: "bold 21px Arial", color }).setOrigin(0.5).setAngle(-8).setScale(1.6).setAlpha(0).setDepth(30);
     this.manifestContainer.add(stamp);
     this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 200 });
     await this.delay(200);
@@ -930,19 +930,19 @@ export class Level35Scene extends Phaser.Scene {
     g.lineStyle(1, C_WALL_STROKE, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(16, 12, "THE NIGHT SHIFT", { font: "bold 15px Arial", color: "#b0bec5" }).setDepth(50);
-    this.add.text(16, 32, "Tuning Phase — Scanner Methods: nextInt() / nextDouble() / nextLine()", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(16, 12, "THE NIGHT SHIFT", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(50);
+    this.add.text(16, 32, "Tuning Phase — Scanner Methods: nextInt() / nextDouble() / nextLine()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
 
-    this.waveText = this.add.text(W / 2, 18, "WAVE 1 / 3", { font: "bold 14px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
+    this.waveText = this.add.text(W / 2, 18, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
     this._waveSquares = [];
     for (let i = 0; i < 5; i++) {
       const sq = this.add.rectangle(W / 2 - 44 + i * 22, 42, 10, 10, 0x2a2f36).setDepth(50).setStrokeStyle(1, 0x546e7a);
       this._waveSquares.push(sq);
     }
 
-    this.add.text(1060, 8, "SCORE", { font: "9px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 18px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 12px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
+    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
+    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 3; i++) {
@@ -1000,7 +1000,7 @@ export class Level35Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "13px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
+    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
     const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
@@ -1050,13 +1050,13 @@ export class Level35Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "bold 10px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "bold 12px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(1800, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 13px Arial", hold = 1400) {
+  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
     const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 360 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
@@ -1235,7 +1235,7 @@ export class Level35Scene extends Phaser.Scene {
     g.fillRoundedRect(-260, -30, 520, 60, 10);
     g.lineStyle(2, C_GOLD, 1);
     g.strokeRoundedRect(-260, -30, 520, 60, 10);
-    const t = this.add.text(0, 0, text, { font: "bold 20px Arial", color: HEX_GOLD }).setOrigin(0.5);
+    const t = this.add.text(0, 0, text, { font: "bold 21px Arial", color: HEX_GOLD }).setOrigin(0.5);
     c.add([g, t]);
     await new Promise((res) => {
       this.tweens.add({
@@ -1384,7 +1384,7 @@ export class Level35Scene extends Phaser.Scene {
         this.nozzleGlow(method, false);
         await this.bufferBeat(450);
       } else if (step.type === "print") {
-        this.createFloatingText(MACHINE_X, MACHINE_Y + 100, `→ ${step.text}`, HEX_GOLD, "bold 15px Courier New", 1000);
+        this.createFloatingText(MACHINE_X, MACHINE_Y + 100, `→ ${step.text}`, HEX_GOLD, "bold 17px Courier New", 1000);
         await this.delay(350);
       }
     }
@@ -1427,7 +1427,7 @@ export class Level35Scene extends Phaser.Scene {
       const label = opt.label || opt.value;
       const isString = opt.value.startsWith('"');
       const color = opt.value === "Error" ? HEX_RED : isString ? HEX_LINE : /^-?\d+\.\d/.test(opt.value) ? HEX_DOUBLE : /^-?\d+$/.test(opt.value) ? HEX_INT : "#e0e0e0";
-      const txt = this.add.text(0, 0, label, { font: "bold 15px Courier New", color }).setOrigin(0.5);
+      const txt = this.add.text(0, 0, label, { font: "bold 17px Courier New", color }).setOrigin(0.5);
       c.add([g, txt]);
       c.setSize(w, h);
       c.setInteractive({ useHandCursor: true });
@@ -1463,7 +1463,7 @@ export class Level35Scene extends Phaser.Scene {
     await this.delay(150);
     if (!this._alive) return;
     await this.runSnippetReveal(config);
-    if (config.revealNote) this.createFloatingText(MACHINE_X, MACHINE_Y + 100, config.revealNote, HEX_GRAY, "11px Arial", 2600);
+    if (config.revealNote) this.createFloatingText(MACHINE_X, MACHINE_Y + 100, config.revealNote, HEX_GRAY, "13px Arial", 2600);
     await this.delay(500);
     if (!this._alive) return;
 
@@ -1528,7 +1528,7 @@ export class Level35Scene extends Phaser.Scene {
       g.strokeRoundedRect(-w / 2, -h / 2, w, h, 12);
     };
     draw(false);
-    const t = this.add.text(0, 0, label, { font: "bold 17px Arial", color: Phaser.Display.Color.IntegerToColor(colorHex).rgba }).setOrigin(0.5);
+    const t = this.add.text(0, 0, label, { font: "bold 19px Arial", color: Phaser.Display.Color.IntegerToColor(colorHex).rgba }).setOrigin(0.5);
     c.add([g, t]);
     c.setSize(w, h);
     c.setInteractive({ useHandCursor: true });
@@ -1580,7 +1580,7 @@ export class Level35Scene extends Phaser.Scene {
     } else {
       await this.runIntake(method, targetKey);
     }
-    if (config.revealNote) this.createFloatingText(MACHINE_X, MACHINE_Y + 100, config.revealNote, HEX_GRAY, "11px Arial", 2600);
+    if (config.revealNote) this.createFloatingText(MACHINE_X, MACHINE_Y + 100, config.revealNote, HEX_GRAY, "13px Arial", 2600);
     await this.delay(450);
     if (!this._alive) return;
 
@@ -1616,7 +1616,7 @@ export class Level35Scene extends Phaser.Scene {
     g.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
     g.lineStyle(2, HEX_MAGENTA === "#ff4081" ? 0xff4081 : C_PURPLE, 1);
     g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
-    const header = this.add.text(0, -h / 2 + 14, "CLICK THE BUG", { font: "bold 13px Arial", color: HEX_MAGENTA }).setOrigin(0.5);
+    const header = this.add.text(0, -h / 2 + 14, "CLICK THE BUG", { font: "bold 15px Arial", color: HEX_MAGENTA }).setOrigin(0.5);
     this.tweens.add({ targets: header, alpha: 0.5, duration: 500, yoyo: true, repeat: -1 });
     this.manifestContainer.add([g, header]);
     this.manifestLineTexts = [];
@@ -1624,7 +1624,7 @@ export class Level35Scene extends Phaser.Scene {
     config.manifestLines.forEach((line, i) => {
       const y = -h / 2 + 40 + i * 26;
       const lineIsBug = config.faultLine ? i + 1 === config.faultLine : line.includes(config.faultToken);
-      const t = this.add.text(0, y, line, { font: "bold 14px Courier New", color: "#e0e0e0" }).setOrigin(0.5);
+      const t = this.add.text(0, y, line, { font: "bold 16px Courier New", color: "#e0e0e0" }).setOrigin(0.5);
       t.setInteractive({ useHandCursor: true });
       t.on("pointerover", () => { if (!this.inputLocked) t.setColor(HEX_GOLD); });
       t.on("pointerout", () => { if (!this.inputLocked) t.setColor("#e0e0e0"); });
@@ -1653,7 +1653,7 @@ export class Level35Scene extends Phaser.Scene {
 
     if (correct) {
       lineText.setColor(HEX_GREEN_BRIGHT);
-      const fixed = this.add.text(lineText.x, lineText.y - 20, config.fixedToken, { font: "bold 13px Courier New", color: HEX_GREEN_BRIGHT }).setOrigin(0.5).setAlpha(0);
+      const fixed = this.add.text(lineText.x, lineText.y - 20, config.fixedToken, { font: "bold 15px Courier New", color: HEX_GREEN_BRIGHT }).setOrigin(0.5).setAlpha(0);
       this.manifestContainer.add(fixed);
       this.tweens.add({ targets: fixed, alpha: 1, y: lineText.y - 24, duration: 250 });
       await this.stampManifest("processed");
@@ -1699,8 +1699,8 @@ export class Level35Scene extends Phaser.Scene {
   scoreForAttempt(timePctUsed) {
     let points = 100 * this.getComboMultiplier();
     const apertureRemaining = 1 - timePctUsed;
-    if (apertureRemaining > 0.6) { points += 50; this.fastBonusCount++; this.createFloatingText(MACHINE_X, MACHINE_Y - 110, "⚡ EXPRESS +50", HEX_GOLD, "bold 14px Arial", 1000); }
-    else if (apertureRemaining > 0.3) { points += 25; this.fastBonusCount++; this.createFloatingText(MACHINE_X, MACHINE_Y - 110, "⚡ +25", HEX_GOLD, "bold 13px Arial", 900); }
+    if (apertureRemaining > 0.6) { points += 50; this.fastBonusCount++; this.createFloatingText(MACHINE_X, MACHINE_Y - 110, "⚡ EXPRESS +50", HEX_GOLD, "bold 16px Arial", 1000); }
+    else if (apertureRemaining > 0.3) { points += 25; this.fastBonusCount++; this.createFloatingText(MACHINE_X, MACHINE_Y - 110, "⚡ +25", HEX_GOLD, "bold 15px Arial", 900); }
     return points;
   }
 
@@ -1765,7 +1765,7 @@ export class Level35Scene extends Phaser.Scene {
       this.updateTimerRing(0);
       this.clearTape();
       this.lamps.forEach((l, i) => this.time.delayedCall(i * 300, () => this.tweens.add({ targets: l.cone, fillAlpha: 0, duration: 400 })));
-      const tag = this.add.text(PORT_X, PORT_Y + 70, "CLOSED — NEXT SHIFT 06:00", { font: "bold 9px Arial", color: HEX_GRAY }).setOrigin(0.5).setDepth(30).setAlpha(0);
+      const tag = this.add.text(PORT_X, PORT_Y + 70, "CLOSED — NEXT SHIFT 06:00", { font: "bold 11px Arial", color: HEX_GRAY }).setOrigin(0.5).setDepth(30).setAlpha(0);
       this.tweens.add({ targets: tag, alpha: 1, duration: 300 });
       this.tweens.add({ targets: tag, angle: 3, duration: 1200, yoyo: true, repeat: -1 });
       await this.delay(600);
@@ -1775,9 +1775,10 @@ export class Level35Scene extends Phaser.Scene {
       this.tweens.add({ targets: ov, fillAlpha: 0.87, duration: 500 });
       const title = this.add.text(640, 240, "SHIFT ABANDONED", { font: "bold 40px Arial", color: HEX_RED }).setOrigin(0.5).setScale(0).setDepth(91);
       this.tweens.add({ targets: title, scale: 1.1, duration: 400, ease: "Back.easeOut", onComplete: () => this.tweens.add({ targets: title, scale: 1, duration: 120 }) });
-      this.add.text(640, 310, `Score: ${this.score}`, { font: "20px Arial", color: "#ffffff" }).setOrigin(0.5).setDepth(91);
-      this.add.text(640, 350, `Deliveries Processed: ${this.currentRound} / 15`, { font: "16px Arial", color: HEX_GRAY }).setOrigin(0.5).setDepth(91);
-      this._makeButton(640, 420, "CLOCK BACK IN", 200, 50, { stroke: C_RED, textColor: HEX_RED }, () => this.scene.restart());
+      this.add.text(640, 310, `Score: ${this.score}`, { font: "21px Arial", color: "#ffffff" }).setOrigin(0.5).setDepth(91);
+      this.add.text(640, 350, `Deliveries Processed: ${this.currentRound} / 15`, { font: "18px Arial", color: HEX_GRAY }).setOrigin(0.5).setDepth(91);
+      this._makeButton(525, 420, "CLOCK BACK IN", 200, 50, { stroke: C_RED, textColor: HEX_RED }, () => this.scene.restart());
+      this._makeButton(755, 420, "RETURN TO MENU", 200, 50, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.start("MenuScene"));
     })();
   }
 
@@ -1844,10 +1845,10 @@ export class Level35Scene extends Phaser.Scene {
     const avgResponseSec = ((this.totalTimePctUsed / 15) * (WAVE_TIME[2] / 1000)).toFixed(1);
     const lines = [`ACCURACY: ${acc}%`, `AVG RESPONSE: ${avgResponseSec}s`, `EXPRESS BONUSES: ${this.fastBonusCount}`, `BEST COMBO: ×${this.getComboMultiplierFor(this.maxCombo)}`];
     lines.forEach((s, i) => {
-      const t = this.add.text(500, 185 + i * 26, s, { font: "14px Arial", color: HEX_GRAY }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
+      const t = this.add.text(500, 185 + i * 26, s, { font: "16px Arial", color: HEX_GRAY }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
       this.tweens.add({ targets: t, alpha: 1, duration: 250, delay: 300 + i * 130 });
     });
-    const totalText = this.add.text(500, 185 + 4 * 26, "TOTAL: 0", { font: "bold 22px Arial", color: HEX_GOLD }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
+    const totalText = this.add.text(500, 185 + 4 * 26, "TOTAL: 0", { font: "bold 23px Arial", color: HEX_GOLD }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: totalText, alpha: 1, duration: 250, delay: 900 });
     const counter = { v: 0 };
     this.tweens.add({ targets: counter, v: this.score, duration: 1000, delay: 900, onUpdate: () => totalText.setText(`TOTAL: ${Math.round(counter.v)}`) });
@@ -1867,10 +1868,10 @@ export class Level35Scene extends Phaser.Scene {
     bg.strokeCircle(0, 0, 30);
     bg.lineStyle(1.5, C_GREEN, 1);
     bg.strokeCircle(0, 0, 14);
-    const enter = this.add.text(0, 0, "⏎", { font: "bold 13px Arial", color: HEX_NEWLINE }).setOrigin(0.5);
+    const enter = this.add.text(0, 0, "⏎", { font: "bold 15px Arial", color: HEX_NEWLINE }).setOrigin(0.5);
     badge.add([bg, enter]);
     this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2000 });
-    const badgeLbl = this.add.text(640, 458, "SCANNER SCHEMA TUNED", { font: "bold 13px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
+    const badgeLbl = this.add.text(640, 458, "SCANNER SCHEMA TUNED", { font: "bold 15px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2150 });
 
     this._makeButton(500, 500, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
@@ -1898,7 +1899,7 @@ export class Level35Scene extends Phaser.Scene {
       g.strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
     };
     draw(false);
-    const t = this.add.text(0, 0, label, { font: "bold 15px Arial", color: style.textColor }).setOrigin(0.5);
+    const t = this.add.text(0, 0, label, { font: "bold 17px Arial", color: style.textColor }).setOrigin(0.5);
     c.add([g, t]);
     c.setSize(w, h);
     c.setInteractive({ useHandCursor: true });

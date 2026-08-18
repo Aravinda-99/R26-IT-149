@@ -12,7 +12,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     // ── Loading bar ──
-    const w = 800, h = 600;
+    const w = 1280, h = 720;
     const barW = 400, barH = 24;
     const barX = (w - barW) / 2;
     const barY = h / 2;

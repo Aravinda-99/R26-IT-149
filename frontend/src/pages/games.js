@@ -57,11 +57,137 @@ function launchGame(section) {
     document.getElementById("phaser-container")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+/**
+ * Open a module's game in a brand-new browser tab.
+ * The app has no URL router, so we pass the module as a query param
+ * (?launchModule=section) that main.js reads on load to auto-launch it.
+ */
+function openModuleInNewTab(section) {
+    const url = new URL(window.location.href);
+    url.search = "";
+    url.searchParams.set("launchModule", section);
+    window.open(url.toString(), "_blank", "noopener");
+}
+
+/**
+ * Called by main.js on page load when the URL carries ?launchModule=section
+ * (i.e. this tab was opened via openModuleInNewTab).
+ */
+export function launchModuleFromQuery(section) {
+    launchGame(section);
+}
+
 function wireModuleButtons(launchId, closeId, section) {
-    document.getElementById(launchId)?.addEventListener("click", () => launchGame(section));
+    document.getElementById(launchId)?.addEventListener("click", () => openModuleInNewTab(section));
     document.getElementById(closeId)?.addEventListener("click", () => {
         destroyGame();
         hideGameContainer();
+    });
+}
+
+/**
+ * Method wings that split into multiple sub-method groups (String.length()
+ * vs String.charAt() vs case methods, etc.) — each needs its own selection
+ * screen before picking a specific 3-level trilogy to launch.
+ * Scanner Methods Wing has only one group, so it skips this tier entirely.
+ */
+const METHOD_GROUPS = {
+    stringmethods: {
+        title: "📝 String Methods Wing", color: "#f59e0b",
+        groups: [
+            { key: "stringmethods_length", title: "String.length()", desc: "The Scan Chamber → The Inspection Line → The Control Room", badge: "🔍 length() Mastery" },
+            { key: "stringmethods_charat", title: "String.charAt()", desc: "The Retrieval Claw → The Claw Trials → The Workshop", badge: "🔧 charAt() Mastery" },
+            { key: "stringmethods_case", title: "toUpperCase() / toLowerCase()", desc: "The Case Press → The Press Gauntlet → The Foundry", badge: "⚒️ Case Mastery" },
+        ],
+    },
+    outputmethods: {
+        title: "📢 Output Methods Wing", color: "#fb7185",
+        groups: [
+            { key: "outputmethods_println", title: "println()", desc: "The Broadcast Tower → The Signal Room → The Studio", badge: "🎬 println() Mastery" },
+            { key: "outputmethods_print", title: "print()", desc: "The Whisper Booth → The Live Feed → The Newsroom", badge: "📰 print() Mastery" },
+            { key: "outputmethods_printf", title: "printf()", desc: "The Composing Room → The Presses → The Print Floor", badge: "🖨️ printf() Mastery" },
+        ],
+    },
+    arraylistmethods: {
+        title: "📚 ArrayList Methods Wing", color: "#a78bfa",
+        groups: [
+            { key: "arraylistmethods_add", title: "add()", desc: "The Archive → The Card Catalog → The Reading Room", badge: "🔑 add() Mastery" },
+            { key: "arraylistmethods_get", title: "get()", desc: "The Consultation Desk → The Stacks → The Restoration Room", badge: "🔎 get() Mastery" },
+            { key: "arraylistmethods_remove", title: "remove()", desc: "The Deaccession Office → The Clearing Sale → The Grand Reshelving", badge: "🗝️ remove() Mastery" },
+        ],
+    },
+    mathclassmethods: {
+        title: "🔭 Math Class Methods Wing", color: "#60a5fa",
+        groups: [
+            { key: "mathclassmethods_maxmin", title: "max() / min()", desc: "The Observatory → The Meridian Trials → The Calculation Chamber", badge: "🏆 max()/min() Mastery" },
+            { key: "mathclassmethods_abs", title: "abs()", desc: "The Distance Hall → The Standards Office", badge: "🏛️ abs() Mastery" },
+            { key: "mathclassmethods_pow", title: "pow()", desc: "The Power Tower → The Exponent Trials → The Formula Works", badge: "🏗️ pow() Mastery" },
+        ],
+    },
+    arraymethods: {
+        title: "🗃️ Array Methods Wing", color: "#c8a05a",
+        groups: [
+            { key: "arraymethods_tostring", title: "toString()", desc: "The Specimen Hall", badge: "🏺 toString() Schema" },
+            { key: "arraymethods_sort", title: "sort()", desc: "The Sorting Room → The Classification Trials → The Arrangement Workshop", badge: "🗂️ sort() Mastery" },
+            { key: "arraymethods_copyof", title: "copyOf()", desc: "The Copy Bench → The Replication Trials → The Curator's Bureau", badge: "🗝️ copyOf() Mastery" },
+        ],
+    },
+    typeconversionmethods: {
+        title: "🔥 Type Conversion Methods Wing", color: "#b87333",
+        groups: [
+            { key: "typeconversionmethods_parseint", title: "parseInt()", desc: "The Integer Furnace → The Smelting Trials → The Conversion Works", badge: "⚒️ parseInt() Mastery" },
+            { key: "typeconversionmethods_parsedouble", title: "parseDouble()", desc: "The Decimal Crucible → The Precision Trials → The Decimal Works", badge: "⚖️ parseDouble() Mastery" },
+            { key: "typeconversionmethods_valueof", title: "valueOf()", desc: "The Inscription Press → The Inscription Trials → The Assay Bureau", badge: "⛓️ valueOf() Mastery" },
+        ],
+    },
+    charactermethods: {
+        title: "🔎 Character Methods Wing", color: "#4fc3f7",
+        groups: [
+            { key: "charactermethods_isdigit", title: "isDigit()", desc: "The Numeral Loupe → The Numeral Trials → The Classification Works", badge: "🔎 isDigit() Mastery" },
+            { key: "charactermethods_isletter", title: "isLetter()", desc: "The Alphabet Lens → The Letter Trials → The Alphabet Works", badge: "🔷 isLetter() Mastery" },
+            { key: "charactermethods_isuppercase", title: "isUpperCase()", desc: "The Case Prism → The Case Trials → The Grand Classification", badge: "👑 isUpperCase() Mastery" },
+        ],
+    },
+};
+
+function renderMethodGroupSelection(container, wingKey) {
+    const wing = METHOD_GROUPS[wingKey];
+    if (!wing) return;
+
+    let html = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+            <div>
+                <h1>${wing.title}</h1>
+                <p style="color: var(--text-secondary);">Pick a method to open its 3-level Schema Theory trilogy</p>
+            </div>
+            <button id="back-to-wings-btn" class="btn" style="background: var(--border-color); color: var(--text-primary); padding: 0.5rem 1rem;">← Back to Methods Wings</button>
+        </div>
+    `;
+
+    wing.groups.forEach((group, i) => {
+        html += `
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: ${wing.color}; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: ${wing.color}; font-size: 1.15rem; margin-bottom: 0.35rem;">${group.title}</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">${group.desc}</p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">Badge: ${group.badge}</p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-group-${i}-btn" style="background: ${wing.color};">Launch Module</button>
+                    <button class="btn" id="close-group-${i}-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    wing.groups.forEach((group, i) => {
+        wireModuleButtons(`launch-group-${i}-btn`, `close-group-${i}-btn`, group.key);
+    });
+
+    document.getElementById("back-to-wings-btn")?.addEventListener("click", () => {
+        showCategoryModules(container, "methods");
     });
 }
 
@@ -112,11 +238,11 @@ function renderCategoryView(container) {
             </div>
 
             <!-- Methods Category -->
-            <div class="card" id="category-methods" style="cursor: pointer; border-color: #f59e0b; opacity: 0.6; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem; filter: grayscale(50%);">🔧</div>
+            <div class="card" id="category-methods" style="cursor: pointer; border-color: #f59e0b; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔧</div>
                 <h3 style="color: #f59e0b; font-size: 1.25rem; margin-bottom: 0.5rem;">Methods</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem;">Master function design & reuse</p>
-                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">Coming Soon</p>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Master built-in Java methods: String, Scanner, Output, ArrayList, Math, Arrays, Type Conversion & Character</p>
+                <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">8 Mastery Wings • 64 Levels</p>
             </div>
         </div>
     `;
@@ -127,9 +253,10 @@ function renderCategoryView(container) {
     document.getElementById("category-loops")?.addEventListener("click", () => showCategoryModules(container, "loops"));
     document.getElementById("category-whileloops")?.addEventListener("click", () => showCategoryModules(container, "whileloops"));
     document.getElementById("category-arrays")?.addEventListener("click", () => showCategoryModules(container, "arrays"));
+    document.getElementById("category-methods")?.addEventListener("click", () => showCategoryModules(container, "methods"));
 
     // Add visual feedback on hover for available categories
-    ["category-variables", "category-operators", "category-loops", "category-whileloops", "category-arrays"].forEach(id => {
+    ["category-variables", "category-operators", "category-loops", "category-whileloops", "category-arrays", "category-methods"].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener("mouseover", () => el.style.transform = "translateY(-4px)");
@@ -296,6 +423,144 @@ function renderModuleView(container, category) {
                 </div>
             </div>
         `;
+    } else if (category === "methods") {
+        html += `
+            <!-- String Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #f59e0b; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #f59e0b; font-size: 1.15rem; margin-bottom: 0.35rem;">📝 String Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3×3-Level Schema Theory Course: <b>length()</b> → <b>charAt()</b> → <b>toUpperCase()/toLowerCase()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🔍 length() Mastery &nbsp; 🔧 charAt() Mastery &nbsp; ⚒️ Case Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-stringmethods-module-btn" style="background: #f59e0b;">Launch Module</button>
+                    <button class="btn" id="close-stringmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Scanner Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #38bdf8; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #38bdf8; font-size: 1.15rem; margin-bottom: 0.35rem;">📥 Scanner Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3-Level Schema Theory Course: <b>The Intake Dock</b> → <b>The Night Shift</b> → <b>The Front Desk</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🏅 Scanner Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-scannermethods-module-btn" style="background: #38bdf8;">Launch Module</button>
+                    <button class="btn" id="close-scannermethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Output Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #fb7185; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #fb7185; font-size: 1.15rem; margin-bottom: 0.35rem;">📢 Output Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3×3-Level Schema Theory Course: <b>println()</b> → <b>print()</b> → <b>printf()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🎬 println() Mastery &nbsp; 📰 print() Mastery &nbsp; 🖨️ printf() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-outputmethods-module-btn" style="background: #fb7185;">Launch Module</button>
+                    <button class="btn" id="close-outputmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- ArrayList Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #a78bfa; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #a78bfa; font-size: 1.15rem; margin-bottom: 0.35rem;">📚 ArrayList Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3×3-Level Schema Theory Course: <b>add()</b> → <b>get()</b> → <b>remove()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🔑 add() Mastery &nbsp; 🔎 get() Mastery &nbsp; 🗝️ remove() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-arraylistmethods-module-btn" style="background: #a78bfa;">Launch Module</button>
+                    <button class="btn" id="close-arraylistmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Math Class Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #60a5fa; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #60a5fa; font-size: 1.15rem; margin-bottom: 0.35rem;">🔭 Math Class Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        Schema Theory Course: <b>max()/min()</b> → <b>abs()</b> → <b>pow()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🏆 max()/min() Mastery &nbsp; 🏛️ abs() Mastery &nbsp; 🏗️ pow() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-mathclassmethods-module-btn" style="background: #60a5fa;">Launch Module</button>
+                    <button class="btn" id="close-mathclassmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Array Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #c8a05a; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #c8a05a; font-size: 1.15rem; margin-bottom: 0.35rem;">🗃️ Array Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        Schema Theory Course: <b>toString()</b> → <b>sort()</b> → <b>copyOf()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🏺 toString() Schema &nbsp; 🗂️ sort() Mastery &nbsp; 🗝️ copyOf() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-arraymethods-module-btn" style="background: #c8a05a;">Launch Module</button>
+                    <button class="btn" id="close-arraymethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Type Conversion Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #b87333; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #b87333; font-size: 1.15rem; margin-bottom: 0.35rem;">🔥 Type Conversion Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3×3-Level Schema Theory Course: <b>parseInt()</b> → <b>parseDouble()</b> → <b>valueOf()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: ⚒️ parseInt() Mastery &nbsp; ⚖️ parseDouble() Mastery &nbsp; ⛓️ valueOf() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-typeconversionmethods-module-btn" style="background: #b87333;">Launch Module</button>
+                    <button class="btn" id="close-typeconversionmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+
+            <!-- Character Methods Wing -->
+            <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #4fc3f7; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="color: #4fc3f7; font-size: 1.15rem; margin-bottom: 0.35rem;">🔎 Character Methods Wing</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        3×3-Level Schema Theory Course: <b>isDigit()</b> → <b>isLetter()</b> → <b>isUpperCase()</b>
+                    </p>
+                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
+                        Badges: 🔎 isDigit() Mastery &nbsp; 🔷 isLetter() Mastery &nbsp; 👑 isUpperCase() Mastery
+                    </p>
+                </div>
+                <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+                    <button class="btn btn-primary" id="launch-charactermethods-module-btn" style="background: #4fc3f7;">Launch Module</button>
+                    <button class="btn" id="close-charactermethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
+                </div>
+            </div>
+        `;
     } else {
         html += `
             <div class="card" style="padding: 3rem; text-align: center; border-color: var(--border-color);">
@@ -318,6 +583,18 @@ function renderModuleView(container, category) {
     wireModuleButtons("launch-loops-module-btn", "close-loops-module-btn", "loops");
     wireModuleButtons("launch-whileloops-module-btn", "close-whileloops-module-btn", "whileloops");
     wireModuleButtons("launch-arrays-module-btn", "close-arrays-module-btn", "arrays");
+    // Multi-group wings open a method-selection screen instead of launching directly.
+    ["stringmethods", "outputmethods", "arraylistmethods", "mathclassmethods", "arraymethods", "typeconversionmethods", "charactermethods"].forEach((wingKey) => {
+        document.getElementById(`launch-${wingKey}-module-btn`)?.addEventListener("click", () => {
+            renderMethodGroupSelection(container, wingKey);
+        });
+        document.getElementById(`close-${wingKey}-module-btn`)?.addEventListener("click", () => {
+            destroyGame();
+            hideGameContainer();
+        });
+    });
+    // Scanner Methods Wing has only one group — launch it directly.
+    wireModuleButtons("launch-scannermethods-module-btn", "close-scannermethods-module-btn", "scannermethods");
 
     // Wire back button
     document.getElementById("back-to-categories-btn")?.addEventListener("click", () => {
@@ -345,7 +622,7 @@ function getCategoryDescription(category) {
         loops: "Master iteration and repetition patterns",
         whileloops: "Master condition-driven iteration with while loops",
         arrays: "Learn collections and indexing",
-        methods: "Master function design and reuse"
+        methods: "Master built-in Java methods across 8 wings: String, Scanner, Output, ArrayList, Math, Arrays, Type Conversion & Character"
     };
     return descriptions[category] || "";
 }
