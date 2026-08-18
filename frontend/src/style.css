@@ -30,8 +30,9 @@ body {
 
 /* --- Phaser Container (fixed canvas sizing) --- */
 #phaser-container {
-    width: 800px;
-    height: 600px;
+    width: 1280px;
+    height: 720px;
+    max-width: 100%;
     margin: 1.5rem auto 2rem auto;
     border-radius: 16px;
     /* visible: Phaser DOM overlays (e.g. Level 9 editor) must not clip on the right */
@@ -44,8 +45,9 @@ body {
 
 #phaser-container canvas {
     display: block;
-    width: 800px !important;
-    height: 600px !important;
+    width: 1280px !important;
+    height: 720px !important;
+    max-width: 100%;
     border-radius: 16px;
 }
 

@@ -16,14 +16,14 @@ export class UIScene extends Phaser.Scene {
 
   create() {
     // ── Top Bar Background ──
-    this.add.rectangle(400, 28, 800, 56, 0x0f172a, 0.92).setDepth(900);
+    this.add.rectangle(640, 28, 1280, 56, 0x0f172a, 0.92).setDepth(900);
 
     // ── Progress Bar ──
-    this.add.rectangle(400, 4, 800, 8, 0x1e293b).setOrigin(0.5, 0).setDepth(901);
+    this.add.rectangle(640, 4, 1280, 8, 0x1e293b).setOrigin(0.5, 0).setDepth(901);
     this.progressBar = this.add.rectangle(0, 4, 0, 8, 0x4ade80).setOrigin(0, 0).setDepth(902);
 
     // ── Level Label ──
-    this.levelLabel = this.add.text(400, 30, "", {
+    this.levelLabel = this.add.text(640, 30, "", {
       fontFamily: "Inter, Arial, sans-serif",
       fontSize: "16px",
       color: "#38bdf8",
@@ -41,7 +41,7 @@ export class UIScene extends Phaser.Scene {
     }).setDepth(903);
 
     // ── Lives (numeric, no heart icons) ──
-    this.livesText = this.add.text(784, 16, "Lives: 0", {
+    this.livesText = this.add.text(1264, 16, "Lives: 0", {
       fontFamily: "monospace",
       fontSize: "16px",
       color: "#f87171",
@@ -52,7 +52,7 @@ export class UIScene extends Phaser.Scene {
     // Combo UI removed per request; update logic retained but disabled in _syncCombo().
 
     // ── Badge popup container (hidden) ──
-    this.badgePopup = this.add.container(400, 300).setDepth(950).setAlpha(0);
+    this.badgePopup = this.add.container(640, 360).setDepth(950).setAlpha(0);
 
     // ── Listen to GameManager events ──
     this._bindEvents();
@@ -107,7 +107,7 @@ export class UIScene extends Phaser.Scene {
     const completed = GameManager.get("levelsCompleted") || [false, false, false, false, false, false, false, false, false, false, false, false];
     const totalLevels = completed.length || 6;
     const pct = completed.filter(Boolean).length / totalLevels;
-    const targetWidth = pct * 800;
+    const targetWidth = pct * 1280;
 
     this.tweens.add({
       targets: this.progressBar,
