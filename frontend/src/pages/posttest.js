@@ -348,6 +348,10 @@ function showResults(result) {
     }
     const calcLevel = getCalcLevel(finalUnderstandingScore);
 
+    const ml = result.ml_prediction || {};
+    const nextAction = result.next_action || ml.next_action || (passed ? "DONE" : "LEARN_AGAIN");
+    const isDone = nextAction === "DONE";
+
     resultContainer.innerHTML = `
         <div class="c4-result-card" style="animation: fadeSlideIn 0.4s ease-out;">
             <!-- Header -->
@@ -363,8 +367,20 @@ function showResults(result) {
                     <span class="c4-result-pct">${Math.round(scorePct)}%</span>
                 </div>
                 <span class="c4-result-badge" style="background: ${level.color}15; color: ${level.color}; border: 1px solid ${level.color}30;">
-                    ${level.label}
+                    ${ml.mastery_level || level.label}
                 </span>
+            </div>
+
+            <!-- ML Validation Summary Badge -->
+            <div class="c4-ml-badge-box" style="margin: 1rem 0; padding: 0.8rem 1rem; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 0.6rem; text-align: center;">
+                <div style="font-size: 0.75rem; color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">⚡ ML Schema Mastery Validation</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: white; margin-top: 0.2rem;">
+                    Mastery: <span style="color: ${level.color}">${ml.mastery_level || level.label}</span>
+                </div>
+                <div style="font-size: 0.85rem; color: #e2e8f0; margin-top: 0.2rem;">
+                    Action: <strong>${nextAction}</strong> 
+                    ${ml.level_confidence ? `<span style="font-size: 0.75rem; color: #a78bfa; margin-left: 4px;">(${Math.round(ml.level_confidence * 100)}% Confidence)</span>` : ''}
+                </div>
             </div>
 
             <!-- Summary stats -->
@@ -392,7 +408,7 @@ function showResults(result) {
 
             <!-- Actions -->
             <div class="c4-result-actions">
-                ${passed
+                ${isDone
                     ? `<button class="btn c4-action-btn c4-btn-done" id="posttest-done-btn"><i class="fa-solid fa-check"></i> Done</button>`
                     : `<button class="btn btn-primary c4-action-btn" id="posttest-learn-again-btn"><i class="fa-solid fa-rotate-left"></i> Learn Again</button>`
                 }

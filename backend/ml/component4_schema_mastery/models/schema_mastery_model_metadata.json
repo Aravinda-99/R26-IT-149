@@ -1,0 +1,75 @@
+{
+  "best_model": "random_forest",
+  "dataset_path": "ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv",
+  "dataset_rows": 24032,
+  "unique_students": 506,
+  "features": [
+    "concept_name",
+    "pre_test_score",
+    "attempt_count",
+    "time_taken_seconds",
+    "error_type",
+    "error_pattern_score",
+    "post_test_correct_count",
+    "post_test_nearly_correct_count",
+    "post_test_wrong_count",
+    "post_test_clearly_wrong_count",
+    "post_test_score"
+  ],
+  "target": "future_success",
+  "score_scale": "0.0-1.0",
+  "validation_method": "StratifiedGroupKFold grouped by student_id, n_splits=5",
+  "baseline_results": {
+    "accuracy": 0.765021637816245,
+    "balanced_accuracy": 0.535837932422889,
+    "macro_f1": 0.5036590363155022,
+    "precision_macro": 0.773203025258346,
+    "recall_macro": 0.535837932422889
+  },
+  "model_results": {
+    "logistic_regression": {
+      "accuracy": {
+        "mean": 0.9817736586038741,
+        "std": 0.0013858982259654425
+      },
+      "balanced_accuracy": {
+        "mean": 0.9828426282255822,
+        "std": 0.0018937682475482383
+      },
+      "macro_f1": {
+        "mean": 0.9759872793868294,
+        "std": 0.0018094095990288644
+      },
+      "precision_macro": {
+        "mean": 0.9696172012628397,
+        "std": 0.0019480454423158782
+      },
+      "recall_macro": {
+        "mean": 0.9828426282255822,
+        "std": 0.0018937682475482383
+      }
+    },
+    "random_forest": {
+      "accuracy": {
+        "mean": 0.9851369725331448,
+        "std": 0.002446879364020176
+      },
+      "balanced_accuracy": {
+        "mean": 0.9878690102838746,
+        "std": 0.002246044030318593
+      },
+      "macro_f1": {
+        "mean": 0.9804475050764129,
+        "std": 0.0031491910194173783
+      },
+      "precision_macro": {
+        "mean": 0.9736020996185226,
+        "std": 0.0041443514692717735
+      },
+      "recall_macro": {
+        "mean": 0.9878690102838746,
+        "std": 0.002246044030318593
+      }
+    }
+  }
+}

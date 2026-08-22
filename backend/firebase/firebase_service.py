@@ -5,13 +5,21 @@ Initializes Firebase Admin and provides a shared Firestore client.
 Place your serviceAccountKey.json in this folder.
 """
 
-import firebase_admin
-from firebase_admin import credentials, firestore
+try:
+    import firebase_admin
+    from firebase_admin import credentials, firestore
+    HAS_FIREBASE = True
+except ImportError:
+    HAS_FIREBASE = False
+    print("[WARN] firebase-admin package not installed. Running in OFFLINE mode.")
 import os
 
 
 def init_firebase():
     """Initialize Firebase Admin SDK. Returns Firestore client or None."""
+    if not HAS_FIREBASE:
+        return None
+
     cred_path = os.getenv(
         "FIREBASE_CREDENTIALS_PATH",
         os.path.join(os.path.dirname(__file__), "serviceAccountKey.json")

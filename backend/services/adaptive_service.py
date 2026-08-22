@@ -10,7 +10,11 @@ from firebase.firebase_service import db
 
 # ── Load trained ML model once when app starts ──────────────────────
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'model.pkl')
-model = joblib.load(MODEL_PATH)
+try:
+    model = joblib.load(MODEL_PATH)
+except Exception as e:
+    print(f"[INFO] Component 1 adaptive model unavailable; using fallback mode. Details: {e}")
+    model = None
 
 TOPICS      = ["variables", "operators", "conditionals", "loops", "arrays", "methods"]
 LABEL_MAP   = {0: 'maintain', 1: 'promote', 2: 'demote'}
@@ -66,9 +70,28 @@ class AdaptiveService:
             current_difficulty (str)  — beginner / intermediate / advanced
             topic_scores      (dict)  — {topic: score} e.g. {"variables": 0.8}
         """
+        curr_diff = session_data.get('current_difficulty', 'beginner')
+        topic_scores = session_data.get('topic_scores') or {}
+        if topic_scores and isinstance(topic_scores, dict):
+            try:
+                next_topic = min(topic_scores, key=topic_scores.get)
+            except Exception:
+                next_topic = 'variables'
+        else:
+            next_topic = 'variables'
+
+        if model is None:
+            return {
+                'action':          'maintain',
+                'next_difficulty': curr_diff,
+                'next_topic':      next_topic,
+                'confidence':      50.0,
+                'current':         curr_diff,
+                'note':            'Fallback mode: ML model not loaded'
+            }
+
         # ── Encode difficulty ────────────────────────────────────────
-        curr_diff   = session_data.get('current_difficulty', 'beginner')
-        diff_enc    = DIFF_ENCODE.get(curr_diff, 0)
+        diff_enc = DIFF_ENCODE.get(curr_diff, 0)
 
         # ── Build feature array (same order as training) ─────────────
         features = [[
@@ -79,10 +102,21 @@ class AdaptiveService:
         ]]
 
         # ── ML model prediction ──────────────────────────────────────
-        prediction    = model.predict(features)[0]
-        probabilities = model.predict_proba(features)[0]
-        action        = LABEL_MAP[int(prediction)]
-        confidence    = round(float(max(probabilities)) * 100, 1)
+        try:
+            prediction    = model.predict(features)[0]
+            probabilities = model.predict_proba(features)[0]
+            action        = LABEL_MAP[int(prediction)]
+            confidence    = round(float(max(probabilities)) * 100, 1)
+        except Exception as e:
+            print(f"[WARN] Adaptive prediction failed: {e}")
+            return {
+                'action':          'maintain',
+                'next_difficulty': curr_diff,
+                'next_topic':      next_topic,
+                'confidence':      50.0,
+                'current':         curr_diff,
+                'note':            f'Fallback mode: {str(e)}'
+            }
 
         # ── Calculate next difficulty ────────────────────────────────
         curr_idx = DIFFICULTY.index(curr_diff) if curr_diff in DIFFICULTY else 0
@@ -92,13 +126,6 @@ class AdaptiveService:
             next_difficulty = DIFFICULTY[max(curr_idx - 1, 0)]
         else:
             next_difficulty = curr_diff
-
-        # ── Find weakest topic to recommend next ─────────────────────
-        topic_scores = session_data.get('topic_scores', {})
-        if topic_scores:
-            next_topic = min(topic_scores, key=topic_scores.get)
-        else:
-            next_topic = 'variables'
 
         return {
             'action':          action,           # promote / maintain / demote

@@ -73,7 +73,7 @@ export const GamificationAPI = {
     getProfile: (userId) => apiRequest(`/gamification/profile/${userId}`),
 };
 
-// --- Component 4: Mastery Tracker ---
+// --- Component 4: Mastery Tracker & Schema Mastery ---
 export const MasteryAPI = {
     getStatus: (userId) => apiRequest(`/mastery/status/${userId}`),
     getStudents: () => apiRequest("/mastery/students"),
@@ -81,6 +81,11 @@ export const MasteryAPI = {
     getQuestions: (concept) => apiRequest(`/mastery/questions/${concept}`),
     submitDiagnostic: (data) => apiRequest("/mastery/diagnostic", "POST", data),
     getHistory: (userId, schema) => apiRequest(`/mastery/history/${userId}/${schema}`),
+    predictSchemaMastery: (data) => apiRequest("/schema-mastery/predict", "POST", data),
+};
+
+export const SchemaMasteryAPI = {
+    predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
 };
 
 // --- Component 5: Auth ---
