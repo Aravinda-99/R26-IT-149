@@ -19,6 +19,7 @@
 
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
+import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 
 const W = 1280, H = 720;
@@ -1610,6 +1611,46 @@ export class Level39Scene extends Phaser.Scene {
     return match;
   }
 
+  /**
+   * Computes the 4 struggle-detection features from the first 3 missions'
+   * attempt history and asks the backend's Isolation Forest model whether
+   * this looks like typical or struggling play. Wired into FusionEngine so
+   * the existing 'fusionAction' subscription can react to it, exactly like
+   * the emotion/fatigue signals. Never throws — a failed/unreachable
+   * backend just means no behavioral signal for this level; face and
+   * fatigue detection keep working on their own regardless.
+   *
+   * This level uses the MISSIONS/currentMission architecture, not
+   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
+   * `round`) and have no `misconceptionTag` field on the main run-outcome
+   * entries. misconception_repeat_count is the structural equivalent: a
+   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
+   * distractor, mirroring "a wrong attempt attributable to a specific
+   * misconception" from the ROUNDS-based levels.
+   */
+  async runBehavioralCheck() {
+    const relevant = this.attemptLog.filter((a) => a.mission <= 3);
+    const attempts_count = relevant.length;
+    const time_taken_seconds = relevant.reduce((sum, a) => sum + a.timeMs, 0) / 1000;
+    const misconception_repeat_count = relevant.filter(
+      (a) => a.result !== "pass" && (a.wrongBlocks || []).some((b) => b && b.tag)
+    ).length;
+    const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count,
+        time_taken_seconds,
+        misconception_repeat_count,
+        combo_breaks,
+      });
+      if (!this._alive) return;
+      GameManager.fusionEngine.checkBehavioral(prediction);
+    } catch (e) {
+      console.warn("Level39Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
+    }
+  }
+
   _resolveRunOutcome(mission, result, wrongBlocksUsed, failedTests, compileErr) {
     const timeMs = Math.round(this.time.now - this.missionStartTime);
     this.attemptLog.push({
@@ -1669,6 +1710,7 @@ export class Level39Scene extends Phaser.Scene {
   }
 
   onMissionComplete() {
+    if (this.currentMission === 2) this.runBehavioralCheck();
     if (this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;

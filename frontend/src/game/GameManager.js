@@ -6,6 +6,7 @@
  */
 
 import { ProgressTracker } from "./ProgressTracker.js";
+import { FusionEngine } from "./FusionEngine.js";
 
 const TOTAL_LEVELS = 88;
 
@@ -16,6 +17,7 @@ const DEFAULT_STATE = {
   lives: 3,
   maxLives: 3,
   combo: 0,
+  comboBreaksThisLevel: 0,
   levelsCompleted: new Array(TOTAL_LEVELS).fill(false),
   levelAccuracy: new Array(TOTAL_LEVELS).fill(0),
   levelAttempts: new Array(TOTAL_LEVELS).fill(0),
@@ -26,6 +28,7 @@ class _GameManager {
   constructor() {
     this.state = { ...DEFAULT_STATE };
     this._listeners = {};
+    this.fusionEngine = new FusionEngine();
   }
 
   // ── State Access ──────────────────────────────────────────────
@@ -65,6 +68,17 @@ class _GameManager {
     return this.state.lives;
   }
 
+  /**
+   * Grants a bonus life (e.g. the BitMenu "extra life" reward). Deliberately
+   * uncapped at maxLives — it's meant as a genuine bonus, not a top-up.
+   */
+  addLife(amount = 1) {
+    this.state.lives += amount;
+    this._emit("livesChange", this.state.lives);
+    this._emit("stateChange", { key: "lives", value: this.state.lives });
+    return this.state.lives;
+  }
+
   addCombo() {
     this.state.combo++;
     this._emit("comboChange", this.state.combo);
@@ -73,7 +87,9 @@ class _GameManager {
 
   resetCombo() {
     this.state.combo = 0;
+    this.state.comboBreaksThisLevel++;
     this._emit("comboChange", 0);
+    this._emit("stateChange", { key: "comboBreaksThisLevel", value: this.state.comboBreaksThisLevel });
   }
 
   getComboMultiplier() {
@@ -109,8 +125,10 @@ class _GameManager {
     this.state.lives = this.state.maxLives;
     this.state.score = 0;
     this.state.combo = 0;
+    this.state.comboBreaksThisLevel = 0;
     this._emit("stateChange", { key: "lives", value: this.state.lives });
     this._emit("stateChange", { key: "score", value: this.state.score });
+    this._emit("stateChange", { key: "comboBreaksThisLevel", value: this.state.comboBreaksThisLevel });
   }
 
   resetAll() {

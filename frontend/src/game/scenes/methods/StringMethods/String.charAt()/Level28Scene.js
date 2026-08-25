@@ -22,6 +22,8 @@
 
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
+import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
+import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 
 const W = 1280, H = 720;
@@ -155,7 +157,8 @@ export class Level28Scene extends Phaser.Scene {
     super({ key: "Level28Scene" });
   }
 
-  init() {
+  init(data = {}) {
+    this._forceTutorial = !!data.forceTutorial;
     this.currentRound = 0;
     this.score = 0;
     this.displayScore = 0;
@@ -205,6 +208,12 @@ export class Level28Scene extends Phaser.Scene {
     this.createClaw();
     this.createResultDisplay();
     this.createHUD();
+    // These 3 files draw hearts as a "❤️" emoji text glyph (font-substituted,
+    // since Arial has no emoji glyphs), which commonly renders its visual ink
+    // a few px below its nominal text-box center -- unlike our vector-drawn
+    // icon, which sits exactly at its given y. Compensating +3px so the two
+    // line up visually; adjust further if still off once you can see it live.
+    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y + 3);
     this.createBit();
     this.setupDragEvents();
 
@@ -612,7 +621,7 @@ export class Level28Scene extends Phaser.Scene {
 
     this.lifeIcons = [];
     for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1195 + i * 28, y: 30 }).setDepth(51);
+      const lg = this.add.graphics({ x: 1175 + i * 28, y: 30 }).setDepth(51);
       lg.lineStyle(2, C_PURPLE, 1);
       lg.beginPath(); lg.arc(-4, 0, 6, Phaser.Math.DegToRad(-40), Phaser.Math.DegToRad(80), false); lg.strokePath();
       lg.beginPath(); lg.arc(4, 0, 6, Phaser.Math.DegToRad(100), Phaser.Math.DegToRad(220), false); lg.strokePath();
@@ -794,7 +803,7 @@ export class Level28Scene extends Phaser.Scene {
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
-    if (done) this.time.delayedCall(300, () => this.startRound(0));
+    if (done && !this._forceTutorial) this.time.delayedCall(300, () => this.startRound(0));
     else this.runTutorial();
   }
 
@@ -1453,6 +1462,36 @@ export class Level28Scene extends Phaser.Scene {
   // EVALUATION
   // ══════════════════════════════════════════════════════════════
 
+  /**
+   * Computes the 4 struggle-detection features from the first 3 rounds'
+   * attempt history and asks the backend's Isolation Forest model whether
+   * this looks like typical or struggling play. Wired into FusionEngine so
+   * the existing 'fusionAction' subscription can react to it, exactly like
+   * the emotion/fatigue signals. Never throws — a failed/unreachable
+   * backend just means no behavioral signal for this level; face and
+   * fatigue detection keep working on their own regardless.
+   */
+  async runBehavioralCheck() {
+    const relevant = this.attemptLog.filter((a) => a.round <= 3);
+    const attempts_count = relevant.length;
+    const time_taken_seconds = relevant.reduce((sum, a) => sum + a.timeMs, 0) / 1000;
+    const misconception_repeat_count = relevant.filter((a) => a.misconceptionTag !== null).length;
+    const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count,
+        time_taken_seconds,
+        misconception_repeat_count,
+        combo_breaks,
+      });
+      if (!this._alive) return;
+      GameManager.fusionEngine.checkBehavioral(prediction);
+    } catch (e) {
+      console.warn("Level28Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
+    }
+  }
+
   logAttempt(cfg, correct, selected, tag) {
     this.roundAttempts++;
     this.attemptLog.push({
@@ -1484,6 +1523,7 @@ export class Level28Scene extends Phaser.Scene {
 
     this.time.delayedCall(1300, () => {
       if (!this._alive || this.gameEnded) return;
+      if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1500,6 +1540,7 @@ export class Level28Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.time.delayedCall(300, () => {
       if (!this._alive || this.gameEnded) return;
+      if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });

@@ -18,7 +18,9 @@
 
 import Phaser from "phaser";
 import { GameManager } from "../../../GameManager.js";
+import { addTutorialReplayButton } from "../../../TutorialReplayButton.js";
 import { BadgeSystem } from "../../../BadgeSystem.js";
+import { WellbeingAPI } from "../../../../api/api.js";
 
 const W = 1280, H = 720;
 
@@ -178,7 +180,8 @@ export class Level34Scene extends Phaser.Scene {
     super({ key: "Level34Scene" });
   }
 
-  init() {
+  init(data = {}) {
+    this._forceTutorial = !!data.forceTutorial;
     this.currentRound = 0;
     this.score = 0;
     this.displayScore = 0;
@@ -234,6 +237,7 @@ export class Level34Scene extends Phaser.Scene {
     this.createContainers();
     this.createSourceDisplay();
     this.createHUD();
+    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y);
     this.createExpressionMonitor();
     this.createBit();
     this.setupDragEvents();
@@ -1028,7 +1032,7 @@ export class Level34Scene extends Phaser.Scene {
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
-    if (done) {
+    if (done && !this._forceTutorial) {
       this.powerOnMachine();
       this.time.delayedCall(300, () => this.startRound(0));
     } else {
@@ -1659,9 +1663,44 @@ export class Level34Scene extends Phaser.Scene {
 
   advanceRound() {
     this.clearRound();
+    // currentRound is 0-based, so === 2 means the round we're leaving is
+    // ROUNDS[2].round === 3 — i.e. this is the exact round 3 -> round 4
+    // handoff. Fire-and-forget (not awaited): a slow or unreachable
+    // backend must never block the round transition or freeze gameplay.
+    if (this.currentRound === 2) this.runBehavioralCheck();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
+  }
+
+  /**
+   * Computes the 4 struggle-detection features from the first 3 rounds'
+   * attempt history and asks the backend's Isolation Forest model whether
+   * this looks like typical or struggling play. Wired into FusionEngine so
+   * the existing 'fusionAction' subscription can react to it, exactly like
+   * the emotion/fatigue signals. Never throws — a failed/unreachable
+   * backend just means no behavioral signal for this level; face and
+   * fatigue detection keep working on their own regardless.
+   */
+  async runBehavioralCheck() {
+    const relevant = this.attemptLog.filter((a) => a.round <= 3);
+    const attempts_count = relevant.length;
+    const time_taken_seconds = relevant.reduce((sum, a) => sum + a.timeMs, 0) / 1000;
+    const misconception_repeat_count = relevant.filter((a) => a.misconceptionTag !== null).length;
+    const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count,
+        time_taken_seconds,
+        misconception_repeat_count,
+        combo_breaks,
+      });
+      if (!this._alive) return;
+      GameManager.fusionEngine.checkBehavioral(prediction);
+    } catch (e) {
+      console.warn("Level34: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
+    }
   }
 
   // ══════════════════════════════════════════════════════════════
