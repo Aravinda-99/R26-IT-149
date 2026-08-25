@@ -22,12 +22,14 @@ def create_app():
     from routes.gamification_routes import gamification_bp
     from routes.mastery_routes import mastery_bp
     from routes.auth_routes import auth_bp
+    from routes.wellbeing import wellbeing_bp
 
     app.register_blueprint(adaptive_bp, url_prefix="/api/adaptive")
     app.register_blueprint(error_bp, url_prefix="/api/errors")
     app.register_blueprint(gamification_bp, url_prefix="/api/gamification")
     app.register_blueprint(mastery_bp, url_prefix="/api/mastery")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(wellbeing_bp, url_prefix="/api/wellbeing")
 
     # --- Health Check ---
     @app.route("/api/health")

@@ -28,6 +28,8 @@
 
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
+import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
+import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 
 const W = 1280, H = 720;
@@ -166,13 +168,14 @@ export class Level25Scene extends Phaser.Scene {
     super({ key: "Level25Scene" });
   }
 
-  init() {
+  init(data = {}) {
+    this._forceTutorial = !!data.forceTutorial;
     this.currentRound = 0;
     this.score = 0;
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.attemptLog = [];
     this.totalTime = 0;
@@ -214,6 +217,12 @@ export class Level25Scene extends Phaser.Scene {
     this.createChamber();
     this.createCounterDisplay();
     this.createHUD();
+    // These 3 files draw hearts as a "❤️" emoji text glyph (font-substituted,
+    // since Arial has no emoji glyphs), which commonly renders its visual ink
+    // a few px below its nominal text-box center -- unlike our vector-drawn
+    // icon, which sits exactly at its given y. Compensating +3px so the two
+    // line up visually; adjust further if still off once you can see it live.
+    addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y + 3);
     this.createExpressionMonitor();
     this.createBit();
     this.setupDragEvents();
@@ -641,11 +650,21 @@ export class Level25Scene extends Phaser.Scene {
 
     this.add.text(1050, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
     this.scoreText = this.add.text(1050, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    this.comboText = this.add.text(1140, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    // Shifted left from x:1140 (was fine for 3 hearts) to free up room for
+    // the 2 extra hearts below -- see the spacing note on the hearts loop.
+    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
+    // 5 lives (was 3) so the round-3 behavioral checkpoint always survives
+    // even a worst-case 0-for-3 start. Fitting 5 hearts + the replay button
+    // (whose fixed ~38px reservation past the last heart lives in
+    // TutorialReplayButton.js, not touched here) into the combo-to-edge
+    // strip required tightening spacing from 28px to 20px and moving combo
+    // left (above) to free up the extra room -- last heart lands at
+    // x:1220, comfortably inside the button module's own overlap-avoidance
+    // clamp ceiling (~1236) and canvas edge (1280).
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const heart = this.add.text(1195 + i * 28, 30, "❤️", { font: "18px Arial" }).setOrigin(0.5).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const heart = this.add.text(1140 + i * 20, 30, "❤️", { font: "18px Arial" }).setOrigin(0.5).setDepth(51);
       this.lifeIcons.push(heart);
     }
   }
@@ -814,7 +833,7 @@ export class Level25Scene extends Phaser.Scene {
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
-    if (done) {
+    if (done && !this._forceTutorial) {
       this.time.delayedCall(300, () => this.startRound(0));
     } else {
       this.runTutorial();
@@ -1357,6 +1376,36 @@ export class Level25Scene extends Phaser.Scene {
   // EVALUATION
   // ══════════════════════════════════════════════════════════════
 
+  /**
+   * Computes the 4 struggle-detection features from the first 3 rounds'
+   * attempt history and asks the backend's Isolation Forest model whether
+   * this looks like typical or struggling play. Wired into FusionEngine so
+   * the existing 'fusionAction' subscription can react to it, exactly like
+   * the emotion/fatigue signals. Never throws — a failed/unreachable
+   * backend just means no behavioral signal for this level; face and
+   * fatigue detection keep working on their own regardless.
+   */
+  async runBehavioralCheck() {
+    const relevant = this.attemptLog.filter((a) => a.round <= 3);
+    const attempts_count = relevant.length;
+    const time_taken_seconds = relevant.reduce((sum, a) => sum + a.timeMs, 0) / 1000;
+    const misconception_repeat_count = relevant.filter((a) => a.misconceptionTag !== null).length;
+    const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count,
+        time_taken_seconds,
+        misconception_repeat_count,
+        combo_breaks,
+      });
+      if (!this._alive) return;
+      GameManager.fusionEngine.checkBehavioral(prediction);
+    } catch (e) {
+      console.warn("Level25Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
+    }
+  }
+
   logAttempt(cfg, correct, selected, tag) {
     this.roundAttempts++;
     this.attemptLog.push({
@@ -1393,6 +1442,7 @@ export class Level25Scene extends Phaser.Scene {
 
     this.time.delayedCall(1300, () => {
       if (!this._alive || this.gameEnded) return;
+      if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1412,6 +1462,7 @@ export class Level25Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.time.delayedCall(300, () => {
       if (!this._alive || this.gameEnded) return;
+      if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });

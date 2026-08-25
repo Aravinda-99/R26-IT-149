@@ -83,6 +83,11 @@ export const MasteryAPI = {
     getHistory: (userId, schema) => apiRequest(`/mastery/history/${userId}/${schema}`),
 };
 
+// --- Wellbeing / Struggle Detection ---
+export const WellbeingAPI = {
+    predictStruggle: (data) => apiRequest("/wellbeing/predict-struggle", "POST", data),
+};
+
 // --- Component 5: Auth ---
 export const AuthAPI = {
     register: (data) => apiRequest("/auth/register", "POST", data),
