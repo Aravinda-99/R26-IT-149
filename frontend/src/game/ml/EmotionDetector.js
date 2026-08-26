@@ -16,6 +16,15 @@ const MODEL_URL = "/models/emotion_cnn.onnx";
 const INPUT_SIZE = 48;
 const LABELS = ["fear", "frustrated", "neutral", "sad"];
 
+// ════════════════════════════════════════════════════════════════════
+// TEMPORARY DEBUG INSTRUMENTATION — remove before shipping.
+// Guards the raw per-class output log in detect() below. Toggle off (or
+// delete that block) once the fear/frustrated-never-wins investigation is
+// done. No detection/fusion logic depends on this flag; it's purely
+// console-side output.
+// ════════════════════════════════════════════════════════════════════
+const DEBUG_EMOTION = true;
+
 // Threaded wasm needs SharedArrayBuffer + cross-origin isolation headers,
 // which the dev server doesn't set. Force single-threaded so this runs
 // without any extra server config.
@@ -129,6 +138,15 @@ class _EmotionDetector {
 
     const results = await session.run({ input: inputTensor });
     const logits = results.output.data;
+
+    // ── TEMPORARY DEBUG INSTRUMENTATION (remove before shipping) ──
+    // Full raw output every call, not just the winning label — need to see
+    // how close fear/frustrated get even when they lose.
+    if (DEBUG_EMOTION) {
+      const raw = LABELS.map((label, i) => `${label}: ${logits[i].toFixed(3)}`).join(", ");
+      console.log(`[EmotionDetector DEBUG] Raw output: {${raw}}`);
+    }
+    // ── END TEMPORARY DEBUG INSTRUMENTATION ──
 
     let bestIdx = 0;
     for (let i = 1; i < logits.length; i++) {
