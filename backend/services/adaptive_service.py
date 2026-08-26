@@ -15,7 +15,7 @@ import joblib
 from firebase.firebase_service import db
 
 # ── Load trained ML model once when app starts ──────────────────────
-MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'model.pkl')
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'model.pkl')
 model = joblib.load(MODEL_PATH)
 
 TOPICS      = ["variables", "operators", "conditionals", "loops", "arrays", "methods"]
