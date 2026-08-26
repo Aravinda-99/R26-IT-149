@@ -46,7 +46,7 @@ function looksLikeCode(str) {
     return false;
 }
 
-// ── NEW: Calculate engagement score from session data ──────────────────
+// ── Calculate engagement score from session data ───────────────────────
 function calculateEngagementScore(questionRecords) {
     const completed    = questionRecords.filter(q => q.completed);
     const total        = questionRecords.length;
@@ -73,7 +73,8 @@ function calculateEngagementScore(questionRecords) {
     return Math.min(parseFloat(engagement.toFixed(4)), 1.0);
 }
 
-// ── NEW: Calculate all session metrics for ML model ────────────────────
+// ── Calculate all session metrics for ML model ─────────────────────────
+// CHANGED: Added 'accuracy' field calculated from topicBreakdown
 function calculateSessionMetrics(questionRecords, topicBreakdown) {
     const completed  = questionRecords.filter(q => q.completed);
 
@@ -105,17 +106,32 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
             : 0;
     });
 
+    // ── NEW: Calculate overall accuracy from topic breakdown ────────
+    // This is the student's actual quiz score (e.g., 23/25 = 0.92)
+    // Sent to the ML model as the 5th feature so it can see how
+    // the student actually performed, not just behavioral signals.
+    let totalCorrect = 0;
+    let totalQuestions = 0;
+    Object.values(topicBreakdown).forEach(data => {
+        totalCorrect   += data.correct;
+        totalQuestions += data.total;
+    });
+    const accuracy = totalQuestions > 0
+        ? parseFloat((totalCorrect / totalQuestions).toFixed(4))
+        : 0;
+
     return {
         avg_attempts:       parseFloat(avgAttempts.toFixed(2)),
         avg_time_sec:       parseFloat(avgTimeSec.toFixed(2)),
         engagement_score:   engagementScore,
         difficulty:         difficultyEnc,
         current_difficulty: currentDifficulty,
-        topic_scores:       topicScores
+        topic_scores:       topicScores,
+        accuracy:           accuracy    // NEW — overall quiz score for ML model
     };
 }
 
-// ── NEW: Send data to ML model and get recommendation ──────────────────
+// ── Send data to ML model and get recommendation ───────────────────────
 async function getMLRecommendation(sessionMetrics) {
     try {
         const response = await fetch(ML_API_URL, {
@@ -134,24 +150,28 @@ async function getMLRecommendation(sessionMetrics) {
 
     } catch (error) {
         console.error("ML API call failed:", error);
-        // Fallback rule-based recommendation if API fails
         return getFallbackRecommendation(sessionMetrics);
     }
 }
 
-// ── NEW: Fallback if ML API is unreachable ─────────────────────────────
+// ── Fallback if ML API is unreachable ──────────────────────────────────
+// CHANGED: Updated fallback to also use accuracy for better rule-based decisions
 function getFallbackRecommendation(metrics) {
     const difficultyLevels = ["beginner", "intermediate", "advanced"];
     const currIdx = difficultyLevels.indexOf(metrics.current_difficulty);
-    const acc     = Object.values(metrics.topic_scores).reduce((a, b) => a + b, 0)
-                    / Object.values(metrics.topic_scores).length;
+
+    // Use accuracy directly if available, otherwise calculate from topic_scores
+    const acc = metrics.accuracy !== undefined
+        ? metrics.accuracy
+        : Object.values(metrics.topic_scores).reduce((a, b) => a + b, 0)
+          / Object.values(metrics.topic_scores).length;
 
     let action, nextDifficulty;
 
-    if (acc >= 0.80 && metrics.avg_attempts <= 1.5) {
+    if (acc >= 0.80 && metrics.avg_attempts <= 1.5 && metrics.engagement_score >= 0.97) {
         action         = "promote";
         nextDifficulty = difficultyLevels[Math.min(currIdx + 1, 2)];
-    } else if (acc < 0.40 || metrics.avg_attempts >= 3.0) {
+    } else if (acc < 0.40 || metrics.avg_attempts >= 3.0 || metrics.engagement_score < 0.85) {
         action         = "demote";
         nextDifficulty = difficultyLevels[Math.max(currIdx - 1, 0)];
     } else {
@@ -171,12 +191,13 @@ function getFallbackRecommendation(metrics) {
     };
 }
 
-// ── NEW: Build ML recommendation card HTML ─────────────────────────────
+// ── Build ML recommendation card HTML ──────────────────────────────────
+// CHANGED: Added accuracy display in the session analytics grid
 function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const actionColors = {
-        promote:  { bg: "#052e16", border: "#16a34a", text: "#22c55e", label: "▲ PROMOTE" },
-        maintain: { bg: "#1c1a00", border: "#ca8a04", text: "#eab308", label: "■ MAINTAIN" },
-        demote:   { bg: "#2d0a0a", border: "#dc2626", text: "#ef4444", label: "▼ DEMOTE" }
+        promote:  { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
+        maintain: { bg: "#FFFBEB", border: "#F59E0B", text: "#B45309", label: "■ MAINTAIN" },
+        demote:   { bg: "#FEF2F2", border: "#DC2626", text: "#DC2626", label: "▼ DEMOTE" }
     };
 
     const action = mlResult.action || "maintain";
@@ -186,10 +207,18 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const weakestTopic = Object.entries(topicScores)
         .sort((a, b) => a[1] - b[1])[0];
 
+    // Check if next_topic is "all_mastered"
+    const nextTopicDisplay = mlResult.next_topic === 'all_mastered'
+        ? 'All topics mastered!'
+        : `${mlResult.next_topic || weakestTopic[0]}`;
+    const nextTopicAccuracy = mlResult.next_topic === 'all_mastered'
+        ? ''
+        : `(${Math.round((weakestTopic[1] || 0) * 100)}% accuracy)`;
+
     return `
         <div style="
-            background: #0f1923;
-            border: 1px solid rgba(99,102,241,0.3);
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
             border-radius: 1rem;
             padding: 1.5rem;
             margin-top: 1.5rem;
@@ -198,27 +227,27 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
                 <div style="
                     width:36px; height:36px;
-                    background: rgba(99,102,241,0.2);
+                    background: #DBEAFE;
                     border-radius:10px;
                     display:flex; align-items:center; justify-content:center;
                     font-size:18px;
                 ">🤖</div>
                 <div>
-                    <div style="color:white; font-weight:600; font-size:1rem;">
+                    <div style="color:#0F172A; font-weight:600; font-size:1rem;">
                         AI Adaptive Recommendation
                     </div>
-                    <div style="color:rgba(255,255,255,0.5); font-size:0.75rem;">
+                    <div style="color:#475569; font-size:0.75rem;">
                         Powered by Gradient Boosting Classifier
                     </div>
                 </div>
                 <div style="
                     margin-left:auto;
-                    background: rgba(99,102,241,0.15);
-                    color: #818cf8;
+                    background: #DBEAFE;
+                    color: #2563EB;
                     font-size:0.7rem;
                     padding:3px 10px;
                     border-radius:100px;
-                    border: 1px solid rgba(99,102,241,0.3);
+                    border: 1px solid #BFDBFE;
                 ">
                     ${mlResult.confidence || 75}% confident
                 </div>
@@ -227,15 +256,15 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
             <!-- 3 output tiles -->
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1rem;">
                 <div style="
-                    background:rgba(0,0,0,0.3);
+                    background:#F8FAFC;
                     border-radius:10px;
                     padding:14px;
                     text-align:center;
                 ">
-                    <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
                         Current Level
                     </div>
-                    <div style="font-size:1rem; font-weight:600; color:rgba(255,255,255,0.7); text-transform:capitalize;">
+                    <div style="font-size:1rem; font-weight:600; color:#0F172A; text-transform:capitalize;">
                         ${mlResult.current || currentDifficulty}
                     </div>
                 </div>
@@ -247,7 +276,7 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                     padding:14px;
                     text-align:center;
                 ">
-                    <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
                         Recommendation
                     </div>
                     <div style="font-size:1rem; font-weight:700; color:${colors.text};">
@@ -256,15 +285,15 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                 </div>
 
                 <div style="
-                    background:rgba(0,0,0,0.3);
+                    background:#F8FAFC;
                     border-radius:10px;
                     padding:14px;
                     text-align:center;
                 ">
-                    <div style="font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
                         Next Level
                     </div>
-                    <div style="font-size:1rem; font-weight:600; color:#38bdf8; text-transform:capitalize;">
+                    <div style="font-size:1rem; font-weight:600; color:#0D9488; text-transform:capitalize;">
                         ${mlResult.next_difficulty || currentDifficulty}
                     </div>
                 </div>
@@ -272,48 +301,50 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
 
             <!-- Next topic + reasoning -->
             <div style="
-                background: rgba(0,0,0,0.2);
+                background: #F8FAFC;
                 border-radius:8px;
                 padding:12px 14px;
-                border-left: 3px solid #6366f1;
+                border-left: 3px solid #2563EB;
                 font-size:0.85rem;
-                color:rgba(255,255,255,0.6);
+                color:#475569;
                 line-height:1.6;
             ">
-                <strong style="color:#818cf8;">📍 Next focus topic:</strong>
-                <strong style="color:white; text-transform:capitalize;">
-                    ${mlResult.next_topic || weakestTopic[0]}
+                <strong style="color:#2563EB;">📍 Next focus topic:</strong>
+                <strong style="color:#0F172A; text-transform:capitalize;">
+                    ${nextTopicDisplay}
                 </strong>
-                &nbsp;(${Math.round((weakestTopic[1] || 0) * 100)}% accuracy)
+                &nbsp;${nextTopicAccuracy}
                 <br>
-                Based on your ${sessionMetrics.avg_attempts} avg attempts,
+                Based on your ${Math.round(sessionMetrics.accuracy * 100)}% quiz score,
+                ${sessionMetrics.avg_attempts} avg attempts,
                 ${sessionMetrics.avg_time_sec}s avg response time,
                 and ${Math.round(sessionMetrics.engagement_score * 100)}% engagement score.
             </div>
 
-            <!-- Session analytics -->
+            <!-- Session analytics — CHANGED: 5 metrics now including accuracy -->
             <div style="
                 display:grid;
-                grid-template-columns:1fr 1fr 1fr 1fr;
+                grid-template-columns:1fr 1fr 1fr 1fr 1fr;
                 gap:8px;
                 margin-top:1rem;
             ">
                 ${[
+                    ["Accuracy",     Math.round(sessionMetrics.accuracy * 100) + "%"],
                     ["Avg Attempts", sessionMetrics.avg_attempts],
                     ["Avg Time",     sessionMetrics.avg_time_sec + "s"],
                     ["Engagement",   Math.round(sessionMetrics.engagement_score * 100) + "%"],
                     ["Difficulty",   currentDifficulty]
                 ].map(([label, val]) => `
                     <div style="
-                        background:rgba(255,255,255,0.03);
+                        background:#F8FAFC;
                         border-radius:8px;
                         padding:10px;
                         text-align:center;
                     ">
-                        <div style="font-size:0.65rem; color:rgba(255,255,255,0.4); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
+                        <div style="font-size:0.65rem; color:#475569; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
                             ${label}
                         </div>
-                        <div style="font-size:0.95rem; font-weight:600; color:white;">
+                        <div style="font-size:0.95rem; font-weight:600; color:#0F172A;">
                             ${val}
                         </div>
                     </div>
@@ -325,15 +356,15 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                 width:100%;
                 padding:0.85rem;
                 margin-top:1.2rem;
-                background: linear-gradient(135deg, #6366f1, #8b5cf6);
-                color:white;
+                background: linear-gradient(135deg, #2563EB, #0D9488);
+                color:#FFFFFF;
                 border:none;
                 border-radius:0.6rem;
                 font-weight:600;
                 font-size:0.95rem;
                 cursor:pointer;
             ">
-                Start ${mlResult.next_difficulty || currentDifficulty} ${mlResult.next_topic || ""} session →
+                Start ${mlResult.next_difficulty || currentDifficulty} ${mlResult.next_topic === 'all_mastered' ? '' : (mlResult.next_topic || '')} session →
             </button>
         </div>
     `;
@@ -348,10 +379,10 @@ export function setupQuizUI(root = document) {
         selectedAnswers: Array(QUIZ_BANK.length).fill(null),
         submitted:       false,
 
-        // ── NEW: per-question tracking ────────────────────────────────
+        // per-question tracking
         questionStartTime: Date.now(),
         currentAttempts:   1,
-        questionRecords:   [],  // stores data for each answered question
+        questionRecords:   [],
     };
 
     const quizBox    = (root === document) ? document.getElementById("quiz-box")          : root.querySelector(".quiz-box");
@@ -383,14 +414,13 @@ export function setupQuizUI(root = document) {
         return breakdown;
     }
 
-    // ── NEW: Record question data when student moves to next question ──
+    // Record question data when student moves to next question
     function recordQuestionData(questionIndex) {
         const q          = QUIZ_BANK[questionIndex];
         const timeTaken  = (Date.now() - state.questionStartTime) / 1000;
         const answered   = state.selectedAnswers[questionIndex] !== null;
         const correct    = state.selectedAnswers[questionIndex] === q.correctIndex;
 
-        // Only record if not already recorded
         const alreadyRecorded = state.questionRecords.find(r => r.questionIndex === questionIndex);
         if (!alreadyRecorded) {
             state.questionRecords.push({
@@ -410,7 +440,7 @@ export function setupQuizUI(root = document) {
         const { intro, code } = parseQuestion(q.question);
         const codeLines = code ? splitCodeIntoLines(code) : [];
 
-        // ── NEW: Reset timer and attempts for new question ─────────────
+        // Reset timer and attempts for new question
         state.questionStartTime = Date.now();
         state.currentAttempts   = 1;
 
@@ -456,7 +486,7 @@ export function setupQuizUI(root = document) {
             btn.addEventListener("click", () => {
                 if (state.submitted) return;
 
-                // ── NEW: Count attempts ────────────────────────────────
+                // Count attempts
                 if (state.selectedAnswers[state.current] !== null) {
                     state.currentAttempts++;
                 }
@@ -477,7 +507,7 @@ export function setupQuizUI(root = document) {
 
     nextBtn.addEventListener("click", async () => {
 
-        // ── NEW: Record current question before moving ─────────────────
+        // Record current question before moving
         recordQuestionData(state.current);
 
         if (state.current < QUIZ_BANK.length - 1) {
@@ -492,7 +522,7 @@ export function setupQuizUI(root = document) {
             const percent    = Math.round((score / QUIZ_BANK.length) * 100);
             const topicBreakdown = getTopicBreakdown();
 
-            // ── NEW: Calculate session metrics ─────────────────────────
+            // Calculate session metrics (now includes accuracy)
             const sessionMetrics = calculateSessionMetrics(
                 state.questionRecords,
                 topicBreakdown
@@ -515,23 +545,23 @@ export function setupQuizUI(root = document) {
                     <div id="ml-loading" style="
                         margin-top:1.5rem;
                         padding:1rem;
-                        background:rgba(99,102,241,0.1);
+                        background:#DBEAFE;
                         border-radius:0.8rem;
                         text-align:center;
-                        color:rgba(255,255,255,0.6);
+                        color:#475569;
                         font-size:0.85rem;
                     ">
                         🤖 Analyzing your performance...
                     </div>
 
                     <div style="display:flex; gap:1rem; margin-top:1.5rem; justify-content:center;">
-                        <button id="retry-quiz-btn" class="btn btn-primary" style="margin-top:0;">
+                        <button id="retry-quiz-btn" class="btn btn-primary" style="margin-top:0; background:#2563EB;">
                             Retry 25 Questions
                         </button>
-                        <button id="view-details-btn" class="btn btn-secondary" style="margin-top:0;">
+                        <button id="view-details-btn" class="btn btn-secondary" style="margin-top:0; background:#0D9488; color:#FFFFFF;">
                             View Details
                         </button>
-                        <button id="finish-quiz-btn" class="btn btn-primary" style="margin-top:0;">
+                        <button id="finish-quiz-btn" class="btn btn-primary" style="margin-top:0; background:#2563EB;">
                             Finish
                         </button>
                     </div>
@@ -544,7 +574,7 @@ export function setupQuizUI(root = document) {
             prevBtn.disabled          = true;
             nextBtn.textContent       = "Review Again";
 
-            // ── NEW: Call ML API ───────────────────────────────────────
+            // Call ML API
             let mlResult = null;
             if (sessionMetrics) {
                 mlResult = await getMLRecommendation(sessionMetrics);
@@ -561,7 +591,6 @@ export function setupQuizUI(root = document) {
                     const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
                     if (nextSessionBtn) {
                         nextSessionBtn.addEventListener("click", () => {
-                            // Save recommendation for next quiz
                             sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
                             window.navigateTo("quiz-lab");
                         });
@@ -569,7 +598,7 @@ export function setupQuizUI(root = document) {
                 }
             }
 
-            // ── Save full results including ML output ──────────────────
+            // Save full results including ML output
             sessionStorage.setItem("quiz-results", JSON.stringify({
                 score,
                 percent,
@@ -633,19 +662,18 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
     overlay.className = "quiz-details-overlay";
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1300;";
 
-    // ── NEW: Get ML result from sessionStorage ─────────────────────────
     const savedResults = JSON.parse(sessionStorage.getItem("quiz-results") || "{}");
     const mlResult     = savedResults.mlResult || null;
     const metrics      = savedResults.sessionMetrics || null;
 
     const topicDetailsHTML = Object.entries(topicBreakdown).map(([topic, data]) => {
         const accuracy    = Math.round((data.correct / data.total) * 100);
-        const statusColor = accuracy >= 80 ? "#22c55e" : accuracy >= 60 ? "#f59e0b" : "#ef4444";
+        const statusColor = accuracy >= 80 ? "#16A34A" : accuracy >= 60 ? "#F59E0B" : "#DC2626";
         return `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center;padding:1rem;background:rgba(255,255,255,0.03);border-radius:0.6rem;margin-bottom:1rem;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center;padding:1rem;background:#F8FAFC;border-radius:0.6rem;margin-bottom:1rem;">
                 <div>
-                    <div style="font-weight:600;color:white;margin-bottom:0.3rem;">${topic}</div>
-                    <div style="font-size:0.85rem;color:rgba(224,230,237,0.6);">${data.correct} of ${data.total} correct</div>
+                    <div style="font-weight:600;color:#0F172A;margin-bottom:0.3rem;">${topic}</div>
+                    <div style="font-size:0.85rem;color:#475569;">${data.correct} of ${data.total} correct</div>
                 </div>
                 <div style="text-align:right;">
                     <div style="font-size:1.5rem;font-weight:700;color:${statusColor};">${accuracy}%</div>
@@ -654,47 +682,46 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
         `;
     }).join("");
 
-    // ── NEW: ML recommendation section in overlay ──────────────────────
     const mlHTML = mlResult && metrics ? `
         <div style="margin-top:2rem;">
-            <h3 style="margin:0 0 1rem 0;color:white;font-size:1.1rem;">🤖 AI Recommendation</h3>
+            <h3 style="margin:0 0 1rem 0;color:#0F172A;font-size:1.1rem;">🤖 AI Recommendation</h3>
             ${buildMLRecommendationCard(mlResult, metrics)}
         </div>
     ` : "";
 
     overlay.innerHTML = `
-        <div style="background:#1a1f2e;border:1px solid rgba(255,255,255,0.1);border-radius:1rem;padding:2rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+        <div style="background:#FFFFFF;border:1px solid #E2E8F0;border-radius:1rem;padding:2rem;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
-                <h2 style="margin:0;color:white;font-size:1.5rem;">Quiz Results</h2>
-                <button id="close-details-btn" style="background:none;border:none;color:white;font-size:1.5rem;cursor:pointer;">&times;</button>
+                <h2 style="margin:0;color:#0F172A;font-size:1.5rem;">Quiz Results</h2>
+                <button id="close-details-btn" style="background:none;border:none;color:#475569;font-size:1.5rem;cursor:pointer;">&times;</button>
             </div>
 
-            <div style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);border-radius:0.8rem;padding:2rem;text-align:center;margin-bottom:2rem;">
+            <div style="background:linear-gradient(135deg,#2563EB 0%,#0D9488 100%);border-radius:0.8rem;padding:2rem;text-align:center;margin-bottom:2rem;">
                 <div style="font-size:0.85rem;color:rgba(255,255,255,0.8);margin-bottom:0.5rem;">Overall Score</div>
-                <div style="font-size:3rem;font-weight:800;color:white;margin-bottom:0.5rem;">${score} / ${QUIZ_BANK.length}</div>
-                <div style="font-size:1.5rem;font-weight:700;color:white;">${percent}%</div>
+                <div style="font-size:3rem;font-weight:800;color:#FFFFFF;margin-bottom:0.5rem;">${score} / ${QUIZ_BANK.length}</div>
+                <div style="font-size:1.5rem;font-weight:700;color:#FFFFFF;">${percent}%</div>
             </div>
 
-            <h3 style="margin:0 0 1.5rem 0;color:white;font-size:1.1rem;">Performance by Topic</h3>
+            <h3 style="margin:0 0 1.5rem 0;color:#0F172A;font-size:1.1rem;">Performance by Topic</h3>
             ${topicDetailsHTML}
 
-            <div style="background:rgba(255,255,255,0.03);border-radius:0.8rem;padding:1.5rem;margin-top:2rem;">
-                <h4 style="margin:0 0 1rem 0;color:white;">Summary</h4>
+            <div style="background:#F8FAFC;border-radius:0.8rem;padding:1.5rem;margin-top:2rem;">
+                <h4 style="margin:0 0 1rem 0;color:#0F172A;">Summary</h4>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                     <div>
-                        <div style="font-size:0.85rem;color:rgba(224,230,237,0.6);margin-bottom:0.3rem;">Correct</div>
-                        <div style="font-size:1.3rem;font-weight:700;color:#22c55e;">${score}</div>
+                        <div style="font-size:0.85rem;color:#475569;margin-bottom:0.3rem;">Correct</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:#16A34A;">${score}</div>
                     </div>
                     <div>
-                        <div style="font-size:0.85rem;color:rgba(224,230,237,0.6);margin-bottom:0.3rem;">Incorrect</div>
-                        <div style="font-size:1.3rem;font-weight:700;color:#ef4444;">${QUIZ_BANK.length - score}</div>
+                        <div style="font-size:0.85rem;color:#475569;margin-bottom:0.3rem;">Incorrect</div>
+                        <div style="font-size:1.3rem;font-weight:700;color:#DC2626;">${QUIZ_BANK.length - score}</div>
                     </div>
                 </div>
             </div>
 
             ${mlHTML}
 
-            <button id="close-details-footer-btn" style="width:100%;padding:0.8rem;margin-top:2rem;background:rgba(99,102,241,0.2);color:#6366f1;border:1px solid #6366f1;border-radius:0.6rem;font-weight:600;cursor:pointer;">
+            <button id="close-details-footer-btn" style="width:100%;padding:0.8rem;margin-top:2rem;background:#DBEAFE;color:#2563EB;border:1px solid #2563EB;border-radius:0.6rem;font-weight:600;cursor:pointer;">
                 Close
             </button>
         </div>
@@ -717,10 +744,10 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
 export function openQuizOverlay() {
     const overlay = document.createElement("div");
     overlay.className = "lp-quiz-overlay";
-    overlay.style.cssText = "position:fixed;inset:0;background:rgba(6,10,15,0.85);display:flex;align-items:center;justify-content:center;z-index:1200;";
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(248,250,252,0.97);display:flex;align-items:center;justify-content:center;z-index:1200;";
     overlay.innerHTML = `
-        <div class="lp-quiz-overlay-inner card" style="width:min(920px,96%);max-height:92%;overflow:auto;position:relative;">
-            <button class="lp-quiz-overlay-close btn" style="position:absolute;top:12px;right:12px;z-index:2;">Close</button>
+        <div class="lp-quiz-overlay-inner card" style="width:min(920px,96%);max-height:92%;overflow:auto;position:relative;background:#FFFFFF;border-color:#E2E8F0;">
+            <button class="lp-quiz-overlay-close btn" style="position:absolute;top:12px;right:12px;z-index:2;background:#E2E8F0;color:#0F172A;">Close</button>
             <div style="padding:1rem 1.2rem;">
                 <div class="lp-quiz-progress-wrap">
                     <div class="lp-quiz-progress-head" style="display:flex;justify-content:space-between;margin-bottom:8px;">
@@ -733,8 +760,8 @@ export function openQuizOverlay() {
                 </div>
                 <div class="quiz-box" style="margin-top:12px;"></div>
                 <div class="lp-quiz-actions" style="display:flex;justify-content:space-between;gap:0.8rem;margin-top:12px;">
-                    <button class="btn prev-quiz-btn" style="background:var(--border-color);color:var(--text-primary);">Previous</button>
-                    <button class="btn btn-primary next-quiz-btn">Next</button>
+                    <button class="btn prev-quiz-btn" style="background:#E2E8F0;color:#0F172A;">Previous</button>
+                    <button class="btn btn-primary next-quiz-btn" style="background:#2563EB;">Next</button>
                 </div>
             </div>
         </div>

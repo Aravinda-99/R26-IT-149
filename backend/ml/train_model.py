@@ -16,6 +16,13 @@ DATA_PATH  = os.path.join(BASE_DIR, '..', 'data', 'final_dataset_ready.csv')
 MODEL_PATH = os.path.join(BASE_DIR, 'model.pkl')
 
 # ── Constants ──────────────────────────────────────────────────────────
+# 4 features only — accuracy is EXCLUDED because it was used to create
+# the recommendation label (Bloom's thresholds). Including it causes
+# data leakage (100% accuracy). The model predicts using behavioral
+# signals: how the student interacted, not what they scored.
+#
+# The production fix for correct predictions is in adaptive_service.py
+# where avg_time_sec is floored at 10s to match the training data range.
 FEATURES  = ['avg_attempts', 'avg_time_sec', 'engagement_score', 'difficulty']
 LABELS    = ['Maintain', 'Promote', 'Demote']
 label_map = {0: 'Maintain', 1: 'Promote', 2: 'Demote'}
@@ -31,6 +38,7 @@ def train_and_save():
     df = pd.read_csv(DATA_PATH, low_memory=False)
 
     print(f" Model            : Gradient Boosting Classifier")
+    print(f" Features         : {len(FEATURES)} ({', '.join(FEATURES)})")
     print(f" Balance method   : sample_weight='balanced'")
     print(f" Synthetic data   : None — real data only")
     print(f" Dataset rows     : {len(df):,}")
@@ -47,6 +55,13 @@ def train_and_save():
     # ── 3. Prepare features ───────────────────────────────────────────
     X = df[FEATURES].astype(float)
     y = df['recommendation'].astype(int)
+
+    # ── Show feature statistics ───────────────────────────────────────
+    print(" Feature Statistics:")
+    for feat in FEATURES:
+        col = X[feat]
+        print(f"   {feat:<20}: min={col.min():.4f}  max={col.max():.4f}  mean={col.mean():.4f}")
+    print()
 
     # ── 4. Split into train and test ──────────────────────────────────
     X_train, X_test, y_train, y_test = train_test_split(
@@ -156,11 +171,14 @@ def train_and_save():
     print(f" Model saved → {MODEL_PATH}")
     print("=" * 62)
     print()
-    print(" Balancing summary:")
+    print(" Training summary:")
+    print(f"   Features       : {len(FEATURES)} ({', '.join(FEATURES)})")
     print(f"   Method         : sample_weight=balanced")
     print(f"   Synthetic data : None")
     print(f"   Data removed   : None")
     print(f"   Real rows used : {len(df):,}")
+    print(f"   Test accuracy  : {acc*100:.2f}%")
+    print(f"   CV accuracy    : {cv_scores.mean()*100:.2f}%")
     print(f"   Demote recall  : 68.6% → {recalls[2]*100:.1f}%")
 
     return model

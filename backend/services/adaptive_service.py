@@ -2,6 +2,12 @@
 Component 1: Adaptive Learning Path — Service
 ===============================================
 Adaptive recommendation algorithm using trained ML model.
+
+KEY FIX: avg_time_sec is floored at 10.0 seconds.
+The training data (ASSISTments, OULAD, UCI) has response times ranging
+from ~10s to 600s. Our quiz generates 1-5s times (simple MCQ clicks).
+Without the floor, the model misinterprets fast times as random guessing
+and predicts DEMOTE even for high-scoring students.
 """
 
 import os
@@ -23,7 +29,6 @@ class AdaptiveService:
     @staticmethod
     def get_recommendation(user_id):
         """TODO: Analyze learner data and return next activity."""
-        # Placeholder response
         return {
             "user_id":           user_id,
             "recommended_topic": "variables",
@@ -35,7 +40,6 @@ class AdaptiveService:
     @staticmethod
     def update_progress(data):
         """TODO: Store learner progress in Firestore."""
-        # Placeholder
         return {"message": "Progress updated (placeholder)"}
 
     @staticmethod
@@ -60,20 +64,25 @@ class AdaptiveService:
         Uses trained ML model to predict next difficulty level and topic.
 
         Expected session_data keys:
-            avg_attempts      (float) — average attempts per question
-            avg_time_sec      (float) — average time in seconds
-            engagement_score  (float) — 0.0 to 1.0
-            current_difficulty (str)  — beginner / intermediate / advanced
-            topic_scores      (dict)  — {topic: score} e.g. {"variables": 0.8}
+            avg_attempts       (float) — average attempts per question
+            avg_time_sec       (float) — average time in seconds
+            engagement_score   (float) — 0.0 to 1.0
+            current_difficulty (str)   — beginner / intermediate / advanced
+            topic_scores       (dict)  — {topic: score} e.g. {"variables": 0.8}
         """
         # ── Encode difficulty ────────────────────────────────────────
         curr_diff   = session_data.get('current_difficulty', 'beginner')
         diff_enc    = DIFF_ENCODE.get(curr_diff, 0)
 
-        # ── Build feature array (same order as training) ─────────────
+        # ── Build feature array (4 features, same order as training) ─
+        # FIX: Floor avg_time_sec at 10.0 seconds
+        # Training data range is ~10s to 600s. Quiz MCQ clicks produce
+        # 1-5s times which the model has never seen — it interprets
+        # sub-10s as random guessing (correlates with DEMOTE in training).
+        # Flooring at 10s maps quiz times into the valid training range.
         features = [[
             float(session_data.get('avg_attempts',     1.0)),
-            float(session_data.get('avg_time_sec',    30.0)),
+            max(10.0, float(session_data.get('avg_time_sec', 30.0))),
             float(session_data.get('engagement_score', 0.9)),
             diff_enc
         ]]
@@ -96,14 +105,19 @@ class AdaptiveService:
         # ── Find weakest topic to recommend next ─────────────────────
         topic_scores = session_data.get('topic_scores', {})
         if topic_scores:
-            next_topic = min(topic_scores, key=topic_scores.get)
+            # Check if all topics are mastered (>= 90%)
+            all_mastered = all(v >= 0.9 for v in topic_scores.values())
+            if all_mastered:
+                next_topic = 'all_mastered'
+            else:
+                next_topic = min(topic_scores, key=topic_scores.get)
         else:
             next_topic = 'variables'
 
         return {
             'action':          action,           # promote / maintain / demote
-            'next_difficulty': next_difficulty,  # beginner / intermediate / advanced
-            'next_topic':      next_topic,       # weakest topic to study next
-            'confidence':      confidence,       # model confidence %
-            'current':         curr_diff         # what they just completed
+            'next_difficulty': next_difficulty,   # beginner / intermediate / advanced
+            'next_topic':      next_topic,        # weakest topic to study next
+            'confidence':      confidence,        # model confidence %
+            'current':         curr_diff          # what they just completed
         }
