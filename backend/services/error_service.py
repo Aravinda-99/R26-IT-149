@@ -69,13 +69,155 @@ class ErrorService:
         code = re.sub(r'import\s+.*?;', '', code)
         # Remove package statements
         code = re.sub(r'package\s+.*?;', '', code)
+        # Clean whitespaces inside square brackets to handle copy-paste visual wraps
+        code = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", code)
         # Normalize whitespace (replace tabs/newlines with single space)
         code = re.sub(r'\s+', ' ', code)
         return code.strip()
 
+    @staticmethod
+    def validate_java_submission(code):
+        if not code or not code.strip():
+            return {
+                "valid": False,
+                "reason": "Empty input."
+            }
+
+        text = code.strip()
+
+        java_patterns = [
+            r"\bpublic\s+class\b",
+            r"\bclass\s+\w+",
+            r"\bpublic\s+static\s+void\s+main\b",
+            r"\bstatic\s+(int|void|double|float|String|boolean|char)\s+\w+\s*\(",
+            r"\b(int|double|float|String|boolean|char)\s+\w+\s*=",
+            r"\bint\s*\[\]\s+\w+\s*=",
+            r"\bfor\s*\(",
+            r"\bwhile\s*\(",
+            r"\bSystem\.out\.println\s*\("
+        ]
+
+        for pattern in java_patterns:
+            if re.search(pattern, text):
+                return {
+                    "valid": True,
+                    "reason": "Java-like structure detected."
+                }
+
+        return {
+            "valid": False,
+            "reason": "Input does not contain recognizable Java code structure."
+        }
+
     # ------------------------------------------------------------------
     # Rule-Based Safety Layer
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def detect_obviously_correct_java(code):
+        if not code:
+            return {"is_correct": False, "reason": "No code provided", "matched_pattern": None}
+
+        stripped = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
+        stripped = re.sub(r'//.*', '', stripped)
+        # Clean whitespaces inside square brackets to handle copy-paste visual wraps
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+
+        # 1. Method argument mismatch exists
+        mismatch_res = ErrorService.detect_method_argument_mismatch(code)
+        if mismatch_res.get("mismatch_found"):
+            return {"is_correct": False, "reason": "Method argument mismatch found", "matched_pattern": "method_argument_mismatch"}
+
+        # 2. Array length used directly as index
+        if re.search(r'\b\w+\s*\[\s*\w+\.length\s*\]', stripped):
+            return {"is_correct": False, "reason": "Array length used directly as index", "matched_pattern": "array_length_index"}
+
+        # 3. Direct array out-of-bounds when simple literal array is available
+        literal_arrays = re.findall(r'int\s*\[\]\s+(\w+)\s*=\s*\{([^}]+)\}', stripped)
+        for arr_name, elements in literal_arrays:
+            num_elements = len([e for e in elements.split(',') if e.strip()])
+            accesses = re.findall(r'\b' + re.escape(arr_name) + r'\s*\[\s*(\d+)\s*\]', stripped)
+            for acc in accesses:
+                if int(acc) >= num_elements:
+                    return {"is_correct": False, "reason": "Direct array out-of-bounds access detected", "matched_pattern": "array_out_of_bounds"}
+
+        # 4. Loop boundary issues (off-by-one / <= array length access check)
+        if re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*\w+\.length', stripped) or re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*[^;]+;', stripped):
+            return {"is_correct": False, "reason": "Loop boundary issue (off-by-one `<=` comparison risk)", "matched_pattern": "loop_boundary_risk"}
+        
+        # Loop starting at 1 instead of 0
+        if re.search(r'for\s*\(\s*int\s+\w+\s*=\s*1\s*;', stripped):
+            return {"is_correct": False, "reason": "Loop counter starting at 1 instead of 0", "matched_pattern": "loop_start_at_1"}
+
+        # For loop has an empty update expression
+        if re.search(r'for\s*\([^;]+;\s*[^;]+;\s*\)', stripped):
+            return {"is_correct": False, "reason": "For-loop update expression is missing", "matched_pattern": "for_empty_update"}
+
+        # 5. Infinite loop detection
+        while_true_loops = re.findall(r'while\s*\(\s*(true|1)\s*\)\s*\{([^}]*)\}', stripped)
+        for condition, body in while_true_loops:
+            if not re.search(r'\bbreak\b', body):
+                return {"is_correct": False, "reason": "Infinite while loop has no break statement", "matched_pattern": "infinite_loop_no_break"}
+
+        # 6. While loop uses counter but no counter update inside body
+        while_loops = re.findall(r'while\s*\(([^)]+)\)\s*\{([^}]*)\}', stripped)
+        for condition, body in while_loops:
+            if re.search(r'\b\w+\s*(?:<|<=|>|>=|!=|==)\s*\d+', condition):
+                if not re.search(r'\+\+|--|\+=|-=|=', body):
+                    return {"is_correct": False, "reason": "While loop has no counter variable update inside the body", "matched_pattern": "while_no_update"}
+
+        # 7. Discount is added instead of subtracted
+        if re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE):
+            return {"is_correct": False, "reason": "Discount variable is added to price instead of subtracted", "matched_pattern": "discount_added"}
+
+        # 8. Method named add returns subtraction
+        add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
+        for body in add_methods:
+            if '-' in body and '+' not in body:
+                return {"is_correct": False, "reason": "Method named add performs subtraction instead of addition", "matched_pattern": "add_returns_subtraction"}
+
+        # 9. Void method returns a value, or non-void method missing return
+        if re.search(r'\bvoid\b[^{]+\{[^}]*\breturn\b[^;]+;', stripped):
+            return {"is_correct": False, "reason": "Void method attempts to return a value", "matched_pattern": "void_method_returns_value"}
+        
+        non_void_methods = re.findall(r'\b(int|double|float|long|boolean|String)\b\s+[a-zA-Z_]\w*\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
+        for m_type, body in non_void_methods:
+            if "return" not in body:
+                return {"is_correct": False, "reason": "Non-void method is missing a return statement", "matched_pattern": "non_void_method_missing_return"}
+
+        # 10. Self-assignment pattern check
+        if re.search(r'\b(\w+)\s*=\s*\1\s*;', stripped):
+            return {"is_correct": False, "reason": "Self-assignment detected (e.g. x = x)", "matched_pattern": "self_assignment"}
+
+        # Safe patterns list
+        safe_patterns = [
+            (r'\b\w+\s*=\s*\w+\s*[-+*/]\s*\w+', "simple variable calculation with normal arithmetic"),
+            (r'\b\w+\s*\([^)]*\)\s*;', "simple method call"),
+            (r'\b\w+\s*\[\s*\d+\s*\]', "simple array access with valid constant index"),
+            (r'while\s*\([^)]+\)\s*\{[^}]*(\+\+|--|\+=|-=|=)[^}]*\}', "simple while loop with counter update"),
+            (r'for\s*\(\s*int\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*[^;]+\s*;\s*\1\s*\+\+\s*\)', "standard for-loop with safe iteration"),
+            (r'for\s*\([^:]+:[^)]+\)', "simple for-each array traversal"),
+            (r'System\.out\.println\s*\(\s*[^)]+\s*\)', "simple print statement with valid variable"),
+            (r'\b(?:int|double|float|boolean|String|char)\s+\w+\s*=\s*[^;]+;', "simple variable declaration and initialization"),
+            (r'\b(?:int|double|float|boolean|String|char)\s*\[\s*\]\s+\w+\s*=\s*(?:\{[^}]*\}|new\s+[^;]+)\s*;', "simple array declaration and initialization"),
+            (r'\b(?:public|private|protected|static|\s)*(?:void|int|double|String)\s+\w+\s*\([^)]*\)\s*\{[^}]*\}', "simple valid method definition")
+        ]
+        
+        has_simple_pattern = False
+        reason = ""
+        pattern_name = ""
+        
+        for pattern, desc in safe_patterns:
+            if re.search(pattern, stripped):
+                has_simple_pattern = True
+                reason = desc
+                pattern_name = desc.replace(" ", "_")
+                break
+                
+        if has_simple_pattern:
+            return {"is_correct": True, "reason": reason, "matched_pattern": pattern_name}
+
+        return {"is_correct": True, "reason": "No errors detected, behaves like normal correct Java syntax.", "matched_pattern": "generic_correct_java"}
 
     @staticmethod
     def detect_method_argument_mismatch(code):
@@ -149,6 +291,8 @@ class ErrorService:
             
         stripped = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
         stripped = re.sub(r'//.*', '', stripped)
+        # Clean whitespaces inside square brackets to handle copy-paste visual wraps
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
         
         snippet = ""
         note = ""
@@ -199,6 +343,349 @@ class ErrorService:
             
         return {"evidence_found": False, "matched_snippet": "", "evidence_note": "No explicit code snippet could be cleanly extracted, but the ML model detected abstract patterns supporting this reason."}
 
+    # ------------------------------------------------------------------
+    # XAI Helpers (Feature 2 — Explainable AI)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _compute_confidence_pct(confidence_level, decision_scores=None):
+        """
+        Converts the qualitative confidence level to a numeric percentage.
+        Uses raw decision_function scores when available for a finer estimate.
+        """
+        if decision_scores is not None:
+            try:
+                raw = float(max(decision_scores))
+                # Map decision margin → percentage (clamped 35–97)
+                pct = min(97, max(35, int(50 + raw * 22)))
+                return pct
+            except Exception:
+                pass
+        # Fallback when decision_function is unavailable
+        return {"High": 87, "Medium": 64, "Low": 42}.get(confidence_level, 64)
+
+    @staticmethod
+    def _generate_xai_explanation(code, reason_group, final_label, confidence_level, decision_scores=None, recalibrated_confidence_pct=None):
+        """
+        Feature 2 — Explainable AI (XAI)
+        =================================
+        Synthesises a structured, human-readable explanation for the ML prediction
+        by combining:
+          • reason-group-specific regex pattern checks on the submitted code
+          • decision_function confidence score
+          • existing evidence and model trace signals
+
+        Returns:
+            dict:
+              xai_label          – human-readable error category name
+              xai_confidence_pct – numeric confidence percentage (0–100)
+              xai_bullet_points  – list of dicts { icon: str, text: str }
+              xai_narrative      – 2-3 sentence plain-English explanation
+              xai_code_signals   – list of detected code pattern descriptions
+        """
+        stripped = re.sub(r'/\*.*?\*/', '', code or '', flags=re.DOTALL)
+        stripped = re.sub(r'//.*', '', stripped)
+        # Clean whitespaces inside square brackets to handle copy-paste visual wraps
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+
+        if recalibrated_confidence_pct is not None:
+            confidence_pct = recalibrated_confidence_pct
+        else:
+            confidence_pct = ErrorService._compute_confidence_pct(confidence_level, decision_scores)
+
+        label_names = {
+            "LOOP_ERROR":     "Loop Logic Error",
+            "VARIABLE_ERROR": "Variable Usage Error",
+            "ARRAY_ERROR":    "Array Boundary Error",
+            "METHOD_ERROR":   "Method Signature Error",
+            "CORRECT":        "No Error Detected",
+        }
+        xai_label = label_names.get(final_label, final_label.replace("_", " ").title())
+
+        bullets, signals, narrative = [], [], ""
+
+        # ── ARRAY errors ───────────────────────────────────────────────
+        if reason_group == "ARRAY_BOUNDARY_INDEX_ISSUE":
+            if re.search(r'\b\w+\s*\[\s*\w+\.length\s*\]', stripped):
+                bullets.append({"icon": "🔴", "text": "Array accessed using `.length` directly as index — this is always out of bounds."})
+                signals.append("array[array.length] access detected")
+            if re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*\w+\.length', stripped):
+                bullets.append({"icon": "🔴", "text": "Loop uses `<= array.length` — valid indices are 0 to length−1."})
+                signals.append("loop boundary includes .length (off-by-one)")
+            if re.search(r'\b\w+\s*\[\s*\d+\s*\]', stripped):
+                bullets.append({"icon": "🟡", "text": "Constant index detected — verify it is within bounds."})
+                signals.append("constant array index access")
+            if not bullets:
+                bullets.append({"icon": "🔴", "text": "ML detected an array indexing pattern consistent with a boundary violation."})
+                bullets.append({"icon": "🟡", "text": "Java arrays are 0-indexed: valid range is index 0 to length−1."})
+            narrative = (
+                f"The model classified this as an Array Boundary Error with {confidence_pct}% confidence. "
+                "Patterns consistent with out-of-bounds array access were detected. "
+                "The most common cause is using the array's length directly as the last valid index."
+            )
+
+        elif reason_group == "ARRAY_TRAVERSAL_ISSUE":
+            if re.search(r'for\s*\([^;]+;\s*[^;]+;\s*\)', stripped):
+                bullets.append({"icon": "🔴", "text": "For-loop has an empty update expression — the counter never advances."})
+                signals.append("for-loop with empty update clause")
+            bullets.append({"icon": "🟡", "text": "Array traversal detected — ensure all elements are visited exactly once."})
+            bullets.append({"icon": "🔵", "text": "Standard pattern: `for (int i = 0; i < arr.length; i++)`"})
+            narrative = (
+                f"The model detected an array traversal issue with {confidence_pct}% confidence. "
+                "The loop structure does not correctly iterate over all array elements. "
+                "Check the starting index, boundary condition, and counter update."
+            )
+
+        # ── LOOP errors ────────────────────────────────────────────────
+        elif reason_group == "LOOP_BOUNDARY_ISSUE":
+            if re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*[^;]+;', stripped):
+                bullets.append({"icon": "🔴", "text": "Loop uses `<=` — this runs one extra iteration (off-by-one error)."})
+                signals.append("'<=' in loop boundary condition")
+            if re.search(r'for\s*\(\s*int\s+\w+\s*=\s*1\s*;', stripped):
+                bullets.append({"icon": "🟡", "text": "Loop counter starts at 1 — may skip the first element (index 0)."})
+                signals.append("loop counter initialised at 1 instead of 0")
+            if not bullets:
+                bullets.append({"icon": "🔴", "text": "The loop executes one too many or one too few iterations."})
+                bullets.append({"icon": "🟡", "text": "Check start value, stopping condition (`<` vs `<=`), and step."})
+            narrative = (
+                f"The model classified this as a Loop Boundary Error with {confidence_pct}% confidence. "
+                "Using `<=` instead of `<` causes the loop to overrun its intended range. "
+                "Trace through the first and last iterations manually to confirm correctness."
+            )
+
+        elif reason_group == "LOOP_CONDITION_ISSUE":
+            bullets.append({"icon": "🔴", "text": "The loop condition does not correctly control when the loop starts or stops."})
+            if re.search(r'while\s*\(\s*(true|1)\s*\)', stripped):
+                bullets.append({"icon": "🔴", "text": "`while(true)` detected — loop will not naturally terminate."})
+                signals.append("while(true) pattern")
+            bullets.append({"icon": "🟡", "text": "A loop condition must eventually evaluate to `false` for the loop to exit."})
+            narrative = (
+                f"The model detected a loop condition problem with {confidence_pct}% confidence. "
+                "The condition controlling the loop either prevents it from running or never becomes false. "
+                "Ensure your condition accurately reflects when the loop should end."
+            )
+
+        elif reason_group == "LOOP_CONTROL_FLOW_ISSUE":
+            if re.search(r'while\s*\(\s*(true|1)\s*\)', stripped):
+                bullets.append({"icon": "🔴", "text": "`while(true)` detected — runs indefinitely without a `break`."})
+                signals.append("while(true) without break")
+            if not re.search(r'\bbreak\b', stripped):
+                bullets.append({"icon": "🔴", "text": "No `break` statement found — the loop has no exit path."})
+                signals.append("no break in loop body")
+            bullets.append({"icon": "🟡", "text": "Every infinite-loop construct needs a conditional `break` to exit safely."})
+            narrative = (
+                f"The model detected an infinite loop risk with {confidence_pct}% confidence. "
+                "The loop contains a condition that is always true and lacks a `break` statement. "
+                "Add a `break` or update the condition variable to ensure the loop terminates."
+            )
+
+        elif reason_group == "LOOP_UPDATE_ISSUE":
+            if re.search(r'for\s*\([^;]+;\s*[^;]+;\s*\)', stripped):
+                bullets.append({"icon": "🔴", "text": "For-loop has an empty update clause — counter is never changed."})
+                signals.append("for-loop empty update expression")
+            while_blocks = re.findall(r'while\s*\(([^)]+)\)\s*\{([^}]*)\}', stripped)
+            for cond, body in while_blocks:
+                if re.search(r'\b\w+\s*(?:<|<=|>|>=|!=|==)\s*\d+', cond):
+                    if not re.search(r'\+\+|--|\+=|-=', body):
+                        bullets.append({"icon": "🔴", "text": "While-loop counter not updated inside the body — infinite loop risk."})
+                        signals.append("while-loop body missing counter increment")
+            if not bullets:
+                bullets.append({"icon": "🔴", "text": "The loop variable is not updated — the condition never becomes false."})
+            bullets.append({"icon": "🟡", "text": "Add `i++`, `i--`, or `i += n` to ensure the loop progresses."})
+            narrative = (
+                f"The model detected a loop update problem with {confidence_pct}% confidence. "
+                "The loop counter or control variable is never modified, causing an infinite loop. "
+                "Ensure the variable changes with every iteration."
+            )
+
+        # ── METHOD errors ──────────────────────────────────────────────
+        elif reason_group == "METHOD_RETURN_ISSUE":
+            if re.search(r'\bvoid\b[^{]+\{[^}]*\breturn\b[^;]+;', stripped):
+                bullets.append({"icon": "🔴", "text": "A `void` method contains a `return` with a value — void methods cannot return values."})
+                signals.append("return-with-value inside void method")
+            else:
+                m = re.search(r'\b(int|long|double|float|boolean|String)\b[^{]+\{[^}]*\}', stripped)
+                if m and "return" not in m.group(0):
+                    bullets.append({"icon": "🔴", "text": "A typed (non-void) method is missing a `return` statement."})
+                    signals.append("non-void method missing return")
+            bullets.append({"icon": "🟡", "text": "Match the declared return type to what the method actually returns."})
+            bullets.append({"icon": "🔵", "text": "Use `System.out.println()` to print; use `return` to send a value back to the caller."})
+            narrative = (
+                f"The model classified this as a Method Return Error with {confidence_pct}% confidence. "
+                "The method's declared return type and its actual return behaviour are inconsistent. "
+                "Ensure every code path returns the correct type."
+            )
+
+        elif reason_group == "METHOD_SIGNATURE_ISSUE":
+            mismatch = ErrorService.detect_method_argument_mismatch(code)
+            if mismatch.get("mismatch_found"):
+                bullets.append({"icon": "🔴", "text": (
+                    f"Method `{mismatch['method_name']}` declared with {mismatch['declared_params']} "
+                    f"parameter(s) but called with {mismatch['called_args']} argument(s)."
+                )})
+                signals.append(f"arity mismatch: declared={mismatch['declared_params']}, called={mismatch['called_args']}")
+            bullets.append({"icon": "🟡", "text": "Argument count in the call must match the parameter count in the declaration."})
+            bullets.append({"icon": "🔵", "text": "Compare the method signature with every call site — count must agree."})
+            narrative = (
+                f"The model detected a method signature mismatch with {confidence_pct}% confidence. "
+                "The method is called with a different number of arguments than it declares. "
+                "Update either the declaration or the call site to make them consistent."
+            )
+
+        elif reason_group == "METHOD_PARAMETER_USAGE_ISSUE":
+            bullets.append({"icon": "🔴", "text": "One or more method parameters appear unused or incorrectly used inside the body."})
+            bullets.append({"icon": "🟡", "text": "Every declared parameter should contribute to the computation or return value."})
+            bullets.append({"icon": "🔵", "text": "Trace each parameter through the method body and verify it affects the result."})
+            narrative = (
+                f"The model detected a parameter usage problem with {confidence_pct}% confidence. "
+                "The method receives values through its parameters but does not use them correctly. "
+                "Trace each parameter and confirm it is applied where intended."
+            )
+
+        # ── VARIABLE errors ────────────────────────────────────────────
+        elif reason_group == "VARIABLE_ASSIGNMENT_ISSUE":
+            if re.search(r'\b(\w+)\s*=\s*\1\s*;', stripped):
+                bullets.append({"icon": "🔴", "text": "Self-assignment detected (e.g. `x = x`) — has no effect on the value."})
+                signals.append("self-assignment x = x detected")
+            bullets.append({"icon": "🟡", "text": "Ensure the variable receives a distinct, meaningful value on the right-hand side."})
+            bullets.append({"icon": "🔵", "text": "Java requires all local variables to be initialised before they are read."})
+            narrative = (
+                f"The model classified this as a Variable Assignment Error with {confidence_pct}% confidence. "
+                "The variable is being assigned to itself or in a logically incorrect way. "
+                "Check that the right-hand side provides the intended new value."
+            )
+
+        elif reason_group == "VARIABLE_CALCULATION_ISSUE":
+            if (re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or
+                    re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE)):
+                bullets.append({"icon": "🔴", "text": "Discount is being added to the total instead of subtracted — this increases the price."})
+                signals.append("discount addition instead of subtraction")
+            add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
+            for body in add_methods:
+                if '-' in body and '+' not in body:
+                    bullets.append({"icon": "🔴", "text": "Method named `add` performs subtraction instead of addition."})
+                    signals.append("add() body contains subtraction not addition")
+            if not bullets:
+                bullets.append({"icon": "🔴", "text": "A calculation uses the wrong operator (e.g. `+` where `−` is needed)."})
+            bullets.append({"icon": "🟡", "text": "Verify each operator (+, -, *, /) reflects the intended mathematical operation."})
+            narrative = (
+                f"The model classified this as a Variable Calculation Error with {confidence_pct}% confidence. "
+                "A calculation in the code uses an incorrect arithmetic operator. "
+                "Review each expression and confirm the operator matches the intended semantics."
+            )
+
+        elif reason_group == "CORRECT_NO_ERROR":
+            bullets.append({"icon": "✅", "text": "No common beginner error patterns were detected."})
+            bullets.append({"icon": "✅", "text": "The code structure appears logically sound."})
+            bullets.append({"icon": "🔵", "text": "Continue practising to reinforce this pattern."})
+            narrative = (
+                f"The model classified this submission as correct with {confidence_pct}% confidence. "
+                "No error signatures associated with common beginner mistakes were detected. "
+                "Well done — move on to the next challenge."
+            )
+
+        else:
+            # Generic fallback for any unmapped reason group
+            bullets.append({"icon": "🔴", "text": f"The ML model detected a pattern consistent with {final_label.replace('_', ' ').title()}."})
+            bullets.append({"icon": "🟡", "text": "Review the Repair Strategy and Beginner Insight below for targeted guidance."})
+            narrative = (
+                f"The model identified a {final_label.replace('_', ' ').lower()} with {confidence_pct}% confidence. "
+                "Review the explanation and suggested fix for correction advice."
+            )
+
+        concept_names = {
+            "LOOP_ERROR": "Loops",
+            "VARIABLE_ERROR": "Variables",
+            "ARRAY_ERROR": "Arrays",
+            "METHOD_ERROR": "Methods",
+            "CORRECT": "General"
+        }
+        concept = concept_names.get(final_label, "General")
+        
+        # Dynamic why_not_correct
+        if final_label == "CORRECT":
+            why_not_correct = "No error detected. The submission behaves correctly."
+        else:
+            why_not_correct = f"This code was not marked correct because a logic mistake was detected under the {concept} concept, specifically flagged as {reason_group.replace('_', ' ').title()}."
+
+        # Debugging steps mapping
+        steps_map = {
+            "ARRAY_BOUNDARY_INDEX_ISSUE": [
+                "1. Locate where the array is indexed (e.g., arr[index]).",
+                "2. Check if you are accessing arr[arr.length]. Remember that Java arrays are 0-indexed.",
+                "3. Adjust the index boundary by subtracting 1 (arr[arr.length - 1]) to safely access the last item."
+            ],
+            "ARRAY_TRAVERSAL_ISSUE": [
+                "1. Inspect the loop header controlling the array traversal.",
+                "2. Ensure the condition is strictly 'i < arr.length' (strictly less than length) and not '<='.",
+                "3. Double-check that your index counter is updated inside the loop header or body."
+            ],
+            "LOOP_BOUNDARY_ISSUE": [
+                "1. Find the loop boundary condition (usually in the middle of the loop header).",
+                "2. If you are starting at 0, using '<=' instead of '<' will execute the loop one extra time.",
+                "3. Change the condition to '<' to avoid off-by-one index overruns."
+            ],
+            "LOOP_CONDITION_ISSUE": [
+                "1. Review the condition in your loop header (e.g. while(condition)).",
+                "2. Make sure it starts as true so the loop runs, and eventually evaluates to false so the loop terminates.",
+                "3. Verify that the variables used in the condition are properly modified inside the loop."
+            ],
+            "LOOP_CONTROL_FLOW_ISSUE": [
+                "1. Check if the loop has a clear exit condition and a reachable 'break;' statement.",
+                "2. If using 'while(true)', trace the flow to ensure the break statement runs when needed.",
+                "3. Make sure there are no unreachable statements after a break/continue."
+            ],
+            "LOOP_UPDATE_ISSUE": [
+                "1. Find the loop counter variable in the condition.",
+                "2. Verify that this variable is incremented/decremented (e.g., i++ or i--) inside the loop.",
+                "3. If inside a while-loop, confirm the increment statement exists at the end of the body."
+            ],
+            "METHOD_RETURN_ISSUE": [
+                "1. Check the declared return type in your method header (e.g., void, int, String).",
+                "2. If the return type is void, ensure there are no return statements that return values.",
+                "3. If the return type is non-void, verify that every execution path contains a return statement."
+            ],
+            "METHOD_SIGNATURE_ISSUE": [
+                "1. Locate the declared method header and count its parameters.",
+                "2. Locate the place in your code where the method is called and count the arguments passed.",
+                "3. Update the declaration or call to make the parameter and argument counts match."
+            ],
+            "METHOD_PARAMETER_USAGE_ISSUE": [
+                "1. Check the list of parameters declared in your method signature.",
+                "2. Confirm that every parameter is referenced and used in the method body.",
+                "3. Make sure you do not declare a local variable that hides the parameter name."
+            ],
+            "VARIABLE_ASSIGNMENT_ISSUE": [
+                "1. Check the assignment statements in your code (e.g., x = y;).",
+                "2. Ensure you are not assigning a variable to itself (e.g., x = x;).",
+                "3. Check that the variable on the right-hand side has been initialized before reading it."
+            ],
+            "VARIABLE_CALCULATION_ISSUE": [
+                "1. Examine mathematical calculations in your code (e.g., adding discount).",
+                "2. If subtracting a discount, use the subtraction operator (-) instead of addition (+).",
+                "3. Trace math operations with simple trace values to verify correctness."
+            ],
+            "CORRECT_NO_ERROR": [
+                "1. Logic is clean and behaves as expected.",
+                "2. Continue practice on the next challenges."
+            ]
+        }
+        explanation_steps = steps_map.get(reason_group, [
+            "1. Locate the flagged concept and matching code evidence.",
+            "2. Refer to the recommended repair strategy.",
+            "3. Correct the mistake and run the diagnostic again."
+        ])
+
+        return {
+            "xai_label":          xai_label,
+            "xai_confidence_pct": confidence_pct,
+            "xai_bullet_points":  bullets,
+            "xai_narrative":      narrative,
+            "xai_code_signals":   signals,
+            "why_not_correct":    why_not_correct,
+            "explanation_steps":  explanation_steps
+        }
+
     @classmethod
     def analyze(cls, data):
         """
@@ -209,8 +696,16 @@ class ErrorService:
         code = data.get("code", "")
         pretest = data.get("pretest_results", {})
 
-        if not code:
-            return {"success": False, "error": "No code provided"}
+        validation = cls.validate_java_submission(code)
+
+        if not validation["valid"]:
+            return {
+                "success": False,
+                "error_type": "INVALID_JAVA_INPUT",
+                "error": "The submitted text does not appear to be valid Java code.",
+                "message": "Please enter a valid Java class, method, variable declaration, loop, array declaration, or Java code snippet.",
+                "validation_reason": validation["reason"]
+            }
 
         model_1, model_2 = cls._load_models()
         if not model_1 or not model_2:
@@ -220,36 +715,183 @@ class ErrorService:
         # Step 1 — ML predictions
         # ------------------------------------------------------------------
         cleaned_code = cls.clean_java_code(code)
+        decision_scores_raw = None  # raw decision_function output, used for XAI confidence %
         try:
             ml_label = model_1.predict([cleaned_code])[0]
             reason_group = model_2.predict([cleaned_code])[0]
 
             confidence = "Medium"
             if hasattr(model_1, "decision_function"):
-                decision_scores = model_1.decision_function([cleaned_code])[0]
-                if max(decision_scores) > 1.0:
+                decision_scores_raw = model_1.decision_function([cleaned_code])[0]
+                if max(decision_scores_raw) > 1.0:
                     confidence = "High"
-                elif max(decision_scores) < 0.3:
+                elif max(decision_scores_raw) < 0.3:
                     confidence = "Low"
         except Exception as e:
             return {"success": False, "error": f"Prediction failed: {str(e)}"}
 
         # ------------------------------------------------------------------
-        # Step 2 — Rule-based safety layer (triggered on Low confidence)
+        # Step 1.5 — Hybrid Confidence Recalibration Layer
+        # ------------------------------------------------------------------
+        svm_conf_pct = cls._compute_confidence_pct(confidence, decision_scores_raw)
+        
+        # Calculate rule-based validation score (base is 0.5)
+        rule_validation_score = 0.5
+        stripped = re.sub(r'/\*.*?\*/', '', code or '', flags=re.DOTALL)
+        stripped = re.sub(r'//.*', '', stripped)
+        # Clean whitespaces inside square brackets to handle copy-paste visual wraps
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+        
+        if ml_label == "LOOP_ERROR":
+            loop_errors = (
+                re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*[^;]+;', stripped) or
+                re.search(r'for\s*\(\s*int\s+\w+\s*=\s*1\s*;', stripped) or
+                re.search(r'for\s*\([^;]+;\s*[^;]+;\s*\)', stripped) or
+                re.search(r'while\s*\(\s*(true|1)\s*\)', stripped)
+            )
+            while_blocks = re.findall(r'while\s*\(([^)]+)\)\s*\{([^}]*)\}', stripped)
+            for cond, body in while_blocks:
+                if re.search(r'\b\w+\s*(?:<|<=|>|>=|!=|==)\s*\d+', cond):
+                    if not re.search(r'\+\+|--|\+=|-=', body):
+                        loop_errors = True
+            
+            if loop_errors:
+                rule_validation_score += 0.4
+            else:
+                safe_loop = re.search(r'for\s*\(\s*int\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*[^;]+\s*;\s*\1\s*\+\+\s*\)', stripped)
+                if safe_loop:
+                    rule_validation_score -= 0.3
+                    
+        elif ml_label == "ARRAY_ERROR":
+            arr_errors = (
+                re.search(r'\b\w+\s*\[\s*\w+\.length\s*\]', stripped) or
+                re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*\w+\.length', stripped)
+            )
+            literal_arrays = re.findall(r'int\s*\[\]\s+(\w+)\s*=\s*\{([^}]+)\}', stripped)
+            for arr_name, elements in literal_arrays:
+                num_elements = len([e for e in elements.split(',') if e.strip()])
+                accesses = re.findall(r'\b' + re.escape(arr_name) + r'\s*\[\s*(\d+)\s*\]', stripped)
+                for acc in accesses:
+                    if int(acc) >= num_elements:
+                        arr_errors = True
+            
+            if arr_errors:
+                rule_validation_score += 0.4
+            else:
+                if re.search(r'\b\w+\s*\[\s*0\s*\]', stripped) or re.search(r'\.length\s*-\s*1', stripped):
+                    rule_validation_score -= 0.3
+                    
+        elif ml_label == "METHOD_ERROR":
+            mismatch = cls.detect_method_argument_mismatch(code)
+            method_errors = (
+                mismatch.get("mismatch_found") or
+                re.search(r'\bvoid\b[^{]+\{[^}]*\breturn\b[^;]+;', stripped)
+            )
+            m = re.search(r'\b(int|long|double|float|boolean|String)\b[^{]+\{[^}]*\}', stripped)
+            if m and "return" not in m.group(0):
+                method_errors = True
+                
+            if method_errors:
+                rule_validation_score += 0.4
+            else:
+                rule_validation_score -= 0.2
+                
+        elif ml_label == "VARIABLE_ERROR":
+            var_errors = (
+                re.search(r'\b(\w+)\s*=\s*\1\b', stripped) or
+                re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or
+                re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE)
+            )
+            add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
+            for body in add_methods:
+                if '-' in body and '+' not in body:
+                    var_errors = True
+                    
+            if var_errors:
+                rule_validation_score += 0.4
+            else:
+                if re.search(r'\b(?:int|double|float|boolean|String|char)\s+\w+\s*=\s*[^;]+;', stripped):
+                    rule_validation_score -= 0.3
+                    
+        elif ml_label == "CORRECT":
+            has_error = (
+                cls.detect_method_argument_mismatch(code).get("mismatch_found") or
+                re.search(r'\b\w+\s*\[\s*\w+\.length\s*\]', stripped) or
+                re.search(r'for\s*\([^;]+;\s*[^;]+<=\s*[^;]+;', stripped) or
+                re.search(r'\b(\w+)\s*=\s*\1\b', stripped)
+            )
+            if has_error:
+                rule_validation_score -= 0.4
+            else:
+                rule_validation_score += 0.4
+                
+        rule_validation_score = max(0.0, min(1.0, rule_validation_score))
+        
+        # Fused confidence calculation (0.6 SVM + 0.4 Rules)
+        final_confidence_pct = int(0.6 * svm_conf_pct + 40.0 * rule_validation_score)
+        final_confidence_pct = max(0, min(100, final_confidence_pct))
+        
+        # Reset qualitative confidence based on fusion
+        if final_confidence_pct >= 80:
+            confidence = "High"
+        elif final_confidence_pct >= 50:
+            confidence = "Medium"
+        else:
+            confidence = "Low"
+
+        # ------------------------------------------------------------------
+        # Step 2 — Rule-based safety layer (unconditional for definitive errors)
         # ------------------------------------------------------------------
         original_ml_label = ml_label
         final_label = ml_label
         override_applied = False
         override_reason = None
         hybrid_correction_badge = None
+        correctness_validation_applied = False
+        correctness_validation_reason = None
+        correctness_check = None
 
-        if confidence == "Low":
-            mismatch = cls.detect_method_argument_mismatch(code)
-            if mismatch["mismatch_found"]:
-                final_label = "METHOD_ERROR"
+        mismatch = cls.detect_method_argument_mismatch(code)
+        if mismatch["mismatch_found"]:
+            final_label = "METHOD_ERROR"
+            override_applied = True
+            override_reason = mismatch["reason"]
+            hybrid_correction_badge = "Rule-based correction applied"
+
+        if not override_applied:
+            correctness_check = cls.detect_obviously_correct_java(code)
+            if correctness_check.get("is_correct"):
+                final_label = "CORRECT"
                 override_applied = True
-                override_reason = mismatch["reason"]
-                hybrid_correction_badge = "Rule-based correction applied"
+                override_reason = "Correctness validation identified a simple valid Java pattern with no obvious beginner error."
+                correctness_validation_applied = True
+                correctness_validation_reason = correctness_check.get("reason")
+                hybrid_correction_badge = "Validated as Correct"
+            else:
+                # ML model falsely predicted CORRECT, but rule validation detected an error pattern
+                if final_label == "CORRECT":
+                    pattern_map = {
+                        "method_argument_mismatch": "METHOD_ERROR",
+                        "array_length_index": "ARRAY_ERROR",
+                        "array_out_of_bounds": "ARRAY_ERROR",
+                        "loop_boundary_risk": "LOOP_ERROR",
+                        "loop_start_at_1": "LOOP_ERROR",
+                        "for_empty_update": "LOOP_ERROR",
+                        "infinite_loop_no_break": "LOOP_ERROR",
+                        "while_no_update": "LOOP_ERROR",
+                        "discount_added": "VARIABLE_ERROR",
+                        "add_returns_subtraction": "VARIABLE_ERROR",
+                        "void_method_returns_value": "METHOD_ERROR",
+                        "non_void_method_missing_return": "METHOD_ERROR",
+                        "self_assignment": "VARIABLE_ERROR"
+                    }
+                    mp = correctness_check.get("matched_pattern")
+                    mapped_label = pattern_map.get(mp)
+                    if mapped_label:
+                        final_label = mapped_label
+                        override_applied = True
+                        override_reason = f"ML model falsely predicted CORRECT, but rule validation detected: {correctness_check.get('reason')}."
+                        hybrid_correction_badge = "Rule-based correction applied"
 
         # ------------------------------------------------------------------
         # Step 2b — Consistency Validation
@@ -275,7 +917,33 @@ class ErrorService:
             "CORRECT": "CORRECT_NO_ERROR"
         }
         
-        if reason_group_original not in allowed_mapping.get(final_label, []):
+        if override_applied and final_label == "METHOD_ERROR" and mismatch.get("mismatch_found"):
+            reason_group_final = "METHOD_SIGNATURE_ISSUE"
+            reason_group_adjusted = True
+            reason_group_adjustment_reason = "Method signature mismatch rule overrode the predicted sub-reason."
+        elif override_applied and correctness_check and not correctness_check.get("is_correct"):
+            sub_reason_map = {
+                "method_argument_mismatch": "METHOD_SIGNATURE_ISSUE",
+                "array_length_index": "ARRAY_BOUNDARY_INDEX_ISSUE",
+                "array_out_of_bounds": "ARRAY_BOUNDARY_INDEX_ISSUE",
+                "loop_boundary_risk": "LOOP_BOUNDARY_ISSUE",
+                "loop_start_at_1": "LOOP_BOUNDARY_ISSUE",
+                "for_empty_update": "LOOP_UPDATE_ISSUE",
+                "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
+                "while_no_update": "LOOP_UPDATE_ISSUE",
+                "discount_added": "VARIABLE_CALCULATION_ISSUE",
+                "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
+                "void_method_returns_value": "METHOD_RETURN_ISSUE",
+                "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
+                "self_assignment": "VARIABLE_ASSIGNMENT_ISSUE"
+            }
+            mp = correctness_check.get("matched_pattern")
+            mapped_sub = sub_reason_map.get(mp)
+            if mapped_sub:
+                reason_group_final = mapped_sub
+                reason_group_adjusted = True
+                reason_group_adjustment_reason = "Sub-reason group was set to match the rule-based error override."
+        elif reason_group_original not in allowed_mapping.get(final_label, []):
             reason_group_final = fallback_mapping.get(final_label, "CORRECT_NO_ERROR")
             reason_group_adjusted = True
             reason_group_adjustment_reason = "Reason group was adjusted to remain consistent with the broad error prediction."
@@ -292,14 +960,17 @@ class ErrorService:
         model_trace = {
             "preprocessing": "Java code cleaned using training preprocessing pipeline",
             "broad_model": "Linear SVM + TF-IDF",
-            "broad_prediction": ml_label,
+            "original_broad_prediction": original_ml_label,
+            "final_broad_prediction": final_label,
             "reason_model": "Linear SVM + TF-IDF",
-            "reason_prediction": reason_group_original,
-            "reason_group_final": reason_group_final,
+            "original_reason_prediction": reason_group_original,
+            "final_reason_group": reason_group_final,
             "reason_group_adjusted": "Yes" if reason_group_adjusted else "No",
             "feedback_source": "reason_group_feedback_template",
             "rule_override_applied": override_applied,
-            "rule_override_reason": override_reason if override_reason else "None"
+            "rule_override_reason": override_reason if override_reason else "None",
+            "correctness_validation_applied": correctness_validation_applied,
+            "correctness_validation_reason": correctness_validation_reason if correctness_validation_applied else "None"
         }
 
         if override_applied and override_reason:
@@ -317,16 +988,36 @@ class ErrorService:
 
         alignment = cls._align_with_pretest(final_label, pretest)
 
+        # ------------------------------------------------------------------
+        # Step 3b — Explainable AI (XAI) — Feature 2
+        # ------------------------------------------------------------------
+        xai_explanation = cls._generate_xai_explanation(
+            code=code,
+            reason_group=reason_group,
+            final_label=final_label,
+            confidence_level=confidence,
+            decision_scores=decision_scores_raw,
+            recalibrated_confidence_pct=final_confidence_pct,
+        )
+
         response = {
             "success": True,
             "student_id": student_id,
+            "predicted_label": final_label,
+            "reason_group": reason_group_final,
+            "confidence_score": final_confidence_pct,
+            "rule_override_status": {
+                "applied": override_applied,
+                "reason": override_reason or "None",
+                "badge": hybrid_correction_badge or "None"
+            },
+            "explanation_steps": xai_explanation["explanation_steps"],
+            "why_not_correct": xai_explanation["why_not_correct"],
             "analysis_source": "Two-stage ML prediction",
             "model_1": "Linear SVM broad error classifier",
             "model_2": "Linear SVM reason-group classifier",
             "broad_label": ml_label,
-            "reason_group": reason_group_final,
             "reason_group_original": reason_group_original,
-            "reason_group_final": reason_group_final,
             "reason_group_adjusted": reason_group_adjusted,
             "reason_group_adjustment_reason": reason_group_adjustment_reason,
             "model_trace": model_trace,
@@ -338,6 +1029,7 @@ class ErrorService:
             "hybrid_correction_badge": hybrid_correction_badge,
             "pattern_hint_applied": False,
             "pattern_hint_matched": None,
+            "xai_explanation": xai_explanation,
             "prediction": {
                 "label": final_label,
                 "concept": details["concept"],
@@ -365,16 +1057,22 @@ class ErrorService:
 
         # ------------------------------------------------------------------
         # Step 4 — Persist to history using the final label
+        # Also stores week_bucket (for analytics) and reason_group (for report)
         # ------------------------------------------------------------------
+        _now = datetime.datetime.now()
+        _week_bucket = _now.strftime("%Y-W%V")   # ISO week string e.g. "2025-W32"
+
         cls._history.append({
             "student_id": student_id,
-            "code": code[:100] + "...",
+            "code": code if len(code) <= 100 else code[:100] + "...",
             "label": final_label,
             "original_ml_label": original_ml_label,
             "override_applied": override_applied,
             "concept": details["concept"],
-            "timestamp": datetime.datetime.now().isoformat(),
-            "activity": details["gamification"]["recommended_activity"]
+            "timestamp": _now.isoformat(),
+            "activity": details["gamification"]["recommended_activity"],
+            "week_bucket": _week_bucket,          # Feature 1 — analytics bucketing
+            "reason_group": reason_group,          # Feature 3 — learning report detail
         })
 
         return response
@@ -467,13 +1165,13 @@ class ErrorService:
             },
             "CORRECT": {
                 "concept": "General",
-                "reason": "No common beginner error patterns were detected in the submitted code.",
-                "misconception": "The learner appears to have a stable grasp of the implemented concepts.",
-                "suggested_fix": "Everything looks good! You can try a more complex challenge to further test your skills.",
-                "beginner_explanation": "Great job! Your code follows the expected logic and structure for these programming concepts.",
+                "reason": "No common beginner error pattern was detected.",
+                "misconception": "The learner correctly applies the required logic.",
+                "suggested_fix": "Everything looks good. You can continue to the next challenge.",
+                "beginner_explanation": "Great job. Your code follows the expected logic for this concept.",
                 "gamification": {
                     "target_concept": "General",
-                    "recommended_activity": "Advanced Java Challenge",
+                    "recommended_activity": "Next Challenge",
                     "game_type": "advanced_project",
                     "difficulty": "pro",
                     "reward_badge": "Clean Coder",
@@ -567,10 +1265,10 @@ class ErrorService:
             },
             "CORRECT_NO_ERROR": {
                 "base": "CORRECT",
-                "reason": "No errors were found in the reasoning structure.",
+                "reason": "No common beginner error pattern was detected.",
                 "misconception": "The learner correctly applies the required logic.",
-                "suggested_fix": "Code looks completely fine.",
-                "beginner_explanation": "Perfect reasoning! The logic follows exactly what is expected."
+                "suggested_fix": "Everything looks good. You can continue to the next challenge.",
+                "beginner_explanation": "Great job. Your code follows the expected logic for this concept."
             }
         }
         
@@ -665,4 +1363,373 @@ class ErrorService:
             "counts": counts,
             "most_frequent_error": most_freq,
             "recommended_focus": rec_focus
+        }
+
+    # ======================================================================
+    # Feature 1 — Error Progression Analytics
+    # ======================================================================
+
+    @classmethod
+    def get_analytics(cls, user_id):
+        """
+        Computes error progression analytics for a learner.
+
+        Groups submission history by ISO week, calculates per-category error
+        counts, improvement percentages (first-half vs second-half comparison),
+        and identifies the most improved and most problematic concepts.
+
+        Returns a fully structured response ready for Chart.js consumption.
+        """
+        user_history = [h for h in cls._history if h["student_id"] == user_id]
+
+        if not user_history:
+            return {
+                "user_id": user_id,
+                "has_data": False,
+                "total_submissions": 0,
+                "weeks": [],
+                "weekly_totals": [],
+                "category_weekly": {},
+                "improvement_scores": {},
+                "overall_improvement_pct": 0,
+                "most_improved": None,
+                "most_problematic": None,
+                "error_free_rate": 0,
+                "total_counts": {},
+            }
+
+        all_error_cats = ["LOOP_ERROR", "VARIABLE_ERROR", "ARRAY_ERROR", "METHOD_ERROR"]
+
+        # ── Group by ISO week ──────────────────────────────────────────
+        week_buckets = {}
+        for entry in user_history:
+            week_key = entry.get("week_bucket")
+            if not week_key:
+                # Back-compute from timestamp for entries created before this feature
+                try:
+                    dt = datetime.datetime.fromisoformat(entry["timestamp"])
+                    week_key = dt.strftime("%Y-W%V")
+                except Exception:
+                    week_key = "Unknown"
+
+            if week_key not in week_buckets:
+                week_buckets[week_key] = {"total": 0, "errors": {}, "correct": 0}
+
+            week_buckets[week_key]["total"] += 1
+            label = entry["label"]
+            if label == "CORRECT":
+                week_buckets[week_key]["correct"] += 1
+            else:
+                week_buckets[week_key]["errors"][label] = (
+                    week_buckets[week_key]["errors"].get(label, 0) + 1
+                )
+
+        sorted_weeks = sorted(week_buckets.keys())
+
+        # ── Weekly totals (line chart data) ───────────────────────────
+        weekly_totals = []
+        for week in sorted_weeks:
+            error_count = sum(week_buckets[week]["errors"].values())
+            weekly_totals.append({
+                "week": week,
+                "total_errors": error_count,
+                "total_submissions": week_buckets[week]["total"],
+                "correct": week_buckets[week]["correct"],
+            })
+
+        # ── Per-category weekly counts (bar / multi-line chart) ───────
+        category_weekly = {}
+        for cat in all_error_cats:
+            category_weekly[cat] = [
+                week_buckets[w]["errors"].get(cat, 0) for w in sorted_weeks
+            ]
+
+        # ── Improvement scores (first-half vs second-half) ────────────
+        n = len(user_history)
+        midpoint = max(1, n // 2)
+        first_half  = user_history[:midpoint]
+        second_half = user_history[midpoint:]
+
+        improvement_scores = {}
+        for cat in all_error_cats:
+            first_count  = sum(1 for h in first_half  if h["label"] == cat)
+            second_count = sum(1 for h in second_half if h["label"] == cat)
+
+            if first_count == 0 and second_count == 0:
+                improvement_scores[cat] = {"pct": 0,    "direction": "stable",   "first": 0, "second": 0}
+            elif first_count == 0:
+                improvement_scores[cat] = {"pct": -100, "direction": "worse",    "first": 0, "second": second_count}
+            else:
+                pct = round(((first_count - second_count) / first_count) * 100)
+                direction = "improved" if pct > 0 else ("worse" if pct < 0 else "stable")
+                improvement_scores[cat] = {"pct": pct, "direction": direction,
+                                           "first": first_count, "second": second_count}
+
+        # ── Overall improvement ───────────────────────────────────────
+        total_first_errors  = sum(1 for h in first_half  if h["label"] != "CORRECT")
+        total_second_errors = sum(1 for h in second_half if h["label"] != "CORRECT")
+        if total_first_errors == 0:
+            overall_improvement_pct = 0
+        else:
+            overall_improvement_pct = round(
+                ((total_first_errors - total_second_errors) / total_first_errors) * 100
+            )
+
+        # ── Most improved ─────────────────────────────────────────────
+        most_improved  = None
+        best_gain = -999
+        for cat, data in improvement_scores.items():
+            if data["direction"] == "improved" and data["pct"] > best_gain:
+                best_gain = data["pct"]
+                most_improved = cat
+
+        # ── Most problematic (by total count) ─────────────────────────
+        total_counts = {}
+        for h in user_history:
+            if h["label"] != "CORRECT":
+                total_counts[h["label"]] = total_counts.get(h["label"], 0) + 1
+        most_problematic = max(total_counts, key=total_counts.get) if total_counts else None
+
+        # ── Error-free rate ───────────────────────────────────────────
+        correct_count    = sum(1 for h in user_history if h["label"] == "CORRECT")
+        error_free_rate  = round((correct_count / len(user_history)) * 100)
+
+        return {
+            "user_id":               user_id,
+            "has_data":              True,
+            "total_submissions":     n,
+            "weeks":                 sorted_weeks,
+            "weekly_totals":         weekly_totals,
+            "category_weekly":       category_weekly,
+            "improvement_scores":    improvement_scores,
+            "overall_improvement_pct": overall_improvement_pct,
+            "most_improved":         most_improved,
+            "most_problematic":      most_problematic,
+            "error_free_rate":       error_free_rate,
+            "total_counts":          total_counts,
+        }
+
+    # ======================================================================
+    # Feature 3 — Personalized Learning Report
+    # ======================================================================
+
+    @classmethod
+    def generate_learning_report(cls, user_id):
+        """
+        Generates a dynamic, personalized learning report for a learner.
+
+        Uses the full submission history to identify:
+          • Current strengths   — error categories absent in recent submissions
+          • Recurring mistakes  — categories appearing in ≥ 25% of all submissions
+          • Recently improved   — categories frequent in early history, rare now
+          • New mistakes        — categories appearing only in the last 3 submissions
+          • Recommended focus   — top-2 error categories in the last 5 submissions
+
+        The summary narrative is dynamically generated — not a fixed template.
+        """
+        user_history = [h for h in cls._history if h["student_id"] == user_id]
+
+        if not user_history:
+            return {
+                "user_id": user_id,
+                "has_data": False,
+                "total_submissions": 0,
+                "summary": "No submission history found. Submit code to generate your learning report.",
+                "strengths": [],
+                "recurring_mistakes": [],
+                "recently_improved": [],
+                "new_mistakes": [],
+                "recommended_focus": [],
+                "avoid_patterns": [],
+            }
+
+        all_error_cats = ["LOOP_ERROR", "VARIABLE_ERROR", "ARRAY_ERROR", "METHOD_ERROR"]
+
+        concept_map = {
+            "LOOP_ERROR":     "Loops",
+            "VARIABLE_ERROR": "Variables",
+            "ARRAY_ERROR":    "Arrays",
+            "METHOD_ERROR":   "Methods",
+        }
+
+        reason_friendly = {
+            "LOOP_BOUNDARY_ISSUE":         "loop boundary conditions (using <= instead of <)",
+            "LOOP_UPDATE_ISSUE":            "missing loop counter updates",
+            "LOOP_CONTROL_FLOW_ISSUE":      "infinite loop conditions",
+            "LOOP_CONDITION_ISSUE":         "incorrect loop termination conditions",
+            "LOOP_CONDITION_BOUNDARY_ISSUE":"loop condition and boundary combined",
+            "LOOP_UPDATE_CONTROL_ISSUE":    "loop update and control flow combined",
+            "ARRAY_BOUNDARY_INDEX_ISSUE":   "array index out-of-bounds access",
+            "ARRAY_TRAVERSAL_ISSUE":        "incorrect array traversal",
+            "METHOD_RETURN_ISSUE":          "method return type mismatches",
+            "METHOD_SIGNATURE_ISSUE":       "method argument count mismatches",
+            "METHOD_PARAMETER_USAGE_ISSUE": "unused or incorrect parameter usage",
+            "VARIABLE_ASSIGNMENT_ISSUE":    "incorrect variable assignment",
+            "VARIABLE_CALCULATION_ISSUE":   "incorrect arithmetic operations",
+        }
+
+        n          = len(user_history)
+        recent     = user_history[-5:]              # last 5 submissions
+        very_recent = user_history[-3:]             # last 3 submissions
+        early      = user_history[:max(1, n - 5)]  # all except last 5
+
+        all_labels    = [h["label"] for h in user_history]
+        recent_labels = [h["label"] for h in recent]
+
+        # ── Strengths ─────────────────────────────────────────────────
+        strengths = []
+        for cat in all_error_cats:
+            total_occ  = all_labels.count(cat)
+            recent_occ = recent_labels.count(cat)
+            concept    = concept_map[cat]
+            if total_occ > 0 and recent_occ == 0:
+                strengths.append({
+                    "concept": concept,
+                    "message": f"You have not made {concept.lower()} errors in your recent submissions.",
+                    "icon": "💪",
+                })
+            elif total_occ == 0:
+                strengths.append({
+                    "concept": concept,
+                    "message": f"No {concept.lower()} errors detected across all your submissions.",
+                    "icon": "✅",
+                })
+
+        # ── Recurring mistakes ────────────────────────────────────────
+        recurring_mistakes = []
+        for cat in all_error_cats:
+            count = all_labels.count(cat)
+            rate  = count / len(user_history)
+            if rate >= 0.25:
+                concept = concept_map[cat]
+                reasons = [h.get("reason_group", "") for h in user_history
+                           if h.get("label") == cat and h.get("reason_group")]
+                top_reason = max(set(reasons), key=reasons.count) if reasons else None
+                reason_text = reason_friendly.get(top_reason, "various issues") if top_reason else "various issues"
+                recurring_mistakes.append({
+                    "concept":   concept,
+                    "count":     count,
+                    "rate_pct":  round(rate * 100),
+                    "message":   (
+                        f"{concept} errors appear in {round(rate * 100)}% of your submissions, "
+                        f"particularly around {reason_text}."
+                    ),
+                    "icon": "⚠️",
+                })
+
+        # ── Recently improved ─────────────────────────────────────────
+        recently_improved = []
+        if len(user_history) >= 4 and early:
+            early_labels = [h["label"] for h in early]
+            for cat in all_error_cats:
+                early_rate  = early_labels.count(cat)  / len(early_labels)  if early_labels  else 0
+                recent_rate = recent_labels.count(cat) / len(recent_labels) if recent_labels else 0
+                if early_rate >= 0.3 and recent_rate < early_rate * 0.5:
+                    concept         = concept_map[cat]
+                    improvement_pct = round((1 - recent_rate / early_rate) * 100) if early_rate > 0 else 0
+                    recently_improved.append({
+                        "concept":         concept,
+                        "improvement_pct": improvement_pct,
+                        "message": (
+                            f"Your {concept.lower()} error rate has dropped by approximately "
+                            f"{improvement_pct}% compared to your earlier submissions."
+                        ),
+                        "icon": "📈",
+                    })
+
+        # ── New mistakes ──────────────────────────────────────────────
+        new_mistakes  = []
+        older         = user_history[:-3] if len(user_history) > 3 else []
+        recent3_cats  = {h["label"] for h in very_recent if h["label"] != "CORRECT"}
+        older_cats    = {h["label"] for h in older}
+        for cat in recent3_cats - older_cats:
+            concept = concept_map.get(cat, cat)
+            new_mistakes.append({
+                "concept": concept,
+                "message": f"A new {concept.lower()} error pattern appeared in your most recent submissions.",
+                "icon": "🆕",
+            })
+
+        # ── Recommended focus ─────────────────────────────────────────
+        reason_advice = {
+            "LOOP_ERROR": {
+                "focus":  ["Nested loop structures", "Loop termination conditions", "While-loop counter management"],
+                "avoid":  ["Using <= instead of < in for-loops", "Missing loop variable increments", "Infinite while(true) patterns"],
+            },
+            "VARIABLE_ERROR": {
+                "focus":  ["Variable initialisation before use", "Assignment vs. equality operator", "Variable scope rules"],
+                "avoid":  ["Self-assignment (x = x)", "Adding discounts instead of subtracting", "Reading uninitialised variables"],
+            },
+            "ARRAY_ERROR": {
+                "focus":  ["Zero-based indexing", "Array length vs. last valid index", "Enhanced for-each loops"],
+                "avoid":  ["Using array.length directly as an index", "Starting array loops at 1", "Accessing indices beyond length−1"],
+            },
+            "METHOD_ERROR": {
+                "focus":  ["Matching argument count to parameter count", "Return type declarations", "Parameter vs. local variable distinction"],
+                "avoid":  ["Returning values from void methods", "Missing return in typed methods", "Calling methods with wrong argument count"],
+            },
+        }
+
+        recent_error_counts = {}
+        for h in recent:
+            if h["label"] != "CORRECT":
+                recent_error_counts[h["label"]] = recent_error_counts.get(h["label"], 0) + 1
+
+        sorted_recent  = sorted(recent_error_counts.items(), key=lambda x: x[1], reverse=True)
+        recommended_focus, avoid_patterns = [], []
+
+        for cat, count in sorted_recent[:2]:
+            concept = concept_map.get(cat, cat)
+            advice  = reason_advice.get(cat, {"focus": [concept], "avoid": []})
+            recommended_focus.append({
+                "concept": concept,
+                "count":   count,
+                "topics":  advice["focus"],
+                "icon":    "🎯",
+            })
+            for pattern in advice["avoid"]:
+                avoid_patterns.append({"text": pattern, "concept": concept})
+
+        # ── Summary narrative (dynamic) ───────────────────────────────
+        error_submissions = [h for h in user_history if h["label"] != "CORRECT"]
+
+        if not error_submissions:
+            summary = (
+                "Excellent performance! All your submissions are error-free. "
+                "Keep advancing to more complex challenges."
+            )
+        elif recently_improved:
+            improved_list = ", ".join(x["concept"] for x in recently_improved)
+            summary = f"You are showing clear improvement in {improved_list}. "
+            if recurring_mistakes:
+                rec_list = ", ".join(x["concept"] for x in recurring_mistakes[:2])
+                summary += (
+                    f"However, {rec_list} errors continue to appear frequently "
+                    "and need focused attention."
+                )
+            else:
+                summary += "Keep up this momentum and move to the next challenge."
+        elif recurring_mistakes:
+            rec_list = ", ".join(x["concept"] for x in recurring_mistakes[:2])
+            summary = (
+                f"Your main challenge areas are {rec_list}. "
+                "Targeted practice on these concepts will significantly improve your results."
+            )
+        else:
+            summary = (
+                "Your submission history shows a mix of error types. "
+                "Review the focus areas below and work through related exercises."
+            )
+
+        return {
+            "user_id":           user_id,
+            "has_data":          True,
+            "total_submissions": n,
+            "summary":           summary,
+            "strengths":         strengths,
+            "recurring_mistakes": recurring_mistakes,
+            "recently_improved": recently_improved,
+            "new_mistakes":      new_mistakes,
+            "recommended_focus": recommended_focus,
+            "avoid_patterns":    avoid_patterns,
         }
