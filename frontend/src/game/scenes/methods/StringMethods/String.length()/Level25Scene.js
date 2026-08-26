@@ -1406,21 +1406,15 @@ export class Level25Scene extends Phaser.Scene {
     const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
 
     try {
-      // TEMPORARY DEBUG — remove after investigation
-      console.log("[DEBUG] sending features:", { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks });
-      const response = await WellbeingAPI.predictStruggle({
+      const { prediction } = await WellbeingAPI.predictStruggle({
         attempts_count,
         time_taken_seconds,
         misconception_repeat_count,
         combo_breaks,
       });
-      // TEMPORARY DEBUG — remove after investigation
-      console.log("[DEBUG] behavioral prediction response:", response);
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(response.prediction);
+      GameManager.fusionEngine.checkBehavioral(prediction);
     } catch (e) {
-      // TEMPORARY DEBUG — remove after investigation
-      console.log("[DEBUG] behavioral check FAILED:", e);
       console.warn("Level25Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
@@ -1436,8 +1430,6 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   onCorrectAnswer(cfg) {
-    // TEMPORARY DEBUG — remove after investigation
-    console.log("[DEBUG] onCorrectAnswer called, this.currentRound =", this.currentRound);
     if (this.gameEnded) return;
     this.inputLocked = true;
     const firstTry = this.roundAttempts === 1;
@@ -1472,8 +1464,6 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   async onIncorrectAnswer(cfg, tag) {
-    // TEMPORARY DEBUG — remove after investigation
-    console.log("[DEBUG] onIncorrectAnswer called, this.currentRound =", this.currentRound);
     if (this.gameEnded) return;
     this.inputLocked = true;
     this.updateCombo(false);

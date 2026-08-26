@@ -7,7 +7,6 @@ breaks) looks anomalous compared to typical play — a proxy for "struggling".
 """
 
 import os
-import hashlib
 import numpy as np
 import joblib
 
@@ -39,16 +38,6 @@ class WellbeingService:
             if os.path.exists(MODEL_PATH):
                 try:
                     cls._model = joblib.load(MODEL_PATH)
-                    # TEMPORARY DEBUG — remove after investigation
-                    with open(MODEL_PATH, "rb") as f:
-                        file_bytes = f.read()
-                    print(
-                        f"[DEBUG] loaded isolation_forest_model.joblib -- "
-                        f"size={len(file_bytes)} bytes, "
-                        f"sha256={hashlib.sha256(file_bytes).hexdigest()}, "
-                        f"offset_={getattr(cls._model, 'offset_', 'N/A')}",
-                        flush=True,
-                    )
                 except Exception as e:
                     print(f"CRITICAL ERROR loading isolation forest model: {e}")
             else:
