@@ -91,9 +91,9 @@ function startFusionLoop() {
       const faceTriggered = GameManager.fusionEngine.updateFaceFrame(emotion);
       const fatigueTriggered = GameManager.fusionEngine.updateFatigueFrame(ear);
 
-      const { action, message } = GameManager.fusionEngine.decideAction(faceTriggered, fatigueTriggered);
-      if (action !== "NONE") {
-        GameManager._emit("fusionAction", { action, message });
+      const decision = GameManager.fusionEngine.decideAction(faceTriggered, fatigueTriggered);
+      if (decision.action !== "NONE") {
+        GameManager._emit("fusionAction", decision);
       }
     }, FUSION_LOOP_INTERVAL_MS);
   })();

@@ -640,6 +640,18 @@ export class Level25Scene extends Phaser.Scene {
 
     this.add.text(20, 14, "THE SCAN CHAMBER", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
     this.add.text(20, 36, "Accretion Phase — String Methods: length()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    // Persistent round counter, additional to (not a replacement for) the
+    // small numbered badge on each round's question card. Stacked under
+    // the title/subtitle on the left so it can't collide with SCORE/combo/
+    // hearts/the replay button on the right, or the monitor panel (which
+    // starts at x:400). Kept updated from startRound(); left as-is (frozen,
+    // dimmed under the end-screen overlay like the rest of this HUD bar)
+    // on gameOver()/levelComplete() rather than hidden, so it still shows
+    // how far the player got, matching the "Rounds Completed: X/12" text
+    // those screens already display.
+    this.roundHudText = this.add.text(20, 49, `ROUND 1 / ${ROUNDS.length}`, {
+      font: "bold 12px Arial", color: "#4fc3f7",
+    }).setDepth(51);
 
     const mg = this.add.graphics().setDepth(51);
     mg.fillStyle(0x1a1a2e, 1);
@@ -979,6 +991,7 @@ export class Level25Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
     const cfg = ROUNDS[index];
+    if (this.roundHudText) this.roundHudText.setText(`ROUND ${this.currentRound + 1} / ${ROUNDS.length}`);
     this.roundAttempts = 0;
     this.feedMissCount = 0;
     this.roundStartTime = this.time.now;
@@ -1393,15 +1406,21 @@ export class Level25Scene extends Phaser.Scene {
     const combo_breaks = GameManager.get("comboBreaksThisLevel") || 0;
 
     try {
-      const { prediction } = await WellbeingAPI.predictStruggle({
+      // TEMPORARY DEBUG — remove after investigation
+      console.log("[DEBUG] sending features:", { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks });
+      const response = await WellbeingAPI.predictStruggle({
         attempts_count,
         time_taken_seconds,
         misconception_repeat_count,
         combo_breaks,
       });
+      // TEMPORARY DEBUG — remove after investigation
+      console.log("[DEBUG] behavioral prediction response:", response);
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      GameManager.fusionEngine.checkBehavioral(response.prediction);
     } catch (e) {
+      // TEMPORARY DEBUG — remove after investigation
+      console.log("[DEBUG] behavioral check FAILED:", e);
       console.warn("Level25Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
@@ -1417,6 +1436,8 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   onCorrectAnswer(cfg) {
+    // TEMPORARY DEBUG — remove after investigation
+    console.log("[DEBUG] onCorrectAnswer called, this.currentRound =", this.currentRound);
     if (this.gameEnded) return;
     this.inputLocked = true;
     const firstTry = this.roundAttempts === 1;
@@ -1442,6 +1463,8 @@ export class Level25Scene extends Phaser.Scene {
 
     this.time.delayedCall(1300, () => {
       if (!this._alive || this.gameEnded) return;
+      // TEMPORARY DEBUG — remove after investigation
+      console.log("[DEBUG] checking behavioral hook, currentRound===2?", this.currentRound === 2);
       if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
@@ -1449,6 +1472,8 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   async onIncorrectAnswer(cfg, tag) {
+    // TEMPORARY DEBUG — remove after investigation
+    console.log("[DEBUG] onIncorrectAnswer called, this.currentRound =", this.currentRound);
     if (this.gameEnded) return;
     this.inputLocked = true;
     this.updateCombo(false);
@@ -1462,6 +1487,8 @@ export class Level25Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.time.delayedCall(300, () => {
       if (!this._alive || this.gameEnded) return;
+      // TEMPORARY DEBUG — remove after investigation
+      console.log("[DEBUG] checking behavioral hook, currentRound===2?", this.currentRound === 2);
       if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);

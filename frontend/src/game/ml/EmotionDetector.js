@@ -16,6 +16,14 @@ const MODEL_URL = "/models/emotion_cnn.onnx";
 const INPUT_SIZE = 48;
 const LABELS = ["fear", "frustrated", "neutral", "sad"];
 
+// ════════════════════════════════════════════════════════════════════
+// TEMPORARY DEBUG INSTRUMENTATION — remove before shipping.
+// Toggle off (or delete everything guarded by DEBUG_EMOTION) once the
+// fear/frustrated-never-wins investigation is done. No detection/fusion
+// logic depends on this flag; it's purely console/DOM side output.
+// ════════════════════════════════════════════════════════════════════
+const DEBUG_EMOTION = true;
+
 // Threaded wasm needs SharedArrayBuffer + cross-origin isolation headers,
 // which the dev server doesn't set. Force single-threaded so this runs
 // without any extra server config.
@@ -111,7 +119,68 @@ class _EmotionDetector {
       tensorData[p] = (gray / 255 - 0.5) / 0.5;
     }
 
+    // ── TEMPORARY DEBUG INSTRUMENTATION (remove before shipping) ──
+    // Captures the exact tensor the model sees, once, so we can visually
+    // check the crop/resize/grayscale pipeline isn't distorting, flipping,
+    // or mis-centering the face — independent of anything the model itself
+    // does with it.
+    if (DEBUG_EMOTION && !this._debugTensorCaptured) {
+      this._debugTensorCaptured = true;
+      this._debugCaptureTensorImage(tensorData);
+    }
+    // ── END TEMPORARY DEBUG INSTRUMENTATION ──
+
     return tensorData;
+  }
+
+  /**
+   * TEMPORARY DEBUG INSTRUMENTATION (remove before shipping).
+   * Reverses the normalization back to 0-255 grayscale, renders it to a
+   * canvas pinned in the page's top-left corner (magenta border, so it's
+   * unmistakable), and also exposes it on `window` + logs a data URL —
+   * three ways to inspect the same image, pick whichever's convenient.
+   */
+  _debugCaptureTensorImage(tensorData) {
+    const native = document.createElement("canvas");
+    native.width = INPUT_SIZE;
+    native.height = INPUT_SIZE;
+    const nativeCtx = native.getContext("2d");
+    const imgData = nativeCtx.createImageData(INPUT_SIZE, INPUT_SIZE);
+    for (let p = 0; p < tensorData.length; p++) {
+      const gray = Math.round(Math.min(255, Math.max(0, (tensorData[p] * 0.5 + 0.5) * 255)));
+      imgData.data[p * 4] = gray;
+      imgData.data[p * 4 + 1] = gray;
+      imgData.data[p * 4 + 2] = gray;
+      imgData.data[p * 4 + 3] = 255;
+    }
+    nativeCtx.putImageData(imgData, 0, 0);
+
+    // Upscale for visibility (48x48 is too small to inspect at native size).
+    const scale = 4;
+    const display = document.createElement("canvas");
+    display.width = INPUT_SIZE * scale;
+    display.height = INPUT_SIZE * scale;
+    const displayCtx = display.getContext("2d");
+    displayCtx.imageSmoothingEnabled = false;
+    displayCtx.drawImage(native, 0, 0, INPUT_SIZE, INPUT_SIZE, 0, 0, display.width, display.height);
+
+    display.style.position = "fixed";
+    display.style.top = "8px";
+    display.style.left = "8px";
+    display.style.zIndex = "999999";
+    display.style.border = "3px solid #ff00ff";
+    display.title = "EmotionDetector DEBUG: the actual 48x48 tensor fed to the model";
+    document.body.appendChild(display);
+
+    const dataUrl = native.toDataURL("image/png");
+    window.__emotionDebugTensorCanvas = display;
+    window.__emotionDebugTensorDataURL = dataUrl;
+    console.log(
+      "[EmotionDetector DEBUG] Captured the model input tensor as an image — " +
+      "pinned to the page's top-left corner (magenta border). Also at " +
+      "window.__emotionDebugTensorCanvas / window.__emotionDebugTensorDataURL.\n" +
+      "Data URL (paste into a new tab's address bar to view full-size):\n" + dataUrl
+    );
   }
 
   /**
@@ -129,6 +198,15 @@ class _EmotionDetector {
 
     const results = await session.run({ input: inputTensor });
     const logits = results.output.data;
+
+    // ── TEMPORARY DEBUG INSTRUMENTATION (remove before shipping) ──
+    // Full raw output every call, not just the winning label — need to see
+    // how close fear/frustrated get even when they lose.
+    if (DEBUG_EMOTION) {
+      const raw = LABELS.map((label, i) => `${label}: ${logits[i].toFixed(3)}`).join(", ");
+      console.log(`[EmotionDetector DEBUG] Raw output: {${raw}}`);
+    }
+    // ── END TEMPORARY DEBUG INSTRUMENTATION ──
 
     let bestIdx = 0;
     for (let i = 1; i < logits.length; i++) {
