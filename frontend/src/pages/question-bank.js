@@ -141,6 +141,9 @@ export async function renderQuestionBank(container) {
                     <i class="fa-solid fa-box-archive" style="margin-right: 0.4rem;"></i> 4. Rejected Archive
                     <span id="rejected-badge" style="background: #64748b; color: white; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem;">0</span>
                 </button>
+                <button class="btn qbank-tab-btn ${activeTab === 'analytics' ? 'active' : ''}" data-tab="analytics" style="padding: 0.6rem 1.2rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s;">
+                    <i class="fa-solid fa-chart-pie" style="margin-right: 0.4rem;"></i> 5. Post-Test ML Analytics
+                </button>
             </div>
 
             <!-- Tab Content Area -->
@@ -212,6 +215,8 @@ function renderTabContent() {
         renderApprovedTab(content);
     } else if (activeTab === "rejected") {
         renderRejectedTab(content);
+    } else if (activeTab === "analytics") {
+        renderAnalyticsTab(content);
     }
 }
 
@@ -462,6 +467,68 @@ function renderRejectedTab(content) {
 
         <div style="display: flex; flex-direction: column; gap: 1.2rem;">
             ${rejectedQuestions.map(q => renderQuestionCard(q, { showActions: false, isDraft: false, isRejected: true })).join("")}
+        </div>
+    `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. POST-TEST ML ANALYTICS TAB
+// ─────────────────────────────────────────────────────────────────────────────
+function renderAnalyticsTab(content) {
+    content.innerHTML = `
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: #0f172a; margin: 0 0 0.3rem 0;">
+                Post-Learning Validation & ML Mastery Model Analytics
+            </h3>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">
+                Component 4 empirical verification analytics based on the scikit-learn Random Forest Pipeline.
+            </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; margin-bottom: 2rem;">
+            <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.4rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #4338ca; text-transform: uppercase;">Active Inference Pipeline</span>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0.4rem 0;">schema_mastery_pipeline.pkl</div>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">11-feature multi-source vector trained on 24,032 student sessions.</p>
+            </div>
+
+            <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.4rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #059669; text-transform: uppercase;">Answer Quality Weighting</span>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0.4rem 0;">4-Tier Graded Evaluation</div>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Correct (1.0), Nearly Correct (0.5), Wrong (0.0), Clearly Wrong (0.0).</p>
+            </div>
+
+            <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.4rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #d97706; text-transform: uppercase;">Progression Thresholds</span>
+                <div style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0.4rem 0;">DONE vs LEARN_AGAIN</div>
+                <p style="font-size: 0.8rem; color: #64748b; margin: 0;">Strong (≥85%), Good (≥70%) → DONE. Practice/Learn (<70%) → LEARN_AGAIN.</p>
+            </div>
+        </div>
+
+        <div class="card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.6rem;">
+            <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0 0 1rem 0;">
+                <i class="fa-solid fa-list-check" style="color: #4338ca; margin-right: 0.4rem;"></i>
+                Approved Question Bank Blueprint Coverage
+            </h4>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                ${CONCEPTS.map(c => {
+                    const count = approvedQuestions.filter(q => q.concept_name?.toLowerCase() === c.toLowerCase()).length;
+                    return `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="color: #0f172a; font-size: 0.9rem;">${c}</strong>
+                                <span style="font-size: 0.75rem; font-weight: 700; background: #e0e7ff; color: #4338ca; padding: 0.15rem 0.5rem; border-radius: 999px;">
+                                    ${count} Approved
+                                </span>
+                            </div>
+                            <div style="margin-top: 0.6rem; background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden;">
+                                <div style="width: ${Math.min(100, (count / 15) * 100)}%; background: #4f46e5; height: 100%;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
         </div>
     `;
 }

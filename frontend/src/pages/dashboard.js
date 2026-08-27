@@ -212,8 +212,30 @@ async function loadDashboardData(studentId) {
         const needReviewColor = needsReview.length > 0 ? "#f97316" : "#34d399";
 
         content.innerHTML = `
+            <!-- Student Personalized Welcome Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1.2rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.3rem;">
+                        <span style="font-size: 1.6rem;">👋</span>
+                        <h1 style="font-size: 1.8rem; font-weight: 800; color: #ffffff; margin: 0;">
+                            Welcome back, ${data.studentName || 'Student'}!
+                        </h1>
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem; margin: 0;">
+                        Your personalized learning journey in <strong>Java Programming Fundamentals</strong>.
+                    </p>
+                </div>
+                
+                <div style="display: flex; gap: 0.8rem; align-items: center;">
+                    <div style="background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.85rem; color: #c7d2fe; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-graduation-cap" style="color: #818cf8;"></i>
+                        <span>Current Target Concept: <strong>Loops & Iteration</strong></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Learning Journey Progress Pipeline -->
-            <div class="dashboard-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(56,189,248,0.06)); border: 1px solid rgba(99,102,241,0.3); border-radius: 0.8rem; padding: 1.5rem; margin-bottom: 1.8rem;">
+            <div class="dashboard-card student-journey-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(56,189,248,0.06)); border: 1px solid rgba(99,102,241,0.3); border-radius: 0.8rem; padding: 1.5rem; margin-bottom: 1.8rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <h3 style="font-size: 1.2rem; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
