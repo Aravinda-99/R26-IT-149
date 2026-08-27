@@ -166,9 +166,18 @@ class ErrorService:
                 if not re.search(r'\+\+|--|\+=|-=|=', body):
                     return {"is_correct": False, "reason": "While loop has no counter variable update inside the body", "matched_pattern": "while_no_update"}
 
-        # 7. Discount is added instead of subtracted
-        if re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE):
-            return {"is_correct": False, "reason": "Discount variable is added to price instead of subtracted", "matched_pattern": "discount_added"}
+        # 7. Discount calculation uses wrong operator (not subtraction)
+        wrong_discount = re.search(r'\b\w+\s*([\+\*\/])\s*\w*discount\w*', stripped, re.IGNORECASE)
+        if wrong_discount:
+            op = wrong_discount.group(1)
+            reason = f"Discount variable is used with '{op}' instead of being subtracted"
+            return {"is_correct": False, "reason": reason, "matched_pattern": "discount_wrong_operator"}
+        
+        wrong_discount2 = re.search(r'\b\w*discount\w*\s*([\+\*\/])\s*\w+', stripped, re.IGNORECASE)
+        if wrong_discount2:
+            op = wrong_discount2.group(1)
+            reason = f"Discount variable is used with '{op}' instead of being subtracted"
+            return {"is_correct": False, "reason": reason, "matched_pattern": "discount_wrong_operator"}
 
         # 8. Method named add returns subtraction
         add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
@@ -556,10 +565,11 @@ class ErrorService:
             )
 
         elif reason_group == "VARIABLE_CALCULATION_ISSUE":
-            if (re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or
-                    re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE)):
-                bullets.append({"icon": "🔴", "text": "Discount is being added to the total instead of subtracted — this increases the price."})
-                signals.append("discount addition instead of subtraction")
+            wrong_op = re.search(r'\b\w+\s*([\+\*\/])\s*\w*discount\w*', stripped, re.IGNORECASE) or re.search(r'\b\w*discount\w*\s*([\+\*\/])\s*\w+', stripped, re.IGNORECASE)
+            if wrong_op:
+                op = wrong_op.group(1)
+                bullets.append({"icon": "🔴", "text": f"Discount is being applied with '{op}' instead of being subtracted."})
+                signals.append(f"discount wrong operator '{op}'")
             add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
             for body in add_methods:
                 if '-' in body and '+' not in body:
@@ -799,8 +809,8 @@ class ErrorService:
         elif ml_label == "VARIABLE_ERROR":
             var_errors = (
                 re.search(r'\b(\w+)\s*=\s*\1\b', stripped) or
-                re.search(r'\b\w+\s*\+\s*\w*discount\w*', stripped, re.IGNORECASE) or
-                re.search(r'\b\w*discount\w*\s*\+\s*\w+', stripped, re.IGNORECASE)
+                re.search(r'\b\w+\s*[\+\*\/]\s*\w*discount\w*', stripped, re.IGNORECASE) or
+                re.search(r'\b\w*discount\w*\s*[\+\*\/]\s*\w+', stripped, re.IGNORECASE)
             )
             add_methods = re.findall(r'(?:int|double|float|long)\s+add\s*\([^)]*\)\s*\{([^}]+)\}', stripped)
             for body in add_methods:
@@ -879,7 +889,7 @@ class ErrorService:
                         "for_empty_update": "LOOP_ERROR",
                         "infinite_loop_no_break": "LOOP_ERROR",
                         "while_no_update": "LOOP_ERROR",
-                        "discount_added": "VARIABLE_ERROR",
+                        "discount_wrong_operator": "VARIABLE_ERROR",
                         "add_returns_subtraction": "VARIABLE_ERROR",
                         "void_method_returns_value": "METHOD_ERROR",
                         "non_void_method_missing_return": "METHOD_ERROR",
@@ -890,7 +900,7 @@ class ErrorService:
                     if mapped_label:
                         final_label = mapped_label
                         override_applied = True
-                        override_reason = f"ML model falsely predicted CORRECT, but rule validation detected: {correctness_check.get('reason')}."
+                        override_reason = correctness_check.get('reason')
                         hybrid_correction_badge = "Rule-based correction applied"
 
         # ------------------------------------------------------------------
@@ -931,7 +941,7 @@ class ErrorService:
                 "for_empty_update": "LOOP_UPDATE_ISSUE",
                 "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
                 "while_no_update": "LOOP_UPDATE_ISSUE",
-                "discount_added": "VARIABLE_CALCULATION_ISSUE",
+                "discount_wrong_operator": "VARIABLE_CALCULATION_ISSUE",
                 "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
                 "void_method_returns_value": "METHOD_RETURN_ISSUE",
                 "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
@@ -976,15 +986,16 @@ class ErrorService:
         if override_applied and override_reason:
             details = dict(details)
             details["reason"] = override_reason
-            details["misconception"] = (
-                "The learner may misunderstand that method arguments must "
-                "match the parameter list exactly in number and order."
-            )
-            details["suggested_fix"] = (
-                "Either update the method call to pass the correct number of "
-                "arguments, or modify the method declaration to accept the "
-                "number of arguments you are providing."
-            )
+            if mismatch and mismatch.get("mismatch_found"):
+                details["misconception"] = (
+                    "The learner may misunderstand that method arguments must "
+                    "match the parameter list exactly in number and order."
+                )
+                details["suggested_fix"] = (
+                    "Either update the method call to pass the correct number of "
+                    "arguments, or modify the method declaration to accept the "
+                    "number of arguments you are providing."
+                )
 
         alignment = cls._align_with_pretest(final_label, pretest)
 
@@ -1258,7 +1269,7 @@ class ErrorService:
             },
             "VARIABLE_CALCULATION_ISSUE": {
                 "base": "VARIABLE_ERROR",
-                "reason": "A mathematical calculation is logically flawed, such as adding a discount instead of subtracting.",
+                "reason": "A mathematical calculation is logically flawed, such as using the wrong operator for a discount.",
                 "misconception": "Confusion with operators or misunderstanding the semantic meaning of the variables (e.g., discounts reduce total).",
                 "suggested_fix": "Check your math operators. If computing a discount, use subtraction '-'. If computing tax, use addition and multiplication.",
                 "beginner_explanation": "Math in Java is just like math in school. If a discount makes things cheaper, use a minus sign, not a plus sign!"
