@@ -5,7 +5,7 @@ export async function renderQuizLab(container) {
         <h1>Quiz Lab</h1>
         <p style="color: var(--text-secondary); margin-bottom: 1rem;">Take focused quizzes in a distraction-free view.</p>
 
-        <div class="card">
+        <div class="card" style="background: #F8FAFC; border-color: #E2E8F0;">
             <div class="lp-quiz-progress-wrap">
                 <div class="lp-quiz-progress-head">
                     <span id="quiz-counter">Question 1 of 20</span>
@@ -19,8 +19,8 @@ export async function renderQuizLab(container) {
             <div id="quiz-box" style="margin-top: 1rem;"></div>
 
             <div class="lp-quiz-actions" style="margin-top: 1rem; display:flex; justify-content:space-between; gap:0.8rem;">
-                <button id="prev-quiz-btn" class="btn" style="background: var(--border-color); color: var(--text-primary);" disabled>Previous</button>
-                <button id="next-quiz-btn" class="btn btn-primary">Next</button>
+                <button id="prev-quiz-btn" class="btn" style="background: #E2E8F0; color: #0F172A;" disabled>Previous</button>
+                <button id="next-quiz-btn" class="btn btn-primary" style="background: #2563EB;">Next</button>
             </div>
         </div>
     `;

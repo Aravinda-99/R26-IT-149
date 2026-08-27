@@ -12,6 +12,7 @@
  * in this codebase does — scene.inputLocked = true — for the duration the
  * menu is open, then releases it once the player picks an option.
  *
+<<<<<<< HEAD
  * All three options are wired:
  * - "Review the basics" restarts the scene with forceTutorial: true.
  * - "Get an extra life and try again" always calls GameManager.addLife(),
@@ -23,6 +24,17 @@
  * - "Go to menu list" navigates via scene.scene.start("MenuScene") — the
  *   same scene key every level's own "RETURN TO MENU" button uses in
  *   gameOver() (verified in Level25Scene.js and Level34Scene.js).
+=======
+ * "Review the basics" restarts the current scene with its tutorial forced —
+ * unless the scene sets its own `baseTutorialScene` (e.g. a rapid-fire
+ * Tuning-phase level pointing back at its wing's Accretion-phase intro),
+ * in which case it navigates there instead. "Get an extra life and try
+ * again" calls GameManager.addLife() for the global count, and also the
+ * scene's own addLife() when it defines one — most methods-wing levels
+ * track lives locally (this.lives / this.lifeIcons) rather than through
+ * GameManager, so the global-only call was previously a no-op for them.
+ * "Go to menu list" returns to MenuScene.
+>>>>>>> a4628d7cf1fa34561dd12211a665fb5acefa69d3
  */
 
 import { GameManager } from "./GameManager.js";
@@ -134,24 +146,65 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
       ? Math.min(Math.max(height / 2, minCenterY), maxCenterY)
       : height / 2;
 
-    const panelBg = scene.add.graphics().setDepth(depth + 1).setAlpha(0);
-    panelBg.fillStyle(COLOR_PANEL_BG, 0.98);
-    panelBg.fillRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
-    panelBg.lineStyle(2, urgent ? COLOR_URGENT : COLOR_CYAN);
-    panelBg.strokeRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
-    created.push(panelBg);
+    // Layout constants — panelH is derived from these plus the title's
+    // actual (possibly word-wrapped) rendered height, so the background
+    // always wraps its content exactly instead of a guessed fixed height.
+    const TOP_PADDING = 32;
+    const TITLE_GAP = 26;
+    const BUTTON_H = 46;
+    const BUTTON_GAP = 18;
+    const BOTTOM_PADDING = 32;
+    const buttonCount = OPTIONS.length;
 
+<<<<<<< HEAD
     // Reposition the (already-measured) title into its final spot now
     // that panelY/panelH are resolved.
     titleText.setPosition(panelX, panelY - panelH / 2 + topPadding + titleText.height / 2);
 
     const buttonY0 = panelY - panelH / 2 + topPadding + titleText.height + titleToButtonsGap + buttonH / 2;
+=======
+    // Created first (off-panel position) purely to measure its wrapped
+    // height — repositioned once panelH/panelTop are known below.
+    const titleText = scene.add.text(
+      panelX,
+      0,
+      title || (urgent
+        ? "Bit noticed you're frustrated AND struggling with this one..."
+        : "Bit noticed you're struggling with this one..."),
+      {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff",
+        fontStyle: "bold",
+        wordWrap: { width: panelW - 40 },
+        align: "center",
+      }
+    ).setOrigin(0.5).setDepth(depth + 2).setAlpha(0);
+    created.push(titleText);
+
+    const buttonsBlockH = buttonCount * BUTTON_H + (buttonCount - 1) * BUTTON_GAP;
+    const panelH = TOP_PADDING + titleText.height + TITLE_GAP + buttonsBlockH + BOTTOM_PADDING;
+    const panelTop = panelY - panelH / 2;
+
+    titleText.y = panelTop + TOP_PADDING + titleText.height / 2;
+
+    const panelBg = scene.add.graphics().setDepth(depth + 1).setAlpha(0);
+    panelBg.fillStyle(COLOR_PANEL_BG, 0.98);
+    panelBg.fillRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
+    panelBg.lineStyle(2, urgent ? COLOR_URGENT : COLOR_CYAN);
+    panelBg.strokeRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
+    created.push(panelBg);
+
+    const buttonY0 = panelTop + TOP_PADDING + titleText.height + TITLE_GAP + BUTTON_H / 2;
+    const buttonSpacing = BUTTON_H + BUTTON_GAP;
+>>>>>>> a4628d7cf1fa34561dd12211a665fb5acefa69d3
 
     const finish = (choice) => {
       created.forEach((obj) => obj.destroy());
       scene.inputLocked = false;
 
       if (choice === "extraLife") {
+<<<<<<< HEAD
         const globalLives = GameManager.addLife(1);
         // GameManager.state.lives is the source of truth for early levels
         // (index <21) that read it directly, but the methods-wing levels
@@ -185,6 +238,19 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
         scene.scene.start("MenuScene");
       } else {
         console.log("BitMenu choice:", choice);
+=======
+        const lives = GameManager.addLife(1);
+        if (typeof scene.addLife === "function") scene.addLife();
+        console.log("BitMenu choice: extraLife — granted bonus life, lives now:", lives);
+      } else if (choice === "review") {
+        if (scene.baseTutorialScene) {
+          scene.scene.start(scene.baseTutorialScene, { forceTutorial: true });
+        } else {
+          scene.scene.restart({ forceTutorial: true });
+        }
+      } else if (choice === "menu") {
+        scene.scene.start("MenuScene");
+>>>>>>> a4628d7cf1fa34561dd12211a665fb5acefa69d3
       }
 
       resolve(choice);

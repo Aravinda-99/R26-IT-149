@@ -232,7 +232,7 @@ export class Level43Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.attemptLog = [];
     this.roundElements = [];
@@ -276,7 +276,7 @@ export class Level43Scene extends Phaser.Scene {
     this.createBroadcastLog();
     this.createSourceDisplay();
     this.createHUD();
-    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y);
+    addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y);
     this.createExpressionMonitor();
     this.createParticles();
     this.createBit();
@@ -674,8 +674,8 @@ export class Level43Scene extends Phaser.Scene {
     this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 24 }).setDepth(50);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 24 }).setDepth(50);
       lg.lineStyle(2, C_BRASS, 1);
       lg.strokeCircle(0, 0, 5);
       lg.lineBetween(3, 3, 7, 7);

@@ -345,7 +345,7 @@ export class Level79Scene extends Phaser.Scene {
   init() {
     this.currentMission = 0;
     this.score = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.flawlessCount = 0;
     this.runCount = 0;
     this.failedRunCount = 0;
@@ -1595,8 +1595,8 @@ export class Level79Scene extends Phaser.Scene {
     this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 26 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 26 }).setDepth(51);
       lg.fillStyle(C_CREAM, 0.85);
       lg.fillRect(-4, -7, 8, 14);
       lg.lineStyle(1.2, C_COPPER, 1);
