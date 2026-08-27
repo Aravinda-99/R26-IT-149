@@ -28,11 +28,20 @@ body {
 
 .hidden { display: none !important; }
 
-/* --- Phaser Container (fixed canvas sizing) --- */
+/* --- Phaser Container (responsive, aspect-ratio-locked canvas sizing) ---
+   Previously: fixed width:1280px/height:720px with only max-width:100%.
+   Width would shrink on narrow viewports but height stayed flatly 720px
+   (not scaled to match), so the canvas got non-uniformly squished --
+   and on short viewports (e.g. DevTools mobile device presets, often
+   under 720px tall) the flat 720px height simply didn't fit, pushing
+   bottom content like Bit Menu's lowest button off-screen/cropped.
+   aspect-ratio + max-width + max-height keep width and height locked
+   together at every size, shrinking to fit BOTH viewport dimensions. */
 #phaser-container {
-    width: 1280px;
-    height: 720px;
-    max-width: 100%;
+    width: 100%;
+    max-width: 1280px;
+    max-height: 80vh;
+    aspect-ratio: 1280 / 720;
     margin: 1.5rem auto 2rem auto;
     border-radius: 16px;
     /* visible: Phaser DOM overlays (e.g. Level 9 editor) must not clip on the right */
@@ -45,9 +54,8 @@ body {
 
 #phaser-container canvas {
     display: block;
-    width: 1280px !important;
-    height: 720px !important;
-    max-width: 100%;
+    width: 100% !important;
+    height: 100% !important;
     border-radius: 16px;
 }
 

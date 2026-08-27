@@ -16,6 +16,22 @@ let fusionSession = 0;
 
 const FUSION_LOOP_INTERVAL_MS = 1000; // matches the interval used during manual testing
 
+// Phaser's Scale Manager (mode: NONE, see GameConfig.js) never reacts to
+// resize on its own -- the canvas' displayed size is driven entirely by
+// CSS (see #phaser-container in style.css). But the Scale Manager still
+// caches the canvas' on-screen bounds (canvasBounds) for translating
+// pointer/touch coordinates into game-world coordinates, and for keeping
+// Phaser's DOM container (dom.createContainer, used by add.dom() inputs
+// on a few levels) transformed to match -- and nothing was ever telling
+// it that CSS had resized the canvas out from under it, so those stayed
+// stale after the very first layout. scale.refresh() is Phaser's own
+// method for re-measuring canvasBounds and re-syncing that DOM transform;
+// it does NOT change the game's internal 1280x720 world/zoom, which is
+// deliberately fixed and CSS-scaled, not Phaser-scaled.
+window.addEventListener("resize", () => {
+  if (gameInstance) gameInstance.scale.refresh();
+});
+
 // ── Bit intervention de-duplication ──────────────────────────────────
 // fusionAction fires every ~1s for as long as its triggering condition
 // holds (e.g. holding a frustrated expression fires the same action
