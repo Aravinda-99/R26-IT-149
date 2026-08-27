@@ -42,7 +42,10 @@ def get_all_students():
     """
     try:
         students = MasteryService.get_all_students()
-        return jsonify({"students": students})
+        return jsonify({
+            "success": True,
+            "students": students,
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -146,3 +149,19 @@ def get_history(user_id, schema):
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@mastery_bp.route("/predict", methods=["POST"])
+def predict_mastery_endpoint():
+    """
+    Component 4 ML-based Schema Mastery prediction endpoint.
+    Returns predicted mastery_level, next_action, and confidence metrics.
+    """
+    data = request.get_json() or {}
+    try:
+        from services.schema_mastery_service import SchemaMasteryService
+        res = SchemaMasteryService.predict(data)
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
