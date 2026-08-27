@@ -285,7 +285,7 @@ export class Level50Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.fastBonusCount = 0;
     this.totalTimePctUsed = 0;
@@ -1387,8 +1387,8 @@ export class Level50Scene extends Phaser.Scene {
     this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 24 }).setDepth(50);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 24 }).setDepth(50);
       lg.lineStyle(2, C_BRASS, 1);
       lg.strokeRoundedRect(-5, -7, 10, 14, 1);
       lg.lineStyle(1, C_BRASS, 0.6);
@@ -1829,7 +1829,9 @@ export class Level50Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const effectivePrediction = (prediction === "typical" && misconception_repeat_count === 3)
+        ? "struggling" : prediction;
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level50Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1895,7 +1897,7 @@ export class Level50Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(49, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(50, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_get_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level50_results", JSON.stringify({
