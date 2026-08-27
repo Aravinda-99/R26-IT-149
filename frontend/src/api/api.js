@@ -95,7 +95,10 @@ export const SchemaMasteryAPI = {
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
-    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getQuestionBank: (concept = "", activeOnly = false) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getTeacherOverview: () => apiRequest("/schema-mastery/teacher/overview"),
+    getRejectedQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/rejected${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
+    toggleQuestionActive: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/toggle-active`, "POST", data),
     getPostTestQuestions: (params = {}) => {
         const studentId = params.student_id || params.studentId || "STU001";
         const concept = params.concept || params.concept_name || "Loops";

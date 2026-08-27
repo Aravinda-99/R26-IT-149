@@ -246,20 +246,79 @@ class SchemaQuestionBankService:
         return None
 
     @classmethod
-    def increment_exposure_counts(cls, question_ids: list):
-        """Increments exposure_count for the specified question IDs."""
+    def get_rejected_questions(cls, concept: str = None) -> list:
+        """Returns all questions with status REJECTED."""
+        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+        rejected = [q for q in all_gen if q.get("status") == "REJECTED"]
+        if concept:
+            concept_lower = concept.strip().lower()
+            rejected = [q for q in rejected if q.get("concept_name", "").strip().lower() == concept_lower]
+        return rejected
+
+    @classmethod
+    def toggle_approved_question_active(cls, question_id: str, active: bool = None) -> dict:
+        """Toggles or sets the active state of an approved question."""
         cls.initialize_seed_data()
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
-        changed = False
+        target_q = None
+
+        for idx, q in enumerate(approved):
+            if q.get("id") == question_id or q.get("question_id") == question_id:
+                if active is None:
+                    q["active"] = not q.get("active", True)
+                else:
+                    q["active"] = bool(active)
+                q["updated_at"] = _now_iso()
+                approved[idx] = q
+                target_q = q
+                break
+
+        if target_q:
+            _write_json(APP_QUESTIONS_FILE, approved)
+        return target_q
+
+    @classmethod
+    def increment_exposure_counts(cls, question_ids: list):
+        """Increments the exposure_count for all questions used in a session."""
+        if not question_ids:
+            return
+        cls.initialize_seed_data()
+        approved = _read_json(APP_QUESTIONS_FILE, default=[])
+        qid_set = set(question_ids)
+        modified = False
 
         for q in approved:
-            if q.get("question_id") in question_ids or q.get("id") in question_ids:
-                q["exposure_count"] = int(q.get("exposure_count", 0)) + 1
-                q["updated_at"] = _now_iso()
-                changed = True
+            if q.get("id") in qid_set or q.get("question_id") in qid_set:
+                q["exposure_count"] = q.get("exposure_count", 0) + 1
+                modified = True
 
-        if changed:
+        if modified:
             _write_json(APP_QUESTIONS_FILE, approved)
+
+    @classmethod
+    def get_teacher_overview_stats(cls) -> dict:
+        """Returns aggregate metrics for teacher/admin dashboard."""
+        cls.initialize_seed_data()
+        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+        approved = _read_json(APP_QUESTIONS_FILE, default=[])
+        sessions = _read_json(SESSIONS_FILE, default=[])
+        attempts = _read_json(ATTEMPTS_FILE, default=[])
+
+        pending_count = len([q for q in all_gen if q.get("status") == "PENDING"])
+        rejected_count = len([q for q in all_gen if q.get("status") == "REJECTED"])
+        approved_active_count = len([q for q in approved if q.get("active", True) is True])
+        approved_total_count = len(approved)
+        sessions_count = len(sessions)
+        attempts_count = len(attempts)
+
+        return {
+            "pending_count": pending_count,
+            "approved_active_count": approved_active_count,
+            "approved_total_count": approved_total_count,
+            "rejected_count": rejected_count,
+            "sessions_count": sessions_count,
+            "attempts_count": attempts_count,
+        }
 
     # ─────────────────────────────────────────────────────────────────────────
     # Student Question Attempts & Session Tracking

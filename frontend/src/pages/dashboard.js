@@ -6,6 +6,7 @@
  */
 
 import { MasteryAPI, AdaptiveAPI } from "../api/api.js";
+import { renderPostTest } from "./posttest.js";
 
 const MOCK_DASHBOARD_STUDENTS = [
     { studentId: "STU001", studentName: "Student 01 (Demo)", name: "Student 01" },
@@ -211,6 +212,109 @@ async function loadDashboardData(studentId) {
         const needReviewColor = needsReview.length > 0 ? "#f97316" : "#34d399";
 
         content.innerHTML = `
+            <!-- Learning Journey Progress Pipeline -->
+            <div class="dashboard-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(56,189,248,0.06)); border: 1px solid rgba(99,102,241,0.3); border-radius: 0.8rem; padding: 1.5rem; margin-bottom: 1.8rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1.2rem; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                            <i class="fa-solid fa-route"></i> Student Adaptive Learning Journey
+                        </h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
+                            Four-component research framework: Diagnostic Pre-Test → Error Analysis → Gamified Lesson → Post-Test Validation
+                        </p>
+                    </div>
+                    <span style="background: rgba(16,185,129,0.15); border: 1px solid #10b981; color: #34d399; font-size: 0.75rem; padding: 0.25rem 0.7rem; border-radius: 999px; font-weight: 700;">
+                        <i class="fa-solid fa-circle-check" style="margin-right: 0.3rem;"></i> Post-Test Available
+                    </span>
+                </div>
+
+                <!-- 4 Step Pipeline Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <!-- Step 1 -->
+                    <div style="background: var(--bg-dark, #0f121d); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(16,185,129,0.4);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.75rem; color: #34d399; font-weight: 700;">COMPONENT 1</span>
+                            <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">Diagnostic Pre-Test</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Weak Concept: <strong>Loops</strong> (45%)</div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div style="background: var(--bg-dark, #0f121d); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(16,185,129,0.4);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.75rem; color: #34d399; font-weight: 700;">COMPONENT 2</span>
+                            <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">Error Analysis</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Focus: <strong>LOOP_CONDITION_ERROR</strong></div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div style="background: var(--bg-dark, #0f121d); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(16,185,129,0.4);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.75rem; color: #34d399; font-weight: 700;">COMPONENT 3</span>
+                            <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem;">Gamified Lesson</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">Loops & Iteration Lesson Completed</div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div style="background: var(--bg-dark, #0f121d); padding: 1rem; border-radius: 0.5rem; border: 2px solid #6366f1; box-shadow: 0 0 15px rgba(99,102,241,0.25);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.75rem; color: #818cf8; font-weight: 700;">COMPONENT 4</span>
+                            <span style="font-size: 0.7rem; background: #6366f1; color: white; padding: 0.1rem 0.4rem; border-radius: 0.2rem; font-weight: 700;">ACTIVE</span>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: white;">Schema Post-Test</div>
+                        <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 0.2rem;">15-Q ML Understanding Validation</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                        <i class="fa-solid fa-info-circle" style="color: #38bdf8; margin-right: 0.3rem;"></i>
+                        Validate your understanding of <strong>Loops</strong> with 15 randomized questions.
+                    </span>
+                    <button class="btn btn-primary" id="dash-start-posttest-btn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 0.7rem 1.6rem; font-weight: 700; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-graduation-cap"></i> Start Post-Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Component 4 Test Mode (Dev / Local Demo Card) -->
+            <div class="dashboard-card" style="background: var(--card-bg, #181c28); border: 1px dashed rgba(168,85,247,0.6); border-radius: 0.8rem; padding: 1.4rem; margin-bottom: 1.8rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1.1rem; font-weight: 700; color: #c084fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                            <i class="fa-solid fa-flask-vial"></i> Component 4 Test Mode
+                        </h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
+                            Use mock Component 1 and Component 2 evidence to test the post-learning validation flow.
+                        </p>
+                    </div>
+                    <span style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.4); color: #d8b4fe; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: 600;">
+                        Local Demo Mode
+                    </span>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 0.8rem; font-size: 0.8rem; color: #e2e8f0; background: var(--bg-dark, #0f121d); padding: 0.8rem 1rem; border-radius: 0.4rem; margin-bottom: 1rem;">
+                    <span><strong>Student ID:</strong> S001</span> •
+                    <span><strong>Concept:</strong> Loops</span> •
+                    <span><strong>Pre-Test Score:</strong> 45%</span> •
+                    <span><strong>Attempt Count:</strong> 3</span> •
+                    <span><strong>Time:</strong> 360s</span> •
+                    <span><strong>Error Type:</strong> LOOP_CONDITION_ERROR</span> •
+                    <span><strong>Error Pattern Score:</strong> 0.40</span>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end;">
+                    <button class="btn" id="dash-mock-posttest-btn" style="background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; padding: 0.6rem 1.4rem; font-weight: 600; border-radius: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-play"></i> Start Test Post-Test
+                    </button>
+                </div>
+            </div>
+
             <!-- Dynamic Recommendations -->
             <div class="dashboard-card dashboard-recommendations-section">
                 <h3 class="dashboard-card-title">Recommendations</h3>
@@ -395,4 +499,33 @@ async function loadDashboardData(studentId) {
                 });
             });
         });
+
+        // Wire Post-Test Launch Buttons
+        const mainContainer = document.getElementById("page-container") || document.getElementById("app");
+
+        document.getElementById("dash-start-posttest-btn")?.addEventListener("click", () => {
+            renderPostTest(mainContainer, {
+                studentId: studentId || "STU001",
+                concept: "Loops",
+                error_type: "LOOP_CONDITION_ERROR",
+                pre_test_score: 0.45,
+                attempt_count: 1,
+                error_pattern_score: 0.40,
+                onBack: () => renderDashboard(mainContainer),
+            });
+        });
+
+        document.getElementById("dash-mock-posttest-btn")?.addEventListener("click", () => {
+            renderPostTest(mainContainer, {
+                studentId: "S001",
+                concept: "Loops",
+                error_type: "LOOP_CONDITION_ERROR",
+                pre_test_score: 0.45,
+                attempt_count: 3,
+                time_taken_seconds: 360,
+                error_pattern_score: 0.40,
+                onBack: () => renderDashboard(mainContainer),
+            });
+        });
 }
+

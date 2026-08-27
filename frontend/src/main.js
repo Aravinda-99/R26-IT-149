@@ -19,6 +19,7 @@ import { renderQuizSummary } from "./pages/quiz-summary.js";
 
 import { renderDemoFlow } from "./pages/demo-flow.js";
 import { renderQuestionBank } from "./pages/question-bank.js";
+import { renderPostTest } from "./pages/posttest.js";
 
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
@@ -28,14 +29,16 @@ initAuthListener();
 
 const pages = {
     dashboard: renderDashboard,
-    "learning-path": renderLearningPath,
+    "learning-path": renderDashboard,
     "quiz-lab": renderQuizLab,
     games: renderGames,
     "error-analysis": renderErrorAnalysis,
-    mastery: renderMastery,
+    mastery: renderDashboard,
+    "post-test": (c) => renderPostTest(c, { onBack: () => navigateTo("dashboard") }),
     "quiz-results": renderQuizResults,
     "quiz-summary": renderQuizSummary,
     "question-bank": renderQuestionBank,
+    "teacher-dashboard": renderQuestionBank,
     "demo-flow": renderDemoFlow,
 };
 
@@ -44,8 +47,8 @@ const authPages = {
     register: (c) => renderRegister(c, navigateTo),
 };
 
-// CHANGED DEFAULT PAGE
-let currentPage = "learning-path";
+// Default entry page is now the unified student Dashboard
+let currentPage = "dashboard";
 
 function navigateTo(page) {
     // Bug fix: ensure the gamified (Phaser) UI is fully removed when navigating away.
@@ -160,6 +163,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // LOAD HOME PAGE FIRST
-    navigateTo("learning-path");
+    // LOAD DASHBOARD FIRST
+    navigateTo("dashboard");
 });

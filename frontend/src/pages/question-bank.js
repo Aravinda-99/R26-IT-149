@@ -38,6 +38,15 @@ const ERROR_TYPES = [
 let activeTab = "generate";
 let pendingQuestions = [];
 let approvedQuestions = [];
+let rejectedQuestions = [];
+let teacherStats = {
+    pending_count: 0,
+    approved_active_count: 0,
+    approved_total_count: 0,
+    rejected_count: 0,
+    sessions_count: 0,
+    attempts_count: 0,
+};
 let editingQuestionId = null;
 
 export async function renderQuestionBank(container) {
@@ -68,27 +77,55 @@ export async function renderQuestionBank(container) {
         });
         return;
     }
+
     container.innerHTML = `
         <div class="qbank-page" style="padding: 1.5rem 2rem; max-width: 1280px; margin: 0 auto; color: var(--text-primary);">
             <!-- Header -->
-            <div class="qbank-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.2rem;">
+            <div class="qbank-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.8rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <h1 style="font-size: 1.8rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem;">
-                        <i class="fa-solid fa-layer-group" style="color: #6366f1;"></i>
-                        Component 4: Question Bank & LLM Workflow
+                        <i class="fa-solid fa-chalkboard-user" style="color: #6366f1;"></i>
+                        Teacher & Admin Dashboard
                     </h1>
                     <p style="color: var(--text-secondary); margin-top: 0.4rem; font-size: 0.95rem;">
-                        LLM-assisted question drafting with mandatory teacher review & 4-tier answer quality validation.
+                        Component 4: Schema Mastery Question Bank, LLM Drafting & Pedagogical Approval Workflow
                     </p>
                 </div>
-                <div style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.85rem; color: #a5b4fc;">
-                    <i class="fa-solid fa-shield-halved" style="margin-right: 0.4rem;"></i>
-                    Teacher Review Mode Active
+                <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 0.5rem; padding: 0.5rem 1rem; font-size: 0.85rem; color: #a5b4fc; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-shield-halved" style="color: #818cf8;"></i>
+                    <span>Role: <strong>${role.toUpperCase()}</strong> (Verified)</span>
+                </div>
+            </div>
+
+            <!-- Overview Stats Cards -->
+            <div class="dashboard-stats" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 1.8rem;">
+                <div class="dashboard-stat-card" style="--stat-accent: #f59e0b;">
+                    <div class="dashboard-stat-value" id="stat-pending-val" style="color: #fbbf24;">0</div>
+                    <div class="dashboard-stat-label">Pending Review</div>
+                    <div class="dashboard-stat-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">Awaiting Action</div>
+                </div>
+
+                <div class="dashboard-stat-card" style="--stat-accent: #10b981;">
+                    <div class="dashboard-stat-value" id="stat-approved-val" style="color: #34d399;">0</div>
+                    <div class="dashboard-stat-label">Approved Questions</div>
+                    <div class="dashboard-stat-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">Active Pool</div>
+                </div>
+
+                <div class="dashboard-stat-card" style="--stat-accent: #ef4444;">
+                    <div class="dashboard-stat-value" id="stat-rejected-val" style="color: #f87171;">0</div>
+                    <div class="dashboard-stat-label">Rejected Questions</div>
+                    <div class="dashboard-stat-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">Archived</div>
+                </div>
+
+                <div class="dashboard-stat-card" style="--stat-accent: #8b5cf6;">
+                    <div class="dashboard-stat-value" id="stat-sessions-val" style="color: #c084fc;">0</div>
+                    <div class="dashboard-stat-label">Post-Test Sessions</div>
+                    <div class="dashboard-stat-badge" style="background: rgba(139, 92, 246, 0.2); color: #c084fc;">ML Evaluated</div>
                 </div>
             </div>
 
             <!-- Tab Navigation -->
-            <div class="qbank-tabs" style="display: flex; gap: 0.8rem; margin-bottom: 1.8rem;">
+            <div class="qbank-tabs" style="display: flex; gap: 0.8rem; margin-bottom: 1.8rem; flex-wrap: wrap;">
                 <button class="btn qbank-tab-btn ${activeTab === 'generate' ? 'active' : ''}" data-tab="generate" style="padding: 0.6rem 1.2rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s;">
                     <i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 0.4rem;"></i> 1. Generate Questions (LLM)
                 </button>
@@ -99,6 +136,10 @@ export async function renderQuestionBank(container) {
                 <button class="btn qbank-tab-btn ${activeTab === 'approved' ? 'active' : ''}" data-tab="approved" style="padding: 0.6rem 1.2rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s;">
                     <i class="fa-solid fa-book-bookmark" style="margin-right: 0.4rem;"></i> 3. Approved Bank
                     <span id="approved-badge" style="background: #10b981; color: white; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem;">0</span>
+                </button>
+                <button class="btn qbank-tab-btn ${activeTab === 'rejected' ? 'active' : ''}" data-tab="rejected" style="padding: 0.6rem 1.2rem; font-weight: 600; border-radius: 0.5rem; transition: all 0.2s;">
+                    <i class="fa-solid fa-box-archive" style="margin-right: 0.4rem;"></i> 4. Rejected Archive
+                    <span id="rejected-badge" style="background: #64748b; color: white; border-radius: 999px; padding: 0.1rem 0.5rem; font-size: 0.75rem; margin-left: 0.4rem;">0</span>
                 </button>
             </div>
 
@@ -125,17 +166,35 @@ export async function renderQuestionBank(container) {
 
 async function refreshCounts() {
     try {
-        const [penRes, appRes] = await Promise.all([
+        const [penRes, appRes, rejRes, overRes] = await Promise.all([
             SchemaMasteryAPI.getPendingQuestions(),
             SchemaMasteryAPI.getQuestionBank(),
+            SchemaMasteryAPI.getRejectedQuestions(),
+            SchemaMasteryAPI.getTeacherOverview(),
         ]);
         pendingQuestions = penRes.questions || [];
         approvedQuestions = appRes.questions || [];
+        rejectedQuestions = rejRes.questions || [];
+        if (overRes.stats) {
+            teacherStats = overRes.stats;
+        }
 
         const penBadge = document.getElementById("pending-badge");
         const appBadge = document.getElementById("approved-badge");
+        const rejBadge = document.getElementById("rejected-badge");
         if (penBadge) penBadge.textContent = pendingQuestions.length;
         if (appBadge) appBadge.textContent = approvedQuestions.length;
+        if (rejBadge) rejBadge.textContent = rejectedQuestions.length;
+
+        // Update Overview Cards
+        const pVal = document.getElementById("stat-pending-val");
+        const aVal = document.getElementById("stat-approved-val");
+        const rVal = document.getElementById("stat-rejected-val");
+        const sVal = document.getElementById("stat-sessions-val");
+        if (pVal) pVal.textContent = teacherStats.pending_count ?? pendingQuestions.length;
+        if (aVal) aVal.textContent = teacherStats.approved_total_count ?? approvedQuestions.length;
+        if (rVal) rVal.textContent = teacherStats.rejected_count ?? rejectedQuestions.length;
+        if (sVal) sVal.textContent = teacherStats.sessions_count ?? 0;
     } catch (e) {
         console.warn("Failed to refresh question bank counts:", e);
     }
@@ -151,6 +210,8 @@ function renderTabContent() {
         renderPendingTab(content);
     } else if (activeTab === "approved") {
         renderApprovedTab(content);
+    } else if (activeTab === "rejected") {
+        renderRejectedTab(content);
     }
 }
 
@@ -357,7 +418,7 @@ function renderApprovedTab(content) {
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 1.2rem;" id="approved-list">
-            ${approvedQuestions.map(q => renderQuestionCard(q, { showActions: false, isDraft: false })).join("")}
+            ${approvedQuestions.map(q => renderQuestionCard(q, { showActions: false, isDraft: false, canToggleActive: true })).join("")}
         </div>
     `;
 
@@ -368,15 +429,47 @@ function renderApprovedTab(content) {
             : approvedQuestions;
         const listEl = document.getElementById("approved-list");
         if (listEl) {
-            listEl.innerHTML = filtered.map(q => renderQuestionCard(q, { showActions: false, isDraft: false })).join("");
+            listEl.innerHTML = filtered.map(q => renderQuestionCard(q, { showActions: false, isDraft: false, canToggleActive: true })).join("");
+            attachQuestionCardHandlers();
         }
     });
+
+    attachQuestionCardHandlers();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. REJECTED ARCHIVE TAB
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRejectedTab(content) {
+    if (rejectedQuestions.length === 0) {
+        content.innerHTML = `
+            <div style="text-align: center; padding: 4rem 1rem; color: var(--text-secondary); border: 2px dashed var(--border-color); border-radius: 0.8rem;">
+                <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: #64748b; margin-bottom: 1rem;"></i>
+                <h3>No Rejected Questions</h3>
+                <p style="margin-top: 0.5rem;">There are no questions in the rejection archive.</p>
+            </div>
+        `;
+        return;
+    }
+
+    content.innerHTML = `
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span style="font-size: 1.1rem; font-weight: 700;">Rejection Archive (${rejectedQuestions.length} Questions)</span>
+                <p style="font-size: 0.85rem; color: var(--text-secondary);">Archived draft questions that did not meet pedagogical clarity standards.</p>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+            ${rejectedQuestions.map(q => renderQuestionCard(q, { showActions: false, isDraft: false, isRejected: true })).join("")}
+        </div>
+    `;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CARD RENDERER
 // ─────────────────────────────────────────────────────────────────────────────
-function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
+function renderQuestionCard(q, { showActions = true, isDraft = true, canToggleActive = false, isRejected = false } = {}) {
     const isEditing = editingQuestionId === q.id;
     if (isEditing) {
         return renderEditQuestionCard(q);
@@ -390,14 +483,16 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
     };
 
     const options = [
-        { key: "A", text: q.option_a, quality: q.option_a_quality || "Wrong" },
-        { key: "B", text: q.option_b, quality: q.option_b_quality || "Wrong" },
-        { key: "C", text: q.option_c, quality: q.option_c_quality || "Wrong" },
-        { key: "D", text: q.option_d, quality: q.option_d_quality || "Wrong" },
+        { key: "A", text: q.option_a, quality: q.option_a_quality || (q.correct_option === "A" ? "Correct" : "Wrong") },
+        { key: "B", text: q.option_b, quality: q.option_b_quality || (q.correct_option === "B" ? "Correct" : "Wrong") },
+        { key: "C", text: q.option_c, quality: q.option_c_quality || (q.correct_option === "C" ? "Correct" : "Wrong") },
+        { key: "D", text: q.option_d, quality: q.option_d_quality || (q.correct_option === "D" ? "Correct" : "Wrong") },
     ];
 
+    const isActive = q.active !== false;
+
     return `
-        <div class="card q-card" data-qid="${q.id}" style="background: var(--card-bg, #181c28); border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.3rem; transition: transform 0.15s ease;">
+        <div class="card q-card" data-qid="${q.id}" style="background: var(--card-bg, #181c28); border: 1px solid ${isRejected ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-color)'}; border-radius: 0.8rem; padding: 1.3rem; transition: transform 0.15s ease;">
             <!-- Header Metadata -->
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -417,13 +512,17 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
                 </div>
 
                 <div>
-                    ${isDraft ? `
+                    ${isRejected ? `
+                        <span style="background: rgba(239, 68, 68, 0.2); color: #f87171; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
+                            <i class="fa-solid fa-ban"></i> REJECTED
+                        </span>
+                    ` : isDraft ? `
                         <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
                             <i class="fa-solid fa-hourglass-half"></i> PENDING REVIEW
                         </span>
                     ` : `
-                        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
-                            <i class="fa-solid fa-circle-check"></i> APPROVED (Exposures: ${q.exposure_count || 0})
+                        <span style="background: ${isActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(100, 116, 139, 0.2)'}; color: ${isActive ? '#34d399' : '#94a3b8'}; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
+                            <i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-circle-pause'}"></i> ${isActive ? 'ACTIVE' : 'INACTIVE'} (Exposures: ${q.exposure_count || 0})
                         </span>
                     `}
                 </div>
@@ -454,14 +553,27 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
                 `).join("")}
             </div>
 
+            <!-- Rejection Reason if any -->
+            ${isRejected && q.rejection_reason ? `
+                <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #ef4444; padding: 0.6rem 0.8rem; border-radius: 0.3rem; font-size: 0.85rem; color: #fca5a5; margin-bottom: 0.8rem;">
+                    <strong>Rejection Reason:</strong> ${escapeHtml(q.rejection_reason)}
+                </div>
+            ` : ""}
+
             <!-- Explanation / Outcome Footer -->
             <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="font-size: 0.8rem; color: var(--text-secondary); max-width: 70%;">
                     ${q.explanation ? `<strong>Explanation:</strong> ${escapeHtml(q.explanation)}` : `<em>Outcome: ${escapeHtml(q.learning_outcome || "")}</em>`}
                 </div>
 
-                ${showActions ? `
-                    <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    ${canToggleActive ? `
+                        <button class="btn btn-sm toggle-active-btn" data-id="${q.question_id || q.id}" data-active="${isActive}" style="background: ${isActive ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)'}; color: ${isActive ? '#f87171' : '#34d399'}; font-size: 0.8rem;">
+                            <i class="fa-solid ${isActive ? 'fa-pause' : 'fa-play'}"></i> ${isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                    ` : ""}
+
+                    ${showActions ? `
                         <button class="btn btn-sm edit-q-btn" data-id="${q.id}" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">
                             <i class="fa-solid fa-pen-to-square"></i> Edit
                         </button>
@@ -654,6 +766,23 @@ function attachQuestionCardHandlers() {
                 renderTabContent();
             } catch (err) {
                 alert("Update failed: " + err.message);
+            }
+        });
+    });
+
+    // Toggle Active/Inactive button
+    document.querySelectorAll(".toggle-active-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const qid = btn.dataset.id;
+            const currentActive = btn.dataset.active === "true";
+            btn.disabled = true;
+            try {
+                await SchemaMasteryAPI.toggleQuestionActive(qid, { active: !currentActive });
+                await refreshCounts();
+                renderTabContent();
+            } catch (err) {
+                alert("Failed to toggle question status: " + err.message);
+                btn.disabled = false;
             }
         });
     });
