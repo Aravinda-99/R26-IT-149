@@ -1527,6 +1527,26 @@ export class Level25Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  /**
+   * Symmetric counterpart to loseLife() — this level tracks lives locally
+   * (this.lives / this.lifeIcons), independent of GameManager.state.lives,
+   * so the BitMenu "extra life" reward needs a scene-local hook to have any
+   * visible effect here. Capped at this.lifeIcons.length (5), matching the
+   * number of heart icons actually drawn in createHUD() — never restore
+   * past what's on screen. Mirrors loseLife()'s indexing exactly: that
+   * method dims lifeIcons[this.lives] *after* decrementing, so restoring
+   * uses lifeIcons[this.lives - 1] *after* incrementing.
+   */
+  addLife(amount = 1) {
+    const maxLives = this.lifeIcons.length;
+    for (let i = 0; i < amount && this.lives < maxLives; i++) {
+      this.lives++;
+      const icon = this.lifeIcons[this.lives - 1];
+      if (icon) this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+    }
+    return this.lives;
+  }
+
   // ══════════════════════════════════════════════════════════════
   // UTILITIES
   // ══════════════════════════════════════════════════════════════
