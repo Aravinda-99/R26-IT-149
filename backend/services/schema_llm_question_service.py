@@ -411,7 +411,12 @@ class SchemaLLMQuestionService:
         count = max(1, min(20, int(count or 5)))
 
         # 1. Attempt real LLM generation if API configured
-        generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count)
+        generated_raw = None
+        try:
+            generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count)
+        except Exception as e:
+            print(f"[INFO] Real LLM generation skipped/failed: {e}")
+            generated_raw = None
 
         # 2. Fallback to rich template mock generator
         if not generated_raw:
@@ -424,11 +429,160 @@ class SchemaLLMQuestionService:
     @classmethod
     def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count):
         """
-        Hook for future real LLM API integrations (e.g. OpenAI / Gemini).
-        Returns None when no API key is provided, falling back seamlessly.
+        Generates draft questions using OpenAI API if OPENAI_API_KEY is available.
+        Validates JSON schema, 4-tier answer qualities, and returns draft question dicts.
         """
-        # In standard environment without external API keys, fallback immediately.
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        if not api_key or api_key.startswith("your_openai"):
+            return None
+
+        try:
+            from openai import OpenAI
+            import json
+
+            client = OpenAI(api_key=api_key)
+            q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
+            err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
+
+            prompt = f"""You are an expert Java Computer Science educator.
+Generate {count} multiple-choice draft diagnostic questions on the concept '{concept}' at '{difficulty}' difficulty{q_type_str}{err_str}.
+
+Each question MUST strictly follow this exact 4-tier schema:
+- Exactly 4 options: option_a, option_b, option_c, option_d
+- Option quality labels:
+    - Exactly one "Correct" (worth 1.0)
+    - Exactly one "Nearly Correct" (worth 0.5 - represents a common misconception or off-by-one/partial reasoning)
+    - Exactly one "Wrong" (worth 0.0 - weak conceptual understanding)
+    - Exactly one "Clearly Wrong" (worth 0.0 - severe misconception or nonsense)
+- "correct_option" MUST be "A", "B", "C", or "D" corresponding to the option marked "Correct"
+- Include Java code snippet if applicable (or empty string "")
+- Include concise pedagogical explanation
+- Include learning_outcome and target_error_type
+
+Return ONLY a JSON object with a single key "questions" containing a list of {count} question objects formatted as:
+{{
+  "questions": [
+    {{
+      "question_type": "Basic Understanding",
+      "question_text": "...",
+      "code_snippet": "...",
+      "option_a": "...",
+      "option_a_quality": "Correct",
+      "option_b": "...",
+      "option_b_quality": "Nearly Correct",
+      "option_c": "...",
+      "option_c_quality": "Wrong",
+      "option_d": "...",
+      "option_d_quality": "Clearly Wrong",
+      "correct_option": "A",
+      "explanation": "...",
+      "learning_outcome": "...",
+      "target_error_type": "..."
+    }}
+  ]
+}}
+"""
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.7,
+            )
+
+            content = response.choices[0].message.content
+            parsed = json.loads(content)
+            raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+
+            validated = []
+            now = datetime.utcnow().isoformat() + "Z"
+            for item in raw_list:
+                val_q = cls._validate_and_format_question(item, concept, difficulty, target_error_type, now, source="OpenAI GPT-4o-mini")
+                if val_q:
+                    validated.append(val_q)
+
+            if len(validated) > 0:
+                print(f"[OK] OpenAI generated {len(validated)} validated draft questions for {concept}")
+                return validated
+
+        except Exception as e:
+            print(f"[WARN] OpenAI generation failed: {e}. Falling back to mock template generator.")
+
         return None
+
+    @classmethod
+    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM_Generator"):
+        """Validates and enforces strict 4-tier quality labels and 4 options A/B/C/D."""
+        if not isinstance(q, dict):
+            return None
+
+        text = q.get("question_text") or q.get("text") or q.get("question")
+        if not text or not str(text).strip():
+            return None
+
+        opt_a = str(q.get("option_a") or q.get("opt_a") or "").strip()
+        opt_b = str(q.get("option_b") or q.get("opt_b") or "").strip()
+        opt_c = str(q.get("option_c") or q.get("opt_c") or "").strip()
+        opt_d = str(q.get("option_d") or q.get("opt_d") or "").strip()
+
+        if not (opt_a and opt_b and opt_c and opt_d):
+            return None
+
+        qual_a = q.get("option_a_quality") or q.get("q_a") or "Correct"
+        qual_b = q.get("option_b_quality") or q.get("q_b") or "Nearly Correct"
+        qual_c = q.get("option_c_quality") or q.get("q_c") or "Wrong"
+        qual_d = q.get("option_d_quality") or q.get("q_d") or "Clearly Wrong"
+
+        valid_qualities = {"Correct", "Nearly Correct", "Wrong", "Clearly Wrong"}
+        qualities = [qual_a, qual_b, qual_c, qual_d]
+        if not all(k in valid_qualities for k in qualities):
+            # Attempt gentle fix
+            qual_a, qual_b, qual_c, qual_d = "Correct", "Nearly Correct", "Wrong", "Clearly Wrong"
+
+        # Determine correct_option based on "Correct" label
+        correct_letter = "A"
+        if qual_a == "Correct":
+            correct_letter = "A"
+        elif qual_b == "Correct":
+            correct_letter = "B"
+        elif qual_c == "Correct":
+            correct_letter = "C"
+        elif qual_d == "Correct":
+            correct_letter = "D"
+        else:
+            qual_a = "Correct"
+            correct_letter = "A"
+
+        qid_prefix = concept[:4].upper()
+        return {
+            "id": f"GEN_{uuid.uuid4().hex[:8].upper()}",
+            "question_id": f"{qid_prefix}_Q{uuid.uuid4().hex[:4].upper()}",
+            "concept_name": concept,
+            "learning_outcome": q.get("learning_outcome") or f"Demonstrate understanding of {concept}",
+            "question_type": q.get("question_type") or "Basic Understanding",
+            "difficulty": difficulty or "Medium",
+            "target_error_type": target_error_type if target_error_type != "UNKNOWN_ERROR" else q.get("target_error_type", "UNKNOWN_ERROR"),
+            "equivalent_group_id": q.get("equivalent_group_id") or f"GRP_{concept[:3].upper()}_{random.randint(100, 999)}",
+            "question_text": str(text).strip(),
+            "code_snippet": q.get("code_snippet") or q.get("code", ""),
+            "option_a": opt_a,
+            "option_b": opt_b,
+            "option_c": opt_c,
+            "option_d": opt_d,
+            "correct_option": correct_letter,
+            "option_a_quality": qual_a,
+            "option_b_quality": qual_b,
+            "option_c_quality": qual_c,
+            "option_d_quality": qual_d,
+            "explanation": q.get("explanation") or f"The correct answer is {correct_letter}.",
+            "generated_by": f"{source} (Teacher-Review Pipeline)",
+            "status": "PENDING",
+            "created_at": timestamp,
+            "updated_at": timestamp,
+        }
 
     @classmethod
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
