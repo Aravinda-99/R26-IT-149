@@ -23,7 +23,7 @@ export async function renderErrorAnalysis(container) {
                     <div id="stat-total" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-blue);">0</div>
                 </div>
                 <div style="width: 1px; background: var(--border-color);"></div>
-                <div class="stat-item" style="text-align: center;">
+                <div class="stat-item" style="t  ext-align: center;">
                     <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Top Misconception</div>
                     <div id="stat-top-error" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-orange);">None</div>
                 </div>
