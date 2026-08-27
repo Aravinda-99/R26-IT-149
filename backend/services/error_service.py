@@ -199,18 +199,21 @@ class ErrorService:
         if re.search(r'\b(\w+)\s*=\s*\1\s*;', stripped):
             return {"is_correct": False, "reason": "Self-assignment detected (e.g. x = x)", "matched_pattern": "self_assignment"}
 
-        # Safe patterns list
+        # Safe patterns list (Strict fullmatch to avoid false positives on partial snippets)
         safe_patterns = [
-            (r'\b\w+\s*=\s*\w+\s*[-+*/]\s*\w+', "simple variable calculation with normal arithmetic"),
-            (r'\b\w+\s*\([^)]*\)\s*;', "simple method call"),
-            (r'\b\w+\s*\[\s*\d+\s*\]', "simple array access with valid constant index"),
-            (r'while\s*\([^)]+\)\s*\{[^}]*(\+\+|--|\+=|-=|=)[^}]*\}', "simple while loop with counter update"),
-            (r'for\s*\(\s*int\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*[^;]+\s*;\s*\1\s*\+\+\s*\)', "standard for-loop with safe iteration"),
-            (r'for\s*\([^:]+:[^)]+\)', "simple for-each array traversal"),
-            (r'System\.out\.println\s*\(\s*[^)]+\s*\)', "simple print statement with valid variable"),
-            (r'\b(?:int|double|float|boolean|String|char)\s+\w+\s*=\s*[^;]+;', "simple variable declaration and initialization"),
-            (r'\b(?:int|double|float|boolean|String|char)\s*\[\s*\]\s+\w+\s*=\s*(?:\{[^}]*\}|new\s+[^;]+)\s*;', "simple array declaration and initialization"),
-            (r'\b(?:public|private|protected|static|\s)*(?:void|int|double|String)\s+\w+\s*\([^)]*\)\s*\{[^}]*\}', "simple valid method definition")
+            (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*$', "simple valid integer declaration"),
+            (r'^\s*boolean\s+[a-zA-Z_$][\w$]*\s*=\s*(true|false)\s*;\s*$', "simple valid boolean declaration"),
+            (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*if\s*\(\s*[a-zA-Z_$][\w$]*\s*==\s*\d+\s*\)\s*\{\s*System\.out\.println\([^)]*\)\s*;\s*\}\s*$', "valid if-condition equality check"),
+            (r'^\s*int\s+a\s*=\s*10\s*;\s*int\s+b\s*=\s*a\+\+\s*;\s*System\.out\.println\([^)]*\)\s*;\s*$', "valid post-increment logic"),
+            (r'^\s*\w+\s*=\s*\w+\s*[-+*/]\s*\w+\s*;\s*$', "simple variable calculation with normal arithmetic"),
+            (r'^\s*\w+\s*\([^)]*\)\s*;\s*$', "simple method call"),
+            (r'^\s*\w+\s*\[\s*\d+\s*\]\s*;\s*$', "simple array access with valid constant index"),
+            (r'^\s*while\s*\([^)]+\)\s*\{[^}]*(\+\+|--|\+=|-=|=)[^}]*\}\s*$', "simple while loop with counter update"),
+            (r'^\s*for\s*\(\s*int\s+(\w+)\s*=\s*0\s*;\s*\1\s*<\s*[^;]+\s*;\s*\1\s*\+\+\s*\)\s*\{[^}]*\}\s*$', "standard for-loop with safe iteration"),
+            (r'^\s*System\.out\.println\s*\(\s*[^)]+\s*\)\s*;\s*$', "simple print statement with valid variable"),
+            (r'^\s*(?:int|double|float|boolean|String|char)\s+\w+\s*=\s*[^;]+;\s*$', "simple variable declaration and initialization"),
+            (r'^\s*(?:int|double|float|boolean|String|char)\s*\[\s*\]\s+\w+\s*=\s*(?:\{[^}]*\}|new\s+[^;]+)\s*;\s*$', "simple array declaration and initialization"),
+            (r'^\s*(?:public|private|protected|static|\s)*(?:void|int|double|String)\s+\w+\s*\([^)]*\)\s*\{[^}]*\}\s*$', "simple valid method definition")
         ]
         
         has_simple_pattern = False
@@ -218,7 +221,7 @@ class ErrorService:
         pattern_name = ""
         
         for pattern, desc in safe_patterns:
-            if re.search(pattern, stripped):
+            if re.fullmatch(pattern, stripped.strip()):
                 has_simple_pattern = True
                 reason = desc
                 pattern_name = desc.replace(" ", "_")
@@ -227,7 +230,7 @@ class ErrorService:
         if has_simple_pattern:
             return {"is_correct": True, "reason": reason, "matched_pattern": pattern_name}
 
-        return {"is_correct": True, "reason": "No errors detected, behaves like normal correct Java syntax.", "matched_pattern": "generic_correct_java"}
+        return {"is_correct": False, "reason": "Code does not match any obvious correct patterns; deferring to ML model.", "matched_pattern": "unknown"}
 
     @staticmethod
     def detect_method_argument_mismatch(code):
