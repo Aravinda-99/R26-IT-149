@@ -282,19 +282,19 @@ async function loadDashboardData(studentId) {
                 </div>
             </div>
 
-            <!-- Component 4 Test Mode (Dev / Local Demo Card) -->
+            <!-- Component 4 ML Test Mode (Dev / Local Demo Card) -->
             <div class="dashboard-card" style="background: var(--card-bg, #181c28); border: 1px dashed rgba(168,85,247,0.6); border-radius: 0.8rem; padding: 1.4rem; margin-bottom: 1.8rem;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
                     <div>
                         <h3 style="font-size: 1.1rem; font-weight: 700; color: #c084fc; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
-                            <i class="fa-solid fa-flask-vial"></i> Component 4 Test Mode
+                            <i class="fa-solid fa-flask-vial"></i> Component 4 ML Test Mode
                         </h3>
                         <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.2rem;">
-                            Use mock Component 1 and Component 2 evidence to test the post-learning validation flow.
+                            Use mock Component 1 and Component 2 evidence to test the post-learning validation flow directly with the trained ML pipeline.
                         </p>
                     </div>
                     <span style="background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.4); color: #d8b4fe; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-weight: 600;">
-                        Local Demo Mode
+                        Trained ML Pipeline
                     </span>
                 </div>
 
@@ -310,7 +310,7 @@ async function loadDashboardData(studentId) {
 
                 <div style="display: flex; justify-content: flex-end;">
                     <button class="btn" id="dash-mock-posttest-btn" style="background: linear-gradient(135deg, #9333ea, #7e22ce); color: white; padding: 0.6rem 1.4rem; font-weight: 600; border-radius: 0.4rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-play"></i> Start Test Post-Test
+                        <i class="fa-solid fa-play"></i> Start Component 4 ML Test
                     </button>
                 </div>
             </div>

@@ -44,10 +44,10 @@ def load_model():
     if os.path.exists(MODEL_PATH):
         try:
             _model = joblib.load(MODEL_PATH)
-            print(f"[OK] Component 4 Schema Mastery model loaded from {MODEL_PATH}")
+            print(f"[SchemaMastery] Loaded ML pipeline: {MODEL_PATH}")
             return _model
         except Exception as e:
-            print(f"[WARN] Failed to load Component 4 pipeline from {MODEL_PATH}: {e}")
+            print(f"[SchemaMastery][WARN] Failed to load ML pipeline from {MODEL_PATH}: {e}")
     else:
         # Fallback check for relative paths
         alt_paths = [
@@ -58,11 +58,12 @@ def load_model():
             if os.path.exists(alt_path):
                 try:
                     _model = joblib.load(alt_path)
-                    print(f"[OK] Component 4 Schema Mastery model loaded from {alt_path}")
+                    print(f"[SchemaMastery] Loaded ML pipeline: {alt_path}")
                     return _model
                 except Exception as e:
-                    print(f"[WARN] Failed to load Component 4 pipeline from {alt_path}: {e}")
+                    print(f"[SchemaMastery][WARN] Failed to load ML pipeline from {alt_path}: {e}")
 
+    print(f"[SchemaMastery][WARN] Using fallback only because ML model failed to load from {MODEL_PATH}")
     return None
 
 
@@ -189,10 +190,12 @@ def predict_schema_mastery(data: dict) -> dict:
     Uses trained ML pipeline to predict mastery probability, level, and next action.
     """
     if not isinstance(data, dict):
+        print("[SchemaMastery][WARN] Using fallback only because input data is invalid")
         return fallback_predict({})
 
     model = load_model()
     if model is None:
+        print("[SchemaMastery][WARN] Using fallback only because ML model failed to load")
         return fallback_predict(data)
 
     try:
@@ -212,6 +215,7 @@ def predict_schema_mastery(data: dict) -> dict:
         level = probability_to_level(prob)
         action = level_to_action(level)
 
+        print(f"[SchemaMastery] Using schema_mastery_pipeline for prediction -> prob={prob}, level='{level}', action='{action}'")
         return {
             "mastery_probability": prob,
             "mastery_level": level,
@@ -220,7 +224,7 @@ def predict_schema_mastery(data: dict) -> dict:
         }
 
     except Exception as e:
-        print(f"[WARN] Error during schema mastery ML prediction: {e}")
+        print(f"[SchemaMastery][WARN] Using fallback only because ML model failed during inference: {e}")
         return fallback_predict(data)
 
 
