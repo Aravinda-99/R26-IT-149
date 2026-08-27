@@ -1269,7 +1269,7 @@ class ErrorService:
             },
             "VARIABLE_CALCULATION_ISSUE": {
                 "base": "VARIABLE_ERROR",
-                "reason": "A mathematical calculation is logically flawed, such as using the wrong operator for a discount.",
+                "reason": "A mathematical calculation is logically flawed. Review your use of operators.",
                 "misconception": "Confusion with operators or misunderstanding the semantic meaning of the variables (e.g., discounts reduce total).",
                 "suggested_fix": "Check your math operators. If computing a discount, use subtraction '-'. If computing tax, use addition and multiplication.",
                 "beginner_explanation": "Math in Java is just like math in school. If a discount makes things cheaper, use a minus sign, not a plus sign!"

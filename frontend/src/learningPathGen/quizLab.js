@@ -565,6 +565,7 @@ export function setupQuizUI(root = document) {
                             ">
                                 <strong style="color:#818cf8;">🤖 ${result.prediction.label.replace(/_/g, " ")}:</strong>
                                 ${result.explanation.reason}
+                                <br><em>${result.explanation.suggested_fix}</em>
                             </div>
                         `;
                     });
