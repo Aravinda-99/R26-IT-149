@@ -23,7 +23,6 @@ const FUSION_LOOP_INTERVAL_MS = 1000; // matches the interval used during manual
 //   1. Never stack a second popup while one is already open.
 //   2. After a popup is dismissed, stay quiet for a cooldown window
 //      before showing anything again, even if a *different* action fires.
-let interventionInFlight = false;
 let lastDismissedAt = 0;
 const INTERVENTION_COOLDOWN_MS = 25000; // 25s, within the requested 20-30s range
 
@@ -123,13 +122,13 @@ function getActiveLevelScene() {
  * before showing anything via Bit.
  */
 async function handleFusionAction({ action, message }) {
-  if (interventionInFlight) return; // something is already showing — never stack a second one
+  if (GameManager.interventionInFlight) return; // something is already showing — never stack a second one
   if (Date.now() - lastDismissedAt < INTERVENTION_COOLDOWN_MS) return; // still cooling down
 
   const scene = getActiveLevelScene();
   if (!scene) return; // no level currently running (e.g. browsing the menu) — nothing to intervene in
 
-  interventionInFlight = true;
+  GameManager.interventionInFlight = true;
   try {
     if (action === "BREAK_SUGGESTION_FATIGUE" || action === "BREAK_SUGGESTION_EMOTION") {
       await showBreakSuggestion(scene, message);
@@ -138,7 +137,7 @@ async function handleFusionAction({ action, message }) {
       console.log("fusionAction resolved:", action, "-> player chose:", choice);
     }
   } finally {
-    interventionInFlight = false;
+    GameManager.interventionInFlight = false;
     lastDismissedAt = Date.now();
   }
 }

@@ -1,6 +1,6 @@
 /**
- * BitMenu — Shared 3-Choice Modal ("Make it easier" / "Review the basics" /
- * "Get an extra life and try again")
+ * BitMenu — Shared 3-Choice Modal ("Review the basics" / "Get an extra life
+ * and try again" / "Go to menu list")
  * ==============================================================================
  * A single reusable component, visually modeled on the existing choice-bubble
  * pattern used across level scenes (rounded-rect Graphics + Text, hover
@@ -12,18 +12,23 @@
  * in this codebase does — scene.inputLocked = true — for the duration the
  * menu is open, then releases it once the player picks an option.
  *
- * "Make it easier" and "Review the basics" aren't wired to real behavior
- * yet — just logged. "Get an extra life and try again" is wired to
- * GameManager.addLife(), the only one of the three simple enough to hook
- * up to existing game state right now.
+ * "Review the basics" restarts the current scene with its tutorial forced —
+ * unless the scene sets its own `baseTutorialScene` (e.g. a rapid-fire
+ * Tuning-phase level pointing back at its wing's Accretion-phase intro),
+ * in which case it navigates there instead. "Get an extra life and try
+ * again" calls GameManager.addLife() for the global count, and also the
+ * scene's own addLife() when it defines one — most methods-wing levels
+ * track lives locally (this.lives / this.lifeIcons) rather than through
+ * GameManager, so the global-only call was previously a no-op for them.
+ * "Go to menu list" returns to MenuScene.
  */
 
 import { GameManager } from "./GameManager.js";
 
 const OPTIONS = [
-  { key: "easier", label: "Make it easier" },
   { key: "review", label: "Review the basics" },
   { key: "extraLife", label: "Get an extra life and try again" },
+  { key: "menu", label: "Go to menu list" },
 ];
 
 const COLOR_CYAN = 0x00e5ff;
@@ -41,7 +46,7 @@ const COLOR_BTN_BG_HOVER = 0x1e1e3a;
  *   border and "Review the basics" visually emphasized
  * @param {string} [opts.title]
  * @returns {Promise<string>} resolves with the chosen option's key
- *   ('easier' | 'review' | 'extraLife') once the player picks one
+ *   ('review' | 'extraLife' | 'menu') once the player picks one
  */
 export function showBitMenu(scene, { urgent = false, title } = {}) {
   return new Promise((resolve) => {
@@ -62,23 +67,27 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
     created.push(overlay);
 
     const panelW = Math.min(460, width - 40);
-    const panelH = 260;
     const panelX = width / 2;
     const panelY = height / 2;
 
-    const panelBg = scene.add.graphics().setDepth(depth + 1).setAlpha(0);
-    panelBg.fillStyle(COLOR_PANEL_BG, 0.98);
-    panelBg.fillRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
-    panelBg.lineStyle(2, urgent ? COLOR_URGENT : COLOR_CYAN);
-    panelBg.strokeRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
-    created.push(panelBg);
+    // Layout constants — panelH is derived from these plus the title's
+    // actual (possibly word-wrapped) rendered height, so the background
+    // always wraps its content exactly instead of a guessed fixed height.
+    const TOP_PADDING = 32;
+    const TITLE_GAP = 26;
+    const BUTTON_H = 46;
+    const BUTTON_GAP = 18;
+    const BOTTOM_PADDING = 32;
+    const buttonCount = OPTIONS.length;
 
+    // Created first (off-panel position) purely to measure its wrapped
+    // height — repositioned once panelH/panelTop are known below.
     const titleText = scene.add.text(
       panelX,
-      panelY - panelH / 2 + 34,
+      0,
       title || (urgent
         ? "Bit noticed you're frustrated AND struggling with this one..."
-        : "Bit has a suggestion..."),
+        : "Bit noticed you're struggling with this one..."),
       {
         fontFamily: "Arial",
         fontSize: "16px",
@@ -90,8 +99,21 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
     ).setOrigin(0.5).setDepth(depth + 2).setAlpha(0);
     created.push(titleText);
 
-    const buttonY0 = panelY - 15;
-    const buttonSpacing = 62;
+    const buttonsBlockH = buttonCount * BUTTON_H + (buttonCount - 1) * BUTTON_GAP;
+    const panelH = TOP_PADDING + titleText.height + TITLE_GAP + buttonsBlockH + BOTTOM_PADDING;
+    const panelTop = panelY - panelH / 2;
+
+    titleText.y = panelTop + TOP_PADDING + titleText.height / 2;
+
+    const panelBg = scene.add.graphics().setDepth(depth + 1).setAlpha(0);
+    panelBg.fillStyle(COLOR_PANEL_BG, 0.98);
+    panelBg.fillRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
+    panelBg.lineStyle(2, urgent ? COLOR_URGENT : COLOR_CYAN);
+    panelBg.strokeRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
+    created.push(panelBg);
+
+    const buttonY0 = panelTop + TOP_PADDING + titleText.height + TITLE_GAP + BUTTON_H / 2;
+    const buttonSpacing = BUTTON_H + BUTTON_GAP;
 
     const finish = (choice) => {
       created.forEach((obj) => obj.destroy());
@@ -99,9 +121,16 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
 
       if (choice === "extraLife") {
         const lives = GameManager.addLife(1);
+        if (typeof scene.addLife === "function") scene.addLife();
         console.log("BitMenu choice: extraLife — granted bonus life, lives now:", lives);
-      } else {
-        console.log("BitMenu choice:", choice);
+      } else if (choice === "review") {
+        if (scene.baseTutorialScene) {
+          scene.scene.start(scene.baseTutorialScene, { forceTutorial: true });
+        } else {
+          scene.scene.restart({ forceTutorial: true });
+        }
+      } else if (choice === "menu") {
+        scene.scene.start("MenuScene");
       }
 
       resolve(choice);

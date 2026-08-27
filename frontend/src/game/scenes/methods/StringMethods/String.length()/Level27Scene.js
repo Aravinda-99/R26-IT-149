@@ -197,7 +197,6 @@ export class Level27Scene extends Phaser.Scene {
     this.missionElements = [];
     this.slotContents = {};
     this.slotDefs = {};
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -208,6 +207,12 @@ export class Level27Scene extends Phaser.Scene {
     this._alive = true;
     this._bubble = null;
     this._dragHoverSlotKey = null;
+    this._modalLockedInput = false;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this drag-and-drop Restructuring-phase level with nothing
+    // to review.
+    this.baseTutorialScene = "Level25Scene";
   }
 
   preload() {}
@@ -245,6 +250,21 @@ export class Level27Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Lock inputs so the player cannot drag blocks or click RUN while an ML
+    // intervention modal is open. Tracks whether WE were the one who locked
+    // it (this._modalLockedInput) so resuming here never clobbers a lock the
+    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
+    // feedback) — only undo what this branch itself did.
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
+
     this.updateAmbient(time, delta);
   }
 
@@ -1395,6 +1415,10 @@ export class Level27Scene extends Phaser.Scene {
       });
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
+      // before onMissionComplete()'s wait-loop starts polling for it.
+      await this.delay(100);
     } catch (e) {
       console.warn("Level27Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1417,25 +1441,37 @@ export class Level27Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // repeated-misconception life loss — count each distinct tag once per run.
-    // (compileErr.tag, when present, always belongs to one of the blocks still
-    // sitting in a slot, so it's already covered by wrongBlocksUsed; the fallback
-    // below only fires for the rare case where it isn't, avoiding a double-count.)
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    if (compileErr && compileErr.tag) tagsThisRun.add(compileErr.tag);
-    tagsThisRun.forEach((tag) => {
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
 
     const feedbackTag = (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || (compileErr && compileErr.tag) || null;
 
     const proceed = async () => {
+      // Trigger the natural ML check if the user has failed 3 times
+      if (this.missionRunsFailed === 3) {
+        await this.runBehavioralCheck();
+
+        // Wait up to 1.5s for the 1Hz polling loop to catch the flag
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+
+        // Wait indefinitely if the modal opened
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+
+      if (!this._alive) return;
+
       if (livesLostThisRun) {
         const dead = this.loseLife();
         if (dead) { this.time.delayedCall(500, () => this.gameOver()); return; }
       }
+
       await this.showBitFeedback(MISCONCEPTION_FEEDBACK[feedbackTag] || "Check the report — the machine shows exactly what your code actually does.");
       if (!this._alive) return;
       this.unlockForRepair();
@@ -1469,9 +1505,26 @@ export class Level27Scene extends Phaser.Scene {
     this.showBitFeedback(hints[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
-    if (this.gameEnded) return;
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next mission.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
     this.updateScore(250 + (flawless ? 100 : 0));
@@ -1518,6 +1571,16 @@ export class Level27Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) {
+        this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+      }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
