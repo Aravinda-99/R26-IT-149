@@ -461,6 +461,16 @@ textarea.input-field {
     white-space: pre;
 }
 
+.lp-blank {
+    display: inline-block;
+    min-width: 2.4em;
+    padding: 0 0.3em;
+    border-bottom: 2px solid #6366f1;
+    color: #818cf8;
+    font-weight: 700;
+    text-align: center;
+}
+
 .lp-opt-code {
     font-family: 'Fira Code', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
     font-size: 0.86rem;

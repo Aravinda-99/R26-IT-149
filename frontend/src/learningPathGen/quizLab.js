@@ -1,4 +1,5 @@
 import { QUIZ_BANK } from "./data.js";
+import { ErrorAPI } from "../api/api.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
 const ML_API_URL = "http://127.0.0.1:5000/api/adaptive/predict";
@@ -8,6 +9,25 @@ let currentDifficulty = "beginner";
 
 export function setQuizDifficulty(level) {
     currentDifficulty = level || "beginner";
+}
+
+// ── Component 2 telemetry ────────────────────────────────────────────────
+// Fill-in-the-blank questions carry a `codeTemplate` with a single
+// {BLANK} placeholder. Substituting the student's chosen option in gives
+// one complete, real Java snippet — this is what gets sent to Component 2
+// (Error Pattern Detector) as live telemetry on every answer.
+function buildFullCodeFromTemplate(question, optionIndex) {
+    const answer = question.options[optionIndex];
+    return question.codeTemplate.replace("{BLANK}", answer);
+}
+
+function sendTelemetry(codeString) {
+    // Fire-and-forget — never blocks quiz interaction on the network call.
+    ErrorAPI.analyze({
+        student_id: "demo_student",
+        code: codeString,
+        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 } // Mock pre-test context
+    }).catch(err => console.error("Telemetry error:", err));
 }
 
 // Splits a question into { intro, code }
@@ -435,10 +455,20 @@ export function setupQuizUI(root = document) {
     }
 
     function renderQuestion() {
-        const q        = QUIZ_BANK[state.current];
-        const selected = state.selectedAnswers[state.current];
-        const { intro, code } = parseQuestion(q.question);
+        const q         = QUIZ_BANK[state.current];
+        const selected  = state.selectedAnswers[state.current];
+        const hasTemplate = Boolean(q.codeTemplate);
+
+        // Fill-in-the-blank questions render their codeTemplate directly as
+        // the code block (with the blank highlighted); other questions fall
+        // back to the older intro/code auto-split for plain-text MCQs.
+        const { intro, code } = hasTemplate
+            ? { intro: q.question, code: null }
+            : parseQuestion(q.question);
         const codeLines = code ? splitCodeIntoLines(code) : [];
+        const templateDisplay = hasTemplate
+            ? q.codeTemplate.replace("{BLANK}", '<span class="lp-blank">____</span>')
+            : null;
 
         // Reset timer and attempts for new question
         state.questionStartTime = Date.now();
@@ -456,11 +486,12 @@ export function setupQuizUI(root = document) {
                 </div>
                 <h4 class="lp-question">${intro}</h4>
                 ${code ? `<pre class="lp-code-block"><code>${codeLines.join('\n')}</code></pre>` : ''}
+                ${templateDisplay ? `<pre class="lp-code-block"><code>${templateDisplay}</code></pre>` : ''}
                 <div class="lp-options">
                     ${q.options.map((opt, idx) => {
                         const isSelected = selected === idx;
                         const isCorrect  = q.correctIndex === idx;
-                        const isCode     = looksLikeCode(opt);
+                        const isCode     = hasTemplate || looksLikeCode(opt);
                         let cls = "lp-option";
                         if (isCode) cls += " is-code";
                         if (state.submitted) {
@@ -494,6 +525,14 @@ export function setupQuizUI(root = document) {
                 const optionIndex = Number(btn.dataset.optIndex);
                 state.selectedAnswers[state.current] = optionIndex;
                 renderQuestion();
+
+                // Component 2 telemetry — build the full Java snippet from the
+                // student's choice and send it in the background. Never awaited,
+                // never blocks the quiz UI.
+                if (q.codeTemplate) {
+                    const fullCodeString = buildFullCodeFromTemplate(q, optionIndex);
+                    sendTelemetry(fullCodeString);
+                }
             });
         });
 

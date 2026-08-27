@@ -8,26 +8,18 @@ export const DEFAULT_PATH = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
-// QUIZ_BANK
+// QUIZ_BANK — Code-Snippet / Fill-in-the-Blank MCQs
 // ─────────────────────────────────────────────────────────────────────────
-// Questions marked "Code-Snippet MCQ" below use real Java statements as
-// their `options` — every WRONG option is itself a buggy snippet that
-// represents a common beginner mistake, so it can be sent as-is to
-// Component 2 (Error Pattern Detector) for ML analysis + XAI feedback.
+// Every Variables/Loops/Arrays/Methods question below carries a
+// `codeTemplate`: a real Java snippet with a single `{BLANK}` placeholder.
+// `options` are just the possible completions for that blank (e.g. "i",
+// "0", "i++") — NOT full alternate snippets. quizLab.js substitutes the
+// student's chosen option into the template to build one complete,
+// analyzable Java snippet, which is what gets sent to Component 2 (Error
+// Pattern Detector) as live telemetry.
 //
-// Questions marked "Fill-in-the-blank MCQ" carry an extra `codeTemplate`
-// field with an {ANSWER} placeholder. The chosen option is a short
-// statement (not a full snippet); quizLab.js substitutes it into the
-// template to build a complete, analyzable Java method before sending it
-// to Component 2 — this also guarantees the snippet passes
-// ErrorService.validate_java_submission (it needs a recognizable Java
-// structure, e.g. a `static ... method(...) { }` declaration).
-//
-// Wrong options are deliberately written to trigger these Component 2
-// reason_group categories (see backend/services/error_service.py):
-//   LOOP_BOUNDARY_ISSUE, LOOP_UPDATE_ISSUE, LOOP_CONTROL_FLOW_ISSUE,
-//   ARRAY_BOUNDARY_INDEX_ISSUE, VARIABLE_ASSIGNMENT_ISSUE,
-//   VARIABLE_CALCULATION_ISSUE, METHOD_RETURN_ISSUE
+// Operators questions are left as standard text MCQs (not part of this
+// rewrite's scope).
 // ─────────────────────────────────────────────────────────────────────────
 
 export const QUIZ_BANK = [
@@ -36,69 +28,54 @@ export const QUIZ_BANK = [
         id: 1,
         topic: "Variables",
         difficulty: "easy",
-        // Fill-in-the-blank MCQ — targets VARIABLE_ASSIGNMENT_ISSUE
-        question: "A method receives a parameter named total and should add 5 to it. Which line correctly updates the value?",
-        codeTemplate: "static void updateTotal(int total) {\n    {ANSWER}\n    System.out.println(total);\n}",
-        options: [
-            "total = total + 5;",
-            "total = total;",
-            "int total = 5;",
-            "total == total + 5;"
-        ],
+        question: "Fill in the blank to correctly declare an integer variable named age:",
+        codeTemplate: "{BLANK} age = 25;",
+        options: ["int", "Int", "integer", "void"],
         correctIndex: 0,
-        explanation: "Option B reassigns total to itself (self-assignment) — it has no effect. Option C re-declares the parameter. Option D uses == (comparison), not = (assignment)."
+        explanation: "Java uses lowercase 'int' as the primitive integer type keyword."
     },
     {
         id: 2,
         topic: "Variables",
-        difficulty: "medium",
-        // Fill-in-the-blank MCQ — targets VARIABLE_CALCULATION_ISSUE
-        question: "A checkout method should subtract a discount from the total price. Which line does this correctly?",
-        codeTemplate: "static double applyDiscount(double total, double discount) {\n    {ANSWER}\n    return total;\n}",
-        options: [
-            "total = total - discount;",
-            "total = total + discount;",
-            "total = discount + total;",
-            "total = total * discount;"
-        ],
+        difficulty: "easy",
+        question: "Fill in the blank with a valid Java variable name:",
+        codeTemplate: "int {BLANK} = 10;",
+        options: ["_count", "2count", "my-var", "class"],
         correctIndex: 0,
-        explanation: "A discount should be subtracted from the total. Adding it (options B and C) increases the price instead of reducing it."
+        explanation: "_count is valid. Variable names cannot start with a digit, contain hyphens, or use reserved keywords like 'class'."
     },
     {
         id: 3,
         topic: "Variables",
-        difficulty: "hard",
-        // Code-Snippet MCQ — reinforces VARIABLE_ASSIGNMENT_ISSUE
-        question: "Which line correctly declares and initializes a variable to store a student's average score?",
-        options: [
-            "double average = 0;",
-            "double average = average;",
-            "int average = 0;",
-            "double average;"
-        ],
+        difficulty: "medium",
+        question: "Fill in the blank to declare a variable that stores true or false:",
+        codeTemplate: "{BLANK} isActive = true;",
+        options: ["boolean", "bool", "Boolean", "bit"],
         correctIndex: 0,
-        explanation: "Option B references average before it has a value (self-assignment pattern). Option C uses int, which loses decimal precision for an average. Option D is declared but never initialized."
+        explanation: "Java's primitive boolean type stores true/false. 'Boolean' (uppercase) is the wrapper class, and 'bool' isn't a Java keyword."
     },
     {
         id: 4,
         topic: "Variables",
         difficulty: "medium",
-        question: "What is the output of: double x = 5 / 2; System.out.println(x);",
-        options: ["2.5", "2.0", "2", "Compile error"],
-        correctIndex: 1,
-        explanation: "5/2 performs integer division first (result: 2), which is then stored as a double → 2.0."
+        question: "Fill in the blank so the condition correctly checks if score equals 10 (rather than assigning it):",
+        codeTemplate: "int score = 10; if (score {BLANK} 10) { System.out.println(\"Match\"); }",
+        options: ["==", "=", "===", "equals"],
+        correctIndex: 0,
+        explanation: "== compares two values. A single = is assignment, not comparison, and isn't valid as a boolean condition here."
     },
     {
         id: 5,
         topic: "Variables",
         difficulty: "hard",
-        question: "What is the output of: int a = 10; int b = a++; System.out.println(a + \" \" + b);",
-        options: ["10 10", "11 10", "10 11", "11 11"],
-        correctIndex: 1,
-        explanation: "a++ is post-increment: b gets the current value of a (10), then a becomes 11. Output: 11 10."
+        question: "Fill in the blank so that b ends up 10 while a becomes 11 afterward:",
+        codeTemplate: "int a = 10; int b = {BLANK}; System.out.println(a + \" \" + b);",
+        options: ["a++", "++a", "a + 1", "a"],
+        correctIndex: 0,
+        explanation: "a++ is post-increment: b receives the current value of a (10) first, then a becomes 11."
     },
 
-    // ── Operators (unchanged) ───────────────────────────────────────────
+    // ── Operators (unchanged — outside this rewrite's scope) ────────────
     {
         id: 6,
         topic: "Operators",
@@ -150,64 +127,51 @@ export const QUIZ_BANK = [
         id: 11,
         topic: "Loops",
         difficulty: "easy",
-        // Code-Snippet MCQ — targets LOOP_BOUNDARY_ISSUE
-        question: "Which loop correctly prints every index of an array named arr (length 5) without going out of bounds?",
-        options: [
-            "for (int i = 0; i < arr.length; i++) { System.out.println(arr[i]); }",
-            "for (int i = 0; i <= arr.length; i++) { System.out.println(arr[i]); }",
-            "for (int i = 1; i < arr.length; i++) { System.out.println(arr[i]); }",
-            "for (int i = arr.length; i > 0; i--) { System.out.println(arr[i]); }"
-        ],
+        question: "Fill in the blank so this loop counts i from 0 up to 9:",
+        codeTemplate: "for (int i = 0; {BLANK} < 10; i++) { System.out.println(i); }",
+        options: ["i", "j", "10", "n"],
         correctIndex: 0,
-        explanation: "Valid indices run from 0 to arr.length - 1. Using <= (B) causes an off-by-one out-of-bounds access. Starting at 1 (C) skips index 0. Counting down from arr.length (D) accesses arr.length first, which is invalid."
+        explanation: "The loop condition must test the same variable (i) that was declared and is being incremented."
     },
     {
         id: 12,
         topic: "Loops",
-        difficulty: "medium",
-        // Code-Snippet MCQ — targets LOOP_UPDATE_ISSUE
-        question: "Which loop correctly counts from 0 to 4, printing each value?",
-        options: [
-            "for (int i = 0; i < 5; i++) { System.out.println(i); }",
-            "for (int i = 0; i < 5; ) { System.out.println(i); }",
-            "int i = 0; while (i < 5) { System.out.println(i); }",
-            "for (int i = 0; i < 5; i--) { System.out.println(i); }"
-        ],
+        difficulty: "easy",
+        question: "Fill in the blank to create a loop that always runs its body at least once:",
+        codeTemplate: "int i = 0; {BLANK} { System.out.println(\"run\"); } while (i < 0);",
+        options: ["do", "while", "for", "if"],
         correctIndex: 0,
-        explanation: "Option B has an empty update clause, so i never changes — infinite loop. Option C's while loop never increments i inside the body — also infinite. Option D decrements instead of incrementing."
+        explanation: "do-while checks its condition after executing the body, so it always runs at least once."
     },
     {
         id: 13,
         topic: "Loops",
-        difficulty: "hard",
-        // Code-Snippet MCQ — targets LOOP_CONTROL_FLOW_ISSUE
-        question: "Which loop correctly searches for the number 7 in an array named arr and stops as soon as it's found?",
-        options: [
-            "for (int i = 0; i < arr.length; i++) { if (arr[i] == 7) { break; } }",
-            "int i = 0; while (true) { if (arr[i] == 7) { System.out.println(\"found\"); } i++; }",
-            "for (int i = 0; i <= arr.length; i++) { if (arr[i] == 7) { break; } }",
-            "for (int i = 0; i < arr.length; i++) { if (arr[i] == 7) { continue; } }"
-        ],
+        difficulty: "medium",
+        question: "Fill in the blank so this loop terminates after printing 0 1 2:",
+        codeTemplate: "int i = 0; while (i < 3) { System.out.print(i + \" \"); {BLANK}; }",
+        options: ["i++", "i--", "i", "continue"],
         correctIndex: 0,
-        explanation: "Option B is a while(true) loop with no break — it never stops, even after finding the value. Option C has an off-by-one boundary. Option D uses continue instead of break, so the loop keeps running."
+        explanation: "Without incrementing i, the loop condition (i < 3) never becomes false — i++ is required to make progress."
     },
     {
         id: 14,
         topic: "Loops",
         difficulty: "medium",
-        question: "What does the break statement do inside a loop?",
-        options: ["Skips the current iteration", "Restarts the loop from the beginning", "Exits the loop immediately", "Pauses the loop"],
-        correctIndex: 2,
-        explanation: "break terminates the nearest enclosing loop immediately and continues after it."
+        question: "Fill in the blank so the loop stops immediately once i equals 3:",
+        codeTemplate: "for (int i = 0; i < 5; i++) { if (i == 3) { {BLANK}; } System.out.print(i); }",
+        options: ["break", "sleep", "wait", "pause"],
+        correctIndex: 0,
+        explanation: "break exits the nearest enclosing loop immediately."
     },
     {
         id: 15,
         topic: "Loops",
         difficulty: "hard",
-        question: "What is the output of: for (int i = 0; i < 3; i++) { if (i == 1) continue; System.out.print(i + \" \"); }",
-        options: ["0 1 2", "0 2", "1 2", "0 1"],
-        correctIndex: 1,
-        explanation: "continue skips the rest of the loop body for i=1. So only 0 and 2 are printed. Output: 0 2."
+        question: "Fill in the blank so the output is \"0 2 \" (i = 1 is skipped, not printed):",
+        codeTemplate: "for (int i = 0; i < 3; i++) { if (i == 1) { {BLANK}; } System.out.print(i + \" \"); }",
+        options: ["continue", "break", "return", "exit"],
+        correctIndex: 0,
+        explanation: "continue skips only the rest of the current iteration (the print), unlike break which would exit the loop entirely."
     },
 
     // ── Arrays ──────────────────────────────────────────────────────────
@@ -215,58 +179,51 @@ export const QUIZ_BANK = [
         id: 16,
         topic: "Arrays",
         difficulty: "easy",
-        // Code-Snippet MCQ — targets ARRAY_BOUNDARY_INDEX_ISSUE
-        question: "Which line correctly accesses the LAST element of a 5-element integer array named arr?",
-        options: [
-            "System.out.println(arr[arr.length - 1]);",
-            "System.out.println(arr[arr.length]);",
-            "System.out.println(arr[5]);",
-            "System.out.println(arr[arr.length + 1]);"
-        ],
+        question: "Fill in the blank to correctly declare an integer array:",
+        codeTemplate: "int{BLANK} arr = new int[5];",
+        options: ["[]", "()", "{}", "<>"],
         correctIndex: 0,
-        explanation: "arr.length (5) is one past the last valid index. The last element is always at arr.length - 1. Options B, C, and D all read past the end of the array."
+        explanation: "Square brackets after the type declare an array: int[] arr = new int[5];"
     },
     {
         id: 17,
         topic: "Arrays",
         difficulty: "easy",
-        question: "How do you correctly declare an integer array in Java?",
-        options: ["int arr = new int[];", "int[] arr = new int[5];", "array int arr[5];", "int arr[5];"],
-        correctIndex: 1,
-        explanation: "The correct syntax is int[] arr = new int[5]; — type with brackets, then new keyword with size."
+        question: "Fill in the blank to correctly access the FIRST element of the array:",
+        codeTemplate: "int[] arr = {10, 20, 30}; System.out.println(arr[{BLANK}]);",
+        options: ["0", "1", "-1", "arr.length"],
+        correctIndex: 0,
+        explanation: "Java arrays are zero-indexed — the first element is always at index 0."
     },
     {
         id: 18,
         topic: "Arrays",
         difficulty: "medium",
-        // Code-Snippet MCQ — reinforces ARRAY_BOUNDARY_INDEX_ISSUE + LOOP_UPDATE_ISSUE
-        question: "Which loop correctly fills every element of a 5-element integer array named arr with its own index value?",
-        options: [
-            "for (int i = 0; i < arr.length; i++) { arr[i] = i; }",
-            "for (int i = 0; i <= arr.length; i++) { arr[i] = i; }",
-            "for (int i = 0; i < arr.length; ) { arr[i] = i; }",
-            "for (int i = 0; i < arr.length; i++) { arr[i] = arr[i]; }"
-        ],
+        question: "Fill in the blank so this loop prints every element without going out of bounds:",
+        codeTemplate: "int[] arr = new int[5]; for (int i = 0; i {BLANK} arr.length; i++) { System.out.println(arr[i]); }",
+        options: ["<", "<=", ">", "=="],
         correctIndex: 0,
-        explanation: "Option B writes to arr[arr.length], which is out of bounds. Option C never updates i — infinite loop. Option D assigns each slot to itself instead of to i, so nothing actually changes."
+        explanation: "Valid indices run from 0 to arr.length - 1. Using <= would read one index past the end of the array."
     },
     {
         id: 19,
         topic: "Arrays",
         difficulty: "medium",
-        question: "What does arr.length return for int[] arr = new int[7];?",
-        options: ["6", "7", "8", "0"],
-        correctIndex: 1,
-        explanation: "arr.length returns the total number of elements the array was created to hold, which is 7."
+        question: "Fill in the blank to correctly get the number of elements the array can hold:",
+        codeTemplate: "int[] arr = new int[7]; System.out.println(arr.{BLANK});",
+        options: ["length", "length()", "size", "count"],
+        correctIndex: 0,
+        explanation: "Arrays expose length as a property (no parentheses) — unlike String's length() method."
     },
     {
         id: 20,
         topic: "Arrays",
         difficulty: "hard",
-        question: "What is the output of: int[] nums = {1,2,3,4,5}; int sum = 0; for (int n : nums) sum += n; System.out.println(sum);",
-        options: ["12", "15", "14", "10"],
-        correctIndex: 1,
-        explanation: "The enhanced for loop sums all elements: 1+2+3+4+5 = 15."
+        question: "Fill in the blank so sum correctly accumulates the total of all array elements:",
+        codeTemplate: "int[] nums = {1,2,3,4,5}; int sum = 0; for (int n : nums) { sum {BLANK} n; } System.out.println(sum);",
+        options: ["+=", "=", "*=", "-="],
+        correctIndex: 0,
+        explanation: "+= adds each element into the running total. Using = would overwrite sum with just the last element instead of accumulating."
     },
 
     // ── Methods ─────────────────────────────────────────────────────────
@@ -274,63 +231,50 @@ export const QUIZ_BANK = [
         id: 21,
         topic: "Methods",
         difficulty: "easy",
-        // Code-Snippet MCQ — targets METHOD_RETURN_ISSUE (void returning a value)
-        question: "Which method correctly prints the sum of two numbers without returning a value?",
-        options: [
-            "static void printSum(int a, int b) { System.out.println(a + b); }",
-            "static void printSum(int a, int b) { return a + b; }",
-            "static int printSum(int a, int b) { System.out.println(a + b); }",
-            "static void printSum(int a, int b) { System.out.println(a); }"
-        ],
+        question: "Fill in the blank to send a value back from this method:",
+        codeTemplate: "static int getFive() { {BLANK} 5; }",
+        options: ["return", "print", "output", "give"],
         correctIndex: 0,
-        explanation: "Option B tries to return a value from a void method — void methods cannot return anything. Option C declares int but never returns. Option D ignores parameter b entirely."
+        explanation: "The return keyword exits the method and passes a value back to the caller."
     },
     {
         id: 22,
         topic: "Methods",
-        difficulty: "medium",
-        // Code-Snippet MCQ — targets METHOD_RETURN_ISSUE (missing return)
-        question: "Which method correctly returns the larger of two integers?",
-        options: [
-            "static int max(int a, int b) { if (a > b) { return a; } return b; }",
-            "static int max(int a, int b) { if (a > b) { System.out.println(a); } }",
-            "static void max(int a, int b) { if (a > b) { return a; } return b; }",
-            "static int max(int a, int b) { if (a < b) { return a; } return b; }"
-        ],
+        difficulty: "easy",
+        question: "Fill in the blank so this method compiles correctly (it never returns a value):",
+        codeTemplate: "static {BLANK} printHello() { System.out.println(\"Hello\"); }",
+        options: ["void", "int", "return", "null"],
         correctIndex: 0,
-        explanation: "Option B is declared int but has no return statement at all. Option C is void but tries to return values. Option D uses the wrong comparison (<), so it returns the smaller value."
+        explanation: "void means the method does not return any value."
     },
     {
         id: 23,
         topic: "Methods",
-        difficulty: "hard",
-        // Code-Snippet MCQ — method call correctness
-        question: "A method named add takes two int parameters and returns their sum. Which call correctly uses it?",
-        options: [
-            "int result = add(3, 4);",
-            "int result = add(3, 4, 5);",
-            "int result = add(3);",
-            "String result = add(3, 4);"
-        ],
+        difficulty: "medium",
+        question: "Fill in the blank so add(3, {BLANK}) prints 7:",
+        codeTemplate: "static int add(int a, int b) { return a + b; } System.out.println(add(3, {BLANK}));",
+        options: ["4", "four", "\"4\"", "IV"],
         correctIndex: 0,
-        explanation: "add() takes exactly two int parameters and returns an int. Options B and C pass the wrong number of arguments. Option D tries to store an int result in a String variable."
+        explanation: "add() expects two int arguments. 3 + 4 = 7 — the other options aren't valid int literals."
     },
     {
         id: 24,
         topic: "Methods",
         difficulty: "medium",
-        question: "What is method overloading in Java?",
-        options: ["Calling a method more than once", "A method calling itself", "Two methods with the same name but different parameters", "A method inside another method"],
-        correctIndex: 2,
-        explanation: "Overloading allows multiple methods with the same name as long as their parameter lists differ."
+        question: "Fill in the blank so the recursion has a base case that stops it:",
+        codeTemplate: "static int mystery(int n) { if (n == 1) { return {BLANK}; } return n + mystery(n - 1); }",
+        options: ["1", "0", "n", "mystery(n)"],
+        correctIndex: 0,
+        explanation: "The base case must return a fixed value (1) rather than recursing further, or the recursion never stops."
     },
     {
         id: 25,
         topic: "Methods",
         difficulty: "hard",
-        question: "What is the output of: static int mystery(int n) { if (n == 1) return 1; return n + mystery(n - 1); } System.out.println(mystery(4));",
-        options: ["4", "8", "10", "24"],
-        correctIndex: 2,
-        explanation: "This is recursion: mystery(4) = 4 + mystery(3) = 4 + 3 + mystery(2) = 4+3+2+mystery(1) = 4+3+2+1 = 10."
+        question: "Fill in the blank so each recursive call moves toward the base case (n == 1):",
+        codeTemplate: "static int mystery(int n) { if (n == 1) { return 1; } return n + mystery({BLANK}); }",
+        options: ["n - 1", "n", "n + 1", "1"],
+        correctIndex: 0,
+        explanation: "Each call must decrease n so it eventually reaches the base case. Calling mystery(n) again would recurse forever."
     },
 ];
