@@ -27,6 +27,15 @@ def get_error_history(user_id):
     return jsonify(result)
 
 
+@error_bp.route("/latest/<user_id>", methods=["GET"])
+def get_latest_analysis(user_id):
+    """Return the most recent full analysis response for a user."""
+    result = ErrorService.get_latest(user_id)
+    if result:
+        return jsonify(result)
+    return jsonify({"error": "No recent analysis found"}), 404
+
+
 @error_bp.route("/summary/<user_id>", methods=["GET"])
 def get_error_summary(user_id):
     """Return aggregated error summary per category."""
