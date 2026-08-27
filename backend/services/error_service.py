@@ -70,7 +70,7 @@ class ErrorService:
         # Remove package statements
         code = re.sub(r'package\s+.*?;', '', code)
         # Clean whitespaces inside square brackets to handle copy-paste visual wraps
-        code = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", code)
+        code = re.sub(r'\[([^]]+)\]', lambda m: '[' + re.sub(r'\s+', '', m.group(1)) + ']', code)
         # Normalize whitespace (replace tabs/newlines with single space)
         code = re.sub(r'\s+', ' ', code)
         return code.strip()
@@ -121,7 +121,7 @@ class ErrorService:
         stripped = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
         stripped = re.sub(r'//.*', '', stripped)
         # Clean whitespaces inside square brackets to handle copy-paste visual wraps
-        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: '[' + re.sub(r'\s+', '', m.group(1)) + ']', stripped)
 
         # 1. Method argument mismatch exists
         mismatch_res = ErrorService.detect_method_argument_mismatch(code)
@@ -292,7 +292,7 @@ class ErrorService:
         stripped = re.sub(r'/\*.*?\*/', '', code, flags=re.DOTALL)
         stripped = re.sub(r'//.*', '', stripped)
         # Clean whitespaces inside square brackets to handle copy-paste visual wraps
-        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: '[' + re.sub(r'\s+', '', m.group(1)) + ']', stripped)
         
         snippet = ""
         note = ""
@@ -386,7 +386,7 @@ class ErrorService:
         stripped = re.sub(r'/\*.*?\*/', '', code or '', flags=re.DOTALL)
         stripped = re.sub(r'//.*', '', stripped)
         # Clean whitespaces inside square brackets to handle copy-paste visual wraps
-        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: '[' + re.sub(r'\s+', '', m.group(1)) + ']', stripped)
 
         if recalibrated_confidence_pct is not None:
             confidence_pct = recalibrated_confidence_pct
@@ -740,7 +740,7 @@ class ErrorService:
         stripped = re.sub(r'/\*.*?\*/', '', code or '', flags=re.DOTALL)
         stripped = re.sub(r'//.*', '', stripped)
         # Clean whitespaces inside square brackets to handle copy-paste visual wraps
-        stripped = re.sub(r'\[([^]]+)\]', lambda m: f"[{re.sub(r'\s+', '', m.group(1))}]", stripped)
+        stripped = re.sub(r'\[([^]]+)\]', lambda m: '[' + re.sub(r'\s+', '', m.group(1)) + ']', stripped)
         
         if ml_label == "LOOP_ERROR":
             loop_errors = (
