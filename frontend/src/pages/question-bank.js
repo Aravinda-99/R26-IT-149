@@ -11,6 +11,7 @@
  */
 
 import { SchemaMasteryAPI } from "../api/api.js";
+import { getUserRole } from "../utils/auth.js";
 
 const CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"];
 const QUESTION_TYPES = [
@@ -40,6 +41,33 @@ let approvedQuestions = [];
 let editingQuestionId = null;
 
 export async function renderQuestionBank(container) {
+    const role = getUserRole();
+    if (role === "student" && window.__cqRole === "student") {
+        container.innerHTML = `
+            <div style="max-width: 600px; margin: 4rem auto; text-align: center; color: var(--text-primary);">
+                <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h2 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Teacher / Admin Access Required</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem; line-height: 1.6;">
+                    The Question Bank & LLM Question Generation dashboard is reserved for teachers and administrators to review, edit, and approve assessment items.
+                </p>
+                <div style="background: var(--card-bg, #181c28); border: 1px solid var(--border-color); border-radius: 0.6rem; padding: 1.5rem; text-align: left; margin-bottom: 2rem;">
+                    <strong style="color: #a5b4fc; display: block; margin-bottom: 0.5rem;">To access Teacher Review Mode:</strong>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">
+                        Please sign in with a teacher account (e.g. <code>teacher@codequest.lk</code> / <code>teacher123</code>).
+                    </p>
+                </div>
+                <button class="btn btn-primary" id="qb-login-redirect-btn" style="padding: 0.7rem 2rem;">
+                    Sign In as Teacher
+                </button>
+            </div>
+        `;
+        document.getElementById("qb-login-redirect-btn")?.addEventListener("click", () => {
+            if (typeof window.navigateTo === "function") window.navigateTo("login");
+        });
+        return;
+    }
     container.innerHTML = `
         <div class="qbank-page" style="padding: 1.5rem 2rem; max-width: 1280px; margin: 0 auto; color: var(--text-primary);">
             <!-- Header -->

@@ -17,6 +17,7 @@ import { SchemaMasteryAPI } from "../api/api.js";
 
 // ── State ───────────────────────────────────────────────────────────
 let currentStudentId = "STU001";
+let currentSessionId = null;
 let currentConcept = "Loops";
 let currentErrorType = "LOOP_CONDITION_ERROR";
 let currentPreTestScore = 0.45;
@@ -48,6 +49,7 @@ const conceptDisplayNames = {
  */
 export async function renderPostTest(container, opts = {}) {
     currentStudentId = opts.studentId || opts.student_id || "STU001";
+    currentSessionId = opts.sessionId || opts.session_id || null;
     currentConcept = opts.concept || opts.concept_name || "Loops";
     currentErrorType = opts.error_type || opts.errorType || "LOOP_CONDITION_ERROR";
     currentPreTestScore = typeof opts.pre_test_score === "number" ? opts.pre_test_score : 0.45;
@@ -151,7 +153,12 @@ async function loadAndStartPostTest(container) {
             student_id: currentStudentId,
             concept: currentConcept,
             error_type: currentErrorType,
+            session_id: currentSessionId,
         });
+
+        if (data.session_id) {
+            currentSessionId = data.session_id;
+        }
 
         questions = data.questions || [];
         if (questions.length === 0) {
@@ -331,6 +338,7 @@ async function submitPostTest(container) {
     try {
         const payload = {
             student_id: currentStudentId,
+            session_id: currentSessionId,
             concept_name: currentConcept,
             pre_test_score: currentPreTestScore,
             attempt_count: currentAttemptCount,

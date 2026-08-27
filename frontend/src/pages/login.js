@@ -5,6 +5,7 @@
  */
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { loginWithMockUser, getUserRole } from "../utils/auth.js";
 
 export function renderLogin(container, onNavigate) {
     container.innerHTML = `
@@ -23,6 +24,12 @@ export function renderLogin(container, onNavigate) {
                 </div>
                 <div id="login-error" style="color: var(--accent-orange); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
                 <button class="btn btn-primary" id="login-btn" style="width: 100%;">Sign In</button>
+                <div style="margin-top: 1.2rem; padding: 0.8rem; background: rgba(99, 102, 241, 0.08); border-radius: 0.4rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+                    <strong style="color: #a5b4fc;">Demo Accounts:</strong><br/>
+                    • Teacher: <code>teacher@codequest.lk</code> / <code>teacher123</code><br/>
+                    • Student: <code>student@codequest.lk</code> / <code>student123</code><br/>
+                    • Admin: <code>admin@codequest.lk</code> / <code>admin123</code>
+                </div>
                 <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
                     Don't have an account? <a href="#" id="go-register" style="color: var(--accent-blue);">Register</a>
                 </p>
@@ -51,10 +58,21 @@ export function renderLogin(container, onNavigate) {
             await signInWithEmailAndPassword(auth, email, password);
             if (onNavigate) onNavigate("dashboard");
         } catch (e) {
-            errorEl.textContent = e.message.replace("Firebase: ", "");
-            errorEl.style.display = "block";
-            btn.disabled = false;
-            btn.textContent = "Sign In";
+            // Check mock login fallback
+            const mockRes = await loginWithMockUser(email, password);
+            if (mockRes.success) {
+                const role = getUserRole(mockRes.user);
+                if (role === "teacher" || role === "admin") {
+                    if (onNavigate) onNavigate("question-bank");
+                } else {
+                    if (onNavigate) onNavigate("dashboard");
+                }
+            } else {
+                errorEl.textContent = e.message.replace("Firebase: ", "");
+                errorEl.style.display = "block";
+                btn.disabled = false;
+                btn.textContent = "Sign In";
+            }
         }
     });
 

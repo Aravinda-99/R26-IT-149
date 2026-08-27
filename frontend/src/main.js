@@ -6,7 +6,7 @@
 
 import "./style.css";
 import { initFirebase } from "./config/firebase.js";
-import { initAuthListener, onAuthChange, logout } from "./utils/auth.js";
+import { initAuthListener, onAuthChange, logout, getUserRole } from "./utils/auth.js";
 import { renderDashboard } from "./pages/dashboard.js";
 import { renderLearningPath } from "./pages/learning-path.js";
 import { renderQuizLab } from "./pages/quiz-lab.js";
@@ -74,12 +74,27 @@ function navigateTo(page) {
 window.navigateTo = navigateTo;
 
 function updateNavForUser(user) {
-    const actionsEl = document.getElementById("nav-actions");
+    const role = getUserRole(user);
+    window.__cqRole = role;
 
+    // Toggle teacher-only nav links (Question Bank)
+    const qbLink = document.querySelector('.nav-link[data-page="question-bank"]');
+    if (qbLink) {
+        if (role === "teacher" || role === "admin") {
+            qbLink.style.display = "inline-flex";
+        } else {
+            qbLink.style.display = "none";
+        }
+    }
+
+    const actionsEl = document.getElementById("nav-actions");
     if (!actionsEl) return;
 
     if (user) {
         actionsEl.innerHTML = `
+            <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); padding: 0.15rem 0.5rem; border-radius: 0.3rem; font-size: 0.75rem; text-transform: uppercase; margin-right: 0.5rem; font-weight: 700;">
+                ${role}
+            </span>
             <span style="color: var(--text-secondary); font-size: 0.85rem; margin-right: 0.5rem;">
                 ${user.email}
             </span>

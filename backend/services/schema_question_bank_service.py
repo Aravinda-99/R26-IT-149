@@ -25,6 +25,7 @@ APP_QUESTIONS_FILE = os.path.join(STORAGE_DIR, "approved_question_bank.json")
 SESSIONS_FILE = os.path.join(STORAGE_DIR, "schema_mastery_sessions.json")
 ATTEMPTS_FILE = os.path.join(STORAGE_DIR, "question_attempts.json")
 SEED_FILE = os.path.join(STORAGE_DIR, "seed_questions.json")
+OPTION_MAPPINGS_FILE = os.path.join(STORAGE_DIR, "post_test_option_mappings.json")
 
 _lock = threading.Lock()
 
@@ -71,6 +72,12 @@ class SchemaQuestionBankService:
                 print(f"[OK] Seeded {len(seed_data)} questions into approved_question_bank.json")
             else:
                 print("[WARN] Seed questions file was empty or missing.")
+        return approved
+
+    @classmethod
+    def seed_approved_questions_if_empty(cls):
+        """Alias for initialize_seed_data."""
+        return cls.initialize_seed_data()
 
     # ─────────────────────────────────────────────────────────────────────────
     # Generated / Draft Questions CRUD
@@ -313,6 +320,47 @@ class SchemaQuestionBankService:
                 print(f"[WARN] Firestore sync failed for session: {e}")
 
         return s_copy
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Post-Test Option Mappings (Option Shuffling Persistence)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def save_session_option_mappings(cls, session_id: str, mappings: dict) -> bool:
+        """
+        Saves shuffled option mappings for a post-test session.
+        mappings format: {
+            "question_id_1": {"A": "C", "B": "A", "C": "D", "D": "B"}, # displayed -> canonical
+            ...
+        }
+        """
+        existing = _read_json(OPTION_MAPPINGS_FILE, default={})
+        if isinstance(existing, list):
+            existing = {}
+        existing[str(session_id)] = {
+            "session_id": str(session_id),
+            "created_at": _now_iso(),
+            "mappings": mappings,
+        }
+        return _write_json(OPTION_MAPPINGS_FILE, existing)
+
+    @classmethod
+    def get_session_option_mappings(cls, session_id: str) -> dict:
+        """Retrieves all question option mappings for a given session."""
+        all_mappings = _read_json(OPTION_MAPPINGS_FILE, default={})
+        if isinstance(all_mappings, list):
+            return {}
+        session_data = all_mappings.get(str(session_id), {})
+        return session_data.get("mappings", {})
+
+    @classmethod
+    def get_option_mapping(cls, session_id: str, question_id: str) -> dict:
+        """
+        Retrieves the displayed_key -> canonical_key mapping for a specific question in a session.
+        Returns dict like {"A": "C", "B": "A", "C": "D", "D": "B"} or {} if not found.
+        """
+        session_mappings = cls.get_session_option_mappings(session_id)
+        return session_mappings.get(str(question_id), {})
 
 
 # Initialize seed data upon module load

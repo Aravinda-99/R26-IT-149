@@ -176,12 +176,14 @@ def get_post_test_questions():
     student_id = request.args.get("student_id", "STU001")
     concept = request.args.get("concept") or request.args.get("concept_name", "Loops")
     error_type = request.args.get("error_type")
+    session_id = request.args.get("session_id")
 
     try:
         payload = SchemaPostTestService.select_post_test_questions(
             student_id=student_id,
             concept=concept,
             error_type=error_type,
+            session_id=session_id,
         )
         return jsonify(payload), 200
     except Exception as e:

@@ -100,7 +100,10 @@ export const SchemaMasteryAPI = {
         const studentId = params.student_id || params.studentId || "STU001";
         const concept = params.concept || params.concept_name || "Loops";
         const errorType = params.error_type || params.errorType || "";
-        const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
+        const sessionId = params.session_id || params.sessionId || "";
+        let query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}`;
+        if (errorType) query += `&error_type=${encodeURIComponent(errorType)}`;
+        if (sessionId) query += `&session_id=${encodeURIComponent(sessionId)}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),

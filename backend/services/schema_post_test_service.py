@@ -12,6 +12,7 @@ Manages:
 """
 
 import uuid
+import random
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
 
@@ -34,14 +35,18 @@ class SchemaPostTestService:
         student_id: str,
         concept: str,
         error_type: str = None,
+        session_id: str = None,
     ) -> dict:
         """
         Selects 15 approved questions using the blueprint rules.
         Filters by concept, avoids previously answered questions,
         prioritizes error_type for Error Recognition, and prefers lower exposure_count.
-        Returns student-safe question objects.
+        Randomizes option order per session while saving displayed -> canonical mapping.
+        Returns student-safe question objects (no correct_option or option_quality leaks).
         """
         concept_clean = concept.strip() if concept else "Loops"
+        if not session_id:
+            session_id = f"SES_{uuid.uuid4().hex[:8].upper()}"
         
         # 1. Fetch all active approved questions for this concept
         all_approved = SchemaQuestionBankService.get_approved_question_bank(concept=concept_clean, active_only=True)
@@ -107,26 +112,47 @@ class SchemaPostTestService:
                 selected_questions.append(pool[idx % len(pool)])
                 idx += 1
 
-        # 6. Sanitize for student delivery (MUST NOT expose correct_option or option_qualities)
+        # 6. Randomize/shuffle options per question and save hidden mapping for this session
         student_safe_questions = []
+        session_mappings = {}
+
         for q in selected_questions:
+            qid = q.get("question_id")
+            canonical_options = {
+                "A": q.get("option_a", ""),
+                "B": q.get("option_b", ""),
+                "C": q.get("option_c", ""),
+                "D": q.get("option_d", ""),
+            }
+
+            canonical_keys = ["A", "B", "C", "D"]
+            shuffled_canonical = random.sample(canonical_keys, len(canonical_keys))
+
+            display_options = {}
+            q_mapping = {}  # displayed_key (A,B,C,D) -> canonical_key (e.g. C,A,D,B)
+
+            for disp_key, canon_key in zip(["A", "B", "C", "D"], shuffled_canonical):
+                display_options[disp_key] = canonical_options.get(canon_key, "")
+                q_mapping[disp_key] = canon_key
+
+            session_mappings[qid] = q_mapping
+
             student_safe_questions.append({
-                "question_id": q.get("question_id"),
+                "question_id": qid,
                 "concept_name": q.get("concept_name"),
                 "question_type": q.get("question_type"),
                 "difficulty": q.get("difficulty"),
                 "question_text": q.get("question_text") or q.get("question"),
                 "code_snippet": q.get("code_snippet") or q.get("code", ""),
-                "options": {
-                    "A": q.get("option_a", ""),
-                    "B": q.get("option_b", ""),
-                    "C": q.get("option_c", ""),
-                    "D": q.get("option_d", ""),
-                },
+                "options": display_options,
             })
+
+        # Persist the shuffled option mapping for this session
+        SchemaQuestionBankService.save_session_option_mappings(session_id, session_mappings)
 
         return {
             "success": True,
+            "session_id": session_id,
             "student_id": student_id,
             "concept_name": concept_clean,
             "total_questions": len(student_safe_questions),
@@ -164,7 +190,7 @@ class SchemaPostTestService:
         # Evaluate each answer
         for idx, item in enumerate(answers):
             qid = item.get("question_id")
-            selected = str(item.get("selected_option", "")).strip().upper()
+            selected_displayed = str(item.get("selected_option", "")).strip().upper()
             used_qids.append(qid)
 
             # Look up hidden metadata
@@ -173,16 +199,24 @@ class SchemaPostTestService:
                 # Fallback search in pending or mock defaults
                 q_meta = SchemaQuestionBankService.get_generated_question_by_id(qid) or {}
 
-            correct_option = str(q_meta.get("correct_option", "A")).upper()
+            # Retrieve option mapping for this session and question
+            q_mapping = SchemaQuestionBankService.get_option_mapping(session_id, qid)
+            if q_mapping:
+                # Map student's displayed selection (A, B, C, D) back to canonical option key
+                canonical_selected = q_mapping.get(selected_displayed, selected_displayed)
+            else:
+                canonical_selected = selected_displayed
+
+            correct_canonical = str(q_meta.get("correct_option", "A")).upper()
             
-            # Map quality of selected option
+            # Map quality of selected option using canonical key
             quality_map = {
-                "A": q_meta.get("option_a_quality", "Correct" if correct_option == "A" else "Wrong"),
-                "B": q_meta.get("option_b_quality", "Correct" if correct_option == "B" else "Wrong"),
-                "C": q_meta.get("option_c_quality", "Correct" if correct_option == "C" else "Wrong"),
-                "D": q_meta.get("option_d_quality", "Correct" if correct_option == "D" else "Wrong"),
+                "A": q_meta.get("option_a_quality", "Correct" if correct_canonical == "A" else "Wrong"),
+                "B": q_meta.get("option_b_quality", "Correct" if correct_canonical == "B" else "Wrong"),
+                "C": q_meta.get("option_c_quality", "Correct" if correct_canonical == "C" else "Wrong"),
+                "D": q_meta.get("option_d_quality", "Correct" if correct_canonical == "D" else "Wrong"),
             }
-            selected_quality = quality_map.get(selected, "Wrong")
+            selected_quality = quality_map.get(canonical_selected, "Wrong")
 
             if selected_quality == "Correct":
                 correct_count += 1
@@ -204,28 +238,43 @@ class SchemaPostTestService:
                 "concept_name": concept_name,
                 "question_id": qid,
                 "equivalent_group_id": q_meta.get("equivalent_group_id", "GRP_DEFAULT"),
-                "selected_option": selected,
+                "selected_option": selected_displayed,
+                "canonical_selected_option": canonical_selected,
                 "answer_quality": selected_quality,
                 "is_correct": is_correct,
                 "attempt_no": attempt_count,
             })
 
-            # Review item for post-submit feedback
-            options_dict = {
+            # Canonical options dict
+            canonical_options = {
                 "A": q_meta.get("option_a", ""),
                 "B": q_meta.get("option_b", ""),
                 "C": q_meta.get("option_c", ""),
                 "D": q_meta.get("option_d", ""),
             }
+
+            # Review item for post-submit feedback
+            if q_mapping:
+                # Find which displayed option corresponds to the correct canonical answer
+                displayed_correct = next((k for k, v in q_mapping.items() if v == correct_canonical), correct_canonical)
+                # Reconstruct options exactly as displayed to the student
+                displayed_options_dict = {
+                    disp_k: canonical_options.get(canon_k, "")
+                    for disp_k, canon_k in q_mapping.items()
+                }
+            else:
+                displayed_correct = correct_canonical
+                displayed_options_dict = canonical_options
+
             review_items.append({
                 "question_id": qid,
                 "question": q_meta.get("question_text") or f"Question {idx+1}",
-                "selected": selected,
-                "correct": correct_option,
+                "selected": selected_displayed,
+                "correct": displayed_correct,
                 "is_correct": is_correct,
                 "answer_quality": selected_quality,
                 "explanation": q_meta.get("explanation", ""),
-                "options": options_dict,
+                "options": displayed_options_dict,
             })
 
         # Calculate post_test_score: Correct = 1.0, Nearly Correct = 0.5, Others = 0.0

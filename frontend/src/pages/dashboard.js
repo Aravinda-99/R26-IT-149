@@ -7,6 +7,66 @@
 
 import { MasteryAPI, AdaptiveAPI } from "../api/api.js";
 
+const MOCK_DASHBOARD_STUDENTS = [
+    { studentId: "STU001", studentName: "Student 01 (Demo)", name: "Student 01" },
+    { studentId: "STU002", studentName: "Student 02 (Demo)", name: "Student 02" },
+    { studentId: "STU003", studentName: "Student 03 (Demo)", name: "Student 03" },
+];
+
+function getMockDashboardData(studentId) {
+    return {
+        found: true,
+        offline: true,
+        studentId: studentId || "STU001",
+        studentName: studentId === "STU002" ? "Student 02" : (studentId === "STU003" ? "Student 03" : "Student 01"),
+        overall_mastery: 0.68,
+        overall_state: "Developing",
+        overall_color: "#fbbf24",
+        concepts: {
+            variables: {
+                conceptName: "Variables & Data Types",
+                schema_state: "Stable",
+                mastery_score: 0.85,
+                needs_posttest: false,
+                color: "#34d399",
+                breakdown: { correctness_score: 0.88, attempt_score: 0.82, quiz_score: 0.85 },
+            },
+            operators: {
+                conceptName: "Operators & Expressions",
+                schema_state: "Developing",
+                mastery_score: 0.72,
+                needs_posttest: false,
+                color: "#fbbf24",
+                breakdown: { correctness_score: 0.75, attempt_score: 0.68, quiz_score: 0.73 },
+            },
+            loops: {
+                conceptName: "Loops & Iteration",
+                schema_state: "Fragile",
+                mastery_score: 0.45,
+                needs_posttest: true,
+                color: "#f97316",
+                breakdown: { correctness_score: 0.42, attempt_score: 0.48, quiz_score: 0.45 },
+            },
+            arrays: {
+                conceptName: "Arrays & Lists",
+                schema_state: "Developing",
+                mastery_score: 0.64,
+                needs_posttest: false,
+                color: "#fbbf24",
+                breakdown: { correctness_score: 0.65, attempt_score: 0.60, quiz_score: 0.67 },
+            },
+            methods: {
+                conceptName: "Methods & Functions",
+                schema_state: "Developing",
+                mastery_score: 0.66,
+                needs_posttest: false,
+                color: "#fbbf24",
+                breakdown: { correctness_score: 0.68, attempt_score: 0.62, quiz_score: 0.68 },
+            },
+        },
+    };
+}
+
 function normalizeStudent(s = {}) {
     const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
     const studentName =
@@ -46,30 +106,30 @@ export async function renderDashboard(container) {
 
 async function loadDashboardStudents() {
     const select = document.getElementById("dashboard-student-select");
+    let students = [];
     try {
         const data = await MasteryAPI.getStudents();
-        const students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
-
-        if (students.length === 0) {
-            select.innerHTML = `<option value="">No students found</option>`;
-            return;
-        }
-
-        select.innerHTML = students.map(s =>
-            `<option value="${s.studentId}">${s.studentName}</option>`
-        ).join("");
-
-        select.addEventListener("change", () => {
-            if (select.value) loadDashboardData(select.value);
-        });
-
-        // Auto-load first student
-        loadDashboardData(students[0].studentId);
-
+        students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
     } catch (err) {
-        select.innerHTML = `<option value="">Failed to load</option>`;
-        document.getElementById("dashboard-content").innerHTML =
-            `<p style="color: var(--accent-orange); text-align: center;">Could not load student data${err?.message ? `: ${err.message}` : ""}</p>`;
+        console.warn("[WARN] Could not load live student data, using mock dataset:", err.message);
+        students = MOCK_DASHBOARD_STUDENTS;
+    }
+
+    if (students.length === 0) {
+        students = MOCK_DASHBOARD_STUDENTS;
+    }
+
+    select.innerHTML = students.map(s =>
+        `<option value="${s.studentId}">${s.studentName}</option>`
+    ).join("");
+
+    select.addEventListener("change", () => {
+        if (select.value) loadDashboardData(select.value);
+    });
+
+    // Auto-load first student
+    if (students.length > 0) {
+        loadDashboardData(students[0].studentId);
     }
 }
 
@@ -77,12 +137,19 @@ async function loadDashboardData(studentId) {
     const content = document.getElementById("dashboard-content");
     content.innerHTML = `<div style="text-align: center; padding: 2rem;"><div class="spinner"></div></div>`;
 
+    let data = null;
+    let isMock = false;
     try {
-        const data = await MasteryAPI.getStatus(studentId);
-        if (!data.found) {
-            content.innerHTML = `<p style="color: var(--accent-orange); text-align: center;">No data found</p>`;
-            return;
+        data = await MasteryAPI.getStatus(studentId);
+        if (!data || !data.found) {
+            data = getMockDashboardData(studentId);
+            isMock = true;
         }
+    } catch (err) {
+        console.warn("[WARN] Could not load live status, using mock data:", err.message);
+        data = getMockDashboardData(studentId);
+        isMock = true;
+    }
 
         const concepts = data.concepts || {};
         const conceptEntries = Object.entries(concepts);
@@ -328,8 +395,4 @@ async function loadDashboardData(studentId) {
                 });
             });
         });
-
-    } catch (err) {
-        content.innerHTML = `<p style="color: var(--accent-orange); text-align: center;">Error loading dashboard: ${err.message}</p>`;
-    }
 }

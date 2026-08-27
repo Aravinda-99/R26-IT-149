@@ -90,21 +90,29 @@ def run_tests():
         assert rejected_res["status"] == "REJECTED"
         print("    [PASS] Teacher question rejection verified.")
 
-    # 5. Test 15-Question Post-Test Selection & Student-Safe Sanitization
-    print("--> 5. Testing Student Post-Test Blueprint Selection...")
+    # 5. Test 15-Question Post-Test Selection & Student-Safe Sanitization & Option Shuffling
+    print("--> 5. Testing Student Post-Test Blueprint Selection & Option Shuffling...")
     posttest = SchemaPostTestService.select_post_test_questions(
         student_id="STU_TEST_001",
         concept="Loops",
         error_type="LOOP_CONDITION_ERROR",
     )
     assert posttest["success"] is True
+    assert "session_id" in posttest, "Missing session_id in posttest response"
+    session_id = posttest["session_id"]
     assert posttest["total_questions"] == 15, f"Expected 15 questions, got {posttest['total_questions']}"
+    
+    # Check that option mappings were stored
+    session_mappings = SchemaQuestionBankService.get_session_option_mappings(session_id)
+    assert len(session_mappings) > 0, "No session option mappings found"
+    assert len(posttest["questions"]) == 15, f"Expected 15 questions, got {len(posttest['questions'])}"
+
     for q in posttest["questions"]:
         assert "correct_option" not in q, f"SECURITY LEAK: correct_option exposed in question {q['question_id']}!"
         assert "option_a_quality" not in q, f"SECURITY LEAK: option_a_quality exposed in question {q['question_id']}!"
         assert "explanation" not in q, f"SECURITY LEAK: explanation exposed before submit in question {q['question_id']}!"
         assert "options" in q and len(q["options"]) == 4
-    print("    [PASS] 15 student-safe questions selected without answer leaks.")
+    print("    [PASS] 15 student-safe questions selected with randomized options & saved mappings.")
 
     # 6. Test Student Post-Test Submission, Grading & ML Integration
     print("--> 6. Testing Student Post-Test Submission & Grading...")
@@ -117,6 +125,7 @@ def run_tests():
 
     sub_payload = {
         "student_id": "STU_TEST_001",
+        "session_id": session_id,
         "concept_name": "Loops",
         "pre_test_score": 0.45,
         "attempt_count": 1,
@@ -127,6 +136,7 @@ def run_tests():
     }
     sub_res = SchemaPostTestService.grade_and_predict(sub_payload)
     print(f"    Grade & Predict result:")
+    print(f"      - Session ID: {sub_res.get('session_id')}")
     print(f"      - Total Questions: {sub_res['total']}")
     print(f"      - Correct (+1.0): {sub_res['post_test_correct_count']}")
     print(f"      - Nearly Correct (+0.5): {sub_res['post_test_nearly_correct_count']}")
