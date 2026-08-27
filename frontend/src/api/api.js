@@ -60,9 +60,13 @@ export const AdaptiveAPI = {
 
 // --- Component 2: Error Detector ---
 export const ErrorAPI = {
-    analyze: (data) => apiRequest("/errors/analyze", "POST", data),
-    getHistory: (userId) => apiRequest(`/errors/history/${userId}`),
-    getSummary: (userId) => apiRequest(`/errors/summary/${userId}`),
+    analyze:          (data)   => apiRequest("/errors/analyze", "POST", data),
+    getHistory:       (userId) => apiRequest(`/errors/history/${userId}`),
+    getSummary:       (userId) => apiRequest(`/errors/summary/${userId}`),
+    // Feature 1 — Error Progression Analytics
+    getAnalytics:     (userId) => apiRequest(`/errors/analytics/${userId}`),
+    // Feature 3 — Personalized Learning Report
+    getLearningReport:(userId) => apiRequest(`/errors/learning-report/${userId}`),
 };
 
 // --- Component 3: Gamification ---
@@ -100,6 +104,11 @@ export const SchemaMasteryAPI = {
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
+};
+
+// --- Wellbeing / Struggle Detection ---
+export const WellbeingAPI = {
+    predictStruggle: (data) => apiRequest("/wellbeing/predict-struggle", "POST", data),
 };
 
 // --- Component 5: Auth ---

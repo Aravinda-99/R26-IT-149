@@ -961,7 +961,7 @@ export class Level10Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(9, accuracy);
       BadgeSystem.unlock("garden_keeper");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 100, 0, 255);
 
       for (let i = 0; i < 8; i++) {

@@ -28,3 +28,9 @@ package-lock.json
 
 # Logs
 *.log
+
+analytics-ml/fer_env/
+analytics-ml/dataset/
+
+analytics-ml/dataset_ferplus/
+analytics-ml/dataset_merged/

@@ -157,6 +157,7 @@ export class Level7Scene extends Phaser.Scene {
     this.boostAvailable = true;
     this.isBoosting = false;
     this.boostTimer = null;
+    this.lastSpawnTime = 0;
 
     this.categoryCount = {
       Uppercase: 0,
@@ -665,21 +666,15 @@ export class Level7Scene extends Phaser.Scene {
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
+    this.lastSpawnTime = this.time.now;
     GameManager.set("lives", 3);
     this.boostText.setAlpha(0.6);
-    this._scheduleSpawn();
   }
 
   /* ═══════════════════════════════════════════════════════════════
    *  SPAWNING
    * ═══════════════════════════════════════════════════════════════ */
-  _scheduleSpawn() {
-    if (this.isComplete) return;
-    this.spawnTimer = this.time.delayedCall(SPAWN_INTERVAL, () => {
-      this._spawnOrb();
-      this._scheduleSpawn();
-    });
-  }
+  // _scheduleSpawn removed. Spawning moved to update()
 
   _spawnOrb() {
     if (this.isComplete) return;
@@ -1126,7 +1121,7 @@ export class Level7Scene extends Phaser.Scene {
     if (passed && categoriesMet) {
       GameManager.completeLevel(6, accuracy);
       BadgeSystem.unlock("char_explorer");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(600, 100, 0, 255);
 
       for (let i = 0; i < 8; i++) {
@@ -1268,7 +1263,6 @@ export class Level7Scene extends Phaser.Scene {
 
   _gameOver() {
     this.isComplete = true;
-    if (this.spawnTimer) this.spawnTimer.destroy();
 
     this.orbs.forEach(b => {
       if (b && b.active) {
@@ -1338,6 +1332,11 @@ export class Level7Scene extends Phaser.Scene {
     if (!this.gameStarted || this.isComplete) {
       this._updateAmbient(time);
       return;
+    }
+
+    if (time > this.lastSpawnTime + SPAWN_INTERVAL) {
+      this._spawnOrb();
+      this.lastSpawnTime = time;
     }
 
     const dt = delta / 1000;
@@ -1442,9 +1441,11 @@ export class Level7Scene extends Phaser.Scene {
         // Sine wave wobble on x-axis
         b.x += Math.sin(t * 2) * 0.5;
 
-        // Scale pulse
-        const pulse = 1 + Math.sin(t * 3) * 0.04;
-        b.setScale(pulse);
+        // Scale pulse (only after scale-in tween completes)
+        if (t > 0.3) {
+          const pulse = 1 + Math.sin(t * 3) * 0.04;
+          b.setScale(pulse);
+        }
 
         // Remove if far off screen
         if (b.x < -80 || b.x > W + 80 || b.y < -80 || b.y > H + 80) {
@@ -1501,7 +1502,6 @@ export class Level7Scene extends Phaser.Scene {
    *  SHUTDOWN
    * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
-    if (this.spawnTimer) this.spawnTimer.destroy();
     this.orbs = [];
 
     const uiScene = this.scene.get("UIScene");

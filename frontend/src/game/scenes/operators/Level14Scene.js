@@ -117,9 +117,9 @@ export class Level14Scene extends Phaser.Scene {
 
   _createHUD() {
     const d = 100;
-    this.waveTxt = this.add.text(W / 2, 12, "Wave 1/5", { fontFamily: "Arial", fontSize: "14px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(d);
-    this.scoreTxt = this.add.text(16, 12, `Score: 0`, { fontFamily: "Arial", fontSize: "14px", color: "#e2e8f0", fontStyle: "bold" }).setDepth(d);
-    this.comboTxt = this.add.text(W - 16, 12, "", { fontFamily: "Arial", fontSize: "14px", color: "#f59e0b", fontStyle: "bold" }).setOrigin(1, 0).setDepth(d);
+    this.waveTxt = this.add.text(W / 2, 68, "Wave 1/5", { fontFamily: "Arial", fontSize: "14px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(d);
+    this.scoreTxt = this.add.text(16, 68, `Score: 0`, { fontFamily: "Arial", fontSize: "14px", color: "#e2e8f0", fontStyle: "bold" }).setDepth(d);
+    this.comboTxt = this.add.text(W - 16, 68, "", { fontFamily: "Arial", fontSize: "14px", color: "#f59e0b", fontStyle: "bold" }).setOrigin(1, 0).setDepth(d);
     // HP bars
     this.pHPbg = this.add.rectangle(220, 370, 120, 12, 0x1e293b).setStrokeStyle(1, 0x475569).setDepth(d);
     this.pHPfill = this.add.rectangle(160, 370, 120, 10, 0x22c55e).setOrigin(0, 0.5).setDepth(d + 1);
@@ -128,13 +128,13 @@ export class Level14Scene extends Phaser.Scene {
     this.eHPfill = this.add.rectangle(520, 370, 120, 10, 0xef4444).setOrigin(0, 0.5).setDepth(d + 1);
     this.eHPtxt = this.add.text(580, 370, "", { fontFamily: "Arial", fontSize: "9px", color: "#fff" }).setOrigin(0.5).setDepth(d + 2);
     // Timer bar
-    this.timerBg = this.add.rectangle(W / 2, 32, 400, 8, 0x334155).setDepth(d);
-    this.timerFill = this.add.rectangle(W / 2 - 200, 32, 400, 6, 0x22c55e).setOrigin(0, 0.5).setDepth(d + 1);
+    this.timerBg = this.add.rectangle(W / 2, 88, 400, 8, 0x334155).setDepth(d);
+    this.timerFill = this.add.rectangle(W / 2 - 200, 88, 400, 6, 0x22c55e).setOrigin(0, 0.5).setDepth(d + 1);
     // Question panel
     this.qPanel = this.add.graphics().setDepth(d);
-    this.qPanel.fillStyle(0x1e293b, 0.95); this.qPanel.fillRoundedRect(W / 2 - 250, 50, 500, 80, 12);
-    this.qPanel.lineStyle(2, 0x3b82f6, 0.6); this.qPanel.strokeRoundedRect(W / 2 - 250, 50, 500, 80, 12);
-    this.qTxt = this.add.text(W / 2, 90, "", { fontFamily: "Courier New", fontSize: "28px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 1);
+    this.qPanel.fillStyle(0x1e293b, 0.95); this.qPanel.fillRoundedRect(W / 2 - 250, 106, 500, 80, 12);
+    this.qPanel.lineStyle(2, 0x3b82f6, 0.6); this.qPanel.strokeRoundedRect(W / 2 - 250, 106, 500, 80, 12);
+    this.qTxt = this.add.text(W / 2, 146, "", { fontFamily: "Courier New", fontSize: "28px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 1);
   }
 
   _addEl(...els) { els.forEach(e => this.elements.push(e)); }
@@ -307,7 +307,7 @@ export class Level14Scene extends Phaser.Scene {
     this._clear();
     const acc = this.battlesDone > 0 ? Math.round((this.battlesWon / this.battlesDone) * 100) : 0;
     const passed = acc >= 60;
-    if (passed) { GameManager.completeLevel(13, acc); BadgeSystem.unlock("combat_calculator"); ProgressTracker.saveProgress(GameManager.getState()); this.cameras.main.flash(600, 100, 255, 100); }
+    if (passed) { GameManager.completeLevel(13, acc); BadgeSystem.unlock("combat_calculator"); /* saved by GameManager */ this.cameras.main.flash(600, 100, 255, 100); }
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0a0a, 0.98); pg.fillRoundedRect(W / 2 - 260, 80, 520, 440, 16);

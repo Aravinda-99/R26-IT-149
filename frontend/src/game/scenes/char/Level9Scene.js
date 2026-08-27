@@ -429,7 +429,7 @@ export class Level9Scene extends Phaser.Scene {
     if (passed) {
       GameManager.completeLevel(8, acc); // ID doesn't change, matches your progress tracker setup
       BadgeSystem.unlock("char_wizard");
-      ProgressTracker.saveProgress(GameManager.getState());
+      /* saved by GameManager */
       this.cameras.main.flash(500, 255, 215, 100);
       for (let i = 0; i < 12; i++) {
         this.time.delayedCall(i * 80, () =>

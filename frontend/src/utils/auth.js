@@ -5,14 +5,22 @@
  */
 
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { GameManager } from "../game/GameManager.js";
 
 let currentUser = null;
 let authListeners = [];
 
 export function initAuthListener() {
     const auth = getAuth();
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         currentUser = user;
+        
+        if (user) {
+            await GameManager.syncWithFirebase();
+        } else {
+            GameManager.resetAll();
+        }
+
         authListeners.forEach((cb) => cb(user));
     });
 }

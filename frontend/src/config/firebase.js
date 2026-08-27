@@ -10,13 +10,13 @@ import { getFirestore } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAMPxVjR2_lXTe5iZiPl6G0RSxZIR8Cb88",
-    authDomain: "research-project-7247c.firebaseapp.com",
-    projectId: "research-project-7247c",
-    storageBucket: "research-project-7247c.firebasestorage.app",
-    messagingSenderId: "905117548022",
-    appId: "1:905117548022:web:3edfa08c1501a5f5a1dbd7",
-    measurementId: "G-GZVKWHK6GZ",
+    apiKey: "AIzaSyDaUfEr5IumQL3gL8ihU52XsRvJcuFDNjM",
+    authDomain: "codequest-166ca.firebaseapp.com",
+    projectId: "codequest-166ca",
+    storageBucket: "codequest-166ca.firebasestorage.app",
+    messagingSenderId: "286274866379",
+    appId: "1:286274866379:web:a8ee3c7b5a765c949a5f4e",
+    measurementId: "G-MYMRH59MQN"
 };
 
 let app, auth, db, analytics;

@@ -79,9 +79,9 @@ export class Level15Scene extends Phaser.Scene {
     // BG
     this.add.rectangle(W / 2, H / 2, W, H, 0x1e1e1e).setDepth(0);
     // Menu bar
-    this.add.rectangle(W / 2, 15, W, 30, 0x2d2d30).setDepth(1);
+    this.add.rectangle(W / 2, 71, W, 30, 0x2d2d30).setDepth(1);
     ["File", "Edit", "View", "Run", "Help"].forEach((m, i) => {
-      this.add.text(20 + i * 60, 15, m, { fontFamily: "Arial", fontSize: "12px", color: "#cccccc" }).setOrigin(0, 0.5).setDepth(2);
+      this.add.text(20 + i * 60, 71, m, { fontFamily: "Arial", fontSize: "12px", color: "#cccccc" }).setOrigin(0, 0.5).setDepth(2);
     });
     // Status bar
     this.statusBg = this.add.rectangle(W / 2, H - 15, W, 30, 0x007acc).setDepth(1);
@@ -89,8 +89,8 @@ export class Level15Scene extends Phaser.Scene {
   }
 
   _createHUD() {
-    this.projTxt = this.add.text(W / 2, 15, `Project 0/${PROJECTS.length}`, { fontFamily: "Arial", fontSize: "12px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(3);
-    this.scoreTxt = this.add.text(W - 20, 15, `Score: 0`, { fontFamily: "Arial", fontSize: "12px", color: "#4ade80" }).setOrigin(1, 0.5).setDepth(3);
+    this.projTxt = this.add.text(W / 2, 71, `Project 0/${PROJECTS.length}`, { fontFamily: "Arial", fontSize: "12px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(3);
+    this.scoreTxt = this.add.text(W - 20, 71, `Score: 0`, { fontFamily: "Arial", fontSize: "12px", color: "#4ade80" }).setOrigin(1, 0.5).setDepth(3);
   }
 
   _addEl(...els) { els.forEach(e => this.elements.push(e)); }
@@ -129,24 +129,24 @@ export class Level15Scene extends Phaser.Scene {
 
     // Client panel
     const cpg = this.add.graphics().setDepth(10);
-    cpg.fillStyle(0x2d2d30, 0.95); cpg.fillRoundedRect(20, 40, W - 40, 80, 8);
-    cpg.lineStyle(2, 0x007acc, 0.5); cpg.strokeRoundedRect(20, 40, W - 40, 80, 8);
+    cpg.fillStyle(0x2d2d30, 0.95); cpg.fillRoundedRect(20, 90, W - 40, 65, 8);
+    cpg.lineStyle(2, 0x007acc, 0.5); cpg.strokeRoundedRect(20, 90, W - 40, 65, 8);
     this._addEl(cpg);
-    this._addEl(this.add.text(40, 50, `${p.icon} Client: ${p.client}`, { fontFamily: "Arial", fontSize: "14px", color: "#4fc3f7", fontStyle: "bold" }).setDepth(11));
-    this._addEl(this.add.text(40, 70, `Task: ${p.title}`, { fontFamily: "Arial", fontSize: "13px", color: "#e0e0e0" }).setDepth(11));
-    this._addEl(this.add.text(40, 90, p.reqs.map(r => "• " + r).join("  |  "), { fontFamily: "Arial", fontSize: "11px", color: "#81c784" }).setDepth(11));
+    this._addEl(this.add.text(40, 100, `${p.icon} Client: ${p.client}`, { fontFamily: "Arial", fontSize: "14px", color: "#4fc3f7", fontStyle: "bold" }).setDepth(11));
+    this._addEl(this.add.text(40, 120, `Task: ${p.title}`, { fontFamily: "Arial", fontSize: "13px", color: "#e0e0e0" }).setDepth(11));
+    this._addEl(this.add.text(40, 140, p.reqs.map(r => "• " + r).join("  |  "), { fontFamily: "Arial", fontSize: "11px", color: "#81c784" }).setDepth(11));
 
     // Code editor area
     const eg = this.add.graphics().setDepth(10);
-    eg.fillStyle(0x1e1e1e, 1); eg.fillRoundedRect(20, 130, W - 40, 280, 8);
-    eg.lineStyle(1, 0x3e3e42); eg.strokeRoundedRect(20, 130, W - 40, 280, 8);
+    eg.fillStyle(0x1e1e1e, 1); eg.fillRoundedRect(20, 165, W - 40, 240, 8);
+    eg.lineStyle(1, 0x3e3e42); eg.strokeRoundedRect(20, 165, W - 40, 240, 8);
     this._addEl(eg);
 
     // Line numbers + code
     let blankCounter = 0;
     this.blankBtns = [];
     p.code.forEach((line, li) => {
-      const ly = 150 + li * 32;
+      const ly = 180 + li * 28;
       // Line number
       this._addEl(this.add.text(35, ly, `${li + 1}`, { fontFamily: "Courier New", fontSize: "13px", color: "#6a737d" }).setDepth(11));
 
@@ -195,17 +195,17 @@ export class Level15Scene extends Phaser.Scene {
 
     // Output panel
     const og = this.add.graphics().setDepth(10);
-    og.fillStyle(0x1e1e1e, 1); og.fillRoundedRect(20, 420, W - 40, 110, 8);
-    og.lineStyle(1, 0x3e3e42); og.strokeRoundedRect(20, 420, W - 40, 110, 8);
+    og.fillStyle(0x1e1e1e, 1); og.fillRoundedRect(20, 415, W - 40, 100, 8);
+    og.lineStyle(1, 0x3e3e42); og.strokeRoundedRect(20, 415, W - 40, 100, 8);
     this._addEl(og);
-    this._addEl(this.add.text(35, 425, "OUTPUT", { fontFamily: "Arial", fontSize: "11px", color: "#888", fontStyle: "bold" }).setDepth(11));
-    this.outputTxt = this.add.text(35, 442, "Click blanks to select operators, then Run Code.", { fontFamily: "Courier New", fontSize: "12px", color: "#4ec9b0", lineSpacing: 3 }).setDepth(11);
+    this._addEl(this.add.text(35, 420, "OUTPUT", { fontFamily: "Arial", fontSize: "11px", color: "#888", fontStyle: "bold" }).setDepth(11));
+    this.outputTxt = this.add.text(35, 435, "Click blanks to select operators, then Run Code.", { fontFamily: "Courier New", fontSize: "12px", color: "#4ec9b0", lineSpacing: 3 }).setDepth(11);
     this._addEl(this.outputTxt);
 
     // Run button
-    const runBg = this.add.rectangle(W / 2, 545, 180, 36, 0x007acc).setDepth(20).setInteractive({ useHandCursor: true });
+    const runBg = this.add.rectangle(W / 2, 540, 180, 36, 0x007acc).setDepth(20).setInteractive({ useHandCursor: true });
     runBg.setStrokeStyle(2, 0x4fc3f7);
-    const runTxt = this.add.text(W / 2, 545, "▶ Run Code", { fontFamily: "Arial", fontSize: "15px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
+    const runTxt = this.add.text(W / 2, 540, "▶ Run Code", { fontFamily: "Arial", fontSize: "15px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
     this._addEl(runBg, runTxt);
     runBg.on("pointerover", () => runBg.setFillStyle(0x005a9e));
     runBg.on("pointerout", () => runBg.setFillStyle(0x007acc));
@@ -277,7 +277,7 @@ export class Level15Scene extends Phaser.Scene {
     this._clear();
     const acc = PROJECTS.length > 0 ? Math.round((this.projCorrect / PROJECTS.length) * 100) : 0;
     const passed = acc >= 60;
-    if (passed) { GameManager.completeLevel(14, acc); BadgeSystem.unlock("code_master"); ProgressTracker.saveProgress(GameManager.getState()); this.cameras.main.flash(600, 100, 255, 100); }
+    if (passed) { GameManager.completeLevel(14, acc); BadgeSystem.unlock("code_master"); /* saved by GameManager */ this.cameras.main.flash(600, 100, 255, 100); }
 
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
