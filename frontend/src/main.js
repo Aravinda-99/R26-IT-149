@@ -18,6 +18,7 @@ import { renderQuizResults } from "./pages/quiz-results.js";
 import { renderQuizSummary } from "./pages/quiz-summary.js";
 
 import { renderDemoFlow } from "./pages/demo-flow.js";
+import { renderQuestionBank } from "./pages/question-bank.js";
 
 import { renderLogin } from "./pages/login.js";
 import { renderRegister } from "./pages/register.js";
@@ -34,9 +35,8 @@ const pages = {
     mastery: renderMastery,
     "quiz-results": renderQuizResults,
     "quiz-summary": renderQuizSummary,
-
+    "question-bank": renderQuestionBank,
     "demo-flow": renderDemoFlow,
-
 };
 
 const authPages = {
