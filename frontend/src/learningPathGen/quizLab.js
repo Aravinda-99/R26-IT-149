@@ -1,49 +1,13 @@
 import { QUIZ_BANK } from "./data.js";
-import { ErrorAPI } from "../api/api.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
 const ML_API_URL = "http://127.0.0.1:5000/api/adaptive/predict";
-
-// TODO: replace with the real authenticated user id once Component 5 (Auth)
-// is wired into this page — mirrors the placeholder used in error-analysis.js.
-const STUDENT_ID = "demo_student";
 
 // ── Default difficulty (can be passed in from quiz lab page) ───────────
 let currentDifficulty = "beginner";
 
 export function setQuizDifficulty(level) {
     currentDifficulty = level || "beginner";
-}
-
-// ── Component 2 integration: send a wrong MCQ option to the Error Pattern
-//    Detector as real Java code ──────────────────────────────────────────
-// Code-Snippet questions store a full, self-contained Java statement/loop
-// in each option, so it can be sent as-is. Fill-in-the-blank questions
-// (identified by a `codeTemplate` field) store only the line that fills
-// the {ANSWER} slot — this substitutes it into the template to build a
-// complete, analyzable snippet (also required so it passes
-// ErrorService.validate_java_submission, which looks for a recognizable
-// Java structure such as a method declaration, loop, or println).
-function buildCodeForOption(question, optionIndex) {
-    const chosenCode = question.options[optionIndex];
-    if (question.codeTemplate) {
-        return question.codeTemplate.replace("{ANSWER}", chosenCode);
-    }
-    return chosenCode;
-}
-
-async function analyzeWrongAnswer(question, optionIndex) {
-    const finalCodeString = buildCodeForOption(question, optionIndex);
-    try {
-        const result = await ErrorAPI.analyze({
-            student_id: STUDENT_ID,
-            code:       finalCodeString
-        });
-        return { finalCodeString, result };
-    } catch (error) {
-        console.error("Error Pattern Detector call failed:", error);
-        return { finalCodeString, result: null };
-    }
 }
 
 // Splits a question into { intro, code }
@@ -527,49 +491,9 @@ export function setupQuizUI(root = document) {
                     state.currentAttempts++;
                 }
 
-                const optionIndex     = Number(btn.dataset.optIndex);
-                const questionAtClick = state.current;
+                const optionIndex = Number(btn.dataset.optIndex);
                 state.selectedAnswers[state.current] = optionIndex;
                 renderQuestion();
-
-                // Wrong answer → send the buggy code to Component 2 (Error Pattern
-                // Detector) so the student gets ML-backed, beginner-friendly XAI
-                // feedback on the actual mistake they picked.
-                if (optionIndex !== q.correctIndex) {
-                    const feedbackBox = quizBox.querySelector("#quiz-feedback");
-                    if (feedbackBox) {
-                        feedbackBox.innerHTML = `<p class="lp-muted-sm">🤖 Analyzing your answer...</p>`;
-                    }
-
-                    analyzeWrongAnswer(q, optionIndex).then(({ result }) => {
-                        // Ignore a late response if the student already moved on
-                        if (state.current !== questionAtClick) return;
-                        const box = quizBox.querySelector("#quiz-feedback");
-                        if (!box) return;
-
-                        if (!result || !result.success) {
-                            box.innerHTML = `<p class="lp-muted-sm">Couldn't analyze this answer right now.</p>`;
-                            return;
-                        }
-
-                        box.innerHTML = `
-                            <div style="
-                                margin-top:0.8rem;
-                                padding:0.8rem 1rem;
-                                background:#0d1117;
-                                border-left:3px solid #6366f1;
-                                border-radius:8px;
-                                font-size:0.85rem;
-                                color:#c9d1d9;
-                                line-height:1.5;
-                            ">
-                                <strong style="color:#818cf8;">🤖 ${result.prediction.label.replace(/_/g, " ")}:</strong>
-                                ${result.explanation.reason}
-                                <br><em>${result.explanation.suggested_fix}</em>
-                            </div>
-                        `;
-                    });
-                }
             });
         });
 
