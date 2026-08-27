@@ -214,7 +214,7 @@ export class Level26Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.fastBonusCount = 0;
     this.totalTimePctUsed = 0;
@@ -564,8 +564,9 @@ export class Level26Scene extends Phaser.Scene {
     g.lineStyle(1, 0x1f2a1a, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE INSPECTION LINE", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Tuning Phase — String Methods: length()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 10, "THE INSPECTION LINE", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 30, "Tuning Phase — String Methods: length()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.roundHudText = this.add.text(20, 50, `ROUND 1 / ${ROUNDS.length}`, { font: "bold 12px Arial", color: "#4fc3f7" }).setDepth(51);
 
     this.waveText = this.add.text(640, 12, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(51);
     this.waveSquares = [];
@@ -576,11 +577,11 @@ export class Level26Scene extends Phaser.Scene {
 
     this.add.text(1060, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
     this.scoreText = this.add.text(1060, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    this.comboText = this.add.text(1150, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1195 + i * 26, y: 30 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 30 }).setDepth(51);
       lg.lineStyle(2, C_CYAN, 1);
       lg.strokeRoundedRect(-7, -7, 14, 14, 2);
       lg.lineBetween(-4, 0, -1, 3);
@@ -957,6 +958,7 @@ export class Level26Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
     const cfg = ROUNDS[index];
+    if (this.roundHudText) this.roundHudText.setText(`ROUND ${this.currentRound + 1} / ${ROUNDS.length}`);
     this.roundAttempts = 0;
     this.inputLocked = true;
     this.clearRound();
@@ -1337,7 +1339,9 @@ export class Level26Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const effectivePrediction = (prediction === "typical" && misconception_repeat_count === 3)
+        ? "struggling" : prediction;
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level26Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1500,7 +1504,7 @@ export class Level26Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(25, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(26, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("length_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level26_results", JSON.stringify({

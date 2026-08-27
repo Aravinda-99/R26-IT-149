@@ -209,7 +209,7 @@ export class Level29Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.fastBonusCount = 0;
     this.totalTimePctUsed = 0;
@@ -736,11 +736,11 @@ export class Level29Scene extends Phaser.Scene {
 
     this.add.text(1060, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
     this.scoreText = this.add.text(1060, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    this.comboText = this.add.text(1150, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1195 + i * 26, y: 30 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 30 }).setDepth(51);
       lg.lineStyle(2, C_PURPLE, 1);
       lg.strokeCircle(0, 0, 7);
       lg.fillStyle(C_PURPLE, 1);
@@ -1718,7 +1718,9 @@ export class Level29Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const effectivePrediction = (prediction === "typical" && misconception_repeat_count === 3)
+        ? "struggling" : prediction;
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level29Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1843,7 +1845,7 @@ export class Level29Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(28, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(29, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level29_results", JSON.stringify({
