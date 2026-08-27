@@ -34,58 +34,10 @@ export async function renderErrorAnalysis(container) {
                 </div>
             </div>
 
-            <!-- Main Workspace: 3 Columns -->
-            <div class="workspace-grid" style="display: grid; grid-template-columns: 320px 1fr 300px; gap: 1.5rem; flex: 1; min-height: 600px;">
+            <!-- Main Workspace: 2 Columns -->
+            <div class="workspace-grid" style="display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem; flex: 1; min-height: 600px;">
                 
-                <!-- Column 1: The Lab (Input) -->
-                <div class="lab-col" style="display: flex; flex-direction: column; gap: 1rem;">
-                    <div class="card glass-card" style="height: 100%; display: flex; flex-direction: column;">
-                        <div style="margin-bottom: 1rem;">
-                            <h3 style="font-size: 1.1rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="font-size: 1.2rem;">🔬</span> Code Lab
-                            </h3>
-                        </div>
-                        
-                        <div style="position: relative; flex: 1;">
-                            <textarea id="code-input" class="input-field" 
-                                placeholder="// Paste Java code here..." 
-                                style="height: 100%; width: 100%; font-family: 'Fira Code', monospace; font-size: 0.85rem; padding: 1rem; background: #0d1117; border-radius: 8px; resize: none;"></textarea>
-                            <div style="position: absolute; top: 10px; right: 10px; font-size: 0.6rem; color: #4a5568;">JAVA 17</div>
-                        </div>
-
-                        <div style="margin-top: 1rem;">
-                            <button id="analyze-btn" class="btn btn-primary" style="width: 100%; padding: 0.8rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem;">
-                                <span id="btn-icon">⚡</span> <span id="btn-text">Run Diagnostic</span>
-                            </button>
-                            <button id="clear-btn" style="width: 100%; background: none; border: none; color: var(--text-secondary); font-size: 0.8rem; cursor: pointer; margin-top: 0.5rem;">Clear Editor</button>
-                        </div>
-
-                        <!-- Pre-test Context -->
-                        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
-                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.8rem; font-weight: 600;">STUDENT CONTEXT (PRE-TEST)</div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <div class="mini-input">
-                                    <label style="font-size: 0.6rem; color: #718096;">Loops</label>
-                                    <input type="number" id="pre-loop" value="3" min="0" max="5" style="width: 100%; background: #1a2332; border: 1px solid #2d3748; color: white; padding: 2px 5px; border-radius: 4px;">
-                                </div>
-                                <div class="mini-input">
-                                    <label style="font-size: 0.6rem; color: #718096;">Arrays</label>
-                                    <input type="number" id="pre-arr" value="3" min="0" max="5" style="width: 100%; background: #1a2332; border: 1px solid #2d3748; color: white; padding: 2px 5px; border-radius: 4px;">
-                                </div>
-                                <div class="mini-input">
-                                    <label style="font-size: 0.6rem; color: #718096;">Variables</label>
-                                    <input type="number" id="pre-var" value="3" min="0" max="5" style="width: 100%; background: #1a2332; border: 1px solid #2d3748; color: white; padding: 2px 5px; border-radius: 4px;">
-                                </div>
-                                <div class="mini-input">
-                                    <label style="font-size: 0.6rem; color: #718096;">Methods</label>
-                                    <input type="number" id="pre-meth" value="3" min="0" max="5" style="width: 100%; background: #1a2332; border: 1px solid #2d3748; color: white; padding: 2px 5px; border-radius: 4px;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Column 2: Insight Engine (Results) -->
+                <!-- Column 1: Live Telemetry Engine (Results) -->
                 <div class="insight-col" id="insight-container">
                     <div id="welcome-view" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5; text-align: center;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">📡</div>
@@ -360,69 +312,34 @@ export async function renderErrorAnalysis(container) {
         </div>
     `;
 
-    const analyzeBtn = document.getElementById("analyze-btn");
-    const codeInput = document.getElementById("code-input");
     const welcomeView = document.getElementById("welcome-view");
     const resultView = document.getElementById("result-view");
 
     // Load initial stats
     refreshGlobalState(studentId);
 
-    analyzeBtn.addEventListener("click", async () => {
-        const code = codeInput.value.trim();
-        if (!code) return alert("System requires source code for telemetry analysis.");
-
-        const pretest = {
-            variables: parseInt(document.getElementById("pre-var").value) || 3,
-            loops: parseInt(document.getElementById("pre-loop").value) || 3,
-            arrays: parseInt(document.getElementById("pre-arr").value) || 3,
-            methods: parseInt(document.getElementById("pre-meth").value) || 3,
-        };
-
-        analyzeBtn.disabled = true;
-        document.getElementById("btn-text").textContent = "Processing...";
-        document.getElementById("btn-icon").textContent = "⚙️";
-        
+    // --- Live Telemetry Poller ---
+    let lastPolledTimestamp = null;
+    setInterval(async () => {
         try {
-            const res = await ErrorAPI.analyze({
-                student_id: studentId,
-                code: code,
-                pretest_results: pretest
-            });
-
-            if (res.success) {
-                latestAnalysisResponse = res;
-                welcomeView.classList.add("hidden");
-                const invalidView = document.getElementById("invalid-view");
-                if (invalidView) invalidView.classList.add("hidden");
-                resultView.classList.remove("hidden");
-                updateInsightEngine(res);
-                refreshGlobalState(studentId);
-            } else if (res.error_type === "INVALID_JAVA_INPUT") {
-                welcomeView.classList.add("hidden");
-                resultView.classList.add("hidden");
-                const invalidView = document.getElementById("invalid-view");
-                if (invalidView) invalidView.classList.remove("hidden");
-            } else {
-                alert("Diagnostic Error: " + res.error);
+            const res = await ErrorAPI.getLatest(studentId);
+            if (res && res.prediction) {
+                // Check if this is a new analysis
+                if (res.timestamp !== lastPolledTimestamp) {
+                    lastPolledTimestamp = res.timestamp;
+                    latestAnalysisResponse = res;
+                    welcomeView.classList.add("hidden");
+                    const invalidView = document.getElementById("invalid-view");
+                    if (invalidView) invalidView.classList.add("hidden");
+                    resultView.classList.remove("hidden");
+                    updateInsightEngine(res);
+                    refreshGlobalState(studentId);
+                }
             }
         } catch (err) {
-            console.error(err);
-            alert("Connection lost. Backend service unresponsive.");
-        } finally {
-            analyzeBtn.disabled = false;
-            document.getElementById("btn-text").textContent = "Run Diagnostic";
-            document.getElementById("btn-icon").textContent = "⚡";
+            // Silently ignore 404 or network errors during polling
         }
-    });
-
-    document.getElementById("clear-btn").addEventListener("click", () => {
-        codeInput.value = "";
-        resultView.classList.add("hidden");
-        const invalidView = document.getElementById("invalid-view");
-        if (invalidView) invalidView.classList.add("hidden");
-        welcomeView.classList.remove("hidden");
-    });
+    }, 2000);
 
     document.getElementById("btn-pipeline").addEventListener("click", () => {
         if (!latestAnalysisResponse) return;
@@ -676,6 +593,15 @@ async function refreshGlobalState(studentId) {
             if (_lineChart) { _lineChart.destroy(); _lineChart = null; }
             const lineCtx = document.getElementById("anl-line-chart");
             if (lineCtx) {
+                const ctx = lineCtx.getContext('2d');
+                const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
+                errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+                
+                const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
+                correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+
                 _lineChart = new Chart(lineCtx, {
                     type: "line",
                     data: {
@@ -685,8 +611,8 @@ async function refreshGlobalState(studentId) {
                                 label: "Errors",
                                 data: errorCounts,
                                 borderColor: "#ef4444",
-                                backgroundColor: "rgba(239,68,68,0.08)",
-                                tension: 0.35,
+                                backgroundColor: errorGradient,
+                                tension: 0.4,
                                 fill: true,
                                 pointBackgroundColor: "#ef4444",
                                 pointRadius: 4,
@@ -695,8 +621,8 @@ async function refreshGlobalState(studentId) {
                                 label: "Correct",
                                 data: correctCounts,
                                 borderColor: "#34d399",
-                                backgroundColor: "rgba(52,211,153,0.06)",
-                                tension: 0.35,
+                                backgroundColor: correctGradient,
+                                tension: 0.4,
                                 fill: true,
                                 pointBackgroundColor: "#34d399",
                                 pointRadius: 4,
@@ -705,10 +631,14 @@ async function refreshGlobalState(studentId) {
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { labels: { color: "#8899aa", font: { size: 10 } } } },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { 
+                            legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
+                            tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                        },
                         scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 9 } }, grid: { color: "rgba(255,255,255,0.04)" } },
-                            y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
+                            y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
                         },
                     },
                 });

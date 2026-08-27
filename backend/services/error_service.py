@@ -32,6 +32,7 @@ class ErrorService:
     _model_1 = None
     _model_2 = None
     _history = []  # In-memory history (fallback if Firestore is offline)
+    _last_analysis = {} # Store full response of last analysis per user for Component 2 polling
 
     @classmethod
     def _load_models(cls):
@@ -1086,6 +1087,8 @@ class ErrorService:
             "reason_group": reason_group,          # Feature 3 — learning report detail
         })
 
+        cls._last_analysis[student_id] = response
+
         return response
 
     @staticmethod
@@ -1343,6 +1346,11 @@ class ErrorService:
         }
 
     @classmethod
+    def get_latest(cls, user_id):
+        """Returns the full response payload of the user's most recent analysis."""
+        return cls._last_analysis.get(user_id)
+
+    @classmethod
     def get_summary(cls, user_id):
         """Aggregates error patterns for the user."""
         user_history = [h for h in cls._history if h["student_id"] == user_id]
@@ -1352,7 +1360,8 @@ class ErrorService:
         counts = {}
         for h in user_history:
             lbl = h["label"]
-            counts[lbl] = counts.get(lbl, 0) + 1
+            if lbl != "CORRECT":
+                counts[lbl] = counts.get(lbl, 0) + 1
 
         most_freq = max(counts, key=counts.get) if counts else "None"
         

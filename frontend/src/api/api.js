@@ -61,6 +61,7 @@ export const AdaptiveAPI = {
 // --- Component 2: Error Detector ---
 export const ErrorAPI = {
     analyze:          (data)   => apiRequest("/errors/analyze", "POST", data),
+    getLatest:        (userId) => apiRequest(`/errors/latest/${userId}`),
     getHistory:       (userId) => apiRequest(`/errors/history/${userId}`),
     getSummary:       (userId) => apiRequest(`/errors/summary/${userId}`),
     // Feature 1 — Error Progression Analytics
