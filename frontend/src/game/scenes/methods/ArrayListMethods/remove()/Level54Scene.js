@@ -31,6 +31,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -254,7 +255,6 @@ export class Level54Scene extends Phaser.Scene {
     this.missionElements = [];
     this.slotContents = {};
     this.slotDefs = {};
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -274,6 +274,12 @@ export class Level54Scene extends Phaser.Scene {
     this.crateContents = [];
     this._tickerLines = [];
     this._trackerRows = [];
+    this._modalLockedInput = false;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this drag-and-drop Restructuring-phase level with nothing
+    // to review.
+    this.baseTutorialScene = "Level52Scene";
   }
 
   preload() {}
@@ -319,6 +325,21 @@ export class Level54Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Lock inputs so the player cannot drag blocks or click RUN while an ML
+    // intervention modal is open. Tracks whether WE were the one who locked
+    // it (this._modalLockedInput) so resuming here never clobbers a lock the
+    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
+    // feedback) — only undo what this branch itself did.
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
+
     this.updateAmbient(time, delta);
     this.updateCrestPulse(time);
   }
@@ -1553,7 +1574,7 @@ export class Level54Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE GRAND RESHELVING", { font: "bold 15px Georgia", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — ArrayList Methods: remove()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 32, "Restructuring Phase — remove()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -2393,7 +2414,14 @@ export class Level54Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
+      // before onMissionComplete()'s wait-loop starts polling for it.
+      await this.delay(100);
     } catch (e) {
       console.warn("Level54Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -2414,14 +2442,9 @@ export class Level54Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.pulseCrest("idle");
 
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    tagsThisRun.forEach((tag) => {
-      if (!tag) return;
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
-
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
     const feedbackTag = compileTag || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag);
 
     (async () => {
@@ -2429,6 +2452,21 @@ export class Level54Scene extends Phaser.Scene {
         const dead = this.loseLife();
         if (dead) { this.time.delayedCall(500, () => this.gameOver()); return; }
       }
+
+      if (this.missionRunsFailed === 3) {
+        await this.runBehavioralCheck();
+
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+
+      if (!this._alive) return;
       await this.showBitFeedback(MISCONCEPTION_FEEDBACK[feedbackTag] || "Check the report — the rig shows exactly what your code actually does.");
       if (!this._alive) return;
       this.unlockForRepair();
@@ -2449,8 +2487,19 @@ export class Level54Scene extends Phaser.Scene {
     this.showBitFeedback(HINTS[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
     if (this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
@@ -2502,6 +2551,13 @@ export class Level54Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives >= this.lifeIcons.length) return;
+    const icon = this.lifeIcons[this.lives];
+    this.lives = Math.min(this.lifeIcons.length, this.lives + 1);
+    if (icon) this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+  }
+
   // ══════════════════════════════════════════════════════════════
   // END STATES
   // ══════════════════════════════════════════════════════════════
@@ -2541,7 +2597,7 @@ export class Level54Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(53, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(54, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_remove_mastery"); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_wing_seal"); } catch (_) {}
     try {

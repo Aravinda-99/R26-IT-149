@@ -21,6 +21,7 @@ import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -1020,7 +1021,7 @@ export class Level61Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE POWER TOWER", { font: "bold 16px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — Math Methods: pow()", { font: "12px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 32, "Accretion Phase — pow()", { font: "12px Arial", color: "#546e7a" }).setDepth(50);
 
     this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
     this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
@@ -1936,6 +1937,14 @@ export class Level61Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
     this.roundAttempts = (this.roundAttempts || 0) + 1;
     this.attemptLog.push({
@@ -1969,14 +1978,28 @@ export class Level61Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level61Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) { this.levelComplete(); return; }
@@ -2020,7 +2043,7 @@ export class Level61Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(60, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(61, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("math_pow_schema"); } catch (_) {}
     try {
       localStorage.setItem("level61_results", JSON.stringify({
