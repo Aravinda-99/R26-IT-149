@@ -10,9 +10,22 @@ import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
 
+let latestAnalysisResponse = null;
+
+function showTelemetryResult(res) {
+    if (!res || !res.prediction) return;
+    latestAnalysisResponse = res;
+    const welcomeView = document.getElementById("welcome-view");
+    if (welcomeView) welcomeView.classList.add("hidden");
+    const invalidView = document.getElementById("invalid-view");
+    if (invalidView) invalidView.classList.add("hidden");
+    const resultView = document.getElementById("result-view");
+    if (resultView) resultView.classList.remove("hidden");
+    updateInsightEngine(res);
+}
+
 export async function renderErrorAnalysis(container) {
     const studentId = "demo_student";
-    let latestAnalysisResponse = null;
 
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
@@ -320,26 +333,24 @@ export async function renderErrorAnalysis(container) {
 
     // --- Live Telemetry Poller ---
     let lastPolledTimestamp = null;
-    setInterval(async () => {
+    async function pollLatestTelemetry() {
         try {
             const res = await ErrorAPI.getLatest(studentId);
             if (res && res.prediction) {
                 // Check if this is a new analysis
                 if (res.timestamp !== lastPolledTimestamp) {
                     lastPolledTimestamp = res.timestamp;
-                    latestAnalysisResponse = res;
-                    welcomeView.classList.add("hidden");
-                    const invalidView = document.getElementById("invalid-view");
-                    if (invalidView) invalidView.classList.add("hidden");
-                    resultView.classList.remove("hidden");
-                    updateInsightEngine(res);
+                    showTelemetryResult(res);
                     refreshGlobalState(studentId);
                 }
             }
         } catch (err) {
             // Silently ignore 404 or network errors during polling
         }
-    }, 2000);
+    }
+
+    pollLatestTelemetry();
+    setInterval(pollLatestTelemetry, 2000);
 
     document.getElementById("btn-pipeline").addEventListener("click", () => {
         if (!latestAnalysisResponse) return;
@@ -524,24 +535,31 @@ let _barChart  = null;
 
 async function refreshGlobalState(studentId) {
     try {
-        const [historyData, summaryData, analyticsData, reportData] = await Promise.all([
+        const [historyRes, summaryRes, analyticsRes, reportRes] = await Promise.allSettled([
             ErrorAPI.getHistory(studentId),
             ErrorAPI.getSummary(studentId),
             ErrorAPI.getAnalytics(studentId),
             ErrorAPI.getLearningReport(studentId),
         ]);
 
+        const historyData   = historyRes.status === "fulfilled"   ? historyRes.value   : { total: 0, history: [] };
+        const summaryData   = summaryRes.status === "fulfilled"   ? summaryRes.value   : { total_analyses: 0, most_frequent_error: "None" };
+        const analyticsData = analyticsRes.status === "fulfilled" ? analyticsRes.value : { has_data: false };
+        const reportData    = reportRes.status === "fulfilled"    ? reportRes.value    : { has_data: false };
+
         // ── Stats Bar ─────────────────────────────────────────────────
-        document.getElementById("stat-total").textContent = summaryData.total_analyses || 0;
-        document.getElementById("stat-top-error").textContent = summaryData.most_frequent_error || "None";
+        const statTotal = document.getElementById("stat-total");
+        if (statTotal) statTotal.textContent = summaryData.total_analyses || 0;
+        const statTopError = document.getElementById("stat-top-error");
+        if (statTopError) statTopError.textContent = summaryData.most_frequent_error || "None";
 
         // ── History List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
         if (historyData.total === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
         } else {
-            histCont.innerHTML = historyData.history.reverse().map(item => `
-                <div style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor:pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            histCont.innerHTML = historyData.history.slice().reverse().map(item => `
+                <div class="history-item" data-code="${encodeURIComponent(item.code || '')}" style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor:pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
                         <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
@@ -549,6 +567,42 @@ async function refreshGlobalState(studentId) {
                     <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
                 </div>
             `).join("");
+
+            histCont.querySelectorAll(".history-item").forEach(el => {
+                el.addEventListener("click", async () => {
+                    const rawCode = decodeURIComponent(el.dataset.code || "");
+                    if (rawCode) {
+                        try {
+                            const res = await ErrorAPI.analyze({
+                                student_id: studentId,
+                                code: rawCode,
+                                pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
+                            });
+                            if (res && res.prediction) {
+                                showTelemetryResult(res);
+                            }
+                        } catch (e) {
+                            console.warn("Failed to load history item telemetry", e);
+                        }
+                    }
+                });
+            });
+
+            // Automatically populate telemetry with the latest item if telemetry is currently empty
+            if (!latestAnalysisResponse && historyData.history.length > 0) {
+                const latestEntry = historyData.history[historyData.history.length - 1];
+                if (latestEntry && latestEntry.code) {
+                    ErrorAPI.analyze({
+                        student_id: studentId,
+                        code: latestEntry.code,
+                        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
+                    }).then(res => {
+                        if (res && res.prediction && !latestAnalysisResponse) {
+                            showTelemetryResult(res);
+                        }
+                    }).catch(() => {});
+                }
+            }
         }
 
         // ── Feature 1: Analytics Dashboard ────────────────────────────
@@ -733,5 +787,9 @@ async function refreshGlobalState(studentId) {
 
     } catch (err) {
         console.warn("Global state sync failed", err);
+        const histCont = document.getElementById("history-container");
+        if (histCont && histCont.querySelector(".spinner")) {
+            histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
+        }
     }
 }
