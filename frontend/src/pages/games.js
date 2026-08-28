@@ -120,7 +120,8 @@ const METHOD_GROUPS = {
         title: "🔭 Math Class Methods Wing", color: "#60a5fa",
         groups: [
             { key: "mathclassmethods_maxmin", title: "max() / min()", desc: "The Observatory → The Meridian Trials → The Calculation Chamber", badge: "🏆 max()/min() Mastery" },
-            { key: "mathclassmethods_abs", title: "abs()", desc: "The Distance Hall → The Standards Office", badge: "🏛️ abs() Mastery" },
+            // Temporarily hidden — see task to hide the abs() method card from the UI.
+            // { key: "mathclassmethods_abs", title: "abs()", desc: "The Distance Hall → The Standards Office", badge: "🏛️ abs() Mastery" },
             { key: "mathclassmethods_pow", title: "pow()", desc: "The Power Tower → The Exponent Trials → The Formula Works", badge: "🏗️ pow() Mastery" },
         ],
     },

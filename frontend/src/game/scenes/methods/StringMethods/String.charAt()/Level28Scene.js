@@ -1521,9 +1521,24 @@ export class Level28Scene extends Phaser.Scene {
     });
     this.time.delayedCall(900, () => this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }));
 
-    this.time.delayedCall(1300, () => {
+    this.time.delayedCall(1300, async () => {
       if (!this._alive || this.gameEnded) return;
-      if (this.currentRound === 2) this.runBehavioralCheck();
+      if (this.currentRound === 2) {
+        await this.runBehavioralCheck();
+
+        // Wait up to 1.5s for the 1Hz polling loop to catch the flag, then
+        // block until the modal (if any) is dismissed, before advancing —
+        // inputLocked is already true throughout this whole window.
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+      if (!this._alive || this.gameEnded) return;
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1538,9 +1553,21 @@ export class Level28Scene extends Phaser.Scene {
     if (dead) { this.time.delayedCall(600, () => this.gameOver()); return; }
     await this.showBitFeedback(MISCONCEPTION_FEEDBACK[tag] || "Recount the plates carefully — the claw never lies!");
     if (!this._alive || this.gameEnded) return;
-    this.time.delayedCall(300, () => {
+    this.time.delayedCall(300, async () => {
       if (!this._alive || this.gameEnded) return;
-      if (this.currentRound === 2) this.runBehavioralCheck();
+      if (this.currentRound === 2) {
+        await this.runBehavioralCheck();
+
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+      if (!this._alive || this.gameEnded) return;
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1582,6 +1609,14 @@ export class Level28Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
@@ -1668,7 +1703,7 @@ export class Level28Scene extends Phaser.Scene {
     this.hideBubble();
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
-    try { GameManager.completeLevel(27, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(28, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_schema"); } catch (_) {}
     try {
       localStorage.setItem("level28_results", JSON.stringify({

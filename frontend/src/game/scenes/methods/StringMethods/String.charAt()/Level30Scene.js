@@ -195,7 +195,6 @@ export class Level30Scene extends Phaser.Scene {
     this.missionElements = [];
     this.slotContents = {};
     this.slotDefs = {};
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -207,6 +206,12 @@ export class Level30Scene extends Phaser.Scene {
     this._bubble = null;
     this._dragHoverSlotKey = null;
     this.miniTiles = [];
+    this._modalLockedInput = false;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this drag-and-drop Restructuring-phase level with nothing
+    // to review.
+    this.baseTutorialScene = "Level28Scene";
   }
 
   preload() {}
@@ -247,6 +252,21 @@ export class Level30Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Lock inputs so the player cannot drag blocks or click RUN while an ML
+    // intervention modal is open. Tracks whether WE were the one who locked
+    // it (this._modalLockedInput) so resuming here never clobbers a lock the
+    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
+    // feedback) — only undo what this branch itself did.
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
+
     this.updateAmbient(time, delta);
     this.updateLampSwing(time);
   }
@@ -1168,7 +1188,7 @@ export class Level30Scene extends Phaser.Scene {
 
     const a1 = this.createAnnotation(CX + CW / 2, CY - 20, "assemble the program", HEX_AMBER, { x: CX + CW / 2, y: CY + 4 });
     await this.delay(350); if (!A()) return;
-    const a2 = this.createAnnotation(PX + PW / 2, PY - 16, "parts — some are faulty!", HEX_CYAN, { x: PX + PW / 2, y: PY + 4 });
+    const a2 = this.createAnnotation(PX + PW * 0.75, PY - 16, "parts — some are faulty!", HEX_CYAN, { x: PX + PW * 0.75, y: PY + 4 });
     await this.delay(350); if (!A()) return;
     const a3 = this.createAnnotation(OX + OW / 2, OY - 16, "your code runs the claw LIVE", HEX_GREEN, { x: OX + OW / 2, y: OY + 4 });
     await this.delay(350); if (!A()) return;
@@ -1496,7 +1516,7 @@ export class Level30Scene extends Phaser.Scene {
       const tileX = this.miniTiles[result.index] ? this.miniTiles[result.index].x : OX + OW - 30;
       await this.hopClawTo(Phaser.Math.Clamp(tileX, OX + 20, OX + OW - 20));
       this.miniClawCrash(this._miniClawState.x);
-      actualDisplay = `StringIndexOutOfBounds(${result.index})`;
+      actualDisplay = `(crash @${result.index})`;
       match = false;
     } else {
       await this.playVisual(mission, test, result);
@@ -1627,6 +1647,10 @@ export class Level30Scene extends Phaser.Scene {
       });
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
+      // before onMissionComplete()'s wait-loop starts polling for it.
+      await this.delay(100);
     } catch (e) {
       console.warn("Level30Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1646,13 +1670,9 @@ export class Level30Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    if (compileErr && compileErr.tag) tagsThisRun.add(compileErr.tag);
-    tagsThisRun.forEach((tag) => {
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
 
     const feedbackTag = (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || (compileErr && compileErr.tag) || null;
 
@@ -1689,9 +1709,26 @@ export class Level30Scene extends Phaser.Scene {
     this.showBitFeedback(hints[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
-    if (this.gameEnded) return;
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next mission.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
     this.updateScore(250 + (flawless ? 100 : 0));
@@ -1738,6 +1775,14 @@ export class Level30Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
@@ -1794,7 +1839,7 @@ export class Level30Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(29, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(30, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level30_results", JSON.stringify({
