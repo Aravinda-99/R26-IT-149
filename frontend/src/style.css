@@ -1,3 +1,5 @@
+@import "./styles/theme.css";
+
 /* =================================
    Global Styles — CodeQuest
    ================================= */
@@ -2210,3 +2212,186 @@ textarea.input-field {
     .dashboard-bar-label { width: 100px; }
     .dashboard-student-bar { flex-direction: column; align-items: flex-start; }
 }
+
+/* ==========================================================================
+   TEACHER & ADMIN PORTAL — PREMIUM WHITE / LIGHT SAAS THEME
+   ========================================================================== */
+
+body.theme-teacher {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+body.theme-teacher #page-container {
+    max-width: 1360px;
+    padding: 2rem 2.5rem;
+}
+
+body.theme-teacher .navbar {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-teacher .nav-brand {
+    color: #4338ca !important;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+body.theme-teacher .nav-link {
+    color: #64748b !important;
+    font-weight: 500;
+}
+
+body.theme-teacher .nav-link:hover {
+    color: #0f172a !important;
+    background-color: #f1f5f9 !important;
+}
+
+body.theme-teacher .nav-link.active {
+    color: #4338ca !important;
+    background-color: #eef2ff !important;
+    font-weight: 600;
+}
+
+body.theme-teacher .card,
+body.theme-teacher .q-card,
+body.theme-teacher .dashboard-stat-card,
+body.theme-teacher .teacher-panel-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+    border-radius: 0.75rem !important;
+}
+
+body.theme-teacher .dashboard-stat-card {
+    background: #ffffff !important;
+}
+
+body.theme-teacher .dashboard-stat-value {
+    color: #0f172a !important;
+}
+
+body.theme-teacher .dashboard-stat-label {
+    color: #64748b !important;
+    font-weight: 500;
+}
+
+body.theme-teacher .qbank-header {
+    border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-teacher .qbank-header h1 {
+    color: #0f172a !important;
+}
+
+body.theme-teacher .qbank-tab-btn {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+body.theme-teacher .qbank-tab-btn:hover {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+
+body.theme-teacher .qbank-tab-btn.active {
+    background: #4338ca !important;
+    color: #ffffff !important;
+    border-color: #4338ca !important;
+    box-shadow: 0 4px 6px -1px rgba(67, 56, 202, 0.25), 0 2px 4px -2px rgba(67, 56, 202, 0.25) !important;
+}
+
+body.theme-teacher .input,
+body.theme-teacher .input-field,
+body.theme-teacher select,
+body.theme-teacher textarea {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    border-radius: 0.5rem !important;
+}
+
+body.theme-teacher .input:focus,
+body.theme-teacher .input-field:focus,
+body.theme-teacher select:focus,
+body.theme-teacher textarea:focus {
+    border-color: #6366f1 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+body.theme-teacher .q-card p {
+    color: #1e293b !important;
+}
+
+body.theme-teacher .q-card [style*="background: var(--bg-dark"],
+body.theme-teacher .q-card [style*="background: #0f121d"] {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+body.theme-teacher pre,
+body.theme-teacher code {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   STUDENT PORTAL — MOTIVATING, CALM & EDUCATIONAL MODERN THEME
+   ========================================================================== */
+
+body.theme-student {
+    background-color: #0b0f19 !important;
+    color: #f1f5f9 !important;
+}
+
+body.theme-student .navbar {
+    background-color: #111827 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+body.theme-student .nav-brand {
+    color: #818cf8 !important;
+    font-weight: 700;
+}
+
+.student-journey-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 1rem;
+    padding: 1.6rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.student-step-node {
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+    padding: 1.2rem;
+    transition: all 0.2s ease;
+}
+
+.student-step-node:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+}
+
+.student-step-node.completed {
+    border-color: rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.03);
+}
+
+.student-step-node.active-stage {
+    border: 2px solid #6366f1;
+    background: rgba(99, 102, 241, 0.08);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+}
+

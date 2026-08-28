@@ -96,12 +96,18 @@ export const SchemaMasteryAPI = {
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
-    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getQuestionBank: (concept = "", activeOnly = false) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getTeacherOverview: () => apiRequest("/schema-mastery/teacher/overview"),
+    getRejectedQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/rejected${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
+    toggleQuestionActive: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/toggle-active`, "POST", data),
     getPostTestQuestions: (params = {}) => {
         const studentId = params.student_id || params.studentId || "STU001";
         const concept = params.concept || params.concept_name || "Loops";
         const errorType = params.error_type || params.errorType || "";
-        const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
+        const sessionId = params.session_id || params.sessionId || "";
+        let query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}`;
+        if (errorType) query += `&error_type=${encodeURIComponent(errorType)}`;
+        if (sessionId) query += `&session_id=${encodeURIComponent(sessionId)}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
@@ -115,8 +121,10 @@ export const WellbeingAPI = {
 // --- Component 5: Auth ---
 export const AuthAPI = {
     register: (data) => apiRequest("/auth/register", "POST", data),
+    login: (data) => apiRequest("/auth/login", "POST", data),
     getProfile: (userId) => apiRequest(`/auth/profile/${userId}`),
-    verifyToken: (idToken) => apiRequest("/auth/verify-token", "POST", { id_token: idToken }),
+    verifyToken: (token) => apiRequest("/auth/verify-token", "POST", { token: token }),
+    getUsers: () => apiRequest("/auth/users"),
 };
 
 // --- Health Check ---

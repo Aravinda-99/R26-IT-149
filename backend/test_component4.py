@@ -15,21 +15,25 @@ from app import create_app
 from services.schema_llm_question_service import SchemaLLMQuestionService
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_post_test_service import SchemaPostTestService
-from services.schema_mastery_service import predict_schema_mastery, load_model
+from services.schema_mastery_service import predict_schema_mastery, load_model, load_action_model
 
 def run_tests():
     print("\n" + "="*70)
     print(" COMPONENT 4: SCHEMA MASTERY TRACKER VERIFICATION SUITE")
     print("="*70 + "\n")
 
-    # 1. Test Model Loading
-    print("--> 1. Testing ML Model Pipeline Loading...")
-    model = load_model()
-    assert model is not None, "Failed to load schema_mastery_pipeline.pkl!"
-    print(f"    [PASS] ML Pipeline loaded successfully: {type(model).__name__}")
+    # 1. Test Dual Model Loading
+    print("--> 1. Testing Dual ML Model Loading...")
+    m1 = load_model()
+    assert m1 is not None, "Failed to load schema_mastery_pipeline.pkl (Model 1)!"
+    print(f"    [PASS] Model 1 (Mastery Pipeline) loaded successfully: {type(m1).__name__}")
+    
+    m2 = load_action_model()
+    assert m2 is not None, "Failed to load schema_next_action_model.pkl (Model 2)!"
+    print(f"    [PASS] Model 2 (Next Action Decision) loaded successfully: {type(m2).__name__}")
 
-    # 2. Test Direct ML Prediction
-    print("--> 2. Testing Direct ML Prediction (predict_schema_mastery)...")
+    # 2. Test Direct Dual ML Prediction
+    print("--> 2. Testing Direct Dual ML Prediction (predict_schema_mastery)...")
     test_input = {
         "concept_name": "Loops",
         "pre_test_score": 0.45,
@@ -48,8 +52,9 @@ def run_tests():
     assert "mastery_probability" in pred, "Missing mastery_probability"
     assert pred["mastery_level"] in ("Strong Understanding", "Good Progress", "Needs More Practice", "Learn Again")
     assert pred["next_action"] in ("DONE", "LEARN_AGAIN")
-    assert pred["model_used"] == "schema_mastery_pipeline"
-    print("    [PASS] Direct ML Prediction verified.")
+    assert pred["mastery_model_used"] == "schema_mastery_pipeline"
+    assert pred["action_model_used"] == "schema_next_action_model"
+    print("    [PASS] Direct Dual ML Prediction verified.")
 
     # 3. Test Draft Question Generation & Quality Labels
     print("--> 3. Testing Draft Question Generation & 4-Tier Answer Qualities...")
@@ -90,24 +95,41 @@ def run_tests():
         assert rejected_res["status"] == "REJECTED"
         print("    [PASS] Teacher question rejection verified.")
 
-    # 5. Test 15-Question Post-Test Selection & Student-Safe Sanitization
-    print("--> 5. Testing Student Post-Test Blueprint Selection...")
+    # 5. Test 15-Question Post-Test Selection & Student-Safe Sanitization & Option Shuffling & Session Persistence
+    print("--> 5. Testing Student Post-Test Blueprint Selection & Option Shuffling...")
     posttest = SchemaPostTestService.select_post_test_questions(
         student_id="STU_TEST_001",
         concept="Loops",
         error_type="LOOP_CONDITION_ERROR",
     )
     assert posttest["success"] is True
+    assert "session_id" in posttest, "Missing session_id in posttest response"
+    session_id = posttest["session_id"]
     assert posttest["total_questions"] == 15, f"Expected 15 questions, got {posttest['total_questions']}"
+    
+    # Check that option mappings and session questions were stored
+    session_mappings = SchemaQuestionBankService.get_session_option_mappings(session_id)
+    assert len(session_mappings) > 0, "No session option mappings found"
+    assert len(posttest["questions"]) == 15, f"Expected 15 questions, got {len(posttest['questions'])}"
+
+    # Test Session Re-retrieval stability (simulating browser refresh)
+    reload_test = SchemaPostTestService.select_post_test_questions(
+        student_id="STU_TEST_001",
+        concept="Loops",
+        session_id=session_id,
+    )
+    assert reload_test["questions"][0]["question_id"] == posttest["questions"][0]["question_id"], "Session question order changed on reload!"
+    print("    [PASS] Session stability across browser reloads verified.")
+
     for q in posttest["questions"]:
         assert "correct_option" not in q, f"SECURITY LEAK: correct_option exposed in question {q['question_id']}!"
         assert "option_a_quality" not in q, f"SECURITY LEAK: option_a_quality exposed in question {q['question_id']}!"
         assert "explanation" not in q, f"SECURITY LEAK: explanation exposed before submit in question {q['question_id']}!"
         assert "options" in q and len(q["options"]) == 4
-    print("    [PASS] 15 student-safe questions selected without answer leaks.")
+    print("    [PASS] 15 student-safe questions selected with randomized options & saved mappings.")
 
-    # 6. Test Student Post-Test Submission, Grading & ML Integration
-    print("--> 6. Testing Student Post-Test Submission & Grading...")
+    # 6. Test Student Post-Test Submission, Grading & Dual ML Integration
+    print("--> 6. Testing Student Post-Test Submission & Dual ML Grading...")
     submission_answers = []
     for q in posttest["questions"]:
         submission_answers.append({
@@ -117,6 +139,7 @@ def run_tests():
 
     sub_payload = {
         "student_id": "STU_TEST_001",
+        "session_id": session_id,
         "concept_name": "Loops",
         "pre_test_score": 0.45,
         "attempt_count": 1,
@@ -127,6 +150,7 @@ def run_tests():
     }
     sub_res = SchemaPostTestService.grade_and_predict(sub_payload)
     print(f"    Grade & Predict result:")
+    print(f"      - Session ID: {sub_res.get('session_id')}")
     print(f"      - Total Questions: {sub_res['total']}")
     print(f"      - Correct (+1.0): {sub_res['post_test_correct_count']}")
     print(f"      - Nearly Correct (+0.5): {sub_res['post_test_nearly_correct_count']}")
@@ -136,10 +160,13 @@ def run_tests():
     print(f"      - Mastery Probability: {sub_res['mastery_probability']}")
     print(f"      - Mastery Level: {sub_res['mastery_level']}")
     print(f"      - Next Action: {sub_res['next_action']}")
-    print(f"      - Model Used: {sub_res['model_used']}")
+    print(f"      - Mastery Model Used: {sub_res['mastery_model_used']}")
+    print(f"      - Action Model Used: {sub_res['action_model_used']}")
     assert sub_res["success"] is True
     assert sub_res["total"] == 15
-    print("    [PASS] Post-test grading & ML pipeline submission verified.")
+    assert sub_res["mastery_model_used"] == "schema_mastery_pipeline"
+    assert sub_res["action_model_used"] == "schema_next_action_model"
+    print("    [PASS] Post-test grading & Dual ML pipeline submission verified.")
 
     # 7. Test Flask HTTP Endpoints via Test Client
     print("--> 7. Testing All Flask API Endpoints (/api/schema-mastery/*)...")

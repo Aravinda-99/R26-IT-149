@@ -9,8 +9,10 @@
  *   output "output" float32 [batch, 4]           (raw logits, not softmax)
  */
 
-import * as ort from "onnxruntime-web";
+// import * as ort from "onnxruntime-web";
 import { WebcamCapture } from "./WebcamCapture.js";
+
+let ort = null;
 
 const MODEL_URL = "/models/emotion_cnn.onnx";
 const INPUT_SIZE = 48;
@@ -24,21 +26,6 @@ const LABELS = ["fear", "frustrated", "neutral", "sad"];
 // console-side output.
 // ════════════════════════════════════════════════════════════════════
 const DEBUG_EMOTION = true;
-
-// Threaded wasm needs SharedArrayBuffer + cross-origin isolation headers,
-// which the dev server doesn't set. Force single-threaded so this runs
-// without any extra server config.
-ort.env.wasm.numThreads = 1;
-
-// onnxruntime-web's internal bundle dynamically import()s its backend
-// variants (e.g. the .jsep.mjs WebGPU backend) at runtime. Vite's dev
-// server refuses to serve files under public/ via dynamic import() (only
-// via fetch/static <script>/<link> tags), which 500s no matter which
-// local path wasmPaths points at. Pointing at the CDN instead routes
-// those requests straight to jsdelivr, bypassing Vite's dev server (and
-// its public/ import() restriction) entirely. Version pinned to match
-// the exact installed onnxruntime-web release (see package-lock.json).
-ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
 
 class _EmotionDetector {
   constructor() {
@@ -54,15 +41,27 @@ class _EmotionDetector {
   /**
    * Loads the ONNX model. Safe to call multiple times — reuses the same
    * session/in-flight load instead of re-fetching.
-   * @returns {Promise<ort.InferenceSession>}
+   * @returns {Promise<any>}
    */
   async load() {
     if (this.session) return this.session;
     if (this._loading) return this._loading;
 
-    this._loading = ort.InferenceSession.create(MODEL_URL, {
-      executionProviders: ["wasm"],
-    });
+    this._loading = (async () => {
+      try {
+        if (!ort) {
+          ort = await import("onnxruntime-web");
+          ort.env.wasm.numThreads = 1;
+          ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.27.0/dist/";
+        }
+        return await ort.InferenceSession.create(MODEL_URL, {
+          executionProviders: ["wasm"],
+        });
+      } catch (err) {
+        console.warn("[WARN] EmotionDetector (onnxruntime-web) unavailable:", err.message);
+        return null;
+      }
+    })();
 
     try {
       this.session = await this._loading;
@@ -133,6 +132,7 @@ class _EmotionDetector {
     if (!frame) return null;
 
     const session = await this.load();
+    if (!session || !ort) return null;
     const tensorData = this._preprocess(frame);
     const inputTensor = new ort.Tensor("float32", tensorData, [1, 1, INPUT_SIZE, INPUT_SIZE]);
 

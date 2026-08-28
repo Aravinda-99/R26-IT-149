@@ -8,9 +8,10 @@
  * Reuses WebcamCapture's existing camera stream (getVideoElement()) rather
  * than requesting getUserMedia again.
  */
-
-import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { WebcamCapture } from "./WebcamCapture.js";
+
+let FaceLandmarker = null;
+let FilesetResolver = null;
 
 const MODEL_URL = "/models/face_landmarker.task";
 
@@ -41,22 +42,32 @@ class _FatigueDetector {
   /**
    * Loads the FaceLandmarker task. Safe to call multiple times — reuses
    * the same instance/in-flight load instead of re-initializing.
-   * @returns {Promise<FaceLandmarker>}
+   * @returns {Promise<FaceLandmarker|null>}
    */
   async load() {
     if (this.landmarker) return this.landmarker;
     if (this._loading) return this._loading;
 
     this._loading = (async () => {
-      const fileset = await FilesetResolver.forVisionTasks(WASM_FILESET_URL);
-      return FaceLandmarker.createFromOptions(fileset, {
-        baseOptions: {
-          modelAssetPath: MODEL_URL,
-          delegate: "GPU",
-        },
-        runningMode: "VIDEO",
-        numFaces: 1,
-      });
+      try {
+        if (!FaceLandmarker || !FilesetResolver) {
+          const mp = await import("@mediapipe/tasks-vision");
+          FaceLandmarker = mp.FaceLandmarker;
+          FilesetResolver = mp.FilesetResolver;
+        }
+        const fileset = await FilesetResolver.forVisionTasks(WASM_FILESET_URL);
+        return await FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: {
+            modelAssetPath: MODEL_URL,
+            delegate: "GPU",
+          },
+          runningMode: "VIDEO",
+          numFaces: 1,
+        });
+      } catch (err) {
+        console.warn("[WARN] FatigueDetector (@mediapipe/tasks-vision) unavailable:", err.message);
+        return null;
+      }
     })();
 
     try {
@@ -101,6 +112,10 @@ class _FatigueDetector {
     }
 
     const landmarker = await this.load();
+    if (!landmarker) {
+      this.currentEAR = null;
+      return null;
+    }
     const result = landmarker.detectForVideo(video, performance.now());
     const faceLandmarks = result.faceLandmarks && result.faceLandmarks[0];
 
