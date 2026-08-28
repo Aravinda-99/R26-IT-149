@@ -10,6 +10,7 @@ STORAGE_DIR = os.path.join(BASE_DIR, "ml", "component4_schema_mastery", "questio
 
 SEED_FILE = os.path.join(STORAGE_DIR, "seed_questions.json")
 APP_FILE = os.path.join(STORAGE_DIR, "approved_question_bank.json")
+GEN_FILE = os.path.join(STORAGE_DIR, "generated_questions.json")
 
 letters = ["A", "B", "C", "D"]
 
@@ -65,3 +66,4 @@ def rebalance_file(filepath):
 
 rebalance_file(SEED_FILE)
 rebalance_file(APP_FILE)
+rebalance_file(GEN_FILE)

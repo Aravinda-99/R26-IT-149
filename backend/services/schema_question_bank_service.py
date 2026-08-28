@@ -385,9 +385,9 @@ class SchemaQuestionBankService:
     # ─────────────────────────────────────────────────────────────────────────
 
     @classmethod
-    def save_session_option_mappings(cls, session_id: str, mappings: dict) -> bool:
+    def save_session_option_mappings(cls, session_id: str, mappings: dict, questions: list = None) -> bool:
         """
-        Saves shuffled option mappings for a post-test session.
+        Saves shuffled option mappings and safe questions for a post-test session.
         mappings format: {
             "question_id_1": {"A": "C", "B": "A", "C": "D", "D": "B"}, # displayed -> canonical
             ...
@@ -400,6 +400,7 @@ class SchemaQuestionBankService:
             "session_id": str(session_id),
             "created_at": _now_iso(),
             "mappings": mappings,
+            "questions": questions or [],
         }
         return _write_json(OPTION_MAPPINGS_FILE, existing)
 
@@ -411,6 +412,15 @@ class SchemaQuestionBankService:
             return {}
         session_data = all_mappings.get(str(session_id), {})
         return session_data.get("mappings", {})
+
+    @classmethod
+    def get_session_questions(cls, session_id: str) -> list:
+        """Retrieves cached student-safe questions for an existing session."""
+        all_mappings = _read_json(OPTION_MAPPINGS_FILE, default={})
+        if isinstance(all_mappings, list):
+            return []
+        session_data = all_mappings.get(str(session_id), {})
+        return session_data.get("questions", [])
 
     @classmethod
     def get_option_mapping(cls, session_id: str, question_id: str) -> dict:

@@ -120,8 +120,10 @@ export const WellbeingAPI = {
 // --- Component 5: Auth ---
 export const AuthAPI = {
     register: (data) => apiRequest("/auth/register", "POST", data),
+    login: (data) => apiRequest("/auth/login", "POST", data),
     getProfile: (userId) => apiRequest(`/auth/profile/${userId}`),
-    verifyToken: (idToken) => apiRequest("/auth/verify-token", "POST", { id_token: idToken }),
+    verifyToken: (token) => apiRequest("/auth/verify-token", "POST", { token: token }),
+    getUsers: () => apiRequest("/auth/users"),
 };
 
 // --- Health Check ---

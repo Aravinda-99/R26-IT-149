@@ -1,24 +1,28 @@
 /**
- * Post-Test Flow — Component 4: Schema Mastery Validation (MCQ)
+ * Post-Test Flow — CodeQuest Post-Learning Understanding Check
  * =============================================================
- * Student post-learning understanding check:
- * 1. Post-Test Start Briefing
- * 2. 15-Question MCQ Assessment (Approved questions only, shuffled options)
- * 3. ML Prediction Result Screen (Random Forest Pipeline Evaluation)
+ * Real-world student assessment flow:
+ * 1. Start Briefing (clean, friendly introduction)
+ * 2. 15-Question Interactive MCQ Assessment (Shuffled options, secret grading)
+ * 3. Student-Friendly Result Screen (Understanding level, score, next step)
+ * 
+ * NOTE: Normal student view HIDES raw ML model names, probabilities, and
+ * internal feature details.
  */
 
 import { SchemaMasteryAPI } from "../../api/api.js";
+import { animatePageEntrance, animateStepTransition } from "../../utils/animations.js";
 
 const CONCEPT_NAMES = {
     variables: "Variables & Data Types",
     operators: "Operators & Expressions",
     loops: "Loops & Iteration",
-    arrays: "Arrays & Data Structures",
+    arrays: "Arrays & Collections",
     methods: "Methods & Functions",
     Variables: "Variables & Data Types",
     Operators: "Operators & Expressions",
     Loops: "Loops & Iteration",
-    Arrays: "Arrays & Data Structures",
+    Arrays: "Arrays & Collections",
     Methods: "Methods & Functions",
 };
 
@@ -40,10 +44,10 @@ export async function renderPostTest(container, opts = {}, onNavigate = null) {
     currentStudentId = opts.studentId || opts.student_id || "S001";
     currentConcept = opts.concept || opts.concept_name || "Loops";
     currentPreTestScore = typeof opts.pre_test_score === "number" ? opts.pre_test_score : 0.45;
-    currentAttemptCount = opts.attempt_count || 3;
-    currentTimeTaken = opts.time_taken_seconds || 360;
-    currentErrorType = opts.error_type || "LOOP_CONDITION_ERROR";
-    currentErrorPatternScore = typeof opts.error_pattern_score === "number" ? opts.error_pattern_score : 0.40;
+    currentAttemptCount = opts.attempt_count || 1;
+    currentTimeTaken = opts.time_taken_seconds || 120;
+    currentErrorType = opts.error_type || "UNKNOWN_ERROR";
+    currentErrorPatternScore = typeof opts.error_pattern_score === "number" ? opts.error_pattern_score : 0.50;
     currentSessionId = opts.sessionId || opts.session_id || `SES_${Date.now()}`;
 
     loadedQuestions = [];
@@ -61,247 +65,224 @@ function renderStartScreen(container, onNavigate) {
     const conceptTitle = CONCEPT_NAMES[currentConcept] || currentConcept;
 
     container.innerHTML = `
-        <div style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="posttest-start-wrap" style="max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.75rem;">
+            
             <!-- Header -->
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <button class="btn btn-secondary btn-sm" id="pt-back-btn" style="margin-bottom: 0.75rem;">
-                        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
-                    </button>
-                    <h1 style="font-size: 1.75rem; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 0.6rem;">
-                        <i class="fa-solid fa-clipboard-check" style="color: #2563EB;"></i>
-                        Post-Learning Understanding Check
-                    </h1>
-                    <p style="color: #64748B; font-size: 0.9375rem; margin-top: 0.25rem;">
-                        Schema Mastery Assessment for <strong>${conceptTitle}</strong>
-                    </p>
-                </div>
-                <span class="badge badge-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8125rem;">
-                    Component 4 Validation
-                </span>
+            <div>
+                <button class="btn btn-secondary btn-sm" id="pt-back-btn" style="margin-bottom: 1rem;">
+                    <i class="fa-solid fa-arrow-left"></i> Return to Dashboard
+                </button>
+                <h1 style="font-size: 1.875rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.6rem;">
+                    <i class="fa-solid fa-clipboard-check" style="color: #2563EB;"></i>
+                    Understanding Check: ${conceptTitle}
+                </h1>
+                <p style="color: #64748B; font-size: 1rem;">
+                    Test your understanding after completing your learning activities.
+                </p>
             </div>
 
-            <!-- Upstream Evidence Context -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i class="fa-solid fa-layer-group" style="color: #2563EB;"></i> Upstream Diagnostic Evidence
+            <!-- Overview Card -->
+            <div class="card" style="padding: 2.25rem; border-radius: 14px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div style="display: flex; align-items: flex-start; gap: 1.25rem; margin-bottom: 1.75rem;">
+                    <div style="width: 52px; height: 52px; border-radius: 12px; background: #DBEAFE; color: #2563EB; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                        <i class="fa-solid fa-graduation-cap"></i>
                     </div>
-                    <span style="font-size: 0.8125rem; font-weight: 600; color: #64748B;">Student: ${currentStudentId}</span>
-                </div>
-
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Prior Pre-Test Score</span>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #0284C7; margin-top: 0.25rem;">
-                            ${Math.round(currentPreTestScore * 100)}%
-                        </div>
-                    </div>
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Target Error Focus</span>
-                        <div style="font-size: 1.1rem; font-weight: 800; color: #DC2626; margin-top: 0.25rem; word-break: break-word;">
-                            ${currentErrorType}
-                        </div>
-                    </div>
-                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Learning Attempt</span>
-                        <div style="font-size: 1.5rem; font-weight: 800; color: #7C3AED; margin-top: 0.25rem;">
-                            Attempt #${currentAttemptCount}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="alert alert-info" style="margin-bottom: 1.75rem;">
-                    <i class="fa-solid fa-circle-info" style="margin-top: 0.15rem;"></i>
                     <div>
-                        <strong>Instructions:</strong> You will complete a <strong>15-question multiple choice assessment</strong>.
-                        Questions are sourced directly from the verified <strong>Approved Question Bank</strong>. Take your time to trace each code snippet carefully.
+                        <h2 style="font-size: 1.25rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem;">
+                            How this check works
+                        </h2>
+                        <p style="font-size: 0.9375rem; color: #64748B; line-height: 1.6;">
+                            You will answer <strong>15 multiple-choice questions</strong> designed to check your understanding of key concepts and code snippets. After submitting, you'll receive immediate feedback and a personalized next-step recommendation.
+                        </p>
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end;">
-                    <button class="btn btn-primary btn-lg" id="pt-begin-btn">
-                        Begin Post-Test <i class="fa-solid fa-arrow-right" style="margin-left: 0.4rem;"></i>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 10px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Total Questions</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #0F172A; margin-top: 0.25rem;">15 Questions</div>
+                    </div>
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 10px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Estimated Time</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: #0F766E; margin-top: 0.25rem;">8–12 Minutes</div>
+                    </div>
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1rem; border-radius: 10px;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Focus Topic</div>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #2563EB; margin-top: 0.25rem;">${conceptTitle}</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 1rem; border-top: 1px solid #E2E8F0; padding-top: 1.5rem;">
+                    <button class="btn btn-primary" id="pt-begin-test-btn" style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 700; border-radius: 10px;">
+                        Start Understanding Check <i class="fa-solid fa-arrow-right" style="margin-left: 0.5rem;"></i>
                     </button>
                 </div>
             </div>
+
         </div>
     `;
+
+    animatePageEntrance(container.querySelector(".posttest-start-wrap"));
 
     document.getElementById("pt-back-btn")?.addEventListener("click", () => {
         if (onNavigate) onNavigate("/student/dashboard");
     });
 
-    document.getElementById("pt-begin-btn")?.addEventListener("click", async () => {
-        await loadAndStartAssessment(container, onNavigate);
+    document.getElementById("pt-begin-test-btn")?.addEventListener("click", () => {
+        loadAndStartQuestions(container, onNavigate);
     });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. Fetch Questions & Render Question Assessment
+// 2. Load Questions from Backend
 // ─────────────────────────────────────────────────────────────────────────────
-async function loadAndStartAssessment(container, onNavigate) {
+async function loadAndStartQuestions(container, onNavigate) {
     container.innerHTML = `
-        <div style="text-align: center; padding: 5rem 1rem;">
-            <div class="spinner" style="margin-bottom: 1.5rem;"></div>
-            <h3 style="font-size: 1.25rem; font-weight: 700; color: #0F172A;">Loading Approved Post-Test Questions...</h3>
-            <p style="color: #64748B; font-size: 0.875rem; margin-top: 0.4rem;">
-                Fetching 15 approved questions for ${currentConcept} with randomized options
-            </p>
+        <div style="min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="spinner" style="margin-bottom: 1.25rem;"></div>
+            <div style="font-size: 1rem; font-weight: 700; color: #0F172A;">Preparing Your Understanding Check...</div>
+            <div style="font-size: 0.875rem; color: #64748B; margin-top: 0.25rem;">Selecting questions from the approved question bank</div>
         </div>
     `;
 
     try {
-        const res = await SchemaMasteryAPI.getPostTestQuestions({
-            student_id: currentStudentId,
-            concept: currentConcept,
-            error_type: currentErrorType,
-            session_id: currentSessionId,
-        });
-
+        const res = await SchemaMasteryAPI.getPostTestQuestions(currentStudentId, currentConcept, currentErrorType, currentSessionId);
+        
         if (res.success && res.questions && res.questions.length > 0) {
             loadedQuestions = res.questions;
-            currentSessionId = res.session_id || currentSessionId;
+            if (res.session_id) currentSessionId = res.session_id;
             currentIndex = 0;
+            studentAnswers = {};
             startTime = Date.now();
             renderQuestionView(container, onNavigate);
         } else {
-            throw new Error("No approved questions found in the Question Bank for this concept. Please notify the teacher.");
+            throw new Error("Unable to load questions for this topic.");
         }
     } catch (err) {
         container.innerHTML = `
-            <div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
-                <div style="width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1rem;">
+            <div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem; border-radius: 14px;">
+                <div style="font-size: 2.25rem; color: #DC2626; margin-bottom: 1rem;">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h2 style="font-size: 1.35rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">Unable to Start Post-Test</h2>
-                <p style="color: #64748B; font-size: 0.875rem; margin-bottom: 1.5rem;">${err.message}</p>
-                <button class="btn btn-primary" id="pt-err-back-btn">Return to Dashboard</button>
+                <h2 style="font-size: 1.35rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">
+                    Unable to Load Questions
+                </h2>
+                <p style="color: #64748B; font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    ${err.message || "Please check your network connection and retry."}
+                </p>
+                <div style="display: flex; justify-content: center; gap: 1rem;">
+                    <button class="btn btn-secondary" id="retry-dash-btn">Return to Dashboard</button>
+                    <button class="btn btn-primary" id="retry-load-btn">Retry</button>
+                </div>
             </div>
         `;
-        document.getElementById("pt-err-back-btn")?.addEventListener("click", () => {
+        document.getElementById("retry-dash-btn")?.addEventListener("click", () => {
             if (onNavigate) onNavigate("/student/dashboard");
+        });
+        document.getElementById("retry-load-btn")?.addEventListener("click", () => {
+            loadAndStartQuestions(container, onNavigate);
         });
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Render Question View
+// ─────────────────────────────────────────────────────────────────────────────
 function renderQuestionView(container, onNavigate) {
+    if (!loadedQuestions || loadedQuestions.length === 0) return;
+
     const q = loadedQuestions[currentIndex];
     const total = loadedQuestions.length;
-    const answeredCount = Object.keys(studentAnswers).length;
-    const isAnswered = !!studentAnswers[q.question_id];
+    const progressPct = Math.round(((currentIndex + 1) / total) * 100);
+    const selectedOption = studentAnswers[q.question_id] || "";
+    const isLast = currentIndex === total - 1;
+
+    const options = q.options || {};
+    const optionKeys = ["A", "B", "C", "D"];
 
     container.innerHTML = `
-        <div style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="posttest-question-wrap" style="max-width: 840px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
             
-            <!-- Progress & Stepper Bar -->
-            <div class="card" style="padding: 1.25rem 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <strong style="font-size: 1rem; color: #0F172A;">Question ${currentIndex + 1} of ${total}</strong>
-                        <span class="badge badge-info" style="font-size: 0.7rem;">${q.question_type || 'MCQ'}</span>
-                    </div>
+            <!-- Top Progress Header -->
+            <div class="card" style="padding: 1.25rem 1.75rem; border-radius: 12px; border: 1px solid #E2E8F0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                    <span style="font-size: 0.875rem; font-weight: 700; color: #2563EB;">
+                        Question ${currentIndex + 1} of ${total}
+                    </span>
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #64748B;">
-                        ${answeredCount} / ${total} Answered
+                        ${progressPct}% Completed
                     </span>
                 </div>
-
-                <!-- Numbered Question Dots -->
-                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                    ${loadedQuestions.map((item, idx) => {
-                        const isCurrent = idx === currentIndex;
-                        const hasAns = !!studentAnswers[item.question_id];
-                        let bg = "#F1F5F9";
-                        let border = "#E2E8F0";
-                        let text = "#64748B";
-
-                        if (isCurrent) {
-                            border = "#2563EB";
-                            bg = "#DBEAFE";
-                            text = "#2563EB";
-                        } else if (hasAns) {
-                            bg = "#2563EB";
-                            border = "#2563EB";
-                            text = "#FFFFFF";
-                        }
-
-                        return `
-                            <button class="q-nav-dot" data-idx="${idx}" style="width: 32px; height: 32px; border-radius: 6px; border: 2px solid ${border}; background: ${bg}; color: ${text}; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 150ms;">
-                                ${idx + 1}
-                            </button>
-                        `;
-                    }).join("")}
+                <div style="height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden;">
+                    <div style="height: 100%; width: ${progressPct}%; background: #2563EB; transition: width 200ms ease;"></div>
                 </div>
             </div>
 
             <!-- Question Card -->
-            <div class="card" style="padding: 2rem;">
-                <div style="font-size: 1.15rem; font-weight: 700; color: #0F172A; margin-bottom: 1.25rem; line-height: 1.5;">
-                    ${q.question_text || q.text || 'Question Prompt'}
-                </div>
+            <div class="card question-main-card" id="q-content-card" style="padding: 2.25rem; border-radius: 14px; border: 1px solid #E2E8F0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                
+                <h2 style="font-size: 1.15rem; font-weight: 700; color: #0F172A; line-height: 1.5; margin-bottom: 1.25rem;">
+                    ${q.question_text || "Consider the following code snippet:"}
+                </h2>
 
                 ${q.code_snippet ? `
-                    <div class="code-box" style="margin-bottom: 1.5rem;">
-                        <pre><code>${escapeHtml(q.code_snippet)}</code></pre>
+                    <div style="background: #1E293B; color: #F8FAFC; padding: 1.25rem; border-radius: 10px; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.75rem; overflow-x: auto; border: 1px solid #334155;">
+                        <pre style="margin: 0; font-family: inherit;"><code>${escapeHtml(q.code_snippet)}</code></pre>
                     </div>
-                ` : ''}
+                ` : ""}
 
-                <!-- Options -->
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;" id="options-list">
-                    ${Object.entries(q.options || {}).map(([key, val]) => {
-                        const isSelected = studentAnswers[q.question_id] === key;
+                <!-- Options List -->
+                <div style="display: flex; flex-direction: column; gap: 0.85rem;" id="options-list">
+                    ${optionKeys.map((k) => {
+                        const optText = options[k] || "";
+                        if (!optText) return "";
+                        const isSelected = selectedOption === k;
+
                         return `
-                            <label class="opt-label" data-key="${key}" style="display: flex; align-items: center; gap: 0.85rem; padding: 1rem 1.25rem; border: 2px solid ${isSelected ? '#2563EB' : '#E2E8F0'}; background: ${isSelected ? '#EFF6FF' : '#FFFFFF'}; border-radius: 10px; cursor: pointer; transition: all 150ms;">
-                                <input type="radio" name="opt" value="${key}" ${isSelected ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #2563EB;">
-                                <div style="display: flex; align-items: center; gap: 0.6rem; width: 100%;">
-                                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 6px; background: ${isSelected ? '#2563EB' : '#F1F5F9'}; color: ${isSelected ? '#FFFFFF' : '#475569'}; font-size: 0.8125rem; font-weight: 800;">
-                                        ${key}
-                                    </span>
-                                    <span style="font-size: 0.9375rem; color: #1E293B; font-weight: ${isSelected ? '600' : '400'};">
-                                        ${escapeHtml(val)}
-                                    </span>
+                            <label class="pt-option-label ${isSelected ? 'selected' : ''}" data-key="${k}" style="display: flex; align-items: flex-start; gap: 0.85rem; padding: 1rem 1.25rem; border: 1.5px solid ${isSelected ? '#2563EB' : '#E2E8F0'}; background: ${isSelected ? '#EFF6FF' : '#FFFFFF'}; border-radius: 10px; cursor: pointer; transition: all 150ms;">
+                                <div style="width: 28px; height: 28px; border-radius: 6px; background: ${isSelected ? '#2563EB' : '#F1F5F9'}; color: ${isSelected ? '#FFFFFF' : '#475569'}; display: flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 700; flex-shrink: 0;">
+                                    ${k}
+                                </div>
+                                <div style="flex: 1; font-size: 0.9375rem; color: #0F172A; line-height: 1.5; padding-top: 0.2rem;">
+                                    ${escapeHtml(optText)}
                                 </div>
                             </label>
                         `;
                     }).join("")}
                 </div>
 
-                <!-- Navigation Controls -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #E2E8F0;">
-                    <button class="btn btn-secondary" id="pt-prev-btn" ${currentIndex === 0 ? 'disabled' : ''}>
+                <!-- Footer Navigation -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px solid #E2E8F0;">
+                    <button class="btn btn-secondary" id="pt-prev-btn" ${currentIndex === 0 ? "disabled" : ""} style="padding: 0.6rem 1.25rem;">
                         <i class="fa-solid fa-arrow-left"></i> Previous
                     </button>
 
-                    ${currentIndex < total - 1 ? `
-                        <button class="btn btn-primary" id="pt-next-btn">
-                            Next Question <i class="fa-solid fa-arrow-right" style="margin-left: 0.35rem;"></i>
-                        </button>
-                    ` : `
-                        <button class="btn btn-success" id="pt-submit-btn" style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 700;">
-                            Submit for ML Evaluation <i class="fa-solid fa-check" style="margin-left: 0.4rem;"></i>
-                        </button>
-                    `}
+                    <div style="display: flex; gap: 0.75rem;">
+                        ${isLast ? `
+                            <button class="btn btn-primary" id="pt-submit-btn" style="padding: 0.65rem 1.75rem; font-weight: 700; background: #16A34A; border-color: #16A34A;">
+                                Submit Answers <i class="fa-solid fa-check" style="margin-left: 0.35rem;"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-primary" id="pt-next-btn" style="padding: 0.65rem 1.5rem; font-weight: 700;">
+                                Next Question <i class="fa-solid fa-arrow-right" style="margin-left: 0.35rem;"></i>
+                            </button>
+                        `}
+                    </div>
                 </div>
+
             </div>
+
         </div>
     `;
 
-    // Attach listeners
-    container.querySelectorAll(".opt-label").forEach(label => {
-        label.addEventListener("click", () => {
-            const key = label.dataset.key;
+    animateStepTransition(document.getElementById("q-content-card"), 1);
+
+    // Option Selection Handlers
+    container.querySelectorAll(".pt-option-label").forEach((lbl) => {
+        lbl.addEventListener("click", () => {
+            const key = lbl.dataset.key;
             studentAnswers[q.question_id] = key;
             renderQuestionView(container, onNavigate);
-        });
-    });
-
-    container.querySelectorAll(".q-nav-dot").forEach(dot => {
-        dot.addEventListener("click", () => {
-            const targetIdx = parseInt(dot.dataset.idx);
-            if (!isNaN(targetIdx)) {
-                currentIndex = targetIdx;
-                renderQuestionView(container, onNavigate);
-            }
         });
     });
 
@@ -319,34 +300,29 @@ function renderQuestionView(container, onNavigate) {
         }
     });
 
-    document.getElementById("pt-submit-btn")?.addEventListener("click", async () => {
+    document.getElementById("pt-submit-btn")?.addEventListener("click", () => {
         const answeredCount = Object.keys(studentAnswers).length;
-        const total = loadedQuestions.length;
-
         if (answeredCount < total) {
-            const confirmSubmit = confirm(`You have answered ${answeredCount} out of ${total} questions. Unanswered questions will be scored as 0. Do you want to proceed?`);
-            if (!confirmSubmit) return;
+            const confirmed = confirm(`You have answered ${answeredCount} of ${total} questions. Do you want to submit anyway?`);
+            if (!confirmed) return;
         }
-
-        await submitPostTest(container, onNavigate);
+        submitPostTest(container, onNavigate);
     });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Submit Post-Test & Render Machine Learning Results
+// 4. Submit Answers to Backend & Grade
 // ─────────────────────────────────────────────────────────────────────────────
 async function submitPostTest(container, onNavigate) {
-    const elapsedSeconds = Math.max(15, Math.round((Date.now() - startTime) / 1000));
-    
     container.innerHTML = `
-        <div style="text-align: center; padding: 5rem 1rem;">
-            <div class="spinner" style="margin-bottom: 1.5rem;"></div>
-            <h3 style="font-size: 1.35rem; font-weight: 800; color: #0F172A;">Evaluating Post-Test Evidence...</h3>
-            <p style="color: #64748B; font-size: 0.9rem; margin-top: 0.4rem;">
-                Submitting multi-source behavioral vector to trained <code>schema_mastery_pipeline.pkl</code>
-            </p>
+        <div style="min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="spinner" style="margin-bottom: 1.25rem;"></div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #0F172A;">Evaluating Your Responses...</div>
+            <div style="font-size: 0.875rem; color: #64748B; margin-top: 0.35rem;">Analyzing answer accuracy and generating personalized recommendation</div>
         </div>
     `;
+
+    const elapsedSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
 
     const answersPayload = loadedQuestions.map((q) => ({
         question_id: q.question_id,
@@ -370,8 +346,8 @@ async function submitPostTest(container, onNavigate) {
         renderResultScreen(container, result, onNavigate);
     } catch (err) {
         container.innerHTML = `
-            <div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem;">
-                <div style="font-size: 2rem; color: #DC2626; margin-bottom: 1rem;">
+            <div class="card" style="max-width: 600px; margin: 3rem auto; text-align: center; padding: 2.5rem; border-radius: 14px;">
+                <div style="font-size: 2.25rem; color: #DC2626; margin-bottom: 1rem;">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <h2 style="font-size: 1.35rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">Submission Failed</h2>
@@ -383,9 +359,12 @@ async function submitPostTest(container, onNavigate) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Render Student-Friendly Result Screen
+// ─────────────────────────────────────────────────────────────────────────────
 function renderResultScreen(container, res, onNavigate) {
     const isDone = res.next_action === "DONE";
-    const masteryProbPct = Math.round((res.mastery_probability || 0) * 100);
+    const scorePercentage = Math.round((res.post_test_score || 0) * 100);
 
     const levelColors = {
         "Strong Understanding": "#16A34A",
@@ -393,152 +372,132 @@ function renderResultScreen(container, res, onNavigate) {
         "Needs More Practice": "#D97706",
         "Learn Again": "#DC2626",
     };
-    const levelColor = levelColors[res.mastery_level] || (isDone ? "#16A34A" : "#DC2626");
+    const levelColor = levelColors[res.mastery_level] || (isDone ? "#16A34A" : "#D97706");
 
     container.innerHTML = `
-        <div style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+        <div class="posttest-result-wrap" style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
             
             <!-- Result Hero Card -->
-            <div class="card" style="text-align: center; padding: 3rem 2rem; border-top: 6px solid ${levelColor}; box-shadow: var(--shadow-lg);">
-                <!-- Outcome Icon -->
-                <div style="width: 80px; height: 80px; border-radius: 50%; background: ${isDone ? '#DCFCE7' : '#FEE2E2'}; color: ${levelColor}; display: inline-flex; align-items: center; justify-content: center; font-size: 2.25rem; margin-bottom: 1.25rem;">
-                    <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-rotate-left'}"></i>
+            <div class="card" style="text-align: center; padding: 3rem 2rem; border-top: 6px solid ${levelColor}; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.06);">
+                
+                <div style="width: 72px; height: 72px; border-radius: 50%; background: ${isDone ? '#DCFCE7' : '#FEF3C7'}; color: ${levelColor}; display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 1.25rem;">
+                    <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-lightbulb'}"></i>
                 </div>
 
-                <h1 style="font-size: 2rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem;">
+                <div style="font-size: 0.8125rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">
+                    Your Understanding Level
+                </div>
+
+                <h1 style="font-size: 2rem; font-weight: 800; color: #0F172A; margin-bottom: 0.5rem;">
                     ${res.mastery_level}
                 </h1>
-                <p style="color: #64748B; font-size: 1rem; margin-bottom: 1.75rem;">
-                    Concept: <strong>${CONCEPT_NAMES[currentConcept] || currentConcept}</strong>
+
+                <p style="color: #64748B; font-size: 0.95rem; max-width: 540px; margin: 0 auto 2rem auto; line-height: 1.5;">
+                    ${res.explanation_message || (isDone ? "Great job! You have demonstrated solid conceptual understanding." : "We recommend reviewing this concept to strengthen your understanding.")}
                 </p>
 
-                <!-- ML Pipeline Badge Box -->
-                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.25rem; max-width: 520px; margin: 0 auto 2rem auto;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">
-                            ML Decision Output
-                        </span>
-                        <span class="badge ${isDone ? 'badge-success' : 'badge-danger'}">
-                            ${res.next_action}
-                        </span>
+                <!-- Score Overview Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; max-width: 620px; margin: 0 auto 2rem auto;">
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.15rem; border-radius: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Check Score</span>
+                        <div style="font-size: 1.65rem; font-weight: 800; color: #0F172A; margin-top: 0.25rem;">${scorePercentage}%</div>
                     </div>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.875rem; color: #334155; font-weight: 600;">Mastery Probability:</span>
-                        <strong style="font-size: 1.25rem; color: ${levelColor};">${masteryProbPct}%</strong>
+                    <div style="background: #DCFCE7; border: 1px solid #BBF7D0; padding: 1.15rem; border-radius: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #16A34A; text-transform: uppercase;">Correct</span>
+                        <div style="font-size: 1.65rem; font-weight: 800; color: #16A34A; margin-top: 0.25rem;">${res.post_test_correct_count || 0}</div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; font-size: 0.75rem; color: #94A3B8;">
-                        <span>Trained Model Engine:</span>
-                        <code>${res.model_used}</code>
+                    <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 1.15rem; border-radius: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Nearly Correct</span>
+                        <div style="font-size: 1.65rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">${res.post_test_nearly_correct_count || 0}</div>
                     </div>
-                </div>
-
-                <!-- 4-Tier Answer Quality Metrics -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
-                    <div style="background: #DCFCE7; border: 1px solid #BBF7D0; padding: 1rem 0.75rem; border-radius: 10px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #16A34A; text-transform: uppercase;">Correct (+1.0)</span>
-                        <div style="font-size: 1.75rem; font-weight: 800; color: #16A34A; margin-top: 0.2rem;">
-                            ${res.post_test_correct_count || 0}
-                        </div>
-                    </div>
-                    <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 1rem 0.75rem; border-radius: 10px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #D97706; text-transform: uppercase;">Nearly Correct (+0.5)</span>
-                        <div style="font-size: 1.75rem; font-weight: 800; color: #D97706; margin-top: 0.2rem;">
-                            ${res.post_test_nearly_correct_count || 0}
-                        </div>
-                    </div>
-                    <div style="background: #FEE2E2; border: 1px solid #FECACA; padding: 1rem 0.75rem; border-radius: 10px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #DC2626; text-transform: uppercase;">Wrong (0.0)</span>
-                        <div style="font-size: 1.75rem; font-weight: 800; color: #DC2626; margin-top: 0.2rem;">
-                            ${res.post_test_wrong_count || 0}
-                        </div>
-                    </div>
-                    <div style="background: #F1F5F9; border: 1px solid #E2E8F0; padding: 1rem 0.75rem; border-radius: 10px;">
-                        <span style="font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase;">Clearly Wrong (0.0)</span>
-                        <div style="font-size: 1.75rem; font-weight: 800; color: #475569; margin-top: 0.2rem;">
-                            ${res.post_test_clearly_wrong_count || 0}
-                        </div>
+                    <div style="background: #F1F5F9; border: 1px solid #E2E8F0; padding: 1.15rem; border-radius: 12px;">
+                        <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Needs Review</span>
+                        <div style="font-size: 1.65rem; font-weight: 800; color: #64748B; margin-top: 0.25rem;">${(res.post_test_wrong_count || 0) + (res.post_test_clearly_wrong_count || 0)}</div>
                     </div>
                 </div>
 
-                <!-- Pedagogical Guidance -->
-                <div class="alert ${isDone ? 'alert-success' : 'alert-warning'}" style="text-align: left; margin-bottom: 2rem;">
-                    <i class="fa-solid ${isDone ? 'fa-circle-check' : 'fa-lightbulb'}" style="margin-top: 0.15rem;"></i>
-                    <div>
-                        ${isDone 
-                            ? `<strong>Mastery Verified!</strong> You have demonstrated solid schema understanding and are ready to advance to the next programming concept in your learning path.`
-                            : `<strong>Remediation Recommended:</strong> Your schema mastery evaluation indicates additional reinforcement is needed for ${CONCEPT_NAMES[currentConcept] || currentConcept}. Please repeat the gamified challenges to correct underlying misconceptions.`
-                        }
-                    </div>
+                <!-- Action Buttons -->
+                <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-secondary" id="res-dash-btn" style="padding: 0.75rem 1.5rem; font-weight: 600;">
+                        Return to Dashboard
+                    </button>
+                    <button class="btn btn-primary" id="res-continue-btn" style="padding: 0.75rem 1.75rem; font-weight: 700;">
+                        ${isDone ? 'Continue to Next Topic <i class="fa-solid fa-arrow-right" style="margin-left: 0.4rem;"></i>' : 'Review Topic Challenges <i class="fa-solid fa-arrow-rotate-right" style="margin-left: 0.4rem;"></i>'}
+                    </button>
                 </div>
 
-                <!-- Action Button -->
-                <div>
-                    ${isDone ? `
-                        <button class="btn btn-primary btn-lg" id="res-action-btn" style="padding: 0.85rem 3rem;">
-                            Advance to Next Module <i class="fa-solid fa-arrow-right" style="margin-left: 0.4rem;"></i>
-                        </button>
-                    ` : `
-                        <button class="btn btn-primary btn-lg" id="res-action-btn" style="padding: 0.85rem 3rem; background: #2563EB;">
-                            Repeat Game Lesson <i class="fa-solid fa-gamepad" style="margin-left: 0.4rem;"></i>
-                        </button>
-                    `}
-                </div>
             </div>
 
-            <!-- Question-by-Question Review Accordion -->
-            ${res.results && res.results.length > 0 ? `
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">
-                            <i class="fa-solid fa-list-check" style="color: #2563EB;"></i> Answer Review & Pedagogical Explanations
-                        </div>
-                    </div>
+            <!-- Detailed Question-by-Question Review -->
+            <div class="card" style="padding: 2rem; border-radius: 14px; border: 1px solid #E2E8F0;">
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0F172A; margin-bottom: 0.35rem;">
+                    Detailed Question Review
+                </h3>
+                <p style="font-size: 0.875rem; color: #64748B; margin-bottom: 1.5rem;">
+                    Review the correct answers and conceptual explanations for each question.
+                </p>
 
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        ${res.results.map((item, idx) => `
-                            <div style="padding: 1.25rem; border: 1px solid ${item.is_correct ? '#BBF7D0' : '#FECACA'}; background: ${item.is_correct ? '#F0FDF4' : '#FEF2F2'}; border-radius: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                                    <strong style="font-size: 0.9375rem; color: #0F172A;">
-                                        ${idx + 1}. ${escapeHtml(item.question)}
-                                    </strong>
-                                    <span class="badge ${item.answer_quality === 'Correct' ? 'badge-success' : item.answer_quality === 'Nearly Correct' ? 'badge-warning' : 'badge-danger'}">
-                                        ${item.answer_quality}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    ${(res.results || []).map((item, idx) => {
+                        const isCorrect = item.is_correct;
+                        const isNearly = item.answer_quality === "Nearly Correct";
+                        const badgeClass = isCorrect ? "badge-success" : isNearly ? "badge-warning" : "badge-danger";
+                        const statusLabel = isCorrect ? "Correct (+1.0)" : isNearly ? "Nearly Correct (+0.5)" : "Needs Review";
+
+                        return `
+                            <div style="border: 1px solid #E2E8F0; border-radius: 10px; padding: 1.25rem; background: ${isCorrect ? '#FFFFFF' : '#F8FAFC'};">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.8125rem; font-weight: 700; color: #64748B;">
+                                        Question ${idx + 1}
+                                    </span>
+                                    <span class="badge ${badgeClass}" style="font-size: 0.75rem;">
+                                        ${statusLabel}
                                     </span>
                                 </div>
 
-                                <div style="font-size: 0.8125rem; color: #475569; margin-bottom: 0.5rem;">
-                                    <span>Selected: <strong>Option ${item.selected}</strong></span> • 
-                                    <span>Correct: <strong>Option ${item.correct}</strong></span>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin-bottom: 0.75rem;">
+                                    ${item.question || `Question ${idx + 1}`}
+                                </div>
+
+                                <div style="display: flex; gap: 1.5rem; font-size: 0.875rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+                                    <div>
+                                        <span style="color: #64748B;">Your Answer:</span> 
+                                        <strong style="color: ${isCorrect ? '#16A34A' : '#DC2626'};">${item.selected || "None"}</strong>
+                                    </div>
+                                    <div>
+                                        <span style="color: #64748B;">Correct Option:</span> 
+                                        <strong style="color: #16A34A;">${item.correct || "A"}</strong>
+                                    </div>
                                 </div>
 
                                 ${item.explanation ? `
-                                    <div style="font-size: 0.8125rem; color: #334155; background: rgba(255,255,255,0.7); padding: 0.6rem 0.8rem; border-radius: 6px; border-left: 3px solid #2563EB;">
-                                        <strong>Explanation:</strong> ${escapeHtml(item.explanation)}
+                                    <div style="background: #EFF6FF; border-left: 3px solid #2563EB; padding: 0.65rem 0.85rem; border-radius: 4px; font-size: 0.8125rem; color: #1E40AF; line-height: 1.45;">
+                                        <strong>Explanation:</strong> ${item.explanation}
                                     </div>
-                                ` : ''}
+                                ` : ""}
                             </div>
-                        `).join("")}
-                    </div>
+                        `;
+                    }).join("")}
                 </div>
-            ` : ''}
+            </div>
+
         </div>
     `;
 
-    document.getElementById("res-action-btn")?.addEventListener("click", () => {
-        if (onNavigate) {
-            if (isDone) {
-                onNavigate("/student/dashboard");
-            } else {
-                onNavigate("/student/games");
-            }
-        }
+    animatePageEntrance(container.querySelector(".posttest-result-wrap"));
+
+    document.getElementById("res-dash-btn")?.addEventListener("click", () => {
+        if (onNavigate) onNavigate("/student/dashboard");
+    });
+
+    document.getElementById("res-continue-btn")?.addEventListener("click", () => {
+        if (onNavigate) onNavigate("/student/games");
     });
 }
 
-function escapeHtml(text) {
-    if (!text) return "";
-    return String(text)
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")

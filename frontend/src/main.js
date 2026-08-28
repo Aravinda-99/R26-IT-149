@@ -1,11 +1,10 @@
 /**
- * Main Entry Point — CodeQuest Dual-Role Platform
- * ===============================================
- * Architecture:
- * - Student LMS Interface (theme-student, StudentLayout)
- * - Teacher & Admin Management Portal (theme-teacher, TeacherLayout)
- * - Public Auth & Onboarding (AuthLayout)
- * - RouteGuard with Refresh & Role Persistence
+ * Main Entry Point — CodeQuest LMS Platform
+ * ==========================================
+ * Dual-Role Learning Platform:
+ * - Public Views (Welcome, Onboarding, Login, Signup)
+ * - Student LMS Interface (StudentLayout: Dashboard, Modules, Practice, Diagnostic Quiz, PostTest, Profile)
+ * - Educator & Admin Portal (TeacherLayout: Dashboard, Generation, Review, Question Bank, Analytics, Settings)
  */
 
 import "./style.css";
@@ -20,24 +19,25 @@ import {
 import { checkRouteAccess, renderLoadingScreen } from "./components/RoleGuard.js";
 
 // Layouts
+import { renderPublicLayout } from "./layouts/PublicLayout.js";
 import { renderStudentLayout } from "./layouts/StudentLayout.js";
 import { renderTeacherLayout } from "./layouts/TeacherLayout.js";
-import { renderAuthLayout } from "./layouts/AuthLayout.js";
 
-// Auth Pages
+// Public Pages
+import { renderWelcome } from "./pages/public/Welcome.js";
+import { renderOnboarding } from "./pages/auth/Onboarding.js";
 import { renderLogin } from "./pages/auth/Login.js";
 import { renderSignup } from "./pages/auth/Signup.js";
-import { renderOnboarding } from "./pages/auth/Onboarding.js";
 
 // Student Pages
 import { renderStudentDashboard } from "./pages/student/StudentDashboard.js";
+import { renderModules } from "./pages/student/Modules.js";
+import { renderProfile } from "./pages/student/Profile.js";
 import { renderPostTest } from "./pages/student/posttest.js";
 import { renderQuizLab } from "./pages/quiz-lab.js";
 import { renderGames, disposeGames, launchModuleFromQuery } from "./pages/games.js";
-import { renderErrorAnalysis } from "./pages/error-analysis.js";
 import { renderQuizResults } from "./pages/quiz-results.js";
 import { renderQuizSummary } from "./pages/quiz-summary.js";
-import { renderDemoFlow } from "./pages/demo-flow.js";
 
 // Teacher Pages
 import { renderTeacherDashboard } from "./pages/teacher/TeacherDashboard.js";
@@ -52,7 +52,7 @@ import { renderTeacherSettings } from "./pages/teacher/TeacherSettings.js";
 initFirebase();
 initAuthListener();
 
-let currentRoute = "/student/dashboard";
+let currentRoute = "/welcome";
 let currentParams = {};
 
 /**
@@ -61,18 +61,18 @@ let currentParams = {};
 function resolveRoute(route) {
     const r = (route || "/").toLowerCase().trim();
 
-    // 1. Public Auth Routes
-    if (r === "/login" || r === "login") {
-        return { layout: "auth", render: (c) => renderLogin(c, navigateTo) };
-    }
-    if (r === "/signup" || r === "signup" || r === "register") {
-        return { layout: "auth", render: (c) => renderSignup(c, navigateTo) };
+    // 1. Public Routes
+    if (r === "/welcome" || r === "welcome" || r === "/" || r === "") {
+        return { layout: "public", render: (c) => renderWelcome(c, navigateTo) };
     }
     if (r === "/onboarding" || r === "onboarding") {
-        return { layout: "auth", render: (c) => renderOnboarding(c, navigateTo) };
+        return { layout: "public", render: (c) => renderOnboarding(c, navigateTo) };
     }
-    if (r === "/forgot-password") {
-        return { layout: "auth", render: (c) => renderLogin(c, navigateTo) };
+    if (r === "/signup" || r === "signup" || r === "/register" || r === "register") {
+        return { layout: "public", render: (c) => renderSignup(c, navigateTo) };
+    }
+    if (r === "/login" || r === "login" || r === "/forgot-password") {
+        return { layout: "public", render: (c) => renderLogin(c, navigateTo) };
     }
 
     // 2. Teacher & Admin Routes
@@ -99,20 +99,20 @@ function resolveRoute(route) {
     }
 
     // 3. Student Routes
-    if (r === "/student/dashboard" || r === "dashboard" || r === "/" || r === "") {
+    if (r === "/student/dashboard" || r === "dashboard") {
         return { layout: "student", render: (c) => renderStudentDashboard(c, navigateTo) };
+    }
+    if (r === "/student/modules" || r === "modules" || r === "/student/curriculum") {
+        return { layout: "student", render: (c) => renderModules(c, navigateTo) };
+    }
+    if (r === "/student/profile" || r === "profile" || r === "/student/settings") {
+        return { layout: "student", render: (c) => renderProfile(c, navigateTo) };
     }
     if (r === "/student/pre-test" || r === "/student/quiz" || r === "quiz-lab") {
         return { layout: "student", render: (c) => renderQuizLab(c) };
     }
     if (r === "/student/games" || r === "games") {
         return { layout: "student", render: (c) => renderGames(c) };
-    }
-    if (r === "/student/errors" || r === "error-analysis") {
-        return { layout: "student", render: (c) => renderErrorAnalysis(c) };
-    }
-    if (r === "/student/learn" || r === "/student/lessons" || r === "demo-flow" || r === "learning-path") {
-        return { layout: "student", render: (c) => renderDemoFlow(c) };
     }
     if (r.startsWith("/student/post-test") || r === "post-test") {
         return { layout: "student", render: (c) => renderPostTest(c, currentParams, navigateTo) };
@@ -124,14 +124,33 @@ function resolveRoute(route) {
         return { layout: "student", render: (c) => renderQuizSummary(c) };
     }
 
-    // Default Fallback
+    // Legacy Redirects (Redirects old demo/learning-journey paths directly to student dashboard)
+    if (
+        r === "/student/learn" || 
+        r === "/student/lessons" || 
+        r === "demo-flow" || 
+        r === "/demo-flow" || 
+        r === "/demo" || 
+        r === "demo" || 
+        r === "learning-path" ||
+        r === "/flow" ||
+        r === "/learning-journey" ||
+        r === "/test-flow"
+    ) {
+        return { layout: "student", render: (c) => renderStudentDashboard(c, navigateTo) };
+    }
+
+    // Default 404 Fallback
     return {
         layout: "student",
         render: (c) => {
             c.innerHTML = `
-                <div class="card" style="max-width: 540px; margin: 4rem auto; text-align: center; padding: 3rem 1.5rem;">
-                    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Page Not Found</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 1.5rem;">The requested page path does not exist.</p>
+                <div class="card" style="max-width: 500px; margin: 4rem auto; text-align: center; padding: 3rem 1.5rem; border-radius: var(--radius-md);">
+                    <div style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Page Not Found</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">The page you are looking for does not exist or has moved.</p>
                     <button class="btn btn-primary" onclick="window.navigateTo('/student/dashboard')">Return to Dashboard</button>
                 </div>
             `;
@@ -185,6 +204,8 @@ function renderApp() {
     // Apply appropriate theme class to document body
     if (routeInfo.layout === "teacher") {
         document.body.className = "theme-teacher";
+    } else if (routeInfo.layout === "public") {
+        document.body.className = "theme-student";
     } else {
         document.body.className = "theme-student";
     }
@@ -193,8 +214,8 @@ function renderApp() {
     let contentContainer = null;
     if (routeInfo.layout === "teacher") {
         contentContainer = renderTeacherLayout(appEl, currentRoute, navigateTo);
-    } else if (routeInfo.layout === "auth") {
-        contentContainer = renderAuthLayout(appEl);
+    } else if (routeInfo.layout === "public") {
+        contentContainer = renderPublicLayout(appEl, currentRoute, navigateTo);
     } else {
         contentContainer = renderStudentLayout(appEl, currentRoute, navigateTo);
     }
@@ -207,20 +228,20 @@ function renderApp() {
 
 // Global Browser Navigation Listener
 window.addEventListener("popstate", () => {
-    currentRoute = window.location.pathname || "/student/dashboard";
+    currentRoute = window.location.pathname || "/welcome";
     renderApp();
 });
 
 // Initialization on DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[OK] CodeQuest Dual-Role LMS initialized");
+    console.log("[OK] CodeQuest LMS initialized");
 
-    // Capture initial route from pathname or default
     const pathname = window.location.pathname;
     if (pathname && pathname !== "/") {
         currentRoute = pathname;
     } else {
-        currentRoute = "/student/dashboard";
+        const user = getCurrentUser();
+        currentRoute = user ? "/student/dashboard" : "/welcome";
     }
 
     // Listen for auth state transitions

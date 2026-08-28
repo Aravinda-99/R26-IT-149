@@ -47,6 +47,18 @@ class SchemaPostTestService:
         concept_clean = concept.strip() if concept else "Loops"
         if not session_id:
             session_id = f"SES_{uuid.uuid4().hex[:8].upper()}"
+        else:
+            # Check if this session already has generated questions to ensure stability across browser reloads
+            cached_qs = SchemaQuestionBankService.get_session_questions(session_id)
+            if cached_qs:
+                return {
+                    "success": True,
+                    "session_id": session_id,
+                    "student_id": student_id,
+                    "concept_name": concept_clean,
+                    "total_questions": len(cached_qs),
+                    "questions": cached_qs,
+                }
         
         # 1. Fetch all active approved questions for this concept
         all_approved = SchemaQuestionBankService.get_approved_question_bank(concept=concept_clean, active_only=True)
@@ -147,8 +159,8 @@ class SchemaPostTestService:
                 "options": display_options,
             })
 
-        # Persist the shuffled option mapping for this session
-        SchemaQuestionBankService.save_session_option_mappings(session_id, session_mappings)
+        # Persist the shuffled option mapping and safe question definitions for this session
+        SchemaQuestionBankService.save_session_option_mappings(session_id, session_mappings, student_safe_questions)
 
         return {
             "success": True,
@@ -163,7 +175,7 @@ class SchemaPostTestService:
     def grade_and_predict(cls, submission: dict) -> dict:
         """
         Grades submitted student answers against approved_question_bank quality labels,
-        constructs the 11-feature ML vector, and calls predict_schema_mastery.
+        constructs the 11-feature ML vector, and calls predict_schema_mastery (Dual ML Models).
         """
         student_id = str(submission.get("student_id", "STU_ANON"))
         session_id = submission.get("session_id") or f"SES_{uuid.uuid4().hex[:8].upper()}"
@@ -296,12 +308,14 @@ class SchemaPostTestService:
             "post_test_score": post_test_score,
         }
 
-        # Predict using trained ML pipeline
+        # Predict using trained Dual ML Models
         ml_prediction = predict_schema_mastery(ml_input)
 
         mastery_probability = ml_prediction.get("mastery_probability", 0.5)
         mastery_level = ml_prediction.get("mastery_level", "Needs More Practice")
         next_action = ml_prediction.get("next_action", "LEARN_AGAIN")
+        mastery_model_used = ml_prediction.get("mastery_model_used", "schema_mastery_pipeline")
+        action_model_used = ml_prediction.get("action_model_used", "schema_next_action_model")
         model_used = ml_prediction.get("model_used", "schema_mastery_pipeline")
 
         # Friendly explanation message for student
@@ -328,6 +342,8 @@ class SchemaPostTestService:
             "mastery_probability": mastery_probability,
             "mastery_level": mastery_level,
             "next_action": next_action,
+            "mastery_model_used": mastery_model_used,
+            "action_model_used": action_model_used,
             "model_used": model_used,
         }
 
@@ -350,6 +366,8 @@ class SchemaPostTestService:
             "mastery_probability": mastery_probability,
             "mastery_level": mastery_level,
             "next_action": next_action,
+            "mastery_model_used": mastery_model_used,
+            "action_model_used": action_model_used,
             "model_used": model_used,
             "explanation_message": explanation_msg,
             "results": review_items,

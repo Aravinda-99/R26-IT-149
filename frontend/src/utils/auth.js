@@ -1,44 +1,23 @@
 /**
  * Auth State Manager — CodeQuest Dual-Role Platform
  * ==================================================
- * Provides robust client-side authentication, role persistence,
- * and loading synchronization to eliminate race conditions on page refresh.
+ * Provides robust authentication against the real backend API,
+ * role persistence, and loading synchronization to eliminate race conditions.
  */
 
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { AuthAPI } from "../api/api.js";
 import { GameManager } from "../game/GameManager.js";
 
 const STORAGE_KEY_USER = "cq_auth_user";
 const STORAGE_KEY_ROLE = "cq_auth_role";
+const STORAGE_KEY_TOKEN = "cq_auth_token";
 const STORAGE_KEY_ONBOARDED = "cq_onboarded_";
-
-export const MOCK_USERS = {
-    "student@codequest.lk": {
-        uid: "MOCK_STUDENT_01",
-        email: "student@codequest.lk",
-        displayName: "Demo Student (S001)",
-        role: "student",
-        onboardingCompleted: true,
-    },
-    "teacher@codequest.lk": {
-        uid: "MOCK_TEACHER_01",
-        email: "teacher@codequest.lk",
-        displayName: "Prof. Sarah Johnson",
-        role: "teacher",
-        onboardingCompleted: true,
-    },
-    "admin@codequest.lk": {
-        uid: "MOCK_ADMIN_01",
-        email: "admin@codequest.lk",
-        displayName: "System Administrator",
-        role: "admin",
-        onboardingCompleted: true,
-    },
-};
 
 // Initial state hydrated synchronously from localStorage
 let currentUser = null;
 let currentRole = "student";
+let currentToken = null;
 let isLoading = true;
 let profileLoaded = false;
 let authListeners = [];
@@ -46,6 +25,7 @@ let authListeners = [];
 try {
     const cachedUser = localStorage.getItem(STORAGE_KEY_USER);
     const cachedRole = localStorage.getItem(STORAGE_KEY_ROLE);
+    currentToken = localStorage.getItem(STORAGE_KEY_TOKEN);
     if (cachedUser) {
         currentUser = JSON.parse(cachedUser);
         currentRole = cachedRole || currentUser.role || "student";
@@ -75,7 +55,7 @@ export function getUserRole(user = null) {
 }
 
 export function hasCompletedOnboarding(userId = null) {
-    const uid = userId || currentUser?.uid || "guest";
+    const uid = userId || currentUser?.uid || currentUser?.id || "guest";
     if (currentUser?.onboardingCompleted) return true;
     try {
         const stored = localStorage.getItem(`${STORAGE_KEY_ONBOARDED}${uid}`);
@@ -86,7 +66,7 @@ export function hasCompletedOnboarding(userId = null) {
 }
 
 export function setOnboardingCompleted(userId = null, completed = true) {
-    const uid = userId || currentUser?.uid || "guest";
+    const uid = userId || currentUser?.uid || currentUser?.id || "guest";
     if (currentUser) {
         currentUser.onboardingCompleted = completed;
     }
@@ -97,18 +77,21 @@ export function setOnboardingCompleted(userId = null, completed = true) {
     }
 }
 
-function persistAuthState(user, role) {
+export function persistAuthState(user, role, token = null) {
     currentUser = user;
     currentRole = role;
+    if (token) currentToken = token;
     window.__cqRole = role;
 
     try {
         if (user) {
             localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
             localStorage.setItem(STORAGE_KEY_ROLE, role);
+            if (token) localStorage.setItem(STORAGE_KEY_TOKEN, token);
         } else {
             localStorage.removeItem(STORAGE_KEY_USER);
             localStorage.removeItem(STORAGE_KEY_ROLE);
+            localStorage.removeItem(STORAGE_KEY_TOKEN);
         }
     } catch {
         // Ignore localStorage error
@@ -145,12 +128,14 @@ export function initAuthListener() {
     try {
         const auth = getAuth();
         onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
+            if (firebaseUser && !currentUser) {
                 const detectedRole = getUserRole(firebaseUser);
                 const userObj = {
+                    id: firebaseUser.uid,
                     uid: firebaseUser.uid,
                     email: firebaseUser.email,
                     displayName: firebaseUser.displayName || (detectedRole === "teacher" ? "Educator" : "Student"),
+                    name: firebaseUser.displayName || (detectedRole === "teacher" ? "Educator" : "Student"),
                     role: detectedRole,
                     onboardingCompleted: hasCompletedOnboarding(firebaseUser.uid),
                 };
@@ -161,10 +146,6 @@ export function initAuthListener() {
                 } catch (e) {
                     console.warn("[WARN] Firebase game manager sync warning:", e);
                 }
-            } else if (!currentUser || !currentUser.uid?.startsWith("MOCK_")) {
-                // If not logged in via mock user, clear state
-                persistAuthState(null, "student");
-                GameManager.resetAll();
             }
 
             isLoading = false;
@@ -179,28 +160,46 @@ export function initAuthListener() {
     }
 }
 
-export async function loginWithMockUser(email, password) {
-    const cleanEmail = (email || "").toLowerCase().trim();
-    const mock = MOCK_USERS[cleanEmail];
-    if (mock) {
-        persistAuthState(mock, mock.role);
-        isLoading = false;
-        profileLoaded = true;
-        notifyListeners();
-        return { success: true, user: mock };
-    }
-    return { success: false, error: "Invalid mock credentials" };
-}
-
 export async function loginWithCredentials(email, password) {
+    const cleanEmail = (email || "").toLowerCase().trim();
+
+    // 1. Authenticate with real backend database API
+    try {
+        const res = await AuthAPI.login({ email: cleanEmail, password });
+        if (res.success && res.user) {
+            const role = res.user.role || "student";
+            persistAuthState(res.user, role, res.token);
+            isLoading = false;
+            profileLoaded = true;
+            notifyListeners();
+
+            // Optional client Firebase Auth sync if available
+            try {
+                const auth = getAuth();
+                await signInWithEmailAndPassword(auth, cleanEmail, password);
+            } catch {}
+
+            return { success: true, user: res.user };
+        }
+    } catch (apiErr) {
+        // If real backend explicitly rejected credentials with 401
+        if (apiErr.message.includes("401") || apiErr.message.includes("Invalid")) {
+            return { success: false, error: "Invalid email or password. Please check your credentials." };
+        }
+        console.warn("[WARN] Backend login API error, checking Firebase Auth fallback:", apiErr.message);
+    }
+
+    // 2. Fallback to direct client Firebase Auth
     try {
         const auth = getAuth();
-        const res = await signInWithEmailAndPassword(auth, email, password);
+        const res = await signInWithEmailAndPassword(auth, cleanEmail, password);
         const role = getUserRole(res.user);
         const userObj = {
+            id: res.user.uid,
             uid: res.user.uid,
             email: res.user.email,
             displayName: res.user.displayName || (role === "teacher" ? "Educator" : "Student"),
+            name: res.user.displayName || (role === "teacher" ? "Educator" : "Student"),
             role: role,
             onboardingCompleted: hasCompletedOnboarding(res.user.uid),
         };
@@ -209,9 +208,8 @@ export async function loginWithCredentials(email, password) {
         profileLoaded = true;
         notifyListeners();
         return { success: true, user: userObj };
-    } catch (err) {
-        // Check mock fallback for development demo
-        return loginWithMockUser(email, password);
+    } catch (fbErr) {
+        return { success: false, error: "Invalid email or password. Please try again." };
     }
 }
 
@@ -229,9 +227,7 @@ export async function logout() {
 }
 
 export async function getIdToken() {
+    if (currentToken) return currentToken;
     if (!currentUser) return null;
-    if (typeof currentUser.getIdToken === "function") {
-        return currentUser.getIdToken();
-    }
-    return `mock_token_${currentUser.uid || "anon"}`;
+    return `token_${currentUser.id || currentUser.uid || "anon"}`;
 }

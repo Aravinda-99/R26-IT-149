@@ -15,6 +15,7 @@ import pandas as pd
 # Paths to ML artifacts
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_PATH = os.path.join(BASE_DIR, "ml", "component4_schema_mastery", "models", "schema_mastery_pipeline.pkl")
+ACTION_MODEL_PATH = os.path.join(BASE_DIR, "ml", "component4_schema_mastery", "models", "schema_next_action_model.pkl")
 META_PATH = os.path.join(BASE_DIR, "ml", "component4_schema_mastery", "models", "schema_mastery_model_metadata.json")
 
 FEATURE_COLUMNS = [
@@ -32,11 +33,12 @@ FEATURE_COLUMNS = [
 ]
 
 _model = None
+_action_model = None
 _metadata = None
 
 
 def load_model():
-    """Loads the trained schema mastery ML pipeline model from disk."""
+    """Loads Model 1: trained schema mastery ML pipeline model from disk."""
     global _model
     if _model is not None:
         return _model
@@ -44,12 +46,11 @@ def load_model():
     if os.path.exists(MODEL_PATH):
         try:
             _model = joblib.load(MODEL_PATH)
-            print(f"[SchemaMastery] Loaded ML pipeline: {MODEL_PATH}")
+            print(f"[SchemaMastery] Loaded ML Model 1 (Mastery Pipeline): {MODEL_PATH}")
             return _model
         except Exception as e:
             print(f"[SchemaMastery][WARN] Failed to load ML pipeline from {MODEL_PATH}: {e}")
     else:
-        # Fallback check for relative paths
         alt_paths = [
             os.path.join("ml", "component4_schema_mastery", "models", "schema_mastery_pipeline.pkl"),
             os.path.join("ml", "schema_mastery_pipeline.pkl")
@@ -58,12 +59,42 @@ def load_model():
             if os.path.exists(alt_path):
                 try:
                     _model = joblib.load(alt_path)
-                    print(f"[SchemaMastery] Loaded ML pipeline: {alt_path}")
+                    print(f"[SchemaMastery] Loaded ML Model 1 (Mastery Pipeline): {alt_path}")
                     return _model
                 except Exception as e:
                     print(f"[SchemaMastery][WARN] Failed to load ML pipeline from {alt_path}: {e}")
 
     print(f"[SchemaMastery][WARN] Using fallback only because ML model failed to load from {MODEL_PATH}")
+    return None
+
+
+def load_action_model():
+    """Loads Model 2: Next Action Recommendation Model from disk."""
+    global _action_model
+    if _action_model is not None:
+        return _action_model
+
+    if os.path.exists(ACTION_MODEL_PATH):
+        try:
+            _action_model = joblib.load(ACTION_MODEL_PATH)
+            print(f"[SchemaMastery] Loaded ML Model 2 (Next Action Decision): {ACTION_MODEL_PATH}")
+            return _action_model
+        except Exception as e:
+            print(f"[SchemaMastery][WARN] Failed to load Next Action model from {ACTION_MODEL_PATH}: {e}")
+    else:
+        alt_paths = [
+            os.path.join("ml", "component4_schema_mastery", "models", "schema_next_action_model.pkl"),
+            os.path.join("ml", "schema_next_action_model.pkl")
+        ]
+        for alt_path in alt_paths:
+            if os.path.exists(alt_path):
+                try:
+                    _action_model = joblib.load(alt_path)
+                    print(f"[SchemaMastery] Loaded ML Model 2 (Next Action Decision): {alt_path}")
+                    return _action_model
+                except Exception as e:
+                    print(f"[SchemaMastery][WARN] Failed to load Next Action model from {alt_path}: {e}")
+
     return None
 
 
@@ -181,13 +212,16 @@ def fallback_predict(data: dict) -> dict:
         "mastery_level": level,
         "next_action": action,
         "model_used": "rule_based_fallback",
+        "mastery_model_used": "rule_based_fallback",
+        "action_model_used": "rule_based_fallback",
     }
 
 
 def predict_schema_mastery(data: dict) -> dict:
     """
-    Main prediction entry point for Schema Mastery.
-    Uses trained ML pipeline to predict mastery probability, level, and next action.
+    Main prediction entry point for Schema Mastery Dual-Model ML architecture:
+      - Model 1: Random Forest Pipeline predicting schema mastery probability and mastery level
+      - Model 2: Decision Tree / Classifier predicting progression next action (DONE vs LEARN_AGAIN)
     """
     if not isinstance(data, dict):
         print("[SchemaMastery][WARN] Using fallback only because input data is invalid")
@@ -202,6 +236,7 @@ def predict_schema_mastery(data: dict) -> dict:
         cleaned = clean_input_data(data)
         df_input = pd.DataFrame([cleaned])[FEATURE_COLUMNS]
 
+        # Model 1 Inference: Mastery Probability & Level
         if hasattr(model, "predict_proba"):
             probs = model.predict_proba(df_input)[0]
             classes = list(model.classes_)
@@ -213,13 +248,34 @@ def predict_schema_mastery(data: dict) -> dict:
 
         prob = round(prob, 4)
         level = probability_to_level(prob)
-        action = level_to_action(level)
 
-        print(f"[SchemaMastery] Using schema_mastery_pipeline for prediction -> prob={prob}, level='{level}', action='{action}'")
+        # Model 2 Inference: Next Action Recommendation
+        action_model = load_action_model()
+        action = None
+        action_model_name = "schema_next_action_model"
+
+        if action_model is not None:
+            try:
+                prep = model.named_steps["preprocess"]
+                X_trans = prep.transform(df_input)
+                if hasattr(X_trans, "toarray"):
+                    X_trans = X_trans.toarray()
+                X_action_input = np.column_stack([X_trans, [prob]])
+                action_pred = action_model.predict(X_action_input)[0]
+                action = "DONE" if int(action_pred) == 1 else "LEARN_AGAIN"
+            except Exception as e_act:
+                print(f"[SchemaMastery][WARN] Model 2 inference fallback to decision threshold: {e_act}")
+                action = level_to_action(level)
+        else:
+            action = level_to_action(level)
+
+        print(f"[SchemaMastery] Dual Model Prediction -> Model 1 (Mastery Pipeline): prob={prob}, level='{level}' | Model 2 (Next Action): action='{action}'")
         return {
             "mastery_probability": prob,
             "mastery_level": level,
             "next_action": action,
+            "mastery_model_used": "schema_mastery_pipeline",
+            "action_model_used": action_model_name,
             "model_used": "schema_mastery_pipeline",
         }
 
@@ -250,6 +306,7 @@ class SchemaMasteryService:
 
 __all__ = [
     "load_model",
+    "load_action_model",
     "load_metadata",
     "normalize_score",
     "probability_to_level",
@@ -260,5 +317,6 @@ __all__ = [
     "SchemaMasteryService",
     "FEATURE_COLUMNS",
     "MODEL_PATH",
+    "ACTION_MODEL_PATH",
     "META_PATH",
 ]
