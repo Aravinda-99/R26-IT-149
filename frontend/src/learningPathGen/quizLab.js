@@ -11,6 +11,76 @@ export function setQuizDifficulty(level) {
     currentDifficulty = level || "beginner";
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// SHUFFLE UTILITIES — Anti-cheating measure
+// ─────────────────────────────────────────────────────────────────────────
+// Two students sitting in the same room, taking the quiz at the same time,
+// would otherwise see identical question order AND identical option order.
+// This lets them copy answers by position ("pick option C") without even
+// reading the question.
+//
+// Fix: on every quiz start, build a FRESH shuffled copy of QUIZ_BANK:
+//   1. Question ORDER is shuffled (Fisher-Yates)
+//   2. Each question's OPTION order is independently shuffled
+//   3. correctIndex is remapped to match the new option order
+//
+// This is done once per setupQuizUI() call and stored in `state`, so
+// Previous/Next navigation within one session stays consistent — but
+// every new session (including Retry) gets a brand new shuffle.
+//
+// The original QUIZ_BANK import is NEVER mutated — we build a deep copy
+// each time, so this is safe even if multiple quiz instances run at once
+// (e.g. two browser tabs on the same machine).
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * Fisher-Yates shuffle — returns a NEW shuffled array, does not mutate input.
+ */
+function fisherYatesShuffle(array) {
+    const result = [...array];
+    for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+}
+
+/**
+ * Builds a fresh shuffled copy of QUIZ_BANK for one quiz session.
+ *   - Question order shuffled
+ *   - Each question's options shuffled independently
+ *   - correctIndex remapped so grading still works correctly
+ *   - codeTemplate questions are handled the same way — shuffling the
+ *     option list is safe because buildFullCodeFromTemplate() looks up
+ *     the option by whatever index the student clicked, not a fixed
+ *     position, so the correct answer is still substituted correctly.
+ */
+function buildShuffledQuizBank() {
+    // Step 1: shuffle question order
+    const shuffledQuestions = fisherYatesShuffle(QUIZ_BANK);
+
+    // Step 2: shuffle each question's options independently
+    return shuffledQuestions.map((q) => {
+        // Pair each option with its original index so we can track
+        // where the correct answer ends up after shuffling
+        const indexedOptions = q.options.map((opt, idx) => ({
+            text: opt,
+            wasCorrect: idx === q.correctIndex
+        }));
+
+        const shuffledOptions = fisherYatesShuffle(indexedOptions);
+
+        // Find the new index of the option that was originally correct
+        const newCorrectIndex = shuffledOptions.findIndex(o => o.wasCorrect);
+
+        return {
+            ...q,
+            options: shuffledOptions.map(o => o.text),
+            correctIndex: newCorrectIndex
+        };
+    });
+}
+
 // ── Component 2 telemetry ────────────────────────────────────────────────
 // Fill-in-the-blank questions carry a `codeTemplate` with a single
 // {BLANK} placeholder. Substituting the student's chosen option in gives
@@ -94,7 +164,6 @@ function calculateEngagementScore(questionRecords) {
 }
 
 // ── Calculate all session metrics for ML model ─────────────────────────
-// CHANGED: Added 'accuracy' field calculated from topicBreakdown
 function calculateSessionMetrics(questionRecords, topicBreakdown) {
     const completed  = questionRecords.filter(q => q.completed);
 
@@ -126,10 +195,7 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
             : 0;
     });
 
-    // ── NEW: Calculate overall accuracy from topic breakdown ────────
-    // This is the student's actual quiz score (e.g., 23/25 = 0.92)
-    // Sent to the ML model as the 5th feature so it can see how
-    // the student actually performed, not just behavioral signals.
+    // Overall accuracy from topic breakdown
     let totalCorrect = 0;
     let totalQuestions = 0;
     Object.values(topicBreakdown).forEach(data => {
@@ -147,7 +213,7 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
         difficulty:         difficultyEnc,
         current_difficulty: currentDifficulty,
         topic_scores:       topicScores,
-        accuracy:           accuracy    // NEW — overall quiz score for ML model
+        accuracy:           accuracy
     };
 }
 
@@ -175,12 +241,10 @@ async function getMLRecommendation(sessionMetrics) {
 }
 
 // ── Fallback if ML API is unreachable ──────────────────────────────────
-// CHANGED: Updated fallback to also use accuracy for better rule-based decisions
 function getFallbackRecommendation(metrics) {
     const difficultyLevels = ["beginner", "intermediate", "advanced"];
     const currIdx = difficultyLevels.indexOf(metrics.current_difficulty);
 
-    // Use accuracy directly if available, otherwise calculate from topic_scores
     const acc = metrics.accuracy !== undefined
         ? metrics.accuracy
         : Object.values(metrics.topic_scores).reduce((a, b) => a + b, 0)
@@ -212,7 +276,6 @@ function getFallbackRecommendation(metrics) {
 }
 
 // ── Build ML recommendation card HTML ──────────────────────────────────
-// CHANGED: Added accuracy display in the session analytics grid
 function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const actionColors = {
         promote:  { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
@@ -227,7 +290,6 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const weakestTopic = Object.entries(topicScores)
         .sort((a, b) => a[1] - b[1])[0];
 
-    // Check if next_topic is "all_mastered"
     const nextTopicDisplay = mlResult.next_topic === 'all_mastered'
         ? 'All topics mastered!'
         : `${mlResult.next_topic || weakestTopic[0]}`;
@@ -341,7 +403,7 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                 and ${Math.round(sessionMetrics.engagement_score * 100)}% engagement score.
             </div>
 
-            <!-- Session analytics — CHANGED: 5 metrics now including accuracy -->
+            <!-- Session analytics -->
             <div style="
                 display:grid;
                 grid-template-columns:1fr 1fr 1fr 1fr 1fr;
@@ -394,9 +456,17 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
  * Initialize the quiz UI within a given root element.
  */
 export function setupQuizUI(root = document) {
+    // ── Build a FRESH shuffled quiz for this session ────────────────────
+    // Every call to setupQuizUI() (page load, Retry, new overlay) gets a
+    // brand new random shuffle — both question order and option order.
+    // This is stored in `state.quizBank` and used everywhere below
+    // INSTEAD of the raw QUIZ_BANK import, so two students starting the
+    // quiz at the same moment see different question sequences and
+    // different option letters for the same underlying question.
     const state = {
+        quizBank:        buildShuffledQuizBank(),
         current:         0,
-        selectedAnswers: Array(QUIZ_BANK.length).fill(null),
+        selectedAnswers: [],
         submitted:       false,
 
         // per-question tracking
@@ -404,6 +474,7 @@ export function setupQuizUI(root = document) {
         currentAttempts:   1,
         questionRecords:   [],
     };
+    state.selectedAnswers = Array(state.quizBank.length).fill(null);
 
     const quizBox    = (root === document) ? document.getElementById("quiz-box")          : root.querySelector(".quiz-box");
     const counter    = (root === document) ? document.getElementById("quiz-counter")       : root.querySelector(".quiz-counter");
@@ -416,13 +487,13 @@ export function setupQuizUI(root = document) {
 
     function getScore() {
         return state.selectedAnswers.reduce((acc, ans, i) => {
-            return acc + (ans === QUIZ_BANK[i].correctIndex ? 1 : 0);
+            return acc + (ans === state.quizBank[i].correctIndex ? 1 : 0);
         }, 0);
     }
 
     function getTopicBreakdown() {
         const breakdown = {};
-        QUIZ_BANK.forEach((q, idx) => {
+        state.quizBank.forEach((q, idx) => {
             if (!breakdown[q.topic]) {
                 breakdown[q.topic] = { correct: 0, total: 0 };
             }
@@ -436,7 +507,7 @@ export function setupQuizUI(root = document) {
 
     // Record question data when student moves to next question
     function recordQuestionData(questionIndex) {
-        const q          = QUIZ_BANK[questionIndex];
+        const q          = state.quizBank[questionIndex];
         const timeTaken  = (Date.now() - state.questionStartTime) / 1000;
         const answered   = state.selectedAnswers[questionIndex] !== null;
         const correct    = state.selectedAnswers[questionIndex] === q.correctIndex;
@@ -455,13 +526,10 @@ export function setupQuizUI(root = document) {
     }
 
     function renderQuestion() {
-        const q         = QUIZ_BANK[state.current];
+        const q         = state.quizBank[state.current];
         const selected  = state.selectedAnswers[state.current];
         const hasTemplate = Boolean(q.codeTemplate);
 
-        // Fill-in-the-blank questions render their codeTemplate directly as
-        // the code block (with the blank highlighted); other questions fall
-        // back to the older intro/code auto-split for plain-text MCQs.
         const { intro, code } = hasTemplate
             ? { intro: q.question, code: null }
             : parseQuestion(q.question);
@@ -474,8 +542,8 @@ export function setupQuizUI(root = document) {
         state.questionStartTime = Date.now();
         state.currentAttempts   = 1;
 
-        counter.textContent       = `Question ${state.current + 1} of ${QUIZ_BANK.length}`;
-        progressBar.style.width   = `${((state.current + 1) / QUIZ_BANK.length) * 100}%`;
+        counter.textContent       = `Question ${state.current + 1} of ${state.quizBank.length}`;
+        progressBar.style.width   = `${((state.current + 1) / state.quizBank.length) * 100}%`;
         miniScore.textContent     = `Score: ${getScore()}`;
 
         quizBox.innerHTML = `
@@ -527,8 +595,7 @@ export function setupQuizUI(root = document) {
                 renderQuestion();
 
                 // Component 2 telemetry — build the full Java snippet from the
-                // student's choice and send it in the background. Never awaited,
-                // never blocks the quiz UI.
+                // student's choice and send it in the background.
                 if (q.codeTemplate) {
                     const fullCodeString = buildFullCodeFromTemplate(q, optionIndex);
                     sendTelemetry(fullCodeString);
@@ -538,7 +605,7 @@ export function setupQuizUI(root = document) {
 
         prevBtn.disabled = state.current === 0;
 
-        if (state.current === QUIZ_BANK.length - 1) {
+        if (state.current === state.quizBank.length - 1) {
             nextBtn.textContent = state.submitted ? "Review Again" : "Submit Quiz";
         } else {
             nextBtn.textContent = "Next";
@@ -550,7 +617,7 @@ export function setupQuizUI(root = document) {
         // Record current question before moving
         recordQuestionData(state.current);
 
-        if (state.current < QUIZ_BANK.length - 1) {
+        if (state.current < state.quizBank.length - 1) {
             state.current += 1;
             renderQuestion();
             return;
@@ -559,10 +626,9 @@ export function setupQuizUI(root = document) {
         if (!state.submitted) {
             state.submitted  = true;
             const score      = getScore();
-            const percent    = Math.round((score / QUIZ_BANK.length) * 100);
+            const percent    = Math.round((score / state.quizBank.length) * 100);
             const topicBreakdown = getTopicBreakdown();
 
-            // Calculate session metrics (now includes accuracy)
             const sessionMetrics = calculateSessionMetrics(
                 state.questionRecords,
                 topicBreakdown
@@ -570,18 +636,16 @@ export function setupQuizUI(root = document) {
 
             console.log("Session metrics:", sessionMetrics);
 
-            // Show result card with loading spinner for ML
             quizBox.innerHTML = `
                 <article class="lp-result-card">
                     <h4>Your Quiz Result</h4>
-                    <p class="lp-result-score">${score} / ${QUIZ_BANK.length} (${percent}%)</p>
+                    <p class="lp-result-score">${score} / ${state.quizBank.length} (${percent}%)</p>
                     <p class="lp-muted-sm">
                         ${percent >= 80 ? "Excellent work! You are mastering the concepts." :
                           percent >= 60 ? "Good progress. Review a few topics and try again." :
                           "Keep going. Repetition builds confidence."}
                     </p>
 
-                    <!-- ML loading spinner -->
                     <div id="ml-loading" style="
                         margin-top:1.5rem;
                         padding:1rem;
@@ -610,16 +674,14 @@ export function setupQuizUI(root = document) {
 
             miniScore.textContent     = `Score: ${score}`;
             progressBar.style.width   = "100%";
-            counter.textContent       = `Completed: ${QUIZ_BANK.length} questions`;
+            counter.textContent       = `Completed: ${state.quizBank.length} questions`;
             prevBtn.disabled          = true;
             nextBtn.textContent       = "Review Again";
 
-            // Call ML API
             let mlResult = null;
             if (sessionMetrics) {
                 mlResult = await getMLRecommendation(sessionMetrics);
 
-                // Replace loading spinner with ML recommendation card
                 const mlLoading = quizBox.querySelector("#ml-loading");
                 if (mlLoading && mlResult) {
                     mlLoading.outerHTML = buildMLRecommendationCard(
@@ -627,7 +689,6 @@ export function setupQuizUI(root = document) {
                         sessionMetrics
                     );
 
-                    // Start next session button
                     const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
                     if (nextSessionBtn) {
                         nextSessionBtn.addEventListener("click", () => {
@@ -638,7 +699,6 @@ export function setupQuizUI(root = document) {
                 }
             }
 
-            // Save full results including ML output
             sessionStorage.setItem("quiz-results", JSON.stringify({
                 score,
                 percent,
@@ -648,19 +708,19 @@ export function setupQuizUI(root = document) {
                 mlResult
             }));
 
-            // Retry button
+            // ── Retry button — builds a NEW shuffle for the retry ─────────
             const retryBtn = quizBox.querySelector("#retry-quiz-btn");
             if (retryBtn) {
                 retryBtn.addEventListener("click", () => {
+                    state.quizBank         = buildShuffledQuizBank();
                     state.current          = 0;
-                    state.selectedAnswers  = Array(QUIZ_BANK.length).fill(null);
+                    state.selectedAnswers  = Array(state.quizBank.length).fill(null);
                     state.submitted        = false;
                     state.questionRecords  = [];
                     renderQuestion();
                 });
             }
 
-            // View details button
             const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
             if (viewDetailsBtn) {
                 viewDetailsBtn.addEventListener("click", () => {
@@ -668,7 +728,6 @@ export function setupQuizUI(root = document) {
                 });
             }
 
-            // Finish button
             const finishBtn = quizBox.querySelector("#finish-quiz-btn");
             if (finishBtn) {
                 finishBtn.addEventListener("click", () => {
