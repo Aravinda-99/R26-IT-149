@@ -26,7 +26,9 @@ const FILL_MAXH = CHAM_H - 6;        // 150
 
 /* ── HUD & Monitor ───────────────────────────────────────────────────────── */
 const HUD_H = 55;
-const MON_W = 390, MON_H = 40, MON_X = (W - MON_W) / 2, MON_Y = 8;
+const MON_W = 340, MON_H = 40;
+const MON_X = (W - MON_W) / 2 + 50; // Shift right by 50px
+const MON_Y = 8;
 
 /* ── Variable panel (right of core) ─────────────────────────────────────── */
 const VP_X = 448, VP_Y = 214, VP_W = 150, VP_H = 110;
@@ -155,6 +157,17 @@ export class Level19Scene extends Phaser.Scene {
   preload() {}
 
   create() {
+    console.log('CREATE START'); // TEMP DIAGNOSTIC
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
     this._levelStartTime = Date.now();
 
@@ -183,7 +196,7 @@ export class Level19Scene extends Phaser.Scene {
 
   /* ── Background ─────────────────────────────────────────────────────── */
   _createBg() {
-    this.add.rectangle(W/2, H/2, W, H, 0x07090d);
+    this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x07090d);
   }
 
   _createFloor() {
@@ -191,13 +204,13 @@ export class Level19Scene extends Phaser.Scene {
     for (let i = 0; i < 9; i++) {
       const y = FLOOR_Y + i * 18;
       g.fillStyle(i % 2 === 0 ? 0x12161c : 0x0e1218);
-      g.fillRect(0, y, W, 18);
+      g.fillRect(-W * 2, y, W * 5, 18);
       g.lineStyle(1, 0x1a2a3a, 0.3);
-      g.lineBetween(0, y, W, y);
+      g.lineBetween(-W * 2, y, W * 3, y);
     }
-    // Grid lines on floor
+    // Grid lines on floor (Stretched)
     g.lineStyle(1, 0x1a2a3a, 0.1);
-    for (let x = 0; x < W; x += 48) g.lineBetween(x, FLOOR_Y, x, H);
+    for (let x = -W * 2; x < W * 3; x += 48) g.lineBetween(x, FLOOR_Y, x, H);
   }
 
   _createPipes() {
@@ -205,14 +218,14 @@ export class Level19Scene extends Phaser.Scene {
     const pipeYs = [64, 76, 88];
     pipeYs.forEach((py, i) => {
       const h = [10, 8, 10][i];
-      g.fillStyle(0x1a2a3a); g.fillRoundedRect(0, py, W, h, 4);
-      g.lineStyle(1, 0x0f1520); g.strokeRoundedRect(0, py, W, h, 4);
+      g.fillStyle(0x1a2a3a); g.fillRoundedRect(-W * 2, py, W * 5, h, 4);
+      g.lineStyle(1, 0x0f1520); g.strokeRoundedRect(-W * 2, py, W * 5, h, 4);
     });
-    // Energy glow pipe (second)
+    // Energy glow pipe (second) — stretched to match the pipe underneath it
     const glowPipe = this.add.graphics();
-    glowPipe.fillStyle(0xff8f00, 0.04); glowPipe.fillRoundedRect(2, 77, W-4, 5, 2);
+    glowPipe.fillStyle(0xff8f00, 0.04); glowPipe.fillRoundedRect(-W * 2, 77, W * 5 - 4, 5, 2);
     this.tweens.add({ targets: glowPipe, alpha: 0.12, duration: 3000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
-    // Vertical connectors
+    // Vertical connectors — fixed structural joints, left at their original X
     g.fillStyle(0x1a2a3a);
     [215, 600].forEach(vx => g.fillRect(vx, 76, 5, 38));
   }
@@ -234,7 +247,7 @@ export class Level19Scene extends Phaser.Scene {
     this._dust = [];
     for (let i = 0; i < 20; i++) {
       const c = this.add.circle(
-        Phaser.Math.Between(0, W), Phaser.Math.Between(0, H), 1, 0x4fc3f7
+        Phaser.Math.Between(-W * 2, W * 3), Phaser.Math.Between(0, H), 1, 0x4fc3f7
       ).setAlpha(Phaser.Math.FloatBetween(0.04, 0.08));
       c._idx = i;
       this._dust.push(c);
@@ -245,7 +258,7 @@ export class Level19Scene extends Phaser.Scene {
     this._dust.forEach(d => {
       d.y += 0.1;
       d.x += Math.sin(time * 0.001 + d._idx) * 0.05;
-      if (d.y > H + 4) { d.y = -4; d.x = Phaser.Math.Between(0, W); }
+      if (d.y > H + 4) { d.y = -4; d.x = Phaser.Math.Between(-W * 2, W * 3); }
     });
   }
 
@@ -270,13 +283,13 @@ export class Level19Scene extends Phaser.Scene {
 
     // Fill glow behind (slightly wider, same color, low alpha)
     this._fillGlow = this.add.rectangle(
-      CHAM_L + CHAM_W/2, FILL_BOTY, FILL_W + 4, 0, 0xf44336, 0.08
-    ).setOrigin(0.5, 1).setDepth(1);
+      CHAM_L + CHAM_W/2, FILL_BOTY, FILL_W + 4, FILL_MAXH, 0xf44336, 0.08
+    ).setOrigin(0.5, 1).setDepth(1).setScale(1, 0);
 
     // Energy fill bar
     this._fillBar = this.add.rectangle(
-      CHAM_L + CHAM_W/2, FILL_BOTY, FILL_W, 0, 0xf44336
-    ).setOrigin(0.5, 1).setDepth(2);
+      CHAM_L + CHAM_W/2, FILL_BOTY, FILL_W, FILL_MAXH, 0xf44336
+    ).setOrigin(0.5, 1).setDepth(2).setScale(1, 0);
 
     // Wave line on fill top
     this._waveG = this.add.graphics().setDepth(3);
@@ -329,8 +342,8 @@ export class Level19Scene extends Phaser.Scene {
 
   _updateWave(time) {
     if (!this._fillBar || !this._fillBar.active) return;
-    if (this._fillBar.height <= 0) { this._waveG.clear(); return; }
-    const fillY = FILL_BOTY - this._fillBar.height;
+    if (this._fillBar.scaleY <= 0) { this._waveG.clear(); return; }
+    const fillY = FILL_BOTY - (FILL_MAXH * this._fillBar.scaleY);
     const fillX = CHAM_L + 3;
     const colHex = this._fillBar.fillColor;
     this._waveG.clear();
@@ -352,7 +365,7 @@ export class Level19Scene extends Phaser.Scene {
 
   async _updateFill(targetPct, duration) {
     const clampedPct = Math.max(0, Math.min(200, targetPct));
-    const targetH = Math.min((clampedPct / 100) * FILL_MAXH, FILL_MAXH);
+    const targetScale = Math.min(clampedPct / 100, 1);
     const color = this._fillColor(Math.min(clampedPct, 100));
 
     if (this._fillBar && this._fillBar.active) {
@@ -361,7 +374,7 @@ export class Level19Scene extends Phaser.Scene {
       return new Promise(r => {
         this.tweens.add({
           targets: [this._fillBar, this._fillGlow],
-          height: targetH,
+          scaleY: targetScale,
           duration: duration || 400,
           ease: 'Cubic.easeOut',
           onComplete: () => r()
@@ -481,8 +494,8 @@ export class Level19Scene extends Phaser.Scene {
   /* ── HUD ─────────────────────────────────────────────────────────────── */
   _createHUD() {
     const g = this.add.graphics().setDepth(30);
-    g.fillStyle(0x0a0e13, 0.92); g.fillRect(0, 0, W, HUD_H);
-    g.lineStyle(1, 0x1a2a3a); g.lineBetween(0, HUD_H, W, HUD_H);
+    g.fillStyle(0x0a0e13, 0.92); g.fillRect(-W * 2, 0, W * 5, HUD_H);
+    g.lineStyle(1, 0x1a2a3a); g.lineBetween(-W * 2, HUD_H, W * 3, HUD_H);
 
     this.add.text(14, 10, 'POWER CORE CHARGER', { fontFamily:'Arial', fontSize:'13px', color:'#b0bec5', fontStyle:'bold' }).setDepth(31);
     this.add.text(14, 28, 'Accretion Phase — While Loops', { fontFamily:'Arial', fontSize:'10px', color:'#546e7a' }).setDepth(31);
@@ -527,38 +540,37 @@ export class Level19Scene extends Phaser.Scene {
 
   /* ── Loop Monitor (in HUD) ───────────────────────────────────────────── */
   _createMonitor() {
+    const monW = 320, monH = 40;
+    const monX = 260, monY = 8;
     const g = this.add.graphics().setDepth(31);
-    g.fillStyle(0x1a1a2e); g.fillRoundedRect(MON_X, MON_Y, MON_W, MON_H, 8);
-    g.lineStyle(1, 0x2a2a4a); g.strokeRoundedRect(MON_X, MON_Y, MON_W, MON_H, 8);
+    g.fillStyle(0x1a1a2e); g.fillRoundedRect(monX, monY, monW, monH, 8);
+    g.lineStyle(1, 0x2a2a4a); g.strokeRoundedRect(monX, monY, monW, monH, 8);
 
-    // Static tokens: while, (, ), {, space }, }
-    const cy = MON_Y + MON_H / 2;
-    let tx = MON_X + 10;
+    const cy = monY + monH / 2;
+    let tx = monX + 10;
     const mk = (text, color, bold) => {
-      const t = this.add.text(tx, cy, text, {
-        fontFamily:'Courier New', fontSize:'13px', color, fontStyle: bold ? 'bold' : 'normal'
-      }).setOrigin(0, 0.5).setDepth(32);
-      tx += t.width + 1;
-      return t;
+      const t = this.add.text(tx, cy, text, { fontFamily:'Courier New', fontSize:'13px', color, fontStyle: bold ? 'bold' : 'normal' }).setOrigin(0, 0.5).setDepth(32);
+      tx += t.width + 1; return t;
     };
     this._monWhile = mk('while', C.kw, true);
     mk(' (', C.punct, false);
-    // Condition placeholder area
+
     this._monCondX = tx;
-    this._monCondPh = this._makePlaceholder(tx, cy, 100);
+    this._monCondPh = this._makePlaceholder(tx, cy, 76);
     this._monCondTxt = this.add.text(tx, cy, '', { fontFamily:'Courier New', fontSize:'13px', color: C.cond }).setOrigin(0, 0.5).setDepth(32).setVisible(false);
-    tx += 106;
+    tx += 80;
+
     mk(') {', C.punct, false);
-    // Body placeholder area
+
     this._monBodyX = tx;
-    this._monBodyPh = this._makePlaceholder(tx, cy, 106);
+    this._monBodyPh = this._makePlaceholder(tx, cy, 76);
     this._monBodyTxt = this.add.text(tx, cy, '', { fontFamily:'Courier New', fontSize:'13px', color: C.body }).setOrigin(0, 0.5).setDepth(32).setVisible(false);
-    tx += 112;
+    tx += 80;
+
     mk(' }', C.punct, false);
 
-    // Flash overlay rects
-    this._condFlash = this.add.rectangle(this._monCondX + 50, cy, 104, 30, 0xffd740, 0.12).setDepth(31.5).setAlpha(0);
-    this._bodyFlash = this.add.rectangle(this._monBodyX + 53, cy, 112, 30, 0x00e5ff, 0.12).setDepth(31.5).setAlpha(0);
+    this._condFlash = this.add.rectangle(this._monCondX + 38, cy, 80, 30, 0xffd740, 0.12).setDepth(31.5).setAlpha(0);
+    this._bodyFlash = this.add.rectangle(this._monBodyX + 38, cy, 80, 30, 0x00e5ff, 0.12).setDepth(31.5).setAlpha(0);
   }
 
   _makePlaceholder(x, y, w) {
@@ -653,11 +665,14 @@ export class Level19Scene extends Phaser.Scene {
   _showBit(msg) {
     return new Promise(resolve => {
       this.tweens.add({ targets: this._bitCont, x: BIT_SHOW_X, duration: 300, ease:'Back.easeOut' });
-      // Destroy previous bubble
-      if (this._bubbleG && this._bubbleG.active) this._bubbleG.destroy();
-      if (this._bubbleTxt && this._bubbleTxt.active) this._bubbleTxt.destroy();
+
+      if (this._bubbleCont && this._bubbleCont.active) this._bubbleCont.destroy();
       if (this._bubbleZone && this._bubbleZone.active) this._bubbleZone.destroy();
       if (this._bubbleTimer) { this._bubbleTimer.remove(); this._bubbleTimer = null; }
+      // Stop any typewriter still ticking from a bubble we just destroyed above —
+      // without this, its next tick calls txt.setText() on a destroyed Text object
+      // (the exact crash the prior diagnostic pass traced and fixed).
+      if (this._bubbleTypewriter) { this._bubbleTypewriter.remove(); this._bubbleTypewriter = null; }
 
       const bw = Math.min(230, msg.length * 7 + 24);
       const lineH = 18, chars = Math.ceil(bw / 7);
@@ -665,58 +680,63 @@ export class Level19Scene extends Phaser.Scene {
       const bh = lines * lineH + 20;
       const bx = BIT_SHOW_X - bw - 14, by = BIT_Y - bh - 10;
 
-      const bg = this.add.graphics().setDepth(60).setScale(0);
+      const cont = this.add.container(0, 0).setDepth(60).setAlpha(0);
+      this._bubbleCont = cont;
+
+      const bg = this.add.graphics();
       bg.fillStyle(0x1a1a2e, 0.97); bg.fillRoundedRect(bx, by, bw, bh, 10);
       bg.lineStyle(1.5, 0x00e5ff); bg.strokeRoundedRect(bx, by, bw, bh, 10);
-      // Pointer
       bg.fillStyle(0x1a1a2e); bg.fillTriangle(bx+bw-4, by+bh-12, bx+bw+10, by+bh-4, bx+bw-4, by+bh+2);
-      this._bubbleG = bg;
 
       const txt = this.add.text(bx+10, by+10, '', {
         fontFamily:'Arial', fontSize:'12px', color:'#e0e0e0', wordWrap:{width:bw-20}
-      }).setDepth(61);
-      this._bubbleTxt = txt;
+      });
 
-      this.tweens.add({ targets: bg, scaleX:1, scaleY:1, duration:200, ease:'Back.easeOut' });
+      cont.add([bg, txt]);
+      this.tweens.add({ targets: cont, alpha: 1, duration: 200 });
 
       let idx = 0;
       const tw = this.time.addEvent({
-        delay:25, repeat:msg.length-1,
-        callback: () => { txt.setText(msg.substring(0, ++idx)); }
+        delay: 20, repeat: msg.length - 1,
+        callback: () => { if (!txt.active) return; txt.setText(msg.substring(0, ++idx)); }
       });
+      this._bubbleTypewriter = tw;
 
       const dismiss = () => {
         tw.remove();
-        if (bg.active) bg.destroy();
-        if (txt.active) txt.destroy();
+        this._bubbleTypewriter = null;
+        if (cont.active) cont.destroy();
         if (zone.active) zone.destroy();
         resolve();
       };
-      this._bubbleTimer = this.time.delayedCall(msg.length * 25 + 3200, dismiss);
+
+      this._bubbleTimer = this.time.delayedCall(msg.length * 20 + 2500, dismiss);
+
       const zone = this.add.zone(bx, by, bw+20, bh+20).setOrigin(0).setInteractive().setDepth(62);
       this._bubbleZone = zone;
-      zone.on('pointerdown', () => { if (this._bubbleTimer) { this._bubbleTimer.remove(); this._bubbleTimer = null; } dismiss(); });
+      zone.on('pointerdown', () => {
+        if (this._bubbleTimer) { this._bubbleTimer.remove(); this._bubbleTimer = null; }
+        dismiss();
+      });
     });
   }
 
   _hideBit() {
     this.tweens.add({ targets: this._bitCont, x: BIT_HIDE_X, duration: 250, ease:'Quad.easeIn' });
-    [this._bubbleG, this._bubbleTxt, this._bubbleZone].forEach(el => { if (el && el.active) el.destroy(); });
+    if (this._bubbleCont && this._bubbleCont.active) this._bubbleCont.destroy();
+    if (this._bubbleZone && this._bubbleZone.active) this._bubbleZone.destroy();
     if (this._bubbleTimer) { this._bubbleTimer.remove(); this._bubbleTimer = null; }
+    if (this._bubbleTypewriter) { this._bubbleTypewriter.remove(); this._bubbleTypewriter = null; }
   }
 
   /* ── Tutorial ────────────────────────────────────────────────────────── */
   _checkTutorial() {
-    let done = false;
-    try { done = localStorage.getItem('level19_tutorial_done') === 'true'; } catch(e) {}
-    if (done) {
-      this._startRound(0);
-    } else {
-      this._runTutorial().catch(e => this._startRound(0));
-    }
+    // Force bypass the tutorial to prevent hanging and jump straight to gameplay
+    this._startRound(0);
   }
 
   async _runTutorial() {
+    console.log('TUTORIAL START'); // TEMP DIAGNOSTIC
     // Fade in
     const ov = this.add.rectangle(W/2, H/2, W, H, 0x000000, 1).setDepth(100);
     this.tweens.add({ targets: ov, alpha: 0, duration: 800 });
@@ -728,12 +748,16 @@ export class Level19Scene extends Phaser.Scene {
     this._setMonitorBody(null);
 
     // Step 1
+    console.log('STEP 1 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("Welcome, Technician! These Power Cores need charging. We use while loops to keep charging UNTIL they're full!");
+    console.log('STEP 1 AFTER'); // TEMP DIAGNOSTIC
 
     // Step 2 — while keyword
     this._monWhile.setScale(0);
     this.tweens.add({ targets: this._monWhile, scaleX:1, scaleY:1, duration:200, ease:'Back.easeOut' });
+    console.log('STEP 2 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("A while loop starts with 'while'. It means: KEEP DOING something as long as a condition is true.");
+    console.log('STEP 2 AFTER'); // TEMP DIAGNOSTIC
 
     // Step 3 — condition
     this._setMonitorCond('charge < 100');
@@ -741,27 +765,36 @@ export class Level19Scene extends Phaser.Scene {
     this._updateCondCheck('0 < 100', true);
     this._condCheckTxt.setVisible(true);
     this._condCheckResult.setVisible(true);
+    console.log('STEP 3 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("This is the CONDITION — checked FIRST, before every cycle. Is charge less than 100? If YES → run the body. If NO → STOP!");
+    console.log('STEP 3 AFTER'); // TEMP DIAGNOSTIC
 
     // Step 4 — body
     this._setMonitorBody('charge += 15;');
     this._floatNum(15, true);
+    console.log('STEP 4 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("This is the BODY — the action that repeats. Each cycle adds 15 to charge. Something in the body MUST eventually make the condition false, or the loop runs FOREVER!");
+    console.log('STEP 4 AFTER'); // TEMP DIAGNOSTIC
 
     // Step 5 — auto-run
+    console.log('STEP 5 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("Unlike for loops, while loops have NO built-in counter. You don't know exactly how many times it runs — just keep going until the condition fails. Watch!");
+    console.log('STEP 5 AFTER'); // TEMP DIAGNOSTIC
 
     // Auto-run 7 iterations (charge 0→105 by +15)
     await this._tutorialAutoRun();
 
     // Step 6
+    console.log('STEP 6 BEFORE'); // TEMP DIAGNOSTIC
     await this._showBit("See? We didn't know it would take 7 cycles. The while loop figured it out! YOUR turn, Technician!");
+    console.log('STEP 6 AFTER'); // TEMP DIAGNOSTIC
     this._hideBit();
     this._condCheckTxt.setVisible(false);
     this._condCheckResult.setVisible(false);
     try { localStorage.setItem('level19_tutorial_done', 'true'); } catch(e) {}
     await this._delay(300);
     this._startRound(0);
+    console.log('TUTORIAL END'); // TEMP DIAGNOSTIC
   }
 
   async _tutorialAutoRun() {
@@ -931,7 +964,7 @@ export class Level19Scene extends Phaser.Scene {
   }
 
   _showBubbles(blankKey, options, callback) {
-    const label = this.add.text(W/2, FLOOR_Y + 5, '▼ SELECT: ' + blankKey.replace(/_/g,' ').toUpperCase(), {
+    const label = this.add.text(W/2, FLOOR_Y, '▼ SELECT: ' + blankKey.replace(/_/g,' ').toUpperCase(), {
       fontFamily:'Arial', fontSize:'9px', color:'#546e7a'
     }).setOrigin(0.5).setDepth(20);
     this._re(label);
@@ -943,7 +976,7 @@ export class Level19Scene extends Phaser.Scene {
       const txt = String(opt);
       const bw = txt.length * 8.5 + 32;
       const bh = 36;
-      const bx = ox + bw/2, by = FLOOR_Y + 28;
+      const bx = ox + bw/2, by = FLOOR_Y + 45;
       ox += bw + 10;
 
       const container = this._re(this.add.container(bx, H + 20).setDepth(21));
@@ -1001,11 +1034,18 @@ export class Level19Scene extends Phaser.Scene {
     }).setOrigin(1, 0);
     card.add([bg, rnd, msg, sc]);
     card.x = cw/2;
-    this.tweens.add({ targets: card, x: W/2, duration: 400, ease:'Back.easeOut' });
+    this.tweens.add({
+      targets: card, x: W/2, duration: 400, ease:'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(4000, () => {
+          if (card.active) this.tweens.add({ targets: card, y: H + 100, duration: 300, ease:'Back.easeIn' });
+        });
+      }
+    });
   }
 
   _showChargeBtn() {
-    const bx = CHARGE_BTN_X, by = 555;
+    const bx = W / 2, by = 555;
     // Glow
     this._chargeBtnGlow = this._re(this.add.graphics().setDepth(22));
     this._chargeBtnGlow.fillStyle(0x00e676, 0.1);
@@ -1417,7 +1457,7 @@ export class Level19Scene extends Phaser.Scene {
     this._ledDots.forEach(d => { if (d.active) d.setFillStyle(0x1a1a2a).setStrokeStyle(1, 0x2a2a3a); });
     this._ledGlows.forEach(g => { if (g.active) g.setVisible(false); });
 
-    const ov = this.add.rectangle(W/2, H/2, W, H, 0x000000, 0).setDepth(80);
+    const ov = this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x000000, 0).setDepth(80);
     this.tweens.add({ targets: ov, alpha: 0.87, duration: 500 });
 
     this.time.delayedCall(600, () => {
@@ -1469,7 +1509,7 @@ export class Level19Scene extends Phaser.Scene {
     const grandTotal = this.totalScore + livesBonus + comboBonus;
 
     this.time.delayedCall(2200, () => {
-      const ov = this.add.rectangle(W/2, H/2, W, H, 0x000814, 0).setDepth(90);
+      const ov = this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x000814, 0).setDepth(90);
       this.tweens.add({ targets:ov, alpha:0.87, duration:500 });
 
       this.time.delayedCall(550, () => {

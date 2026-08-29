@@ -61,6 +61,16 @@ export class Level13Scene extends Phaser.Scene {
   constructor() { super({ key: "Level13Scene" }); }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
     this.chapterIdx = 0;
     this.spellIdx = 0;
@@ -90,11 +100,13 @@ export class Level13Scene extends Phaser.Scene {
     for (let i = 0; i < 60; i++) {
       const t = i / 60;
       gfx.fillStyle(lerpColor(0x1a0533, 0x0f172a, t), 1);
-      gfx.fillRect(0, Math.floor(H * i / 60), W, Math.ceil(H / 60) + 1);
+      // Stretched width: start at -W*2, span W*5 (Y span untouched — it
+      // already correctly tiles 0..H)
+      gfx.fillRect(-W * 2, Math.floor(H * i / 60), W * 5, Math.ceil(H / 60) + 1);
     }
-    // Stars
+    // Stars (Stretched)
     for (let i = 0; i < 80; i++) {
-      const s = this.add.circle(Phaser.Math.Between(0, W), Phaser.Math.Between(0, H),
+      const s = this.add.circle(Phaser.Math.Between(-W * 2, W * 3), Phaser.Math.Between(0, H),
         Phaser.Math.FloatBetween(0.5, 2), 0xffffff, Phaser.Math.FloatBetween(0.2, 0.8)).setDepth(1);
       this.tweens.add({ targets: s, alpha: { from: s.alpha, to: 0.1 }, duration: Phaser.Math.Between(1500, 4000), yoyo: true, repeat: -1 });
     }
@@ -121,13 +133,13 @@ export class Level13Scene extends Phaser.Scene {
 
   // ─── INTRO ───
   _showIntro() {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0533, 0.98); pg.fillRoundedRect(W / 2 - 300, 60, 600, 460, 16);
     pg.lineStyle(3, 0x7c3aed); pg.strokeRoundedRect(W / 2 - 300, 60, 600, 460, 16);
     const t1 = this.add.text(W / 2, 100, "🎓 MATH MAGIC ACADEMY", { fontFamily: "Arial", fontSize: "26px", color: "#a78bfa", fontStyle: "bold" }).setOrigin(0.5).setDepth(202);
     const t2 = this.add.text(W / 2, 140, "Learn Operator Spells!", { fontFamily: "Arial", fontSize: "16px", color: "#c4b5fd" }).setOrigin(0.5).setDepth(202);
-    const t3 = this.add.text(W / 2, 230,
+    const t3 = this.add.text(W / 2, 260,
       "Welcome, young wizard! Every operator is a magical spell.\n\n" +
       "✨ Arithmetic: +, -, *, /, %\n" +
       "🔍 Comparison: ==, !=, >, <\n" +
@@ -148,7 +160,7 @@ export class Level13Scene extends Phaser.Scene {
   _showChapterIntro() {
     this._clear();
     const ch = CHAPTERS[this.chapterIdx];
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.7).setDepth(200);
     const bg = this.add.graphics().setDepth(201);
     bg.fillStyle(0x1e1b4b, 0.95); bg.fillRoundedRect(W / 2 - 250, H / 2 - 100, 500, 200, 16);
     bg.lineStyle(3, ch.color); bg.strokeRoundedRect(W / 2 - 250, H / 2 - 100, 500, 200, 16);
@@ -192,16 +204,19 @@ export class Level13Scene extends Phaser.Scene {
     const gap = Math.min(140, 560 / shuffled.length);
     const startX = W / 2 - ((shuffled.length - 1) * gap) / 2;
 
+    // Buttons shifted down 65px (from y:360 to y:425) so they clear the
+    // purple spell circle's bottom edge (centered at y:260, radius 120 →
+    // bottom edge at y:380) instead of overlapping it.
     shuffled.forEach((opt, i) => {
       const bx = startX + i * gap;
       const bg = this.add.graphics().setDepth(20);
-      bg.fillStyle(0x1e293b, 1); bg.fillRoundedRect(bx - 55, 360, 110, 50, 10);
-      bg.lineStyle(2, 0x475569); bg.strokeRoundedRect(bx - 55, 360, 110, 50, 10);
-      const txt = this.add.text(bx, 385, String(opt), { fontFamily: "Courier New", fontSize: "18px", color: "#e2e8f0", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
-      const hit = this.add.rectangle(bx, 385, 110, 50).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(22);
+      bg.fillStyle(0x1e293b, 1); bg.fillRoundedRect(bx - 55, 425, 110, 50, 10);
+      bg.lineStyle(2, 0x475569); bg.strokeRoundedRect(bx - 55, 425, 110, 50, 10);
+      const txt = this.add.text(bx, 450, String(opt), { fontFamily: "Courier New", fontSize: "18px", color: "#e2e8f0", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
+      const hit = this.add.rectangle(bx, 450, 110, 50).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(22);
 
-      hit.on("pointerover", () => { bg.clear(); bg.fillStyle(ch.color, 0.3); bg.fillRoundedRect(bx - 55, 360, 110, 50, 10); bg.lineStyle(2, ch.color); bg.strokeRoundedRect(bx - 55, 360, 110, 50, 10); });
-      hit.on("pointerout", () => { bg.clear(); bg.fillStyle(0x1e293b, 1); bg.fillRoundedRect(bx - 55, 360, 110, 50, 10); bg.lineStyle(2, 0x475569); bg.strokeRoundedRect(bx - 55, 360, 110, 50, 10); });
+      hit.on("pointerover", () => { bg.clear(); bg.fillStyle(ch.color, 0.3); bg.fillRoundedRect(bx - 55, 425, 110, 50, 10); bg.lineStyle(2, ch.color); bg.strokeRoundedRect(bx - 55, 425, 110, 50, 10); });
+      hit.on("pointerout", () => { bg.clear(); bg.fillStyle(0x1e293b, 1); bg.fillRoundedRect(bx - 55, 425, 110, 50, 10); bg.lineStyle(2, 0x475569); bg.strokeRoundedRect(bx - 55, 425, 110, 50, 10); });
       hit.on("pointerup", () => this._checkAnswer(String(opt), sp, ch, bg, bx));
       this._addEl(bg, txt, hit);
     });
@@ -236,7 +251,7 @@ export class Level13Scene extends Phaser.Scene {
   }
 
   _showSpellFeedback(isCorrect, sp, ch) {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6).setDepth(300);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.6).setDepth(300);
     const pg = this.add.graphics().setDepth(301);
     const fc = isCorrect ? 0x10b981 : 0xef4444;
     pg.fillStyle(0x1e293b, 0.98); pg.fillRoundedRect(W / 2 - 260, 140, 520, 340, 16);
@@ -276,7 +291,7 @@ export class Level13Scene extends Phaser.Scene {
 
   _showGameOver() {
     this._clear();
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const t = this.add.text(W / 2, H / 2 - 30, "💀 Training Failed!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
     const s = this.add.text(W / 2, H / 2 + 10, `Score: ${this.score}  |  Spells: ${this.spellsDone}/${this.totalSpells}`, { fontFamily: "Arial", fontSize: "14px", color: "#94a3b8" }).setOrigin(0.5).setDepth(201);
     const rb = this.add.rectangle(W / 2 - 100, H / 2 + 60, 160, 44, 0x7c3aed).setDepth(201).setInteractive({ useHandCursor: true });
@@ -299,7 +314,7 @@ export class Level13Scene extends Phaser.Scene {
       this.cameras.main.flash(600, 100, 255, 100);
     }
 
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0533, 0.98); pg.fillRoundedRect(W / 2 - 280, 60, 560, 480, 16);
     pg.lineStyle(3, passed ? 0x4ade80 : 0xef4444); pg.strokeRoundedRect(W / 2 - 280, 60, 560, 480, 16);

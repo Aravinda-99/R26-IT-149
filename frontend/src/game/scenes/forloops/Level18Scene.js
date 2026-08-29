@@ -16,7 +16,7 @@ const VZ_X = 388, VZ_Y = 100, VZ_W = 400, VZ_H = 240; // visual zone
 const GUT_W = 30, TAB_H = 24;
 const CX = ED_X + GUT_W + 4;   // 40  code text start x
 const CY = ED_Y + TAB_H + 4;   // 80  code text start y
-const CLH = 16;                  // code line height
+const CLH = 18;                  // code line height
 const TRAY_X = 6, TRAY_Y = 348, TRAY_W = 788, TRAY_H = 158;
 const RUN_X = 105, RUN_Y = 514, RUN_W = 160, RUN_H = 34;
 
@@ -217,6 +217,16 @@ export class Level18Scene extends Phaser.Scene {
   preload() {}
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
     this._levelStartTime = Date.now();
 
@@ -239,13 +249,13 @@ export class Level18Scene extends Phaser.Scene {
     this._ambientParts.forEach(p => {
       p.y -= p.speed;
       p.x += p.dx;
-      if (p.y < 0) { p.y = 610; p.x = Phaser.Math.Between(10, W-10); }
+      if (p.y < 0) { p.y = 610; p.x = Phaser.Math.Between(-W * 2, W * 3); }
     });
   }
 
   /* ── Background ─────────────────────────────────────────────── */
   _createBackground() {
-    this.add.rectangle(W/2, H/2, W, H, 0x0b0f14);
+    this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x0b0f14);
     // Ambient strips
     const lL = this.add.rectangle(1, H/2, 3, H, 0x1565c0).setAlpha(0.08);
     const lR = this.add.rectangle(W-2, H/2, 3, H, 0x1565c0).setAlpha(0.08);
@@ -258,7 +268,7 @@ export class Level18Scene extends Phaser.Scene {
     // Ambient particles
     for (let i = 0; i < 28; i++) {
       const p = this.add.circle(
-        Phaser.Math.Between(10, W-10), Phaser.Math.Between(0, H), 1, 0x4fc3f7
+        Phaser.Math.Between(-W * 2, W * 3), Phaser.Math.Between(0, H), 1, 0x4fc3f7
       ).setAlpha(Phaser.Math.FloatBetween(0.04, 0.10));
       p.speed = Phaser.Math.FloatBetween(0.1, 0.25);
       p.dx = Phaser.Math.FloatBetween(-0.05, 0.05);
@@ -269,21 +279,21 @@ export class Level18Scene extends Phaser.Scene {
   /* ── HUD ─────────────────────────────────────────────────────── */
   _createHUD() {
     const bg = this.add.graphics();
-    bg.fillStyle(0x0a0e13, 0.96); bg.fillRect(0, 0, W, 50);
-    bg.lineStyle(1, 0x21262d, 1); bg.lineBetween(0, 50, W, 50);
+    bg.fillStyle(0x0a0e13, 0.96); bg.fillRect(-W * 2, 0, W * 5, 50);
+    bg.lineStyle(1, 0x21262d, 1); bg.lineBetween(-W * 2, 50, W * 5, 50);
     this.add.text(14, 10, 'LOOP ARCHITECT', { fontFamily:'Arial', fontSize:'13px', color:'#b0bec5', fontStyle:'bold' });
     this.add.text(14, 28, 'Restructuring Phase — For Loops', { fontFamily:'Arial', fontSize:'10px', color:'#546e7a' });
     // Progress dots
     const dots = [];
     for (let i = 0; i < 8; i++) {
-      const dx = 330 + i * 50, dy = 28;
+      const dx = 325 + i * 38, dy = 28;
       const dot = this.add.circle(dx, dy, 6, 0x1a1a2e).setStrokeStyle(1, 0x2a2a4a);
       dots.push(dot);
     }
     this._hudDots = dots;
     // Progress bar
     const pbG = this.add.graphics();
-    pbG.fillStyle(0x1a1a2e); pbG.fillRoundedRect(310, 16, 400, 6, 3);
+    pbG.fillStyle(0x1a1a2e); pbG.fillRoundedRect(310, 16, 280, 6, 3);
     this._hudBarFill = this.add.graphics();
     this._updateHUDProgress(0);
     // Score
@@ -296,7 +306,7 @@ export class Level18Scene extends Phaser.Scene {
     if (this._hudBarFill) {
       this._hudBarFill.clear();
       if (n > 0) {
-        this._hudBarFill.fillStyle(0x00e5ff); this._hudBarFill.fillRoundedRect(310, 16, (n/8)*400, 6, 3);
+        this._hudBarFill.fillStyle(0x00e5ff); this._hudBarFill.fillRoundedRect(310, 16, (n/8)*280, 6, 3);
       }
     }
     if (this._hudDots) {
@@ -413,45 +423,51 @@ export class Level18Scene extends Phaser.Scene {
     const cfg = PROJECTS[idx];
     this._briefEls = [];
 
-    const cw = 460, ch = 220, cx = W/2 - cw/2, cy = H;
-    const ov = this.add.graphics();
-    ov.fillStyle(0x000000, 0.65); ov.fillRect(0, 0, W, H);
+    const cw = 460, ch = 245, cx = W/2 - cw/2, cy = H;
+    const ov = this.add.graphics().setDepth(200);
+    ov.fillStyle(0x000000, 0.65); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     ov.setAlpha(0); this.tweens.add({ targets: ov, alpha: 1, duration: 250 });
     this._briefEls.push(ov);
 
-    const card = this.add.graphics();
+    const card = this.add.graphics().setDepth(201);
     card.fillStyle(0x0d1117); card.fillRoundedRect(cx, cy, cw, ch, 12);
     card.lineStyle(2, 0xffd740); card.strokeRoundedRect(cx, cy, cw, ch, 12);
     card.fillStyle(0xffd740); card.fillRect(cx, cy+16, 5, ch-32);
     this._briefEls.push(card);
 
-    const badge = this.add.circle(cx+30, cy+32, 16, 0xffd740);
+    const badge = this.add.circle(cx+30, cy+32, 16, 0xffd740).setDepth(202);
     const badgeTxt = this.add.text(cx+30, cy+32, String(idx+1), {
       fontFamily:'Arial', fontSize:'12px', color:'#0a0a1a', fontStyle:'bold'
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setDepth(203);
+
     const title = this.add.text(cx+55, cy+22, cfg.title, {
       fontFamily:'Arial', fontSize:'17px', color:'#ffffff', fontStyle:'bold', wordWrap:{ width: cw-70 }
-    });
+    }).setDepth(202);
+
     const desc = this.add.text(cx+16, cy+52, cfg.briefing, {
       fontFamily:'Arial', fontSize:'12px', color:'#b0bec5', wordWrap:{ width: cw-28 }
-    });
+    }).setDepth(202);
+
     // Output preview box
     const prevLines = cfg.expectedOutput.split('\n').slice(0, 5).join('\n') + (cfg.expectedOutput.split('\n').length > 5 ? '\n...' : '');
-    const prevBg = this.add.graphics();
-    prevBg.fillStyle(0x000000); prevBg.fillRoundedRect(cx+16, cy+115, cw-32, 58, 4);
+    const prevBg = this.add.graphics().setDepth(202);
+    prevBg.fillStyle(0x000000); prevBg.fillRoundedRect(cx+16, cy+115, cw-32, 80, 4);
     const prevLbl = this.add.text(cx+20, cy+117, '> expected output', {
       fontFamily:'Courier New', fontSize:'9px', color:'#546e7a'
-    });
+    }).setDepth(203);
+
     const prevTxt = this.add.text(cx+20, cy+129, prevLines, {
       fontFamily:'Courier New', fontSize:'10px', color:'#00e676', wordWrap:{ width: cw-40 }
-    });
+    }).setDepth(203);
+
     // Start button
-    const sbg = this.add.graphics();
-    sbg.fillStyle(0x00e5ff); sbg.fillRoundedRect(cx+cw/2-60, cy+184, 120, 28, 14);
-    const sTxt = this.add.text(cx+cw/2, cy+198, 'START ▶', {
+    const sbg = this.add.graphics().setDepth(202);
+    sbg.fillStyle(0x00e5ff); sbg.fillRoundedRect(cx+cw/2-60, cy+204, 120, 28, 14);
+    const sTxt = this.add.text(cx+cw/2, cy+218, 'START ▶', {
       fontFamily:'Arial', fontSize:'12px', color:'#0a0a1a', fontStyle:'bold'
-    }).setOrigin(0.5);
-    const sZone = this.add.zone(cx+cw/2-60, cy+184, 120, 28).setOrigin(0).setInteractive();
+    }).setOrigin(0.5).setDepth(203);
+
+    const sZone = this.add.zone(cx+cw/2-60, cy+204, 120, 28).setOrigin(0).setInteractive().setDepth(204);
 
     [card, badge, badgeTxt, title, desc, prevBg, prevLbl, prevTxt, sbg, sTxt, sZone].forEach(e => this._briefEls.push(e));
 
@@ -459,12 +475,12 @@ export class Level18Scene extends Phaser.Scene {
     const targets = [card, badge, badgeTxt, title, desc, prevBg, prevLbl, prevTxt, sbg, sTxt];
     const targetY = H/2 - ch/2;
     this.tweens.add({ targets, y: `-=${cy - targetY}`, duration: 380, ease: 'Back.easeOut' });
-    sZone.y = targetY + (cy - targetY) + 184 - cy;
+    sZone.y = targetY + (cy - targetY) + 204 - cy;
 
     // Reposition zone correctly after tween
     this.time.delayedCall(380, () => {
       const finalCardY = H/2 - ch/2;
-      sZone.y = finalCardY + 184; sZone.x = cx+cw/2-60;
+      sZone.y = finalCardY + 204; sZone.x = cx+cw/2-60;
     });
 
     sZone.on('pointerdown', () => {
@@ -475,6 +491,7 @@ export class Level18Scene extends Phaser.Scene {
 
   /* ── Load Project ───────────────────────────────────────────── */
   _loadProject(cfg) {
+    this._currentCfg = cfg;
     this._clearProject();
     this._placed = {};
     Object.keys(cfg.slots).forEach(k => { this._placed[k] = null; });
@@ -582,14 +599,14 @@ export class Level18Scene extends Phaser.Scene {
 
   _makeSlot(slotKey, indentStr, suffix, lineNum, cfg) {
     const sy = CY + lineNum * CLH;
-    const slotW = 170, slotH = CLH - 1;
+    const slotW = 210, slotH = CLH - 1;
     const slotX = CX + this._textWidth(indentStr);
 
     // Line number
     this._renderLineNum(lineNum + 1, ED_X + GUT_W - 4, sy);
 
     // Indent text
-    if (indentStr) this._ee(this.add.text(CX, sy, indentStr, { fontFamily:'Courier New', fontSize:'11px', color: TC.punct }));
+    if (indentStr) this._ee(this.add.text(CX, sy, indentStr, { fontFamily:'Courier New', fontSize:'13px', color: TC.punct }));
 
     // Slot background
     const slotBg = this.add.graphics();
@@ -604,35 +621,30 @@ export class Level18Scene extends Phaser.Scene {
     // Placeholder text
     const cat = cfg.slots[slotKey].label;
     const ph = this.add.text(slotX + slotW/2, sy + slotH/2 - 1, `[ ${cat} ]`, {
-      fontFamily:'Courier New', fontSize:'10px', color: '#' + (parseInt(CC[cat === 'body' ? 'body' : cat].replace('#',''), 16) & 0xffffff).toString(16).padStart(6,'0')
+      fontFamily:'Courier New', fontSize:'11px', color: '#' + (parseInt(CC[cat === 'body' ? 'body' : cat].replace('#',''), 16) & 0xffffff).toString(16).padStart(6,'0')
     }).setOrigin(0.5).setAlpha(0.35);
     this._ee(ph);
 
     // Filled text (hidden initially)
-    const ft = this.add.text(slotX + 4, sy, '', { fontFamily:'Courier New', fontSize:'11px', color: CC[cat] }).setVisible(false);
+    const ft = this.add.text(slotX + 4, sy, '', { fontFamily:'Courier New', fontSize:'13px', color: CC[cat] }).setVisible(false);
     this._ee(ft);
 
     // Suffix text
     if (suffix) {
-      const sfx = this.add.text(slotX + slotW + 2, sy, suffix, { fontFamily:'Courier New', fontSize:'11px', color: TC.punct });
+      const sfx = this.add.text(slotX + slotW + 2, sy, suffix, { fontFamily:'Courier New', fontSize:'13px', color: TC.punct });
       this._ee(sfx);
     }
 
-    // Interactive zone
-    const zone = this.add.zone(slotX, sy-1, slotW, slotH).setOrigin(0).setInteractive();
-    zone.on('pointerover', () => {
-      if (this._placed[slotKey]) return; // occupied: hover on filled slot
-      if (this._selectedBlock) {
-        const cat2 = cfg.slots[slotKey].label;
-        if (this._selectedBlock.category === cat2 || (this._selectedBlock.category === 'body' && cat2 === 'body')) {
-          slotBg.clear(); slotBg.fillStyle(0x002233, 1); slotBg.fillRoundedRect(slotX, sy-1, slotW, slotH, 3);
-        }
-      }
-    });
-    zone.on('pointerout', () => {
-      if (!this._placed[slotKey]) { slotBg.clear(); slotBg.fillStyle(0x1a2030, 0.8); slotBg.fillRoundedRect(slotX, sy-1, slotW, slotH, 3); }
-    });
-    zone.on('pointerdown', () => this._onSlotClick(slotKey, slotX, sy, slotW, slotH, slotBg, dg, ph, ft, cfg));
+    // Interactive zone — drop target for dragged blocks
+    // Padded slightly beyond the visual bounds for a more forgiving hit area.
+    // Kept small (not the full +16 sometimes suggested) because slot lines
+    // here are only CLH=18px apart — a larger pad would overlap the
+    // neighboring line's zone by half its height and make adjacent slots
+    // (e.g. init/condition/update, or FizzBuzz's body1..body4) ambiguous
+    // to target.
+    const zone = this.add.zone(slotX, sy - 4, slotW, slotH + 6)
+      .setOrigin(0)
+      .setInteractive({ dropZone: true });
     this._ee(zone);
 
     this._slotEls[slotKey] = { bg: slotBg, dg, ph, ft, zone, slotX, sy, slotW, slotH, cat };
@@ -646,52 +658,6 @@ export class Level18Scene extends Phaser.Scene {
     // left and right
     for (let j = y; j < y+h-3; j += 7) g.lineBetween(x, j, x, Math.min(j+4, y+h));
     for (let j = y; j < y+h-3; j += 7) g.lineBetween(x+w, j, x+w, Math.min(j+4, y+h));
-  }
-
-  _onSlotClick(slotKey, slotX, sy, slotW, slotH, slotBg, dg, ph, ft, cfg) {
-    if (this._interactionDisabled) return;
-    const cat = cfg.slots[slotKey].label;
-
-    if (this._placed[slotKey]) {
-      // Return block to tray
-      const txt = this._placed[slotKey];
-      this._placed[slotKey] = null;
-      ft.setVisible(false).setText('');
-      ph.setVisible(true);
-      slotBg.clear(); slotBg.fillStyle(0x1a2030, 0.8); slotBg.fillRoundedRect(slotX, sy-1, slotW, slotH, 3);
-      dg.setAlpha(1);
-      // Re-enable tray block
-      const tb = this._trayBlocks.find(b => b.text === txt && b.used);
-      if (tb) { tb.used = false; tb.el.setAlpha(1); if (tb.el.input) tb.el.input.enabled = true; }
-      this._disableRun();
-      return;
-    }
-
-    if (!this._selectedBlock) return;
-    if (this._selectedBlock.category !== cat && !(this._selectedBlock.category === 'body' && cat === 'body')) return;
-    // Also allow specific body slots for FizzBuzz
-    if (slotKey.startsWith('body') && slotKey !== 'body' && this._selectedBlock.slot && this._selectedBlock.slot !== slotKey) {
-      // For FizzBuzz blocks that have a specific target slot - still allow any body slot
-    }
-
-    // Place block
-    const blockText = this._selectedBlock.text;
-    this._placed[slotKey] = blockText;
-    ft.setText(blockText).setColor(CC[cat] || '#b0bec5').setVisible(true);
-    ph.setVisible(false);
-    slotBg.clear(); slotBg.fillStyle(0x0d2030, 1); slotBg.fillRoundedRect(slotX, sy-1, slotW, slotH, 3);
-    dg.setAlpha(0.2);
-
-    // Mark tray block as used
-    const tb = this._trayBlocks.find(b => b.el === this._selectedBlock.trayEl);
-    if (tb) { tb.used = true; tb.el.setAlpha(0.2); if (tb.el.input) tb.el.input.enabled = false; }
-
-    // Snap ring
-    this._snapRing(slotX + slotW/2, sy + slotH/2, CC[cat]);
-
-    this._selectedBlock = null;
-    // Check if all filled
-    if (this._checkAllFilled(cfg)) this._enableRun();
   }
 
   _snapRing(x, y, color) {
@@ -718,14 +684,14 @@ export class Level18Scene extends Phaser.Scene {
   _renderCodeLine(line, x, y) {
     let cx = x;
     this._tokenize(line).forEach(tok => {
-      const t = this._ee(this.add.text(cx, y, tok.text, { fontFamily:'Courier New', fontSize:'11px', color: TC[tok.type] || TC.default }));
+      const t = this._ee(this.add.text(cx, y, tok.text, { fontFamily:'Courier New', fontSize:'13px', color: TC[tok.type] || TC.default }));
       cx += t.width;
     });
   }
 
   _textWidth(str) {
-    // Approximate: Courier New 11px ≈ 6.6px/char
-    return str.length * 6.6;
+    // Approximate width for 13px Courier New
+    return str.length * 7.8;
   }
 
   _tokenize(line) {
@@ -766,11 +732,11 @@ export class Level18Scene extends Phaser.Scene {
     const ROW2_Y = by + 38;
     let col = 0;
 
-    shuffled.forEach((blk, idx) => {
+    shuffled.forEach((blk) => {
       const label = blk.text;
       const colHex = parseInt((CC[blk.category] || '#b0bec5').replace('#',''), 16);
-      const bw = Math.max(72, label.length * 7 + 24);
-      const bh = 30;
+      const bw = Math.max(80, label.length * 7.8 + 24);
+      const bh = 32;
 
       if (bx + bw > TRAY_X + TRAY_W - 10) {
         bx = TRAY_X + 10;
@@ -784,58 +750,147 @@ export class Level18Scene extends Phaser.Scene {
       const accent = this.add.graphics();
       accent.fillStyle(colHex); accent.fillRoundedRect(4, (bh-18)/2, 4, 18, 2);
       const txt = this.add.text(bw/2+4, bh/2, label, {
-        fontFamily:'Courier New', fontSize:'10px', color: CC[blk.category] || '#b0bec5', fontStyle:'bold'
+        fontFamily:'Courier New', fontSize:'12px', color: CC[blk.category] || '#b0bec5', fontStyle:'bold'
       }).setOrigin(0.5);
       container.add([bg, accent, txt]);
-      container.setSize(bw, bh).setInteractive({ useHandCursor: true });
+      container.setSize(bw, bh).setInteractive({ draggable: true, useHandCursor: true });
 
-      // Gentle idle float (staggered)
-      this.tweens.add({ targets: container, y: by - 2, duration: 2500, yoyo: true, repeat: -1, ease:'Sine.easeInOut', delay: idx*150 });
+      // Home position — where the block snaps back to if dropped outside a valid slot
+      container.homeX = bx;
+      container.homeY = by;
+      container.currentSlot = null;
 
-      container.on('pointerover', () => {
-        if (container.__used) return;
-        bg.clear(); bg.fillStyle(0x2a2a4e); bg.fillRoundedRect(0,0,bw,bh,15);
-        bg.lineStyle(2, colHex, 1); bg.strokeRoundedRect(0,0,bw,bh,15);
-      });
-      container.on('pointerout', () => {
-        if (container.__used) return;
-        if (this._selectedBlock && this._selectedBlock.trayEl === container) return;
-        bg.clear(); bg.fillStyle(0x1a1a2e); bg.fillRoundedRect(0,0,bw,bh,15);
-        bg.lineStyle(1, colHex, 0.55); bg.strokeRoundedRect(0,0,bw,bh,15);
-      });
-      container.on('pointerdown', () => {
-        if (container.__used || this._interactionDisabled) return;
-        if (this._selectedBlock && this._selectedBlock.trayEl === container) {
-          // Deselect
-          this._selectedBlock = null;
-          bg.clear(); bg.fillStyle(0x1a1a2e); bg.fillRoundedRect(0,0,bw,bh,15);
-          bg.lineStyle(1, colHex, 0.55); bg.strokeRoundedRect(0,0,bw,bh,15);
-          return;
-        }
-        // Deselect previous
-        if (this._selectedBlock) {
-          const prev = this._selectedBlock;
-          const pg2 = prev.trayEl.getAt(0);
-          if (pg2 && pg2.active) {
-            const pc = parseInt((CC[prev.category]||'#b0bec5').replace('#',''), 16);
-            const pw = prev.trayEl.width;
-            const ph = 30;
-            pg2.clear(); pg2.fillStyle(0x1a1a2e); pg2.fillRoundedRect(0,0,pw,ph,15);
-            pg2.lineStyle(1, pc, 0.55); pg2.strokeRoundedRect(0,0,pw,ph,15);
-          }
-        }
-        // Select this block
-        bg.clear(); bg.fillStyle(0x002244); bg.fillRoundedRect(0,0,bw,bh,15);
-        bg.lineStyle(2, colHex, 1); bg.strokeRoundedRect(0,0,bw,bh,15);
-        this._selectedBlock = { text: blk.text, category: blk.category, slot: blk.slot, trayEl: container };
-      });
-
-      const tbEntry = { el: container, text: blk.text, category: blk.category, trayX: bx, trayY: by, used: false };
+      const tbEntry = { el: container, text: blk.text, category: blk.category, slot: blk.slot, trayX: bx, trayY: by, used: false };
       container.__tbEntry = tbEntry;
       this._trayBlocks.push(tbEntry);
 
       bx += bw + 8;
       col++;
+    });
+
+    this._setupDragEvents();
+  }
+
+  /* ── Drag and Drop ─────────────────────────────────────────────
+   * Registered once per scene lifetime (guarded below) since
+   * _renderBlocks() runs again for every new project. */
+  _setupDragEvents() {
+    if (this._dragEventsBound) return;
+    this._dragEventsBound = true;
+
+    this.input.on('dragstart', (pointer, gameObject) => {
+      if (this._interactionDisabled) return;
+      gameObject.setDepth(100);
+      gameObject.setAlpha(0.85);
+      gameObject.__wasDropped = false;
+
+      // Picking the block back up out of a slot empties that slot again
+      const prevSlot = gameObject.currentSlot;
+      if (prevSlot) {
+        const el = this._slotEls[prevSlot];
+        this._placed[prevSlot] = null;
+        gameObject.currentSlot = null;
+        if (el) {
+          el.ft.setVisible(false).setText('');
+          el.ph.setVisible(true);
+          el.bg.clear(); el.bg.fillStyle(0x1a2030, 0.8); el.bg.fillRoundedRect(el.slotX, el.sy-1, el.slotW, el.slotH, 3);
+          el.dg.setAlpha(1);
+        }
+        this._disableRun();
+      }
+    });
+
+    this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+      if (this._interactionDisabled) return;
+      gameObject.x = dragX;
+      gameObject.y = dragY;
+    });
+
+    this.input.on('dragenter', (pointer, gameObject, dropZone) => {
+      if (this._interactionDisabled) return;
+      const cfg = this._currentCfg;
+      const slotKey = Object.keys(this._slotEls).find(k => this._slotEls[k].zone === dropZone);
+      if (!slotKey) return;
+
+      const tb = gameObject.__tbEntry;
+      const cat = cfg.slots[slotKey].label;
+
+      // Only highlight if it's a valid drop target
+      if ((this._placed[slotKey] && gameObject.currentSlot !== slotKey) ||
+          tb.category !== cat ||
+          (tb.slot && tb.slot !== slotKey)) {
+          return;
+      }
+
+      // Highlight the slot background (Bright blue)
+      const el = this._slotEls[slotKey];
+      el.bg.clear();
+      el.bg.fillStyle(0x004466, 1);
+      el.bg.fillRoundedRect(el.slotX, el.sy - 1, el.slotW, el.slotH, 3);
+    });
+
+    this.input.on('dragleave', (pointer, gameObject, dropZone) => {
+      if (this._interactionDisabled) return;
+      const slotKey = Object.keys(this._slotEls).find(k => this._slotEls[k].zone === dropZone);
+      if (!slotKey) return;
+
+      // Revert the background color
+      const el = this._slotEls[slotKey];
+      el.bg.clear();
+      if (this._placed[slotKey]) {
+          el.bg.fillStyle(0x0d2030, 1); // Filled color
+      } else {
+          el.bg.fillStyle(0x1a2030, 0.8); // Empty color
+      }
+      el.bg.fillRoundedRect(el.slotX, el.sy - 1, el.slotW, el.slotH, 3);
+    });
+
+    this.input.on('drop', (pointer, gameObject, dropZone) => {
+      if (this._interactionDisabled) return;
+      const cfg = this._currentCfg;
+      if (!cfg) return;
+
+      const slotKey = Object.keys(this._slotEls).find(k => this._slotEls[k].zone === dropZone);
+      if (!slotKey) return;
+
+      const el = this._slotEls[slotKey];
+      const tb = gameObject.__tbEntry;
+      const cat = cfg.slots[slotKey].label;
+
+      // Check if occupied, category mismatch, or specific slot mismatch (for FizzBuzz)
+      if ((this._placed[slotKey] && gameObject.currentSlot !== slotKey) ||
+          tb.category !== cat ||
+          (tb.slot && tb.slot !== slotKey)) {
+        return;
+      }
+
+      // Snap to the center of the slot
+      gameObject.x = el.slotX + (el.slotW / 2) - (gameObject.width / 2);
+      gameObject.y = el.sy - 1 + (el.slotH / 2) - (gameObject.height / 2);
+      gameObject.currentSlot = slotKey;
+      gameObject.__wasDropped = true;
+      gameObject.setDepth(15);
+
+      this._placed[slotKey] = tb.text;
+      el.ft.setText(tb.text).setColor(CC[cat] || '#b0bec5').setVisible(true);
+      el.ph.setVisible(false);
+      el.bg.clear(); el.bg.fillStyle(0x0d2030, 1); el.bg.fillRoundedRect(el.slotX, el.sy-1, el.slotW, el.slotH, 3);
+      el.dg.setAlpha(0.2);
+
+      this._snapRing(el.slotX + el.slotW/2, el.sy + el.slotH/2, CC[cat]);
+
+      if (this._checkAllFilled(cfg)) this._enableRun();
+    });
+
+    this.input.on('dragend', (pointer, gameObject) => {
+      gameObject.setAlpha(1);
+      if (!gameObject.__wasDropped) {
+        // Only failed drops return to depth 0 — a successful drop keeps the
+        // depth(15) set in 'drop' so it sits cleanly above the editor bounds.
+        gameObject.setDepth(0);
+        this.tweens.add({ targets: gameObject, x: gameObject.homeX, y: gameObject.homeY, duration: 220, ease: 'Back.easeOut' });
+      }
+      gameObject.__wasDropped = false;
     });
   }
 
@@ -1113,11 +1168,20 @@ export class Level18Scene extends Phaser.Scene {
       const g = this._ve(this.add.graphics());
       g.fillStyle(0x1a1a2e); g.fillRoundedRect(0, 0, 56, 78, 6);
       g.lineStyle(1.5, 0x00e5ff); g.strokeRoundedRect(0, 0, 56, 78, 6);
-      g.fillStyle(0xffd740); g.fillStar(28, 14, 5, 8, 4);
+
+      // FIX 1: Replace invalid fillStar with a simple fillCircle (a dot)
+      g.fillStyle(0xffd740);
+      g.fillCircle(28, 16, 6);
+
       g.setPosition(VZ_X - 60, cy);
+
+      // FIX 2: Properly track the card so _completeGreeting can animate it later
+      this._vizCards.push(g);
+
       const lbl = this._ve(this.add.text(cx + 4, cy + 30, 'Hello\nWorld', {
         fontFamily:'Arial', fontSize:'10px', color:'#e0e0e0', fontStyle:'bold', align:'center'
       }).setVisible(false));
+
       this.tweens.add({
         targets: g, x: cx, duration: 280, ease:'Back.easeOut',
         onComplete: () => { lbl.setVisible(true); resolve(); }
@@ -1609,7 +1673,8 @@ export class Level18Scene extends Phaser.Scene {
     await this._showBitFeedback(BIT_FB[errType] || BIT_FB.generic);
     if (cBg.active) cBg.destroy();
 
-    // Reset all placed blocks
+    // Reset all placed blocks — return each dragged container to its tray
+    // home position, since blocks now physically move into slots.
     Object.keys(this._placed).forEach(k => {
       if (this._placed[k]) {
         const el = this._slotEls[k];
@@ -1619,35 +1684,51 @@ export class Level18Scene extends Phaser.Scene {
           el.bg && (el.bg.clear(), el.bg.fillStyle(0x1a2030, 0.8), el.bg.fillRoundedRect(el.slotX, el.sy-1, el.slotW, el.slotH, 3));
           el.dg && el.dg.setAlpha(1);
         }
-        const tb = this._trayBlocks.find(b => b.text === this._placed[k] && b.used);
-        if (tb) { tb.used = false; tb.el.setAlpha(1); tb.el.__used = false; if (tb.el.input) tb.el.input.enabled = true; }
+        const tb = this._trayBlocks.find(b => b.el.currentSlot === k);
+        if (tb) { tb.el.currentSlot = null; tb.el.x = tb.el.homeX; tb.el.y = tb.el.homeY; }
         this._placed[k] = null;
       }
     });
-    this._selectedBlock = null;
     this._disableRun();
     this._runBtnTxt.setText('▶ COMPILE & RUN');
     this._interactionDisabled = false;
   }
 
   _showDiff(expected, actual) {
+    // Clear the visual elements so they don't overlap with the diff text —
+    // rebuilt via _setupVisual (not just _clearVisual) because several visual
+    // types (e.g. rocket_launch) keep persistent objects like this._vizRocket
+    // across iterations rather than recreating them each run. _onCompileRun()
+    // never re-calls _setupVisual before a retry, so a bare _clearVisual()
+    // here would permanently null those out after the first wrong answer.
+    // _setupVisual() itself calls _clearVisual() first, then rebuilds.
+    if (this._currentCfg) this._setupVisual(this._currentCfg.visual);
+
     const dg = this.add.graphics().setDepth(100);
-    dg.fillStyle(0x0d1117); dg.fillRoundedRect(VIS_X+4, VIS_Y+VIS_H-170, VIS_W-8, 160, 6);
-    dg.lineStyle(1.5, 0xf44336); dg.strokeRoundedRect(VIS_X+4, VIS_Y+VIS_H-170, VIS_W-8, 160, 6);
-    const dy = VIS_Y + VIS_H - 165;
-    this.add.text(VIS_X+10, dy, 'Expected:', { fontFamily:'Courier New', fontSize:'9px', color:'#00e676' }).setDepth(101);
-    this.add.text(VIS_X+10, dy+12, expected.split('\n').slice(0,5).join('\n'), {
-      fontFamily:'Courier New', fontSize:'9px', color:'#00e676', wordWrap:{width:180}
+    // Make the background box larger and give it a solid, darker fill
+    dg.fillStyle(0x0a0a1a, 0.98);
+    dg.fillRoundedRect(VIS_X + 4, VIS_Y + 70, VIS_W - 8, 210, 8);
+    dg.lineStyle(2, 0xf44336);
+    dg.strokeRoundedRect(VIS_X + 4, VIS_Y + 70, VIS_W - 8, 210, 8);
+
+    const dy = VIS_Y + 85;
+
+    this.add.text(VIS_X + 15, dy, 'Expected:', { fontFamily:'Courier New', fontSize:'13px', color:'#00e676', fontStyle:'bold' }).setDepth(101);
+    this.add.text(VIS_X + 15, dy + 22, expected.split('\n').slice(0, 8).join('\n'), {
+      fontFamily:'Courier New', fontSize:'12px', color:'#00e676', wordWrap:{width:180}
     }).setDepth(101);
-    this.add.text(VIS_X+210, dy, 'Your Output:', { fontFamily:'Courier New', fontSize:'9px', color:'#f44336' }).setDepth(101);
-    this.add.text(VIS_X+210, dy+12, actual.split('\n').slice(0,5).join('\n'), {
-      fontFamily:'Courier New', fontSize:'9px', color:'#f44336', wordWrap:{width:180}
+
+    this.add.text(VIS_X + 210, dy, 'Your Output:', { fontFamily:'Courier New', fontSize:'13px', color:'#f44336', fontStyle:'bold' }).setDepth(101);
+    this.add.text(VIS_X + 210, dy + 22, actual.split('\n').slice(0, 8).join('\n'), {
+      fontFamily:'Courier New', fontSize:'12px', color:'#f44336', wordWrap:{width:180}
     }).setDepth(101);
+
     // Click to dismiss
-    const zone = this.add.zone(VIS_X+4, VIS_Y+VIS_H-170, VIS_W-8, 160).setOrigin(0).setInteractive().setDepth(102);
+    const zone = this.add.zone(VIS_X + 4, VIS_Y + 70, VIS_W - 8, 210).setOrigin(0).setInteractive().setDepth(102);
     zone.on('pointerdown', () => { dg.destroy(); zone.destroy(); });
-    // Auto-dismiss
-    this.time.delayedCall(4000, () => { if (dg.active) dg.destroy(); if (zone.active) zone.destroy(); });
+
+    // Auto-dismiss after 5 seconds
+    this.time.delayedCall(5000, () => { if (dg.active) dg.destroy(); if (zone.active) zone.destroy(); });
   }
 
   _showBitFeedback(msg) {
@@ -1697,7 +1778,7 @@ export class Level18Scene extends Phaser.Scene {
     // City reveal in visual zone
     this._clearVisual();
     const bgOv = this._ve(this.add.graphics());
-    bgOv.fillStyle(0x0a0e13, 0.9); bgOv.fillRect(0, 0, W, H);
+    bgOv.fillStyle(0x0a0e13, 0.9); bgOv.fillRect(-W * 2, -H, W * 5, H * 3);
 
     PROJECTS.forEach((proj, idx) => {
       const result = this.projectResults[idx] || { attempts: 1 };
@@ -1723,7 +1804,7 @@ export class Level18Scene extends Phaser.Scene {
     // Score breakdown overlay
     this.time.delayedCall(1600, () => {
       const ov2 = this.add.graphics().setDepth(200).setAlpha(0);
-      ov2.fillStyle(0x000814, 0.9); ov2.fillRect(0, 0, W, H);
+      ov2.fillStyle(0x000814, 0.9); ov2.fillRect(-W * 2, -H, W * 5, H * 3);
       this.tweens.add({ targets: ov2, alpha: 1, duration: 500 });
 
       this.add.text(W/2, 44, 'ALL PROJECTS COMPLETE!', {

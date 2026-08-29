@@ -17,13 +17,16 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TILE = 40;
 const ROBOT_SIZE = 28;
 const ROBOT_SPEED = 140;
+const MAX_LIVES = 5;
 
 /* Colors */
 const COL_FLOOR     = 0x0f172a;
@@ -37,29 +40,50 @@ const COL_ROBOT     = 0x22d3ee;
 
 /* Gate / Terminal layout (pixel positions) */
 const GATES = [
-  { x: 260, y: 280, w: 8, h: 80 },   // Gate 1 — left column
-  { x: 450, y: 280, w: 8, h: 80 },   // Gate 2 — middle column
-  { x: 640, y: 280, w: 8, h: 80 },   // Gate 3 — right column
+  { x: 500, y: 340, w: 8, h: 80 },   // Gate 1 — left column
+  { x: 690, y: 340, w: 8, h: 80 },   // Gate 2 — middle column
+  { x: 880, y: 340, w: 8, h: 80 },   // Gate 3 — right column
 ];
 
 const TERMINALS = [
-  { x: 240, y: 390, label: "T1" },    // Terminal 1 — near Gate 1
-  { x: 430, y: 390, label: "T2" },    // Terminal 2 — near Gate 2
-  { x: 620, y: 390, label: "T3" },    // Terminal 3 — near Gate 3
+  { x: 480, y: 450, label: "T1" },    // Terminal 1 — near Gate 1
+  { x: 670, y: 450, label: "T2" },    // Terminal 2 — near Gate 2
+  { x: 860, y: 450, label: "T3" },    // Terminal 3 — near Gate 3
 ];
 
-const EXIT_ZONE = { x: 730, y: 300, w: 50, h: 60 };
+const EXIT_ZONE = { x: 970, y: 360, w: 50, h: 60 };
 
 export class Level3Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level3Scene" });
   }
 
+  init() {
+    // Reset local counters
+    this.wrongAttempts = 0;
+
+    // Reset Global ML & Intervention States
+    if (GameManager.fusionEngine) {
+      GameManager.fusionEngine.resetForNewLevel();
+    }
+    GameManager.interventionInFlight = false;
+  }
+
   /* ═══════════════════════════════════════════════
    *  CREATE
    * ═══════════════════════════════════════════════ */
   create() {
-    this.cameras.main.setBackgroundColor("#060b18");
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
+    cam.setBackgroundColor("#060b18");
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -67,6 +91,9 @@ export class Level3Scene extends Phaser.Scene {
     this.isComplete = false;
     this.overlayActive = false;
     this.score = 0;
+    this.wrongAttempts = 0;
+    this.lives = MAX_LIVES;
+    this.levelStartTime = this.time.now;
 
     /* ── Textures ── */
     this._genTex();
@@ -101,6 +128,7 @@ export class Level3Scene extends Phaser.Scene {
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 3: Restructuring — Integer Escape Facility!");
     }
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
     /* ── Instruction overlay ── */
     this._showInstruction();
@@ -146,29 +174,36 @@ export class Level3Scene extends Phaser.Scene {
   _drawFacility() {
     const gfx = this.add.graphics().setDepth(1);
 
-    // Floor
+    // Floor (Stretched)
     gfx.fillStyle(COL_FLOOR, 1);
-    gfx.fillRect(40, 100, 720, 400);
+    gfx.fillRect(-W, 160, W * 3, 400);
 
-    // Grid pattern on floor
+    // Grid pattern on floor (Stretched)
     gfx.lineStyle(1, 0x1a2744, 0.3);
-    for (let x = 40; x <= 760; x += TILE) {
-      gfx.beginPath(); gfx.moveTo(x, 100); gfx.lineTo(x, 500); gfx.strokePath();
+    for (let x = -W; x <= W * 2; x += TILE) {
+      gfx.beginPath();
+      gfx.moveTo(x, 160);
+      gfx.lineTo(x, 560);
+      gfx.strokePath();
     }
-    for (let y = 100; y <= 500; y += TILE) {
-      gfx.beginPath(); gfx.moveTo(40, y); gfx.lineTo(760, y); gfx.strokePath();
+    for (let y = 160; y <= 560; y += TILE) {
+      gfx.beginPath();
+      gfx.moveTo(-W, y);
+      gfx.lineTo(W * 2, y);
+      gfx.strokePath();
     }
 
-    // Outer walls
+    // Outer walls (Kept at original bounds for gameplay collision constraints)
     gfx.lineStyle(3, COL_WALL_LINE, 1);
-    gfx.strokeRect(40, 100, 720, 400);
+    gfx.strokeRect(280, 160, 720, 400);
 
-    // Title banner at top
+    // Title banner at top (Stretched)
     gfx.fillStyle(0x0d1530, 0.95);
-    gfx.fillRect(40, 68, 720, 32);
+    gfx.fillRect(-W, 128, W * 3, 32);
     gfx.lineStyle(1, 0x334155);
-    gfx.strokeRect(40, 68, 720, 32);
-    this.add.text(W / 2, 84, "⚡ INTEGER ESCAPE FACILITY ⚡", {
+    gfx.strokeRect(-W, 128, W * 3, 32);
+
+    this.add.text(W / 2, 144, "⚡ INTEGER ESCAPE FACILITY ⚡", {
       fontFamily: "monospace", fontSize: "14px",
       color: "#a78bfa", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(5);
@@ -179,12 +214,12 @@ export class Level3Scene extends Phaser.Scene {
     GATES.forEach((g, i) => {
       // Wall segment above gate
       gfx.fillStyle(COL_WALL, 1);
-      gfx.fillRect(g.x - 4, 100, 8, g.y - 100);
+      gfx.fillRect(g.x - 4, 160, 8, g.y - 160);
       // Wall segment below gate
-      gfx.fillRect(g.x - 4, g.y + g.h, 8, 500 - (g.y + g.h));
+      gfx.fillRect(g.x - 4, g.y + g.h, 8, 560 - (g.y + g.h));
       gfx.lineStyle(1, COL_WALL_LINE);
-      gfx.strokeRect(g.x - 4, 100, 8, g.y - 100);
-      gfx.strokeRect(g.x - 4, g.y + g.h, 8, 500 - (g.y + g.h));
+      gfx.strokeRect(g.x - 4, 160, 8, g.y - 160);
+      gfx.strokeRect(g.x - 4, g.y + g.h, 8, 560 - (g.y + g.h));
 
       // Gate itself (drawn separately for re-coloring)
       const gateG = this.add.graphics().setDepth(3);
@@ -235,13 +270,13 @@ export class Level3Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(5);
 
     // ── START label ──
-    this.add.text(100, 310, "START\n  ↓", {
+    this.add.text(340, 370, "START\n  ↓", {
       fontFamily: "monospace", fontSize: "10px", color: "#475569",
       align: "center",
     }).setOrigin(0.5).setDepth(5);
 
     // ── Prompt text ──
-    this.promptText = this.add.text(W / 2, 520, "Walk to a 💻 Terminal and press [E] to interact", {
+    this.promptText = this.add.text(W / 2, 580, "Walk to a 💻 Terminal and press [E] to interact", {
       fontFamily: "Arial", fontSize: "13px", color: "#64748b",
       fontStyle: "italic",
     }).setOrigin(0.5).setDepth(10);
@@ -254,20 +289,20 @@ export class Level3Scene extends Phaser.Scene {
     this.wallGroup = this.physics.add.staticGroup();
 
     // Outer walls (4 sides)
-    this._addWall(W / 2, 98, 720, 8);      // top
-    this._addWall(W / 2, 502, 720, 8);     // bottom
-    this._addWall(38, 300, 8, 404);         // left
-    this._addWall(762, 300, 8, 404);        // right
+    this._addWall(W / 2, 158, 720, 8);      // top
+    this._addWall(W / 2, 562, 720, 8);     // bottom
+    this._addWall(278, 360, 8, 404);         // left
+    this._addWall(1002, 360, 8, 404);        // right
 
     // Gate wall segments (vertical barriers)
     this.gateWallBodies = [];
     GATES.forEach((g, i) => {
       // Segment above gate
-      const aboveH = g.y - 100;
-      if (aboveH > 0) this._addWall(g.x, 100 + aboveH / 2, 8, aboveH);
+      const aboveH = g.y - 160;
+      if (aboveH > 0) this._addWall(g.x, 160 + aboveH / 2, 8, aboveH);
       // Segment below gate
       const belowY = g.y + g.h;
-      const belowH = 500 - belowY;
+      const belowH = 560 - belowY;
       if (belowH > 0) this._addWall(g.x, belowY + belowH / 2, 8, belowH);
 
       // Gate body (removable when opened)
@@ -288,8 +323,8 @@ export class Level3Scene extends Phaser.Scene {
    *  PLAYER ROBOT
    * ═══════════════════════════════════════════════ */
   _createRobot() {
-    const startX = 100;
-    const startY = 340;
+    const startX = 340;
+    const startY = 400;
 
     // Draw a robot texture
     if (!this.textures.exists("robot3")) {
@@ -337,22 +372,31 @@ export class Level3Scene extends Phaser.Scene {
   _createHUD() {
     const dp = 100;
 
+    // ── Lives (top-right) ──
+    this.livesIcons = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const heart = this.add.text(W - 40 - i * 35, 78, "❤️", {
+        fontSize: "22px",
+      }).setOrigin(0.5).setDepth(dp);
+      this.livesIcons.push(heart);
+    }
+
     // Gate status indicators
     this.gateStatusTexts = [];
     for (let i = 0; i < 3; i++) {
-      const txt = this.add.text(180 + i * 180, 540, `Gate ${i + 1}: 🔒`, {
+      const txt = this.add.text(420 + i * 180, 600, `Gate ${i + 1}: 🔒`, {
         fontFamily: "monospace", fontSize: "11px", color: "#ef4444",
       }).setOrigin(0.5).setDepth(dp);
       this.gateStatusTexts.push(txt);
     }
 
     // Score
-    this.scoreText = this.add.text(W - 16, 540, "Score: 0", {
+    this.scoreText = this.add.text(W - 16, 600, "Score: 0", {
       fontFamily: "monospace", fontSize: "12px", color: "#fbbf24",
     }).setOrigin(1, 0.5).setDepth(dp);
 
     // Near-terminal prompt
-    this.interactPrompt = this.add.text(W / 2, 460, "", {
+    this.interactPrompt = this.add.text(W / 2, 520, "", {
       fontFamily: "Arial", fontSize: "14px", color: "#fbbf24",
       fontStyle: "bold", backgroundColor: "rgba(15, 23, 42, 0.9)",
       padding: { x: 12, y: 6 },
@@ -432,7 +476,7 @@ export class Level3Scene extends Phaser.Scene {
    *  UPDATE — robot movement + terminal detection
    * ═══════════════════════════════════════════════ */
   update() {
-    if (this.isComplete || this.overlayActive) {
+    if (this.isComplete || this.overlayActive || GameManager.interventionInFlight) {
       if (this.robot && this.robot.body) {
         this.robot.body.setVelocity(0, 0);
       }
@@ -538,7 +582,7 @@ export class Level3Scene extends Phaser.Scene {
     ];
     codeLines1.forEach((line, i) => {
       const color = line.startsWith("//") ? "#64748b" : "#4ade80";
-      els.push(this.add.text(240, 180 + i * 24, line, {
+      els.push(this.add.text(W / 2 - 160, 180 + i * 24, line, {
         fontFamily: "Courier New, monospace", fontSize: "16px", color,
       }).setDepth(d + 2));
     });
@@ -591,6 +635,14 @@ export class Level3Scene extends Phaser.Scene {
       if (val !== "7") {
         errTxt.setText('❌ Wrong! a + 10 = 17, so a = 7');
         this.cameras.main.shake(150, 0.01);
+        this.wrongAttempts++;
+        this.lives = Math.max(0, this.lives - 1);
+        this._updateLives();
+        if (this.wrongAttempts === 3) this.runBehavioralCheck();
+        if (this.lives <= 0) {
+           els.forEach(e => e.destroy());
+           this.time.delayedCall(500, () => this._gameOver());
+        }
         return;
       }
 
@@ -635,7 +687,7 @@ export class Level3Scene extends Phaser.Scene {
     ];
     codeLines.forEach((line, i) => {
       const color = line.startsWith("//") ? "#64748b" : "#4ade80";
-      els.push(this.add.text(240, 170 + i * 24, line, {
+      els.push(this.add.text(W / 2 - 160, 170 + i * 24, line, {
         fontFamily: "Courier New, monospace", fontSize: "16px", color,
       }).setDepth(d + 2));
     });
@@ -689,6 +741,14 @@ export class Level3Scene extends Phaser.Scene {
       if (val !== "8") {
         errTxt.setText(`❌ Wrong! 4 * y = 32, so y = 8`);
         this.cameras.main.shake(150, 0.01);
+        this.wrongAttempts++;
+        this.lives = Math.max(0, this.lives - 1);
+        this._updateLives();
+        if (this.wrongAttempts === 3) this.runBehavioralCheck();
+        if (this.lives <= 0) {
+           els.forEach(e => e.destroy());
+           this.time.delayedCall(500, () => this._gameOver());
+        }
         return;
       }
 
@@ -733,7 +793,7 @@ export class Level3Scene extends Phaser.Scene {
     ];
     cLines.forEach((line, i) => {
       const color = line.startsWith("//") ? "#64748b" : (line === "" ? "#000" : "#4ade80");
-      els.push(this.add.text(240, 160 + i * 20, line, {
+      els.push(this.add.text(W / 2 - 160, 160 + i * 20, line, {
         fontFamily: "Courier New, monospace", fontSize: "14px", color,
       }).setDepth(d + 2));
     });
@@ -783,6 +843,14 @@ export class Level3Scene extends Phaser.Scene {
         } else {
           errTxt.setText(`❌ ${opt.hint}`);
           this.cameras.main.shake(150, 0.01);
+          this.wrongAttempts++;
+          this.lives = Math.max(0, this.lives - 1);
+          this._updateLives();
+          if (this.wrongAttempts === 3) this.runBehavioralCheck();
+          if (this.lives <= 0) {
+             els.forEach(e => e.destroy());
+             this.time.delayedCall(500, () => this._gameOver());
+          }
         }
       });
 
@@ -859,6 +927,80 @@ export class Level3Scene extends Phaser.Scene {
     // Check if all gates open → show EXIT glow
     if (this.gatesOpen[0] && this.gatesOpen[1] && this.gatesOpen[2]) {
       this._highlightExit();
+    }
+  }
+
+  _updateLives() {
+    for (let i = 0; i < MAX_LIVES; i++) {
+      if (this.livesIcons[i]) {
+        this.livesIcons[i].setText(i < this.lives ? "❤️" : "🖤");
+        if (i >= this.lives) {
+          this.tweens.add({ targets: this.livesIcons[i], scaleX: 1.3, scaleY: 1.3, yoyo: true, duration: 150 });
+        }
+      }
+    }
+  }
+
+  addLife() {
+    // BitMenu already calls GameManager.addLife() for the global count before
+    // calling this — only touch local state here, or the global count would
+    // be incremented twice per bonus life (matches Level1Scene's convention).
+    if (this.lives < MAX_LIVES) {
+      this.lives++;
+      this._updateLives();
+    }
+  }
+
+  _gameOver() {
+    this.isComplete = true;
+    this.overlayActive = false;
+    if (this.robot && this.robot.body) this.robot.body.setVelocity(0, 0);
+
+    this.cameras.main.shake(500, 0.025);
+    this.cameras.main.flash(400, 255, 0, 0);
+
+    this.time.delayedCall(600, () => {
+      const d = 200;
+      this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(d);
+
+      this.add.text(W / 2, H / 2 - 80, "💀 SYSTEM CRASH", {
+        fontFamily: "Arial Black, Arial", fontSize: "32px",
+        color: "#ef4444", fontStyle: "bold",
+      }).setOrigin(0.5).setDepth(d + 1);
+
+      this.add.text(W / 2, H / 2 - 30, "You ran out of lives!", {
+        fontFamily: "Arial", fontSize: "17px", color: "#e2e8f0",
+      }).setOrigin(0.5).setDepth(d + 1);
+
+      const btnBg1 = this.add.rectangle(W / 2 - 110, H / 2 + 50, 190, 42, 0xef4444).setDepth(d + 1).setStrokeStyle(2, 0xffffff);
+      const txt1 = this.add.text(W / 2 - 110, H / 2 + 50, "REBOOT TERMINALS", { fontFamily: "Arial", fontSize: "14px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 2);
+      btnBg1.setInteractive({ useHandCursor: true });
+      btnBg1.on("pointerup", () => { GameManager.resetLevel(); this.scene.restart(); });
+
+      const btnBg2 = this.add.rectangle(W / 2 + 110, H / 2 + 50, 190, 42, 0x334155).setDepth(d + 1).setStrokeStyle(2, 0xffffff);
+      const txt2 = this.add.text(W / 2 + 110, H / 2 + 50, "MENU", { fontFamily: "Arial", fontSize: "14px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 2);
+      btnBg2.setInteractive({ useHandCursor: true });
+      btnBg2.on("pointerup", () => { this.scene.stop("UIScene"); this.scene.start("MenuScene"); });
+    });
+  }
+
+  /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
+  async runBehavioralCheck() {
+    const attempts_count = this.wrongAttempts;
+    const time_taken_seconds = (this.time.now - this.levelStartTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level3Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
@@ -978,5 +1120,8 @@ export class Level3Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════ */
   shutdown() {
     this.gatesOpen = [false, false, false];
+    // Restore lives visibility for other levels
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(true);
   }
 }

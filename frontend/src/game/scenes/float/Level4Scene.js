@@ -15,10 +15,12 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TARGET_COLLECT = 25;
 const ACCURACY_THRESHOLD = 85;
 const MAX_BUBBLES = 8;
@@ -112,7 +114,23 @@ export class Level4Scene extends Phaser.Scene {
     super({ key: "Level4Scene" });
   }
 
+  init() {
+    this.wrongAttempts = 0;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
+  }
+
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -170,21 +188,24 @@ export class Level4Scene extends Phaser.Scene {
       const t = i / steps;
       const c = lerpColor(topColor, botColor, t);
       gfx.fillStyle(c, 1);
-      gfx.fillRect(0, Math.floor((H * i) / steps), W, Math.ceil(H / steps) + 1);
+      // Stretched width: start at -W, span W * 3
+      gfx.fillRect(-W, Math.floor((H * i) / steps), W * 3, Math.ceil(H / steps) + 1);
     }
 
-    // Light rays from surface
+    // Light rays from surface (Stretched)
     const rayGfx = this.add.graphics().setDepth(1).setAlpha(0.08);
-    for (let i = 0; i < 5; i++) {
-      const x = 100 + i * 160;
+    let rayIndex = 0;
+    for (let x = -W; x < W * 2; x += 160) {
+      const spread = rayIndex % 5; // keep the same width variation cadence as the original 5-ray set
       rayGfx.fillStyle(0xffffff, 1);
       rayGfx.beginPath();
       rayGfx.moveTo(x - 5, 0);
       rayGfx.lineTo(x + 5, 0);
-      rayGfx.lineTo(x + 40 + i * 10, H);
-      rayGfx.lineTo(x - 40 - i * 5, H);
+      rayGfx.lineTo(x + 40 + spread * 10, H);
+      rayGfx.lineTo(x - 40 - spread * 5, H);
       rayGfx.closePath();
       rayGfx.fill();
+      rayIndex++;
     }
 
     // Depth zone labels (faint text on left)
@@ -321,7 +342,7 @@ export class Level4Scene extends Phaser.Scene {
   _createAmbientBubbles() {
     this.ambientBubbles = [];
     for (let i = 0; i < 25; i++) {
-      const x = Phaser.Math.Between(10, W - 10);
+      const x = Phaser.Math.Between(-W, W * 2);
       const y = Phaser.Math.Between(0, H);
       const size = Phaser.Math.FloatBetween(1, 4);
       const alpha = Phaser.Math.FloatBetween(0.1, 0.3);
@@ -722,6 +743,7 @@ export class Level4Scene extends Phaser.Scene {
   _onWrongCollect(cx, cy, value, displayText) {
     this.totalAttempts++;
     this.wrongAttempts++;
+    if (this.wrongAttempts === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.score = Math.max(0, this.score - 10);
 
@@ -749,6 +771,26 @@ export class Level4Scene extends Phaser.Scene {
 
     if (this.oxygen <= 0) {
       this._gameOver();
+    }
+  }
+
+  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalAttempts;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level4Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
@@ -1051,6 +1093,11 @@ export class Level4Scene extends Phaser.Scene {
    *  UPDATE LOOP
    * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
+    if (GameManager.interventionInFlight) {
+      if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+      return;
+    }
+
     if (!this.gameStarted || this.isComplete) {
       this._updateAmbient(time);
       return;
@@ -1178,7 +1225,7 @@ export class Level4Scene extends Phaser.Scene {
       ab.obj.x += Math.sin(time / 1000 * ab.wobbleSpeed + ab.wobbleOffset) * 0.3;
       if (ab.obj.y < -10) {
         ab.obj.y = H + 10;
-        ab.obj.x = Phaser.Math.Between(10, W - 10);
+        ab.obj.x = Phaser.Math.Between(-W, W * 2);
       }
     });
   }

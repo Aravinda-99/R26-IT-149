@@ -15,16 +15,18 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
-const GROUND_Y = 520;
+const W = 1280;
+const H = 720;
+const GROUND_Y = 620;
 const PLAYER_W = 48;
 const PLAYER_H = 64;
 const NUM_RADIUS = 26;
 const TARGET_COLLECT = 20;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;
 const MAX_ON_SCREEN = 5;
 
 const INTEGERS = [
@@ -54,6 +56,17 @@ export class Level1Scene extends Phaser.Scene {
     super({ key: "Level1Scene" });
   }
 
+  init() {
+    // Reset local counters
+    this.wrongCatches = 0;
+
+    // Reset Global ML & Intervention States
+    if (GameManager.fusionEngine) {
+      GameManager.fusionEngine.resetForNewLevel();
+    }
+    GameManager.interventionInFlight = false;
+  }
+
   /* ═══════════════════════════════════════════════════════════════
    *  PRELOAD
    * ═══════════════════════════════════════════════════════════════ */
@@ -65,6 +78,16 @@ export class Level1Scene extends Phaser.Scene {
    *  CREATE
    * ═══════════════════════════════════════════════════════════════ */
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     /* ── Reset physics world gravity for this level ── */
     this.physics.world.gravity.y = 0; // we control fall speed manually
 
@@ -129,6 +152,7 @@ export class Level1Scene extends Phaser.Scene {
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 1: Accretion — Number Line Adventure!");
     }
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
     /* ── Instruction overlay ── */
     this._showInstruction();
@@ -146,7 +170,8 @@ export class Level1Scene extends Phaser.Scene {
       const t = i / steps;
       const c = lerpColor(topColor, botColor, t);
       gfx.fillStyle(c, 1);
-      gfx.fillRect(0, Math.floor((H * i) / steps), W, Math.ceil(H / steps) + 1);
+      // Stretched width: start at -W, span W * 3
+      gfx.fillRect(-W, Math.floor((H * i) / steps), W * 3, Math.ceil(H / steps) + 1);
     }
   }
 
@@ -210,25 +235,23 @@ export class Level1Scene extends Phaser.Scene {
     const gfx = this.add.graphics().setDepth(1);
     const lineY = GROUND_Y + 20;
 
-    // Main line
+    // Main line (Stretched)
     gfx.lineStyle(4, 0x2c3e50, 1);
     gfx.beginPath();
-    gfx.moveTo(30, lineY);
-    gfx.lineTo(W - 30, lineY);
+    gfx.moveTo(-W, lineY);
+    gfx.lineTo(W * 2, lineY);
     gfx.strokePath();
 
     // Tick marks
-    const tickSpacing = (W - 60) / 20; // -10 to +10 = 20 intervals
+    const tickSpacing = (W - 160) / 20; // -10 to +10 = 20 intervals
     for (let i = -10; i <= 10; i++) {
-      const tx = 30 + (i + 10) * tickSpacing;
+      const tx = 80 + (i + 10) * tickSpacing;
       const tickH = (i % 5 === 0) ? 12 : 6;
       gfx.lineStyle(2, 0x2c3e50, 1);
       gfx.beginPath();
       gfx.moveTo(tx, lineY - tickH);
       gfx.lineTo(tx, lineY + tickH);
       gfx.strokePath();
-
-      // Label major ticks removed as per user request
     }
 
     // Player glow (follows player)
@@ -311,10 +334,10 @@ export class Level1Scene extends Phaser.Scene {
 
     // ── Progress bar (top center) ──
 
-    this.progressBarBg = this.add.rectangle(W / 2, 92, 280, 18, 0x34495e, 0.3)
+    this.progressBarBg = this.add.rectangle(W / 2, 92, 400, 18, 0x34495e, 0.3)
       .setStrokeStyle(1, 0x34495e).setDepth(hudDepth);
     this.progressBarFill = this.add.rectangle(
-      W / 2 - 140, 92, 0, 16, 0x27ae60
+      W / 2 - 200, 92, 0, 16, 0x27ae60
     ).setOrigin(0, 0.5).setDepth(hudDepth + 1);
     this.progressText = this.add.text(W / 2, 92, "0 / 20", {
       fontFamily: "Arial",
@@ -347,7 +370,7 @@ export class Level1Scene extends Phaser.Scene {
     }).setDepth(hudDepth);
 
     // ── Tooltip ──
-    this.tooltip = this.add.text(W / 2, H - 50, "", {
+    this.tooltip = this.add.text(W / 2, H - 80, "", {
       fontFamily: "Arial",
       fontSize: "18px",
       color: "#ffffff",
@@ -636,6 +659,11 @@ export class Level1Scene extends Phaser.Scene {
       this._updateScore();
       this._updateCombo();
 
+      // Trigger ML intervention mid-game
+      if (this.wrongCatches === 3) {
+        this.runBehavioralCheck();
+      }
+
       // Check game over
       if (this.lives <= 0) {
         this._gameOver();
@@ -664,7 +692,7 @@ export class Level1Scene extends Phaser.Scene {
     const pct = Math.min(this.integersCollected / TARGET_COLLECT, 1);
     this.tweens.add({
       targets: this.progressBarFill,
-      width: 280 * pct,
+      width: 400 * pct,
       duration: 300,
       ease: "Cubic.out",
     });
@@ -684,6 +712,35 @@ export class Level1Scene extends Phaser.Scene {
           });
         }
       }
+    }
+  }
+
+  addLife() {
+    if (this.lives < MAX_LIVES) {
+      const icon = this.livesIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+      this._updateLives();
+    }
+  }
+
+  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalCatches;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongCatches;
+    const combo_breaks = 0; // Not strictly tracked here
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (!this.gameStarted) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true); // Action game = rapid fire
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level1Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
@@ -953,6 +1010,13 @@ export class Level1Scene extends Phaser.Scene {
    *  UPDATE LOOP
    * ═══════════════════════════════════════════════════════════════ */
   update() {
+    if (GameManager.interventionInFlight) {
+      if (this.physics && this.physics.world) this.physics.world.pause();
+      return;
+    } else {
+      if (this.physics && this.physics.world && this.physics.world.isPaused) this.physics.world.resume();
+    }
+
     if (!this.gameStarted || this.isComplete) return;
 
     /* ── Player movement ── */
@@ -1013,5 +1077,8 @@ export class Level1Scene extends Phaser.Scene {
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.fallingNumbers = [];
+    // Restore lives visibility for other levels
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(true);
   }
 }

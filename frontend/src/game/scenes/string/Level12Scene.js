@@ -102,6 +102,16 @@ export class Level12Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -142,17 +152,20 @@ export class Level12Scene extends Phaser.Scene {
     for (let i = 0; i < 60; i++) {
       const t = i / 60;
       gfx.fillStyle(lerpColor(top, bot, t), 1);
-      gfx.fillRect(0, Math.floor((H * i) / 60), W, Math.ceil(H / 60) + 1);
+      // Stretched width: start at -W*2, span W*5 (Y span untouched — it
+      // already correctly tiles 0..H, and this level's pillarboxing is
+      // horizontal only)
+      gfx.fillRect(-W * 2, Math.floor((H * i) / 60), W * 5, Math.ceil(H / 60) + 1);
     }
 
-    /* Neon grid */
+    /* Neon grid (Stretched) */
     const gridGfx = this.add.graphics().setDepth(1).setAlpha(0.08);
     gridGfx.lineStyle(1, 0xff00ff, 1);
-    for (let x = 0; x < W; x += 40) {
+    for (let x = -W * 2; x <= W * 3; x += 40) {
       gridGfx.beginPath(); gridGfx.moveTo(x, 0); gridGfx.lineTo(x, H); gridGfx.strokePath();
     }
-    for (let y = 0; y < H; y += 40) {
-      gridGfx.beginPath(); gridGfx.moveTo(0, y); gridGfx.lineTo(W, y); gridGfx.strokePath();
+    for (let y = 0; y <= H; y += 40) {
+      gridGfx.beginPath(); gridGfx.moveTo(-W * 2, y); gridGfx.lineTo(W * 3, y); gridGfx.strokePath();
     }
 
     /* Pulsing tech nodes */
@@ -219,33 +232,35 @@ export class Level12Scene extends Phaser.Scene {
   _createHUD() {
     const dp = 100;
 
-    this.add.rectangle(W / 2, 28, W, 50, 0x0a0a1a, 0.88).setDepth(dp - 1);
-    this.add.rectangle(W / 2, 55, W, 1, 0xff00ff, 0.15).setDepth(dp - 1);
+    // Shifted down 50px so this internal HUD sits below the global HTML
+    // header ("Level 12: Restructuring...") instead of overlapping it.
+    this.add.rectangle(W / 2, 78, W, 50, 0x0a0a1a, 0.88).setDepth(dp - 1);
+    this.add.rectangle(W / 2, 105, W, 1, 0xff00ff, 0.15).setDepth(dp - 1);
 
-    this.scoreText = this.add.text(16, 12, "SCORE: 0", {
+    this.scoreText = this.add.text(16, 62, "SCORE: 0", {
       fontFamily: "Courier New, monospace", fontSize: "15px",
       color: "#ff00ff", fontStyle: "bold",
     }).setDepth(dp);
 
-    this.waveText = this.add.text(16, 35, "MASTER: 0 / 50", {
+    this.waveText = this.add.text(16, 85, "MASTER: 0 / 50", {
       fontFamily: "Courier New, monospace", fontSize: "11px", color: "#888888",
     }).setDepth(dp);
 
-    this.progBg = this.add.rectangle(W / 2, 16, 240, 12, 0x1a1a2e, 0.8).setDepth(dp);
+    this.progBg = this.add.rectangle(W / 2, 66, 240, 12, 0x1a1a2e, 0.8).setDepth(dp);
     this.progBg.setStrokeStyle(1, 0xff00ff, 0.3);
-    this.progFill = this.add.rectangle(W / 2 - 120, 16, 0, 10, 0xff00ff, 0.7)
+    this.progFill = this.add.rectangle(W / 2 - 120, 66, 0, 10, 0xff00ff, 0.7)
       .setOrigin(0, 0.5).setDepth(dp + 1);
-    this.progText = this.add.text(W / 2, 16, "0 / 50", {
+    this.progText = this.add.text(W / 2, 66, "0 / 50", {
       fontFamily: "Courier New, monospace", fontSize: "9px",
       color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(dp + 2);
 
-    this.livesText = this.add.text(W - 16, 12, "♥♥♥", {
+    this.livesText = this.add.text(W - 16, 62, "♥♥♥", {
       fontFamily: "Arial", fontSize: "20px",
       color: "#ff4444", fontStyle: "bold",
     }).setOrigin(1, 0).setDepth(dp);
 
-    this.accText = this.add.text(W - 16, 36, "ACC: 100%", {
+    this.accText = this.add.text(W - 16, 86, "ACC: 100%", {
       fontFamily: "Courier New, monospace", fontSize: "10px", color: "#888888",
     }).setOrigin(1, 0).setDepth(dp);
 
@@ -293,23 +308,26 @@ export class Level12Scene extends Phaser.Scene {
   _showInstruction() {
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
 
+    // Shifted down 40px (and trimmed 15px shorter) so this modal clears the
+    // global HTML header instead of overlapping it, while still fitting
+    // fully within the 600px-tall canvas.
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x1a0a2a, 0.98);
-    panelG.fillRoundedRect(W / 2 - 325, 15, 650, 555, 16);
+    panelG.fillRoundedRect(W / 2 - 325, 55, 650, 540, 16);
     panelG.lineStyle(3, 0xff00ff);
-    panelG.strokeRoundedRect(W / 2 - 325, 15, 650, 555, 16);
+    panelG.strokeRoundedRect(W / 2 - 325, 55, 650, 540, 16);
 
-    const title = this.add.text(W / 2, 50, "🎓 MISSION 12: ADVANCED STRING MASTER", {
+    const title = this.add.text(W / 2, 90, "🎓 MISSION 12: ADVANCED STRING MASTER", {
       fontFamily: "Arial Black, Arial, sans-serif",
       fontSize: "21px", color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
 
-    const sub = this.add.text(W / 2, 80, "Master advanced string operations & real-world scenarios", {
+    const sub = this.add.text(W / 2, 120, "Master advanced string operations & real-world scenarios", {
       fontFamily: "Arial", fontSize: "13px",
       color: "#00ffff", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202);
 
-    const desc = this.add.text(W / 2, 185,
+    const desc = this.add.text(W / 2, 225,
       "Complete 50 ADVANCED string challenges!\n\n" +
       "ADVANCED OPERATIONS:\n" +
       '• split() & join(): breaking/combining strings\n' +
@@ -326,18 +344,18 @@ export class Level12Scene extends Phaser.Scene {
       }
     ).setOrigin(0.5).setDepth(202);
 
-    const goal = this.add.text(W / 2, 410, "Conquer 50 expert challenges with 85%+ accuracy\nto earn the ULTIMATE String Genius badge! 🎓", {
+    const goal = this.add.text(W / 2, 450, "Conquer 50 expert challenges with 85%+ accuracy\nto earn the ULTIMATE String Genius badge! 🎓", {
       fontFamily: "Arial", fontSize: "12px",
       color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 4,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 455, "⚠ 3 lives — final exam difficulty!", {
+    const warn = this.add.text(W / 2, 495, "⚠ 3 lives — final exam difficulty!", {
       fontFamily: "Arial", fontSize: "11px", color: "#ff6b6b",
     }).setOrigin(0.5).setDepth(202);
 
-    const btnBg = this.add.rectangle(W / 2, 500, 300, 50, 0x8B008B, 1).setDepth(202);
+    const btnBg = this.add.rectangle(W / 2, 540, 300, 50, 0x8B008B, 1).setDepth(202);
     btnBg.setStrokeStyle(2, 0xff00ff);
-    const btnTxt = this.add.text(W / 2, 500, "COMMENCE MASTERY", {
+    const btnTxt = this.add.text(W / 2, 540, "COMMENCE MASTERY", {
       fontFamily: "Courier New, monospace",
       fontSize: "19px", color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(203);
@@ -847,7 +865,9 @@ export class Level12Scene extends Phaser.Scene {
   }
 
   _showEndScreen(passed, accuracy, timeStr) {
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(200);
+    // Stretched to cover the pillarbox area on wide screens (same fix as
+    // the game-over overlay above).
+    const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.9).setDepth(200);
 
     const panelG = this.add.graphics().setDepth(201);
     const panelColor = passed ? 0x1a0a2a : 0x4a1e1e;
@@ -956,7 +976,9 @@ export class Level12Scene extends Phaser.Scene {
     this.cameras.main.flash(300, 255, 0, 0);
 
     this.time.delayedCall(600, () => {
-      const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(200);
+      // Stretched to cover the pillarbox area on wide screens; the modal
+      // panel/text/buttons below stay centered within the original 0..W.
+      const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.9).setDepth(200);
 
       const panelG = this.add.graphics().setDepth(201);
       panelG.fillStyle(0x3a0000, 0.95);

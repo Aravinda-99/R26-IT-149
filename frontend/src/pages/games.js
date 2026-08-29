@@ -511,7 +511,14 @@ function renderModuleView(container, category) {
                 </div>
             </div>
 
-            <!-- Array Methods Wing -->
+            <!--
+            Array Methods Wing, Type Conversion Methods Wing, and Character
+            Methods Wing are temporarily hidden from the Methods Wings list.
+            Uncomment this block (and the matching wingKey entries in the
+            wireModuleButtons forEach below, if re-enabling the click wiring
+            is desired) to restore them.
+
+            Array Methods Wing:
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #c8a05a; margin-bottom: 1rem;">
                 <div>
                     <h3 style="color: #c8a05a; font-size: 1.15rem; margin-bottom: 0.35rem;">🗃️ Array Methods Wing</h3>
@@ -528,7 +535,7 @@ function renderModuleView(container, category) {
                 </div>
             </div>
 
-            <!-- Type Conversion Methods Wing -->
+            Type Conversion Methods Wing:
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #b87333; margin-bottom: 1rem;">
                 <div>
                     <h3 style="color: #b87333; font-size: 1.15rem; margin-bottom: 0.35rem;">🔥 Type Conversion Methods Wing</h3>
@@ -545,7 +552,7 @@ function renderModuleView(container, category) {
                 </div>
             </div>
 
-            <!-- Character Methods Wing -->
+            Character Methods Wing:
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #4fc3f7; margin-bottom: 1rem;">
                 <div>
                     <h3 style="color: #4fc3f7; font-size: 1.15rem; margin-bottom: 0.35rem;">🔎 Character Methods Wing</h3>
@@ -561,6 +568,7 @@ function renderModuleView(container, category) {
                     <button class="btn" id="close-charactermethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
+            -->
         `;
     } else {
         html += `
