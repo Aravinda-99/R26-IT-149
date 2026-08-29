@@ -7,6 +7,11 @@ import { FatigueDetector } from "./ml/FatigueDetector.js";
 import { showBreakSuggestion } from "./BitIntervention.js";
 import { showBitMenu } from "./BitMenu.js";
 
+// TEMP DIAGNOSTIC — catches any silent/uncaught exception that could be
+// breaking a promise chain (e.g. inside Level19Scene's tutorial). Remove
+// once the freeze is localized.
+window.addEventListener('error', e => console.error('UNCAUGHT:', e.message, e.filename, e.lineno));
+
 let gameInstance = null;
 let fusionLoopHandle = null;
 // Bumped by stopFusionLoop() so an in-flight startFusionLoop() (still

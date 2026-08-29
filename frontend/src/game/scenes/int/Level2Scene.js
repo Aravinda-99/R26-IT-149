@@ -18,12 +18,15 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TOTAL_ENEMIES = 15;
 const ENEMY_BASE_SPEED = 1800; // ms for approach tween (gets faster)
+const MAX_LIVES = 5;
 
 /* Values pool — each has a raw value, display string, and whether it's a valid int */
 const DATA_VALUES = [
@@ -85,17 +88,40 @@ export class Level2Scene extends Phaser.Scene {
     super({ key: "Level2Scene" });
   }
 
+  init() {
+    // Reset local counters
+    this.wrongCatches = 0;
+
+    // Reset Global ML & Intervention States
+    if (GameManager.fusionEngine) {
+      GameManager.fusionEngine.resetForNewLevel();
+    }
+    GameManager.interventionInFlight = false;
+  }
+
   /* ═══════════════════════════════════════════
    *  CREATE
    * ═══════════════════════════════════════════ */
   create() {
-    this.cameras.main.setBackgroundColor("#060b18");
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
+    cam.setBackgroundColor("#060b18");
 
     /* ── State ── */
     this.currentIndex = 0;
     this.combo = 0;
     this.score = 0;
     this.correctCount = 0;
+    this.wrongCatches = 0;
+    this.lives = MAX_LIVES;
     this.isComplete = false;
     this.roundActive = false;
     this.roundStartTime = 0;
@@ -131,6 +157,7 @@ export class Level2Scene extends Phaser.Scene {
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 2: Tuning — Cyber Variable Arena!");
     }
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
     /* ── Instruction overlay ── */
     this._showInstruction();
@@ -183,15 +210,15 @@ export class Level2Scene extends Phaser.Scene {
   _drawArena() {
     const gfx = this.add.graphics().setDepth(0);
 
-    // Gradient
+    // Gradient (Stretched)
     for (let i = 0; i < 50; i++) {
       const t = i / 50;
       gfx.fillStyle(lerpColor(0x060b18, 0x0d1530), t);
-      gfx.fillRect(0, Math.floor((H * i) / 50), W, Math.ceil(H / 50) + 1);
+      gfx.fillRect(-W, Math.floor((H * i) / 50), W * 3, Math.ceil(H / 50) + 1);
     }
 
-    // Vertical data streams
-    for (let x = 40; x < W; x += 60) {
+    // Vertical data streams (Stretched)
+    for (let x = -W; x < W * 2; x += 60) {
       const alpha = Phaser.Math.FloatBetween(0.04, 0.12);
       gfx.lineStyle(1, 0x22d3ee, alpha);
       gfx.beginPath();
@@ -199,28 +226,28 @@ export class Level2Scene extends Phaser.Scene {
       gfx.lineTo(x, H);
       gfx.strokePath();
     }
-    // Horizontal grid
+    // Horizontal grid (Stretched)
     for (let y = 40; y < H; y += 60) {
       const alpha = Phaser.Math.FloatBetween(0.03, 0.08);
       gfx.lineStyle(1, 0x22d3ee, alpha);
       gfx.beginPath();
-      gfx.moveTo(0, y);
-      gfx.lineTo(W, y);
+      gfx.moveTo(-W, y);
+      gfx.lineTo(W * 2, y);
       gfx.strokePath();
     }
 
-    // Glowing floor line
+    // Glowing floor line (Stretched)
     gfx.lineStyle(2, 0x22d3ee, 0.25);
     gfx.beginPath();
-    gfx.moveTo(0, 330);
-    gfx.lineTo(W, 330);
+    gfx.moveTo(-W, 390);
+    gfx.lineTo(W * 2, 390);
     gfx.strokePath();
 
-    // Animated data-stream dots (decorative)
+    // Animated data-stream dots (Decorative - Stretched spawn area)
     this.streamDots = [];
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 40; i++) {
       const dot = this.add.circle(
-        Phaser.Math.Between(0, W),
+        Phaser.Math.Between(-W, W * 2),
         Phaser.Math.Between(0, H),
         Phaser.Math.FloatBetween(1, 2.5),
         0x22d3ee,
@@ -234,7 +261,7 @@ export class Level2Scene extends Phaser.Scene {
    *  PLAYER — "The Compiler"
    * ═══════════════════════════════════════════ */
   _drawPlayer() {
-    this.playerGroup = this.add.container(130, 210).setDepth(10);
+    this.playerGroup = this.add.container(370, 270).setDepth(10);
 
     // Main body (monitor-shaped)
     const body = this.add.rectangle(0, 0, 70, 80, 0x0e1a36, 1);
@@ -277,13 +304,13 @@ export class Level2Scene extends Phaser.Scene {
     );
 
     // Shield visual (hidden, shown on REJECT)
-    this.shieldGfx = this.add.arc(130, 210, 65, 0, 360, false, 0xa78bfa, 0).setDepth(11);
+    this.shieldGfx = this.add.arc(370, 270, 65, 0, 360, false, 0xa78bfa, 0).setDepth(11);
     this.shieldGfx.setStrokeStyle(3, 0xa78bfa);
     this.shieldGfx.setAlpha(0);
 
     // Idle bob
     this.tweens.add({
-      targets: this.playerGroup, y: 213,
+      targets: this.playerGroup, y: 273,
       yoyo: true, repeat: -1, duration: 1400, ease: "Sine.inOut",
     });
   }
@@ -298,7 +325,7 @@ export class Level2Scene extends Phaser.Scene {
     }
 
     const startX = W + 80;
-    this.enemyContainer = this.add.container(startX, 210).setDepth(10);
+    this.enemyContainer = this.add.container(startX, 270).setDepth(10);
 
     // Outer shell
     const borderColor = 0x4ade80; // Always green so players must evaluate the value
@@ -345,13 +372,13 @@ export class Level2Scene extends Phaser.Scene {
     const actualSpeed = speed / this.enemySpeedMult;
     this.enemyApproachTween = this.tweens.add({
       targets: this.enemyContainer,
-      x: 350,
+      x: W / 2,
       duration: actualSpeed,
       ease: "Sine.inOut",
       onComplete: () => {
         // enemy bob when it arrives
         this.tweens.add({
-          targets: this.enemyContainer, y: 213,
+          targets: this.enemyContainer, y: 273,
           yoyo: true, repeat: -1, duration: 800, ease: "Sine.inOut",
         });
       },
@@ -397,6 +424,15 @@ export class Level2Scene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "11px", color: "#94a3b8",
     }).setOrigin(1, 0).setDepth(dp);
 
+    // ── Lives (top-right) ──
+    this.livesIcons = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const heart = this.add.text(W - 40 - i * 35, 78, "❤️", {
+        fontSize: "22px",
+      }).setOrigin(0.5).setDepth(dp);
+      this.livesIcons.push(heart);
+    }
+
     // Feedback toast
     this.feedbackText = this.add.text(W / 2, 145, "", {
       fontFamily: "Arial, sans-serif", fontSize: "17px",
@@ -409,20 +445,20 @@ export class Level2Scene extends Phaser.Scene {
    *  CODE SIMULATION PANEL
    * ═══════════════════════════════════════════ */
   _createCodePanel() {
-    this.codePanelBg = this.add.rectangle(W / 2, 555, W - 20, 80, 0x0a1628, 0.96)
+    this.codePanelBg = this.add.rectangle(W / 2, 650, W - 20, 80, 0x0a1628, 0.96)
       .setStrokeStyle(1, 0x1e293b).setDepth(90);
 
-    this.add.text(20, 520, "// Code Execution", {
+    this.add.text(40, 615, "// Code Execution", {
       fontFamily: "monospace", fontSize: "9px", color: "#475569",
     }).setDepth(91);
 
-    this.codeLine1 = this.add.text(20, 536, "", {
+    this.codeLine1 = this.add.text(40, 631, "", {
       fontFamily: "Courier New, monospace", fontSize: "13px", color: "#22d3ee",
     }).setDepth(91);
-    this.codeLine2 = this.add.text(20, 554, "", {
+    this.codeLine2 = this.add.text(40, 649, "", {
       fontFamily: "Courier New, monospace", fontSize: "13px", color: "#94a3b8",
     }).setDepth(91);
-    this.codeLine3 = this.add.text(20, 572, "", {
+    this.codeLine3 = this.add.text(40, 667, "", {
       fontFamily: "Courier New, monospace", fontSize: "13px", color: "#4ade80",
     }).setDepth(91);
   }
@@ -506,6 +542,7 @@ export class Level2Scene extends Phaser.Scene {
    *  START COMBAT
    * ═══════════════════════════════════════════ */
   _startCombat() {
+    GameManager.set("lives", MAX_LIVES);
     this._nextEnemy();
   }
 
@@ -557,13 +594,13 @@ export class Level2Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════ */
   _showActionButtons() {
     // ── ASSIGN button ──
-    const assignBg = this.add.rectangle(W / 2 - 130, 410, 220, 55, 0x0e4429, 1).setDepth(50);
+    const assignBg = this.add.rectangle(W / 2 - 180, 520, 220, 55, 0x0e4429, 1).setDepth(50);
     assignBg.setStrokeStyle(2, 0x4ade80);
-    const assignTxt = this.add.text(W / 2 - 130, 400, "📥  ASSIGN", {
+    const assignTxt = this.add.text(W / 2 - 180, 510, "📥  ASSIGN", {
       fontFamily: "Courier New, monospace", fontSize: "20px",
       color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(51);
-    const assignSub = this.add.text(W / 2 - 130, 424, "Valid Integer", {
+    const assignSub = this.add.text(W / 2 - 180, 534, "Valid Integer", {
       fontFamily: "Arial", fontSize: "11px", color: "#86efac",
     }).setOrigin(0.5).setDepth(51);
 
@@ -581,13 +618,13 @@ export class Level2Scene extends Phaser.Scene {
     this.roundElements.push(assignBg, assignTxt, assignSub);
 
     // ── REJECT button ──
-    const rejectBg = this.add.rectangle(W / 2 + 130, 410, 220, 55, 0x4a1525, 1).setDepth(50);
+    const rejectBg = this.add.rectangle(W / 2 + 180, 520, 220, 55, 0x4a1525, 1).setDepth(50);
     rejectBg.setStrokeStyle(2, 0xef4444);
-    const rejectTxt = this.add.text(W / 2 + 130, 400, "🚫 can not assign", {
+    const rejectTxt = this.add.text(W / 2 + 180, 510, "🚫 can not assign", {
       fontFamily: "Courier New, monospace", fontSize: "20px",
       color: "#ef4444", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(51);
-    const rejectSub = this.add.text(W / 2 + 130, 424, "Type Error", {
+    const rejectSub = this.add.text(W / 2 + 180, 534, "Type Error", {
       fontFamily: "Arial", fontSize: "11px", color: "#fca5a5",
     }).setOrigin(0.5).setDepth(51);
 
@@ -619,7 +656,7 @@ export class Level2Scene extends Phaser.Scene {
    *  HANDLE PLAYER CHOICE
    * ═══════════════════════════════════════════ */
   _handleChoice(choice) {
-    if (!this.roundActive || this.isComplete) return;
+    if (!this.roundActive || this.isComplete || GameManager.interventionInFlight) return;
     this.roundActive = false;
 
     // Disable buttons
@@ -711,8 +748,8 @@ export class Level2Scene extends Phaser.Scene {
   _onWrong(choice, data) {
     this.combo = 0;
     GameManager.resetCombo();
-    GameManager.loseLife();
-    const currentLives = GameManager.get("lives");
+    this.lives = GameManager.loseLife();
+    this._updateLives();
 
     // ── Code panel ──
     if (choice === "ASSIGN" && !data.isInt) {
@@ -743,7 +780,12 @@ export class Level2Scene extends Phaser.Scene {
     this._updateProgress();
     this._updateCombo();
 
-    if (currentLives <= 0) {
+    this.wrongCatches = (this.wrongCatches || 0) + 1;
+    if (this.wrongCatches === 3) {
+      this.runBehavioralCheck();
+    }
+
+    if (this.lives <= 0) {
       this.time.delayedCall(800, () => this._gameOver());
       return;
     }
@@ -758,7 +800,7 @@ export class Level2Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════ */
   _animateAllocationBeam(total, timeBonus, comboMult) {
     // Cyan laser from player to enemy
-    const laser = this.add.rectangle(380, 210, 350, 5, 0x22d3ee, 0.9).setDepth(70);
+    const laser = this.add.rectangle(620, 270, 350, 5, 0x22d3ee, 0.9).setDepth(70);
     laser.setAlpha(0);
 
     this.tweens.add({
@@ -766,7 +808,7 @@ export class Level2Scene extends Phaser.Scene {
       onComplete: () => {
         // Trail particles along beam
         for (let i = 0; i < 10; i++) {
-          this.beamParticles.emitParticleAt(160 + i * 30, 210, 2);
+          this.beamParticles.emitParticleAt(400 + i * 30, 270, 2);
         }
 
         this.tweens.add({
@@ -775,7 +817,7 @@ export class Level2Scene extends Phaser.Scene {
         });
 
         // Hit enemy
-        this.hitParticles.emitParticleAt(this.enemyContainer ? this.enemyContainer.x : 500, 210, 30);
+        this.hitParticles.emitParticleAt(this.enemyContainer ? this.enemyContainer.x : 740, 270, 30);
 
         // Explode enemy
         if (this.enemyContainer) {
@@ -789,24 +831,24 @@ export class Level2Scene extends Phaser.Scene {
         }
 
         // "DEFEATED" popup
-        const dt = this.add.text(500, 180, "💥 ALLOCATED!", {
+        const dt = this.add.text(740, 240, "💥 ALLOCATED!", {
           fontFamily: "Arial Black, Arial", fontSize: "20px",
           color: "#22d3ee", fontStyle: "bold",
           stroke: "#000", strokeThickness: 3,
         }).setOrigin(0.5).setDepth(100);
         this.tweens.add({
-          targets: dt, y: 140, alpha: 0, scaleX: 1.3, scaleY: 1.3,
+          targets: dt, y: 200, alpha: 0, scaleX: 1.3, scaleY: 1.3,
           duration: 900, onComplete: () => dt.destroy(),
         });
 
         this.cameras.main.flash(100, 30, 200, 220);
 
         // Score popup
-        const sp = this.add.text(500, 240, `+${total}`, {
+        const sp = this.add.text(740, 300, `+${total}`, {
           fontFamily: "Arial", fontSize: "16px", color: "#fbbf24",
           fontStyle: "bold", stroke: "#000", strokeThickness: 2,
         }).setOrigin(0.5).setDepth(100);
-        this.tweens.add({ targets: sp, y: 200, alpha: 0, duration: 800, onComplete: () => sp.destroy() });
+        this.tweens.add({ targets: sp, y: 260, alpha: 0, duration: 800, onComplete: () => sp.destroy() });
       },
     });
 
@@ -824,7 +866,7 @@ export class Level2Scene extends Phaser.Scene {
         this.shieldGfx.setScale(1);
       },
     });
-    this.shieldParticles.emitParticleAt(130, 210, 25);
+    this.shieldParticles.emitParticleAt(370, 270, 25);
 
     // Enemy bounces off and explodes
     if (this.enemyContainer) {
@@ -832,34 +874,34 @@ export class Level2Scene extends Phaser.Scene {
         targets: this.enemyContainer,
         x: W + 100, duration: 400, ease: "Cubic.in",
         onComplete: () => {
-          this.hitParticles.emitParticleAt(W - 50, 210, 20);
+          this.hitParticles.emitParticleAt(W - 50, 270, 20);
           if (this.enemyContainer) this.enemyContainer.destroy();
         },
       });
     }
 
     // "REJECTED" popup
-    const rt = this.add.text(300, 180, "🛡️ FIREWALL!", {
+    const rt = this.add.text(540, 240, "🛡️ FIREWALL!", {
       fontFamily: "Arial Black, Arial", fontSize: "20px",
       color: "#a78bfa", fontStyle: "bold",
       stroke: "#000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(100);
     this.tweens.add({
-      targets: rt, y: 140, alpha: 0, scaleX: 1.3, scaleY: 1.3,
+      targets: rt, y: 200, alpha: 0, scaleX: 1.3, scaleY: 1.3,
       duration: 900, onComplete: () => rt.destroy(),
     });
 
     this.cameras.main.flash(100, 120, 80, 200);
 
-    const sp = this.add.text(300, 240, `+${total}`, {
+    const sp = this.add.text(540, 300, `+${total}`, {
       fontFamily: "Arial", fontSize: "16px", color: "#fbbf24",
       fontStyle: "bold", stroke: "#000", strokeThickness: 2,
     }).setOrigin(0.5).setDepth(100);
-    this.tweens.add({ targets: sp, y: 200, alpha: 0, duration: 800, onComplete: () => sp.destroy() });
+    this.tweens.add({ targets: sp, y: 260, alpha: 0, duration: 800, onComplete: () => sp.destroy() });
   }
 
   _animateGlitch() {
-    this.glitchParticles.emitParticleAt(130, 210, 25);
+    this.glitchParticles.emitParticleAt(370, 270, 25);
     this.cameras.main.shake(300, 0.02);
     this.cameras.main.flash(250, 255, 0, 0);
 
@@ -881,18 +923,18 @@ export class Level2Scene extends Phaser.Scene {
     }
 
     // Damage popup
-    const dp = this.add.text(130, 150, `−1 LIFE`, {
+    const dp = this.add.text(370, 210, `−1 LIFE`, {
       fontFamily: "Arial", fontSize: "20px", color: "#ef4444",
       fontStyle: "bold", stroke: "#000", strokeThickness: 3,
     }).setOrigin(0.5).setDepth(100);
-    this.tweens.add({ targets: dp, y: 110, alpha: 0, duration: 800, onComplete: () => dp.destroy() });
+    this.tweens.add({ targets: dp, y: 170, alpha: 0, duration: 800, onComplete: () => dp.destroy() });
   }
 
   /* ═══════════════════════════════════════════
    *  POWER-UPS
    * ═══════════════════════════════════════════ */
   _showPowerUps() {
-    const py = 470;
+    const py = 580;
     const powers = [
       {
         emoji: "🛡️", label: "Auto-Cast Shield", uses: this.powerAutoShield,
@@ -973,10 +1015,65 @@ export class Level2Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.feedbackText, alpha: 0, delay: 2200, duration: 500 });
   }
 
+  _updateLives() {
+    for (let i = 0; i < MAX_LIVES; i++) {
+      if (this.livesIcons[i]) {
+        this.livesIcons[i].setText(i < this.lives ? "❤️" : "🖤");
+        if (i >= this.lives) {
+          this.tweens.add({
+            targets: this.livesIcons[i],
+            scaleX: 1.3, scaleY: 1.3,
+            yoyo: true,
+            duration: 150,
+          });
+        }
+      }
+    }
+  }
+
+  addLife() {
+    // BitMenu already calls GameManager.addLife() for the global count before
+    // calling this — only touch local state here, or the global count would
+    // be incremented twice per bonus life (matches Level1Scene's convention).
+    if (this.lives < MAX_LIVES) {
+      this.lives++;
+      this._updateLives();
+    }
+  }
+
+  /** ML struggle check — reports real per-round accuracy/timing stats (rapid-fire rules apply). */
+  async runBehavioralCheck() {
+    const attempts_count = this.currentIndex;
+    const time_taken_seconds = (this.time.now - this.roundStartTime) / 1000;
+    const misconception_repeat_count = this.wrongCatches;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      // BehavioralRules' own Rule 1 already forces "struggling" whenever
+      // isRapidFire && misconception_repeat_count >= 3 — which is always true
+      // here, since this method is only ever called at wrongCatches === 3.
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level2Scene: /api/wellbeing/predict-struggle unreachable", e);
+      // Network/API failure shouldn't silently swallow a guaranteed struggle signal.
+      if (this.wrongCatches >= 3) {
+        GameManager.fusionEngine.checkBehavioral("struggling");
+      }
+    }
+  }
+
   /* ═══════════════════════════════════════════
    *  UPDATE LOOP
    * ═══════════════════════════════════════════ */
   update() {
+    if (GameManager.interventionInFlight) return;
+
     // Timer
     if (this.roundActive && !this.isComplete) {
       const s = ((this.time.now - this.roundStartTime) / 1000).toFixed(1);
@@ -1035,7 +1132,7 @@ export class Level2Scene extends Phaser.Scene {
       `Accuracy: ${accuracy}%`,
       `Final Score: ${this.score}`,
       `Max Combo: ${this.combo}`,
-      `Lives Remaining: ${GameManager.get('lives')} / 3`,
+      `Lives Remaining: ${GameManager.get('lives')} / 5`,
     ];
     stats.forEach((s, i) => {
       this.add.text(W / 2, 185 + i * 26, s, {
@@ -1123,5 +1220,8 @@ export class Level2Scene extends Phaser.Scene {
     if (this.enemyContainer) this.enemyContainer.destroy();
     if (this.enemyApproachTween) this.enemyApproachTween.stop();
     this.streamDots = [];
+    // Restore lives visibility for other levels
+    const uiScene = this.scene.get("UIScene");
+    if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(true);
   }
 }

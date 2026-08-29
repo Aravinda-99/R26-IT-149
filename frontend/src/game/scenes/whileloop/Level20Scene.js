@@ -184,6 +184,16 @@ export class Level20Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
     GameManager.incrementAttempt(19);
     this._buildBG();
@@ -207,16 +217,26 @@ export class Level20Scene extends Phaser.Scene {
   // ─── Background ───────────────────────────────────────────────────────────
 
   _buildBG() {
-    this.add.rectangle(W / 2, H / 2, W, H, 0x0a0014);
+    // Stretch main background
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x0a0014);
+
+    // Stretch grid — X only. This scene's camera height always fits 0..H
+    // exactly (zoom = min(w/W, h/H), and h/H is always the constraining
+    // factor on a wide screen), so there's no vertical letterboxing to
+    // fill — only the horizontal pillarboxing needs covering.
     const grid = this.add.graphics();
     grid.lineStyle(1, 0x1a0033, 0.4);
-    for (let x = 0; x <= W; x += 40) { grid.moveTo(x, 0); grid.lineTo(x, H); }
-    for (let y = 0; y <= H; y += 40) { grid.moveTo(0, y); grid.lineTo(W, y); }
+    for (let x = -W * 2; x <= W * 3; x += 40) { grid.moveTo(x, 0); grid.lineTo(x, H); }
+    for (let y = 0; y <= H; y += 40) { grid.moveTo(-W * 2, y); grid.lineTo(W * 3, y); }
     grid.strokePath();
 
     const frags = ["while", "{}", "!=", "++", "true", "break", "int", "<=", "print", "i++"];
     for (let i = 0; i < 10; i++) {
-      const fx = Phaser.Math.Between(20, W - 40);
+      // Spawn text fragments across the ultrawide area — Y kept in the
+      // visible band. Spawning up to H*2 would leave roughly half of these
+      // permanently off-screen, since their drift tween only moves them up
+      // 30-80px before resetting back to the original (off-screen) Y.
+      const fx = Phaser.Math.Between(-W * 2, W * 3);
       const fy = Phaser.Math.Between(HUD_H + 20, H - 40);
       const ft = this.add.text(fx, fy, frags[i], {
         fontFamily: "monospace", fontSize: "11px", color: "#330055",
@@ -229,22 +249,28 @@ export class Level20Scene extends Phaser.Scene {
       });
     }
 
+    // Stretch edge accents — X only. The top/bottom lines must stay at
+    // y:0 / y:H-2 to actually mark the real top/bottom screen edges;
+    // pushing them to -H / H*2-2 would move them entirely off-screen.
     const edges = this.add.graphics();
-    edges.fillStyle(0xff0000, 0.06); edges.fillRect(0, 0, 3, H);
-    edges.fillStyle(0x0000ff, 0.06); edges.fillRect(W - 3, 0, 3, H);
-    edges.fillStyle(0x00ff00, 0.04); edges.fillRect(0, 0, W, 2);
-    edges.fillStyle(0xff00ff, 0.04); edges.fillRect(0, H - 2, W, 2);
+    edges.fillStyle(0xff0000, 0.06); edges.fillRect(-W * 2, 0, 3, H);
+    edges.fillStyle(0x0000ff, 0.06); edges.fillRect(W * 3 - 3, 0, 3, H);
+    edges.fillStyle(0x00ff00, 0.04); edges.fillRect(-W * 2, 0, W * 5, 2);
+    edges.fillStyle(0xff00ff, 0.04); edges.fillRect(-W * 2, H - 2, W * 5, 2);
   }
 
   _buildCRT() {
+    // X-only stretch — see _buildBG() note: Y always exactly fits 0..H, so
+    // stretching the vignette's Y bounds would push its border stroke
+    // entirely outside the visible area, making it invisible.
     const crt = this.add.graphics().setDepth(50);
     for (let y = 0; y < H; y += 4) {
-      crt.fillStyle(0x000000, 0.12); crt.fillRect(0, y, W, 2);
+      crt.fillStyle(0x000000, 0.12); crt.fillRect(-W * 2, y, W * 5, 2);
     }
     const vig = this.add.graphics().setDepth(49);
     for (let r = 0; r < 5; r++) {
       vig.lineStyle(18 + r * 8, 0x000000, 0.06 + r * 0.025);
-      vig.strokeRect(0, 0, W, H);
+      vig.strokeRect(-W * 2, 0, W * 5, H);
     }
   }
 
@@ -254,7 +280,7 @@ export class Level20Scene extends Phaser.Scene {
     const colors = [0xff00ff, 0x00ffff, 0xff0000, 0xffff00, 0x00ff88];
     for (let i = 0; i < 6; i++) {
       const gb = this.add.rectangle(
-        Phaser.Math.Between(0, W),
+        Phaser.Math.Between(-W * 2, W * 3),
         Phaser.Math.Between(HUD_H, H - 20),
         Phaser.Math.Between(30, 120), 3,
         Phaser.Math.RND.pick(colors), 0.4
@@ -266,9 +292,10 @@ export class Level20Scene extends Phaser.Scene {
   _updateGlitchBlocks(time) {
     for (const gb of this._glitchBlocks) {
       if (time > gb.next) {
-        gb.obj.setX(Phaser.Math.Between(0, W));
+        gb.obj.setX(Phaser.Math.Between(-W * 2, W * 3));
         gb.obj.setY(Phaser.Math.Between(HUD_H, H - 20));
-        gb.obj.setWidth(Phaser.Math.Between(20, 150));
+        // FIX: Use setDisplaySize(width, height) instead of the non-existent setWidth method
+        gb.obj.setDisplaySize(Phaser.Math.Between(20, 150), 3);
         gb.obj.setAlpha(Math.random() * 0.45 + 0.05);
         gb.next = time + Phaser.Math.Between(300, 2000);
       }
@@ -278,8 +305,8 @@ export class Level20Scene extends Phaser.Scene {
   // ─── HUD ──────────────────────────────────────────────────────────────────
 
   _buildHUD() {
-    this.add.rectangle(W / 2, HUD_H / 2, W, HUD_H, 0x0d0020, 0.95).setDepth(10);
-    this.add.rectangle(W / 2, HUD_H, W, 2, 0x9900ff, 1).setDepth(10);
+    this.add.rectangle(W / 2, HUD_H / 2, W * 5, HUD_H, 0x0d0020, 0.95).setDepth(10);
+    this.add.rectangle(W / 2, HUD_H, W * 5, 2, 0x9900ff, 1).setDepth(10);
 
     this._hudTitle = this.add.text(12, 10, "DEBUG DIMENSION", {
       fontFamily: "monospace", fontSize: "13px", color: "#ff00ff", fontStyle: "bold",
@@ -675,7 +702,7 @@ export class Level20Scene extends Phaser.Scene {
   }
 
   _flashEffect(color, shake) {
-    const fl = this.add.rectangle(W / 2, H / 2, W, H, color, 0.15).setDepth(30);
+    const fl = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, color, 0.15).setDepth(30);
     this.time.delayedCall(300, () => fl.destroy());
     if (shake) this.cameras.main.shake(180, 0.007);
     else {
@@ -696,7 +723,7 @@ export class Level20Scene extends Phaser.Scene {
     this._clearWave();
     this.cameras.main.shake(500, 0.02);
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(40);
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.88).setDepth(40);
     const t = this.add.text(W / 2, H / 2 - 90, "DIMENSION DESTABILIZED!", {
       fontFamily: "monospace", fontSize: "20px", color: "#ff0044", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(41);
@@ -729,7 +756,7 @@ export class Level20Scene extends Phaser.Scene {
     const stars = acc >= 90 ? 3 : acc >= 70 ? 2 : 1;
     const starStr = "★".repeat(stars) + "☆".repeat(3 - stars);
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(40);
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(40);
 
     this.add.text(W / 2, H / 2 - 130, "DIMENSION STABILIZED!", {
       fontFamily: "monospace", fontSize: "22px", color: "#ff00ff", fontStyle: "bold",

@@ -112,6 +112,27 @@ export class Level9Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+
+      // domRoot (the DOM code-editor panel) runs setScrollFactor(0) so camera
+      // shake() doesn't jitter it — but that also makes it ignore the scroll
+      // recentering above, since DOM elements are positioned via
+      // camera.matrix (zoom + camera viewport) with scrollX/scrollY applied
+      // separately per-object, scaled by scrollFactor. A scrollFactor(0)
+      // object's local x therefore lands on-screen at
+      // scale.width/2 + zoom * (x - scale.width/2) — so setting its x to
+      // scale.width/2 is what actually re-centers it on a wide/pillarboxed
+      // screen, not a scrollX change.
+      if (this.domRoot) this.domRoot.x = this.scale.width / 2;
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     this.currentQuestion = 0;
@@ -154,7 +175,11 @@ export class Level9Scene extends Phaser.Scene {
         i
       );
       g.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
-      g.fillRect(0, (H * i) / 50, W, H / 50 + 1);
+      // Oversized width so each gradient band covers the canvas regardless
+      // of camera position/zoom on any aspect ratio; the Y span is left
+      // untouched since it already correctly tiles 0..H (this level's
+      // pillarboxing is horizontal only — the height fits the zoom exactly).
+      g.fillRect(-W * 2, (H * i) / 50, W * 5, H / 50 + 1);
     }
 
     this.add.text(W / 2, 22, "CODE ASSESSMENT", {
@@ -304,7 +329,10 @@ export class Level9Scene extends Phaser.Scene {
       </div>
     `;
 
-    this.domRoot = this.add.dom(W / 2, 0, wrap);
+    // x uses the raw canvas center (not W / 2) because this element has
+    // scrollFactor(0) — see the domRoot correction in create()'s
+    // updateCamera() for why that matters on a wide/pillarboxed screen.
+    this.domRoot = this.add.dom(this.scale.width / 2, 0, wrap);
     this.domRoot.setOrigin(0.5, 0);
     this.domRoot.setScrollFactor(0);
 
