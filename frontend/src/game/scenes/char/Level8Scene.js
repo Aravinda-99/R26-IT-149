@@ -128,6 +128,16 @@ export class Level8Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -180,17 +190,18 @@ export class Level8Scene extends Phaser.Scene {
     for (let i = 0; i < 60; i++) {
       const t = i / 60;
       gfx.fillStyle(lerpColor(top, bot, t), 1);
-      gfx.fillRect(0, Math.floor((H * i) / 60), W, Math.ceil(H / 60) + 1);
+      // Stretched width: start at -W, span W * 3
+      gfx.fillRect(-W, Math.floor((H * i) / 60), W * 3, Math.ceil(H / 60) + 1);
     }
 
-    /* Metal grid on floor */
+    /* Metal grid on floor (Stretched) */
     const gridGfx = this.add.graphics().setDepth(1).setAlpha(0.04);
     gridGfx.lineStyle(1, 0x00ffff, 1);
-    for (let x = 0; x < W; x += 40) {
+    for (let x = -W; x <= W * 2; x += 40) {
       gridGfx.beginPath(); gridGfx.moveTo(x, 0); gridGfx.lineTo(x, H); gridGfx.strokePath();
     }
-    for (let y = 0; y < H; y += 40) {
-      gridGfx.beginPath(); gridGfx.moveTo(0, y); gridGfx.lineTo(W, y); gridGfx.strokePath();
+    for (let y = 0; y <= H; y += 40) {
+      gridGfx.beginPath(); gridGfx.moveTo(-W, y); gridGfx.lineTo(W * 2, y); gridGfx.strokePath();
     }
 
     /* Hazard stripes at top */

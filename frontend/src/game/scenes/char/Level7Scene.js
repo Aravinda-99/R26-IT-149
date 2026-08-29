@@ -141,6 +141,16 @@ export class Level7Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -206,13 +216,14 @@ export class Level7Scene extends Phaser.Scene {
       const t = i / steps;
       const c = lerpColor(topColor, botColor, t);
       gfx.fillStyle(c, 1);
-      gfx.fillRect(0, Math.floor((H * i) / steps), W, Math.ceil(H / steps) + 1);
+      // Stretched width: start at -W, span W * 3
+      gfx.fillRect(-W, Math.floor((H * i) / steps), W * 3, Math.ceil(H / steps) + 1);
     }
 
     /* Layer 1: Far stars (small white dots, slow drift via tweens) */
     this.farStars = [];
     for (let i = 0; i < 60; i++) {
-      const x = Phaser.Math.Between(0, W);
+      const x = Phaser.Math.Between(-W, W * 2);
       const y = Phaser.Math.Between(0, H);
       const size = Phaser.Math.FloatBetween(0.5, 1.5);
       const alpha = Phaser.Math.FloatBetween(0.2, 0.7);
@@ -232,7 +243,7 @@ export class Level7Scene extends Phaser.Scene {
     this.nebulaClouds = [];
     const nebulaColors = [0x6a0dad, 0x9b30ff, 0xda70d6, 0x8b008b, 0x4b0082];
     for (let i = 0; i < 5; i++) {
-      const nx = Phaser.Math.Between(100, W - 100);
+      const nx = Phaser.Math.Between(-W, W * 2);
       const ny = Phaser.Math.Between(80, H - 80);
       const cloud = this.add.graphics().setDepth(2);
       const color = nebulaColors[i % nebulaColors.length];
@@ -1490,8 +1501,8 @@ export class Level7Scene extends Phaser.Scene {
     if (this.farStars) {
       this.farStars.forEach(fs => {
         fs.obj.x -= fs.speed;
-        if (fs.obj.x < -5) {
-          fs.obj.x = W + 5;
+        if (fs.obj.x < -W) {
+          fs.obj.x = W * 2 + 5;
           fs.obj.y = Phaser.Math.Between(0, H);
         }
       });

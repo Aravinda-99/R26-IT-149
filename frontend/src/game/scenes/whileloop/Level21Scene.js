@@ -266,6 +266,16 @@ export class Level21Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
     GameManager.incrementAttempt(20);
     this._buildBG();
@@ -280,7 +290,7 @@ export class Level21Scene extends Phaser.Scene {
   update() {
     for (const d of this._streamDots) {
       d.x += d.speed;
-      if (d.x > W + 5) d.x = -5;
+      if (d.x > W * 3) d.x = -W * 2; // Wrap across the extended bounds
     }
     for (const p of this._ambientParts) {
       p.obj.y -= 0.08;
@@ -293,13 +303,14 @@ export class Level21Scene extends Phaser.Scene {
   // ─── Background ──────────────────────────────────────────────────────────
 
   _buildBG() {
-    this.add.rectangle(W / 2, H / 2, W, H, 0x080c12);
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x080c12);
 
-    // Data stream dots (bottom strip)
+    // Data stream dots (bottom strip) — expanded loop range so the tiled
+    // dots cover the extended ultrawide width
     const speeds = [0.35, 0.4, 0.45, 0.5, 0.38];
     const ys = [530, 545, 558, 572, 586];
     for (let r = 0; r < 5; r++) {
-      for (let i = 0; i < 35; i++) {
+      for (let i = -100; i < 200; i++) {
         const x = i * 23 + Phaser.Math.Between(-5, 5);
         const dot = this.add.rectangle(x, ys[r], 2, 2, 0x00e5ff, 0.07);
         this._streamDots.push({ x: dot.x, y: ys[r], speed: speeds[r], obj: dot });
@@ -310,26 +321,33 @@ export class Level21Scene extends Phaser.Scene {
       }
     }
 
-    // Ambient particles
+    // Ambient particles — X spawn widened for the ultrawide space, but Y
+    // kept at its original 0..H-10 range. These drift upward continuously
+    // and wrap via `if (p.obj.y < 0) p.obj.y = H - 10` in update() — that
+    // check fires on ANY y<0, not just "wrapped from the top", so spawning
+    // some particles pre-negative (from a -H..H*2 range) would make them
+    // teleport instantly to the bottom on the very first frame, while
+    // particles spawned past y:H would take minutes of upward drift before
+    // ever entering the visible 0..H band. Neither is the intended effect.
     for (let i = 0; i < 20; i++) {
       const obj = this.add.circle(
-        Phaser.Math.Between(0, W), Phaser.Math.Between(0, H - 10),
+        Phaser.Math.Between(-W * 2, W * 3), Phaser.Math.Between(0, H - 10),
         1, 0x4fc3f7, Phaser.Math.FloatBetween(0.03, 0.07)
       );
       this._ambientParts.push({ obj, phase: Math.random() * Math.PI * 2 });
     }
 
-    // Ambient side strips
-    const ls = this.add.rectangle(1, H / 2, 3, H, 0x1565c0, 0.06);
-    const rs = this.add.rectangle(W - 1, H / 2, 3, H, 0x1565c0, 0.06);
+    // Ambient side strips — moved out to the real ultrawide edges
+    const ls = this.add.rectangle(-W * 2, H / 2, 3, H * 3, 0x1565c0, 0.06);
+    const rs = this.add.rectangle(W * 3, H / 2, 3, H * 3, 0x1565c0, 0.06);
     this.tweens.add({ targets: [ls, rs], alpha: 0.1, duration: 4500, yoyo: true, repeat: -1 });
   }
 
   // ─── HUD ─────────────────────────────────────────────────────────────────
 
   _buildHUD() {
-    this.add.rectangle(W / 2, HUD_H / 2, W, HUD_H, 0x0a0e13, 0.96).setDepth(10);
-    this.add.rectangle(W / 2, HUD_H, W, 1, 0x21262d, 1).setDepth(10);
+    this.add.rectangle(W / 2, HUD_H / 2, W * 5, HUD_H, 0x0a0e13, 0.96).setDepth(10);
+    this.add.rectangle(W / 2, HUD_H, W * 5, 1, 0x21262d, 1).setDepth(10);
 
     this.add.text(14, 10, "DATA STREAM PROCESSOR", {
       fontFamily: "Arial, sans-serif", fontSize: "12px", color: "#b0bec5", fontStyle: "bold",
@@ -559,8 +577,11 @@ export class Level21Scene extends Phaser.Scene {
       if (!obj.blockData) return;
       obj.setScale(1.0); obj.setAlpha(1.0);
 
-      // Find nearest valid slot
-      let best = null, bestDist = 55;
+      // Find nearest valid slot. obj.x/obj.y is already this block's true
+      // center (the container is created at x + tw/2 with its background
+      // laid out symmetrically from -tw/2 to +tw/2), so no width offset is
+      // needed here — only the forgiveness radius is being widened.
+      let best = null, bestDist = 65; // Slightly increased forgiveness radius
       for (const [key, slot] of Object.entries(this._slots)) {
         if (slot.filled) continue;
         if (slot.category !== obj.blockData.category) continue;
@@ -666,7 +687,7 @@ export class Level21Scene extends Phaser.Scene {
     hit.on("pointerout", () => { g.setAlpha(1); });
     hit.on("pointerdown", () => { if (!this._executing) this._onProcess(); });
 
-    this._processBtn = { cont: this.add.container(0, 0, [g, t, hit]), g, t, hit };
+    this._processBtn = { cont: this.add.container(0, 0, [g, t, hit]).setDepth(20), g, t, hit };
     this._waveEls.push(g, t, hit);
     this._disableProcessBtn();
   }
@@ -1556,7 +1577,7 @@ export class Level21Scene extends Phaser.Scene {
   // ─── Bit Mascot ───────────────────────────────────────────────────────────
 
   _buildBit() {
-    this._bitCont = this.add.container(W + 60, H - 70).setDepth(28);
+    this._bitCont = this.add.container(W * 2, H - 70).setDepth(28);
     const body = this.add.graphics();
     body.fillStyle(0x6600cc, 1); body.fillRoundedRect(-18, -18, 36, 36, 7);
     body.fillStyle(0xffffff, 1); body.fillCircle(-6, -4, 4); body.fillCircle(6, -4, 4);
@@ -1577,8 +1598,13 @@ export class Level21Scene extends Phaser.Scene {
     this.tweens.add({ targets: this._bitCont, x: W - 80, duration: 300, ease: "Back.easeOut" });
     if (this._bitTimer) this._bitTimer.remove();
     this._bitTimer = this.time.delayedCall(4000, () => {
-      this.tweens.add({ targets: this._bitCont, x: W + 60, duration: 300 });
+      this._hideBit();
     });
+  }
+
+  _hideBit() {
+    this.tweens.killTweensOf(this._bitCont);
+    this.tweens.add({ targets: this._bitCont, x: W * 2, duration: 300, ease: "Quad.easeIn" });
   }
 
   // ─── Level Complete ───────────────────────────────────────────────────────
@@ -1588,7 +1614,7 @@ export class Level21Scene extends Phaser.Scene {
     GameManager.completeLevel(20, Math.round(acc * 100));
     try { BadgeSystem.unlock("stream_architect"); } catch (_) {}
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(40);
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.88).setDepth(40);
 
     this.add.text(W / 2, 60, "ALL STREAMS PROCESSED!", {
       fontFamily: "Arial", fontSize: "22px", color: "#ffd740", fontStyle: "bold",

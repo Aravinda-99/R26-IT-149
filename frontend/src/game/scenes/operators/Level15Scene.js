@@ -66,9 +66,19 @@ export class Level15Scene extends Phaser.Scene {
   constructor() { super({ key: "Level15Scene" }); }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
     this.projIdx = 0; this.score = 0; this.projDone = 0; this.projCorrect = 0;
-    this.elements = []; this.userAnswers = [];
+    this.elements = []; this.userAnswers = []; this.currentDropdown = null;
     this._drawIDE(); this._createHUD();
     const ui = this.scene.get("UIScene");
     if (ui && ui.setLevelLabel) ui.setLevelLabel("Level 15: Code Builder Pro");
@@ -76,15 +86,17 @@ export class Level15Scene extends Phaser.Scene {
   }
 
   _drawIDE() {
-    // BG
-    this.add.rectangle(W / 2, H / 2, W, H, 0x1e1e1e).setDepth(0);
-    // Menu bar
-    this.add.rectangle(W / 2, 71, W, 30, 0x2d2d30).setDepth(1);
+    // BG (Stretched — centered on W/2 so widening the width alone spans
+    // -W*2..W*3, matching the fillRect(-W*2,...,W*5,...) convention used
+    // elsewhere)
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x1e1e1e).setDepth(0);
+    // Menu bar (Stretched — Y/height unchanged)
+    this.add.rectangle(W / 2, 71, W * 5, 30, 0x2d2d30).setDepth(1);
     ["File", "Edit", "View", "Run", "Help"].forEach((m, i) => {
       this.add.text(20 + i * 60, 71, m, { fontFamily: "Arial", fontSize: "12px", color: "#cccccc" }).setOrigin(0, 0.5).setDepth(2);
     });
-    // Status bar
-    this.statusBg = this.add.rectangle(W / 2, H - 15, W, 30, 0x007acc).setDepth(1);
+    // Status bar (Stretched — Y/height unchanged)
+    this.statusBg = this.add.rectangle(W / 2, H - 15, W * 5, 30, 0x007acc).setDepth(1);
     this.statusTxt = this.add.text(W / 2, H - 15, "Ready", { fontFamily: "Arial", fontSize: "12px", color: "#fff" }).setOrigin(0.5).setDepth(2);
   }
 
@@ -97,7 +109,7 @@ export class Level15Scene extends Phaser.Scene {
   _clear() { this.elements.forEach(e => { try { e.destroy(); } catch { } }); this.elements = []; }
 
   _showIntro() {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1e1e1e, 0.98); pg.fillRoundedRect(W / 2 - 280, 60, 560, 460, 16);
     pg.lineStyle(3, 0x007acc); pg.strokeRoundedRect(W / 2 - 280, 60, 560, 460, 16);
@@ -169,15 +181,57 @@ export class Level15Scene extends Phaser.Scene {
             this._addEl(bbg, btxt, bhit);
             this.blankBtns.push({ bbg, btxt, bhit, bi, blank, cx, ly });
 
-            // Cycle through options on click
-            let optIdx = -1;
+            // Dropdown Menu Logic
             bhit.on("pointerup", () => {
-              optIdx = (optIdx + 1) % blank.opts.length;
-              this.userAnswers[bi] = blank.opts[optIdx];
-              btxt.setText(blank.opts[optIdx]);
-              btxt.setColor("#ffd700");
-              bbg.clear(); bbg.fillStyle(0x1b5e20, 0.6); bbg.fillRoundedRect(cx, ly - 8, bw, 22, 4);
-              bbg.lineStyle(1, 0x66bb6a); bbg.strokeRoundedRect(cx, ly - 8, bw, 22, 4);
+              // 1. Destroy any currently open dropdown
+              if (this.currentDropdown) {
+                this.currentDropdown.destroy();
+              }
+
+              const dropW = 60;
+              const dropH = blank.opts.length * 28;
+              const dropContainer = this.add.container(cx - 5, ly + 16).setDepth(200);
+              this.currentDropdown = dropContainer;
+
+              // 2. Draw Dropdown Background (VS Code Dark Style)
+              const dbg = this.add.graphics();
+              dbg.fillStyle(0x252526, 0.98);
+              dbg.fillRoundedRect(0, 0, dropW, dropH, 4);
+              dbg.lineStyle(1, 0x454545);
+              dbg.strokeRoundedRect(0, 0, dropW, dropH, 4);
+              dropContainer.add(dbg);
+
+              // 3. Add Options
+              blank.opts.forEach((opt, idx) => {
+                const optY = idx * 28;
+                const optHit = this.add.rectangle(dropW / 2, optY + 14, dropW - 4, 24).setInteractive({ useHandCursor: true });
+                const optTxt = this.add.text(dropW / 2, optY + 14, opt, {
+                  fontFamily: "Courier New", fontSize: "16px", color: "#d4d4d4", fontStyle: "bold"
+                }).setOrigin(0.5);
+
+                // Hover effects
+                optHit.on("pointerover", () => optHit.setFillStyle(0x094771, 1));
+                optHit.on("pointerout", () => optHit.setFillStyle(0x000000, 0));
+
+                // Select option
+                optHit.on("pointerup", () => {
+                  this.userAnswers[bi] = opt;
+                  btxt.setText(opt);
+                  btxt.setColor("#ffd700");
+                  bbg.clear();
+                  bbg.fillStyle(0x1b5e20, 0.6);
+                  bbg.fillRoundedRect(cx, ly - 8, bw, 22, 4);
+                  bbg.lineStyle(1, 0x66bb6a);
+                  bbg.strokeRoundedRect(cx, ly - 8, bw, 22, 4);
+
+                  dropContainer.destroy();
+                  this.currentDropdown = null;
+                });
+
+                dropContainer.add([optHit, optTxt]);
+              });
+
+              this._addEl(dropContainer); // Add to elements array for scene cleanup
             });
             cx += bw + 4;
           }
@@ -254,7 +308,7 @@ export class Level15Scene extends Phaser.Scene {
   }
 
   _showProjectResult(passed, p) {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.6).setDepth(300);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.6).setDepth(300);
     const pg = this.add.graphics().setDepth(301);
     pg.fillStyle(0x252526, 0.98); pg.fillRoundedRect(W / 2 - 220, H / 2 - 100, 440, 200, 12);
     pg.lineStyle(3, passed ? 0x4caf50 : 0xd32f2f); pg.strokeRoundedRect(W / 2 - 220, H / 2 - 100, 440, 200, 12);
@@ -279,7 +333,7 @@ export class Level15Scene extends Phaser.Scene {
     const passed = acc >= 60;
     if (passed) { GameManager.completeLevel(14, acc); BadgeSystem.unlock("code_master"); /* saved by GameManager */ this.cameras.main.flash(600, 100, 255, 100); }
 
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1e1e1e, 0.98); pg.fillRoundedRect(W / 2 - 260, 60, 520, 480, 16);
     pg.lineStyle(3, passed ? 0x4caf50 : 0xd32f2f); pg.strokeRoundedRect(W / 2 - 260, 60, 520, 480, 16);

@@ -135,6 +135,16 @@ export class Level10Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
 
     /* ── State ── */
@@ -193,7 +203,8 @@ export class Level10Scene extends Phaser.Scene {
       const t = i / steps;
       const c = lerpColor(topColor, botColor, t);
       gfx.fillStyle(c, 1);
-      gfx.fillRect(0, Math.floor((H * i) / steps), W, Math.ceil(H / steps) + 1);
+      // FORCE the width to be W * 5, starting at -W * 2
+      gfx.fillRect(-W * 2, Math.floor((H * i) / steps), W * 5, Math.ceil(H / steps) + 1);
     }
 
     /* Grass patch details */

@@ -460,21 +460,24 @@ export class Level24Scene extends Phaser.Scene {
   }
 
   createForgeButton() {
-    const bx = 225, by = 548;
-    const glow = this.add.ellipse(bx, by, 196, 48, C_EMBER, 0.1).setDepth(19);
+    const bx = 325, by = 500; // Centered inside the Editor Panel
+    // Increased depth to 34 to render above the tray (which is at depth 30)
+    const glow = this.add.ellipse(bx, by, 196, 42, C_EMBER, 0.1).setDepth(34);
     this.tweens.add({ targets: glow, fillAlpha: 0.16, duration: 1000, yoyo: true, repeat: -1 });
 
-    const c = this.add.container(bx, by).setDepth(20);
+    // Increased container depth to 35
+    const c = this.add.container(bx, by).setDepth(35);
     const btnG = this.add.graphics();
     const draw = (hover) => {
       btnG.clear();
       btnG.fillStyle(C_ORANGE, hover ? 1 : 0.95);
-      btnG.fillRoundedRect(-95, -21, 190, 42, 21);
+      // Reduced height from 42 to 36 and adjusted corner radius
+      btnG.fillRoundedRect(-95, -18, 190, 36, 18);
     };
     draw(false);
     const t = this.add.text(0, 0, "▶ FORGE DATA", { font: "bold 13px Arial", color: "#ffffff" }).setOrigin(0.5);
     c.add([btnG, t]);
-    c.setSize(190, 42);
+    c.setSize(190, 36); // Match interaction area to new height
     c.setAlpha(0.2);
     c.on("pointerover", () => { if (this._forgeReady) { draw(true); c.setScale(1.03); } });
     c.on("pointerout", () => { draw(false); c.setScale(1); });
@@ -1001,6 +1004,10 @@ export class Level24Scene extends Phaser.Scene {
       b.container.setAlpha(1).setScale(1);
       b.container.setInteractive({ useHandCursor: true, draggable: true });
     });
+
+    // Refresh the visual editor to show the empty slots again
+    this.renderEditorDisplay();
+
     this.disableForgeButton();
   }
 
@@ -1209,16 +1216,21 @@ export class Level24Scene extends Phaser.Scene {
   showCompilationAnimation() {
     return new Promise((res) => {
       this.forgeButton.t.setText("FORGING...");
-      const barY = 575;
-      const bar = this.add.graphics().setDepth(20);
+      const bar = this.add.graphics().setDepth(36); // Above the button
       const prog = { w: 0 };
+
+      // Match the new button coordinates
+      const bx = 325, by = 500;
+      const startX = bx - 95;
+      const barY = by + 22; // Slightly below the button center
+
       const sparkEvent = this.time.addEvent({
         delay: 120, repeat: 5,
         callback: () => {
-          const p = this.add.particles(225 - 95 + prog.w, 566, "l24_dot", {
+          const p = this.add.particles(startX + prog.w, barY - 4, "l24_dot", {
             speed: { min: 30, max: 60 }, angle: { min: 250, max: 290 },
             scale: { start: 0.5, end: 0 }, lifespan: 300, tint: C_AMBER, emitting: false,
-          }).setDepth(21);
+          }).setDepth(37);
           p.explode(3);
           this.time.delayedCall(350, () => p.destroy());
         },
@@ -1228,7 +1240,7 @@ export class Level24Scene extends Phaser.Scene {
         onUpdate: () => {
           bar.clear();
           bar.fillStyle(C_ORANGE, 1);
-          bar.fillRect(225 - 95, 570, prog.w, 3);
+          bar.fillRect(startX, barY, prog.w, 3);
         },
         onComplete: () => {
           sparkEvent.remove();
@@ -1974,10 +1986,15 @@ export class Level24Scene extends Phaser.Scene {
     g.lineStyle(1, C_RED, 1);
     g.strokeRoundedRect(-280, -90, 560, 180, 10);
     c.add(g);
+
+    // Left column for Expected
     c.add(this.add.text(-260, -70, "Expected:", { font: "bold 12px Arial", color: HEX_GREEN }));
-    c.add(this.add.text(-260, -50, expected, { font: "12px Courier New", color: HEX_GREEN, wordWrap: { width: 520 } }));
-    c.add(this.add.text(-260, 10, "Actual:", { font: "bold 12px Arial", color: HEX_RED }));
-    c.add(this.add.text(-260, 30, actual, { font: "12px Courier New", color: HEX_RED, wordWrap: { width: 520 } }));
+    c.add(this.add.text(-260, -50, expected, { font: "12px Courier New", color: HEX_GREEN, wordWrap: { width: 260 } }));
+
+    // Right column for Actual
+    c.add(this.add.text(20, -70, "Actual:", { font: "bold 12px Arial", color: HEX_RED }));
+    c.add(this.add.text(20, -50, actual, { font: "12px Courier New", color: HEX_RED, wordWrap: { width: 260 } }));
+
     this._diffView = c;
   }
 

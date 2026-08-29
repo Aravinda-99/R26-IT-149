@@ -121,6 +121,16 @@ export class Level16Scene extends Phaser.Scene {
   preload() {}
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     // Stop UIScene overlay — Level16 has its own HUD
     if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
 
@@ -148,7 +158,7 @@ export class Level16Scene extends Phaser.Scene {
     if (!this._billboards) return;
     this._billboards.forEach(b => {
       b.x -= b.speed;
-      if (b.x < -110) b.x = W + 60 + Math.random() * 200;
+      if (b.x < -W * 1.5) b.x = W * 2.5 + Math.random() * 200;
     });
   }
 
@@ -156,11 +166,11 @@ export class Level16Scene extends Phaser.Scene {
   createBackground() {
     const g = this.add.graphics();
     g.fillGradientStyle(0x050520,0x050520,0x0a0a2a,0x0a0a2a,1);
-    g.fillRect(0,0,W,H);
+    g.fillRect(-W * 2, -H, W * 5, H * 3);
 
     for (let i=0; i<70; i++) {
       const s = this.add.circle(
-        Phaser.Math.Between(0,W),
+        Phaser.Math.Between(-W * 2, W * 3),
         Phaser.Math.Between(0, H*0.55),
         Math.random()<0.5?1:2, 0xffffff
       ).setAlpha(Phaser.Math.FloatBetween(0.2,0.6));
@@ -173,10 +183,10 @@ export class Level16Scene extends Phaser.Scene {
   createCitySkyline() {
     // horizon glow
     const hg = this.add.graphics();
-    hg.fillStyle(0x6a1b9a,1); hg.fillRect(0,465,W,30); hg.setAlpha(0.15);
+    hg.fillStyle(0x6a1b9a,1); hg.fillRect(-W * 2, 465, W * 5, 30); hg.setAlpha(0.15);
 
     const winColors=[0x00e5ff,0xff00ff,0xffd740,0x4fc3f7];
-    for (let i=0;i<10;i++) {
+    for (let i=-25;i<35;i++) {
       const bw=Phaser.Math.Between(28,65);
       const bh=Phaser.Math.Between(60,150);
       const bx=i*82+Phaser.Math.Between(-5,5);
@@ -200,7 +210,7 @@ export class Level16Scene extends Phaser.Scene {
   createParallaxElements() {
     this._billboards=[];
     for (let i=0;i<5;i++) {
-      const bx=Phaser.Math.Between(0,W);
+      const bx=Phaser.Math.Between(-W, W * 2);
       const by=Phaser.Math.Between(80,280);
       const bw=Phaser.Math.Between(60,100); const bh=Phaser.Math.Between(28,45);
       const g=this.add.graphics();
@@ -219,13 +229,13 @@ export class Level16Scene extends Phaser.Scene {
   createTrack() {
     const g=this.add.graphics();
     g.lineStyle(3,0x455a64);
-    for(let x=0;x<=W;x+=40) g.lineBetween(x,TRACK_Y1,x,TRACK_Y2);
+    for(let x=-W*2;x<=W*3;x+=40) g.lineBetween(x,TRACK_Y1,x,TRACK_Y2);
     g.lineStyle(2,0x78909c);
-    g.lineBetween(0,TRACK_Y1,W,TRACK_Y1);
-    g.lineBetween(0,TRACK_Y2,W,TRACK_Y2);
+    g.lineBetween(-W*2,TRACK_Y1,W*3,TRACK_Y1);
+    g.lineBetween(-W*2,TRACK_Y2,W*3,TRACK_Y2);
 
     const pr=this.add.graphics();
-    pr.lineStyle(1,0x00e5ff,0.3); pr.lineBetween(0,389,W,389);
+    pr.lineStyle(1,0x00e5ff,0.3); pr.lineBetween(-W*2,389,W*3,389);
     this.tweens.add({ targets:pr, alpha:0.7, duration:1500, yoyo:true, repeat:-1 });
   }
 
@@ -363,7 +373,7 @@ export class Level16Scene extends Phaser.Scene {
   // ── HUD ─────────────────────────────────────────────────────────────────────
   createHUD() {
     const bar=this.add.graphics();
-    bar.fillStyle(0x0f0f13,0.92); bar.fillRect(0,0,W,72);
+    bar.fillStyle(0x0f0f13,0.92); bar.fillRect(-W * 2, 0, W * 5, 72);
     bar.lineStyle(1,0x1e1e3a); bar.lineBetween(0,72,W,72);
 
     this.add.text(20,14,"LOOP TRAIN EXPRESS",{fontFamily:"Arial",fontSize:"13px",fontStyle:"bold",color:"#b0bec5"});
@@ -407,7 +417,7 @@ export class Level16Scene extends Phaser.Scene {
 
   // ── Loop Monitor ────────────────────────────────────────────────────────────
   createLoopMonitor() {
-    this._monCont=this.add.container(W/2, 36);
+    this._monCont=this.add.container(W/2, 95);
     const bg=this.add.graphics();
     bg.fillStyle(0x1a1a2e); bg.fillRoundedRect(-250,-25,500,50,8);
     bg.lineStyle(1,0x2a2a4a); bg.strokeRoundedRect(-250,-25,500,50,8);
@@ -663,7 +673,7 @@ export class Level16Scene extends Phaser.Scene {
   }
 
   _showMissionCard(cfg) {
-    const c=this.add.container(W+220,130).setDepth(5);
+    const c=this.add.container(W+220,190).setDepth(5);
     this._roundEls.push(c);
     const bg=this.add.graphics();
     bg.fillStyle(0x1a1a2e); bg.fillRoundedRect(-210,-48,420,96,12);
@@ -675,7 +685,7 @@ export class Level16Scene extends Phaser.Scene {
 
     this.tweens.add({ targets:c,x:W/2,duration:400,ease:"Back.easeOut",
       onComplete:()=>this.time.delayedCall(500,()=>{
-        this.tweens.add({ targets:c,x:W-215,y:130,duration:280,
+        this.tweens.add({ targets:c,x:W-215,y:190,duration:280,
           onComplete:()=>this._nextBubbles(cfg) });
       }) });
   }
@@ -765,7 +775,7 @@ export class Level16Scene extends Phaser.Scene {
 
   _showRun() {
     if(this._runBtn) this._runBtn.destroy();
-    const btn=this.add.container(W/2,115).setDepth(10);
+    const btn=this.add.container(W/2,160).setDepth(10);
     this._runBtn=btn; this._roundEls.push(btn);
 
     const glow=this.add.graphics();
@@ -931,7 +941,7 @@ export class Level16Scene extends Phaser.Scene {
 
   gameOver() {
     const ov=this.add.graphics().setDepth(50);
-    ov.fillStyle(0x000000,0.82); ov.fillRect(0,0,W,H);
+    ov.fillStyle(0x000000,0.82); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     this.add.text(W/2,H/2-70,"GAME OVER",{fontFamily:"Arial",fontSize:"42px",fontStyle:"bold",color:"#f44336"}).setOrigin(0.5,0.5).setDepth(51);
     this.add.text(W/2,H/2-20,`Score: ${this.score}`,{fontFamily:"Arial",fontSize:"22px",color:"#ffffff"}).setOrigin(0.5,0.5).setDepth(51);
     const rb=this.add.container(W/2,H/2+50).setDepth(51);
@@ -963,7 +973,7 @@ export class Level16Scene extends Phaser.Scene {
 
   _endScreen(total,livesBonus,stars) {
     const ov=this.add.graphics().setDepth(60);
-    ov.fillStyle(0x000000,0); ov.fillRect(0,0,W,H);
+    ov.fillStyle(0x000000,0); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     this.tweens.add({ targets:ov,alpha:0.85,duration:600 });
 
     const c=this.add.container(W/2,H/2).setDepth(61).setAlpha(0);
