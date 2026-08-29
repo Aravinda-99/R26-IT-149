@@ -540,16 +540,52 @@ async function refreshGlobalState(studentId) {
         if (historyData.total === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
         } else {
-            histCont.innerHTML = historyData.history.reverse().map(item => `
-                <div style="padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor:pointer; transition: 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+            histCont.innerHTML = "";
+            // Newest first
+            const reversed = [...historyData.history].reverse();
+            reversed.forEach((item, idx) => {
+                const el = document.createElement("div");
+                el.style.cssText = "padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s, border-color 0.2s;";
+                el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
                         <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
-                </div>
-            `).join("");
+                `;
+                el.addEventListener("mouseover", () => {
+                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.06)";
+                });
+                el.addEventListener("mouseout", () => {
+                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.03)";
+                });
+                el.addEventListener("click", () => {
+                    // Deselect all items
+                    histCont.querySelectorAll("[data-selected]").forEach(prev => {
+                        delete prev.dataset.selected;
+                        prev.style.background = "rgba(255,255,255,0.03)";
+                        prev.style.borderColor = "rgba(255,255,255,0.05)";
+                    });
+                    // Highlight selected
+                    el.dataset.selected = "1";
+                    el.style.background = "rgba(74, 144, 226, 0.12)";
+                    el.style.borderColor = "rgba(74, 144, 226, 0.4)";
+
+                    if (item.full_response) {
+                        // Show this item's full insight in the main panel
+                        const welcomeView = document.getElementById("welcome-view");
+                        const invalidView = document.getElementById("invalid-view");
+                        const resultView  = document.getElementById("result-view");
+                        if (welcomeView) welcomeView.classList.add("hidden");
+                        if (invalidView) invalidView.classList.add("hidden");
+                        if (resultView)  resultView.classList.remove("hidden");
+                        updateInsightEngine(item.full_response);
+                    }
+                });
+                histCont.appendChild(el);
+            });
         }
+
 
         // ── Feature 1: Analytics Dashboard ────────────────────────────
         if (analyticsData.has_data && analyticsData.total_submissions >= 2) {

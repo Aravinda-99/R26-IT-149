@@ -5,7 +5,7 @@
  */
 
 const API_BASE = "/api";
-const DEV_FALLBACK_BASE = "http://localhost:5000/api";
+const DEV_FALLBACK_BASE = "http://localhost:5001/api";
 
 function shouldTryDevFallback(response, endpoint) {
     // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.

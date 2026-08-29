@@ -1088,6 +1088,7 @@ class ErrorService:
             "activity": details["gamification"]["recommended_activity"],
             "week_bucket": _week_bucket,          # Feature 1 — analytics bucketing
             "reason_group": reason_group,          # Feature 3 — learning report detail
+            "full_response": response,             # Full payload for history item click-through
         })
 
         cls._last_analysis[student_id] = response

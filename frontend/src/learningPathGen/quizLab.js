@@ -2,7 +2,9 @@ import { QUIZ_BANK } from "./data.js";
 import { ErrorAPI } from "../api/api.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
-const ML_API_URL = "http://127.0.0.1:5000/api/adaptive/predict";
+// Use the Vite proxy path (/api/...) so this always hits the correct
+// backend port regardless of what port Flask is running on.
+const ML_API_URL = "/api/adaptive/predict";
 
 // ── Default difficulty (can be passed in from quiz lab page) ───────────
 let currentDifficulty = "beginner";
@@ -679,10 +681,10 @@ export function setupQuizUI(root = document) {
             nextBtn.textContent       = "Review Again";
 
             let mlResult = null;
+            const mlLoading = quizBox.querySelector("#ml-loading");
             if (sessionMetrics) {
                 mlResult = await getMLRecommendation(sessionMetrics);
 
-                const mlLoading = quizBox.querySelector("#ml-loading");
                 if (mlLoading && mlResult) {
                     mlLoading.outerHTML = buildMLRecommendationCard(
                         mlResult,
@@ -696,7 +698,13 @@ export function setupQuizUI(root = document) {
                             window.navigateTo("quiz-lab");
                         });
                     }
+                } else if (mlLoading) {
+                    // ML call returned nothing — hide the spinner so it doesn't stay stuck
+                    mlLoading.style.display = "none";
                 }
+            } else if (mlLoading) {
+                // No session metrics (e.g. no questions answered) — hide spinner
+                mlLoading.style.display = "none";
             }
 
             sessionStorage.setItem("quiz-results", JSON.stringify({
