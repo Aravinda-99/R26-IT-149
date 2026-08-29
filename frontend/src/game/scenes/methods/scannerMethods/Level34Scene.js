@@ -1652,6 +1652,16 @@ export class Level34Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) {
+        this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+      }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
     this.totalTimeMs += timeMs;
     this.attemptLog.push({
@@ -1661,13 +1671,30 @@ export class Level34Scene extends Phaser.Scene {
     });
   }
 
-  advanceRound() {
+  async advanceRound() {
     this.clearRound();
     // currentRound is 0-based, so === 2 means the round we're leaving is
     // ROUNDS[2].round === 3 — i.e. this is the exact round 3 -> round 4
-    // handoff. Fire-and-forget (not awaited): a slow or unreachable
-    // backend must never block the round transition or freeze gameplay.
-    if (this.currentRound === 2) this.runBehavioralCheck();
+    // handoff. Awaited (unlike the old fire-and-forget version): a slow or
+    // unreachable backend still can't block gameplay, since
+    // runBehavioralCheck() never throws and the wait below is capped at
+    // 1.5s unless a modal genuinely opens — but a fire-and-forget call let
+    // Round 4 spawn while Bit's modal was still on screen, which is the
+    // actual freeze/timeout bug this was covering up.
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
@@ -1770,7 +1797,7 @@ export class Level34Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(33, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(34, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("scanner_schema"); } catch (_) {}
     try {
       localStorage.setItem("level34_results", JSON.stringify({
