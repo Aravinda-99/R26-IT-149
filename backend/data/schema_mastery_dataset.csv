@@ -1,0 +1,101 @@
+student_id,session_id,concept_name,pre_test_score,attempt_count,time_taken,error_type,error_pattern_score,post_test_correct_count,post_test_nearly_correct_count,post_test_wrong_count,post_test_clearly_wrong_count,post_test_score,mastery_level,next_action
+STU001,SESS_101,variables,0.85,1,25,none,0.1,9,1,0,0,0.95,Strong Understanding,DONE
+STU002,SESS_102,loops,0.30,4,180,boundary_error,0.7,4,2,3,1,0.50,Needs More Practice,LEARN_AGAIN
+STU003,SESS_103,arrays,0.20,5,240,off_by_one,0.9,2,1,4,3,0.25,Learn Again,LEARN_AGAIN
+STU004,SESS_104,operators,0.70,2,60,logic_error,0.3,7,2,1,0,0.80,Strong Understanding,DONE
+STU005,SESS_105,methods,0.55,3,120,type_mismatch,0.4,6,2,2,0,0.70,Good Progress,DONE
+STU006,SESS_106,variables,0.90,1,20,none,0.05,10,0,0,0,1.00,Strong Understanding,DONE
+STU007,SESS_107,loops,0.40,3,150,logic_error,0.6,5,2,2,1,0.60,Good Progress,DONE
+STU008,SESS_108,arrays,0.35,4,210,off_by_one,0.8,3,2,3,2,0.40,Needs More Practice,LEARN_AGAIN
+STU009,SESS_109,methods,0.25,6,300,syntax_error,0.85,1,2,4,3,0.20,Learn Again,LEARN_AGAIN
+STU010,SESS_110,operators,0.65,2,80,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU011,SESS_111,variables,0.50,2,90,syntax_error,0.3,6,3,1,0,0.75,Good Progress,DONE
+STU012,SESS_112,loops,0.15,5,280,boundary_error,0.95,2,0,5,3,0.20,Learn Again,LEARN_AGAIN
+STU013,SESS_113,arrays,0.60,2,110,logic_error,0.4,7,1,2,0,0.75,Good Progress,DONE
+STU014,SESS_114,methods,0.75,1,45,none,0.15,9,0,1,0,0.90,Strong Understanding,DONE
+STU015,SESS_115,operators,0.30,4,190,type_mismatch,0.7,4,1,3,2,0.45,Needs More Practice,LEARN_AGAIN
+STU016,SESS_116,variables,0.80,1,30,none,0.1,8,2,0,0,0.90,Strong Understanding,DONE
+STU017,SESS_117,loops,0.45,3,140,off_by_one,0.5,6,1,2,1,0.65,Good Progress,DONE
+STU018,SESS_118,arrays,0.10,6,320,null_pointer,0.9,1,1,5,3,0.15,Learn Again,LEARN_AGAIN
+STU019,SESS_119,methods,0.50,3,130,logic_error,0.4,5,3,2,0,0.65,Good Progress,DONE
+STU020,SESS_120,operators,0.85,1,35,none,0.05,9,1,0,0,0.95,Strong Understanding,DONE
+STU021,SESS_121,variables,0.40,3,100,syntax_error,0.5,4,3,2,1,0.55,Needs More Practice,LEARN_AGAIN
+STU022,SESS_122,loops,0.70,2,75,boundary_error,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU023,SESS_123,arrays,0.30,4,200,off_by_one,0.75,3,3,3,1,0.45,Needs More Practice,LEARN_AGAIN
+STU024,SESS_124,methods,0.20,5,260,type_mismatch,0.8,2,2,4,2,0.30,Learn Again,LEARN_AGAIN
+STU025,SESS_125,operators,0.60,2,85,logic_error,0.35,7,2,1,0,0.80,Strong Understanding,DONE
+STU026,SESS_126,variables,0.95,1,15,none,0.0,10,0,0,0,1.00,Strong Understanding,DONE
+STU027,SESS_127,loops,0.25,5,250,boundary_error,0.85,3,1,4,2,0.35,Learn Again,LEARN_AGAIN
+STU028,SESS_128,arrays,0.65,2,95,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU029,SESS_129,methods,0.45,3,160,logic_error,0.5,5,2,2,1,0.60,Good Progress,DONE
+STU030,SESS_130,operators,0.35,4,175,syntax_error,0.6,4,2,3,1,0.50,Needs More Practice,LEARN_AGAIN
+STU031,SESS_131,variables,0.75,2,50,none,0.15,8,2,0,0,0.90,Strong Understanding,DONE
+STU032,SESS_132,loops,0.55,3,125,off_by_one,0.4,7,1,2,0,0.75,Good Progress,DONE
+STU033,SESS_133,arrays,0.15,6,310,null_pointer,0.95,1,0,6,3,0.10,Learn Again,LEARN_AGAIN
+STU034,SESS_134,methods,0.80,1,40,none,0.1,9,1,0,0,0.95,Strong Understanding,DONE
+STU035,SESS_135,operators,0.40,3,115,type_mismatch,0.5,5,2,2,1,0.60,Good Progress,DONE
+STU036,SESS_136,variables,0.30,4,145,syntax_error,0.65,3,3,3,1,0.45,Needs More Practice,LEARN_AGAIN
+STU037,SESS_137,loops,0.85,1,30,none,0.05,9,1,0,0,0.95,Strong Understanding,DONE
+STU038,SESS_138,arrays,0.50,3,135,logic_error,0.45,6,2,2,0,0.70,Good Progress,DONE
+STU039,SESS_139,methods,0.10,5,270,boundary_error,0.9,2,1,4,3,0.25,Learn Again,LEARN_AGAIN
+STU040,SESS_140,operators,0.70,2,70,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU041,SESS_141,variables,0.60,2,80,logic_error,0.3,7,2,1,0,0.80,Strong Understanding,DONE
+STU042,SESS_142,loops,0.20,5,230,off_by_one,0.8,2,2,4,2,0.30,Learn Again,LEARN_AGAIN
+STU043,SESS_143,arrays,0.80,1,35,none,0.1,9,1,0,0,0.95,Strong Understanding,DONE
+STU044,SESS_144,methods,0.35,4,185,syntax_error,0.65,4,2,3,1,0.50,Needs More Practice,LEARN_AGAIN
+STU045,SESS_145,operators,0.55,3,105,type_mismatch,0.4,6,2,2,0,0.70,Good Progress,DONE
+STU046,SESS_146,variables,0.90,1,18,none,0.05,10,0,0,0,1.00,Strong Understanding,DONE
+STU047,SESS_147,loops,0.65,2,90,none,0.25,8,1,1,0,0.85,Strong Understanding,DONE
+STU048,SESS_148,arrays,0.25,4,220,boundary_error,0.75,3,2,3,2,0.40,Needs More Practice,LEARN_AGAIN
+STU049,SESS_149,methods,0.40,3,150,logic_error,0.55,4,3,2,1,0.55,Needs More Practice,LEARN_AGAIN
+STU050,SESS_150,operators,0.15,6,300,null_pointer,0.9,1,1,5,3,0.15,Learn Again,LEARN_AGAIN
+STU051,SESS_151,variables,0.70,2,65,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU052,SESS_152,loops,0.30,4,195,logic_error,0.7,4,1,3,2,0.45,Needs More Practice,LEARN_AGAIN
+STU053,SESS_153,arrays,0.85,1,28,none,0.08,9,1,0,0,0.95,Strong Understanding,DONE
+STU054,SESS_154,methods,0.60,2,100,type_mismatch,0.3,7,2,1,0,0.80,Strong Understanding,DONE
+STU055,SESS_155,operators,0.45,3,130,syntax_error,0.45,5,3,2,0,0.65,Good Progress,DONE
+STU056,SESS_156,variables,0.20,5,240,boundary_error,0.85,2,1,4,3,0.25,Learn Again,LEARN_AGAIN
+STU057,SESS_157,loops,0.80,1,32,none,0.1,9,1,0,0,0.95,Strong Understanding,DONE
+STU058,SESS_158,arrays,0.40,3,165,off_by_one,0.5,5,2,2,1,0.60,Good Progress,DONE
+STU059,SESS_159,methods,0.75,2,55,none,0.15,8,2,0,0,0.90,Strong Understanding,DONE
+STU060,SESS_160,operators,0.25,4,210,null_pointer,0.8,3,1,4,2,0.35,Learn Again,LEARN_AGAIN
+STU061,SESS_161,variables,0.85,1,22,none,0.05,9,1,0,0,0.95,Strong Understanding,DONE
+STU062,SESS_162,loops,0.50,3,140,logic_error,0.4,6,2,2,0,0.70,Good Progress,DONE
+STU063,SESS_163,arrays,0.35,4,180,off_by_one,0.6,4,2,3,1,0.50,Needs More Practice,LEARN_AGAIN
+STU064,SESS_164,methods,0.15,5,290,type_mismatch,0.9,1,2,4,3,0.20,Learn Again,LEARN_AGAIN
+STU065,SESS_165,operators,0.90,1,25,none,0.05,10,0,0,0,1.00,Strong Understanding,DONE
+STU066,SESS_166,variables,0.65,2,70,syntax_error,0.25,7,2,1,0,0.80,Strong Understanding,DONE
+STU067,SESS_167,loops,0.10,6,330,boundary_error,0.95,0,2,5,3,0.10,Learn Again,LEARN_AGAIN
+STU068,SESS_168,arrays,0.70,2,85,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU069,SESS_169,methods,0.45,3,155,logic_error,0.5,5,2,2,1,0.60,Good Progress,DONE
+STU070,SESS_170,operators,0.30,4,205,type_mismatch,0.7,3,2,3,2,0.40,Needs More Practice,LEARN_AGAIN
+STU071,SESS_171,variables,0.95,1,15,none,0.0,9,1,0,0,0.95,Strong Understanding,DONE
+STU072,SESS_172,loops,0.60,2,95,off_by_one,0.3,7,2,1,0,0.80,Strong Understanding,DONE
+STU073,SESS_173,arrays,0.20,5,255,null_pointer,0.85,2,0,5,3,0.20,Learn Again,LEARN_AGAIN
+STU074,SESS_174,methods,0.80,1,38,none,0.1,9,0,1,0,0.90,Strong Understanding,DONE
+STU075,SESS_175,operators,0.50,3,120,syntax_error,0.4,6,2,2,0,0.70,Good Progress,DONE
+STU076,SESS_176,variables,0.40,3,135,logic_error,0.5,5,1,3,1,0.55,Needs More Practice,LEARN_AGAIN
+STU077,SESS_177,loops,0.75,2,60,none,0.15,8,2,0,0,0.90,Strong Understanding,DONE
+STU078,SESS_178,arrays,0.30,4,190,off_by_one,0.65,4,1,4,1,0.45,Needs More Practice,LEARN_AGAIN
+STU079,SESS_179,methods,0.10,6,300,boundary_error,0.9,1,1,5,3,0.15,Learn Again,LEARN_AGAIN
+STU080,SESS_180,operators,0.65,2,78,none,0.2,7,3,0,0,0.85,Strong Understanding,DONE
+STU081,SESS_181,variables,0.85,1,24,none,0.08,9,1,0,0,0.95,Strong Understanding,DONE
+STU082,SESS_182,loops,0.35,4,170,logic_error,0.6,4,2,3,1,0.50,Needs More Practice,LEARN_AGAIN
+STU083,SESS_183,arrays,0.55,3,115,off_by_one,0.35,6,3,1,0,0.75,Good Progress,DONE
+STU084,SESS_184,methods,0.25,5,245,type_mismatch,0.8,2,2,4,2,0.30,Learn Again,LEARN_AGAIN
+STU085,SESS_185,operators,0.70,2,65,none,0.18,8,1,1,0,0.85,Strong Understanding,DONE
+STU086,SESS_186,variables,0.50,3,110,syntax_error,0.35,6,2,2,0,0.70,Good Progress,DONE
+STU087,SESS_187,loops,0.15,6,315,boundary_error,0.92,1,0,6,3,0.10,Learn Again,LEARN_AGAIN
+STU088,SESS_188,arrays,0.90,1,19,none,0.05,10,0,0,0,1.00,Strong Understanding,DONE
+STU089,SESS_189,methods,0.40,3,145,logic_error,0.5,5,2,2,1,0.60,Good Progress,DONE
+STU090,SESS_190,operators,0.60,2,82,none,0.25,7,2,1,0,0.80,Strong Understanding,DONE
+STU091,SESS_191,variables,0.30,4,160,syntax_error,0.65,3,3,3,1,0.45,Needs More Practice,LEARN_AGAIN
+STU092,SESS_192,loops,0.80,1,35,none,0.1,9,1,0,0,0.95,Strong Understanding,DONE
+STU093,SESS_193,arrays,0.25,5,235,null_pointer,0.8,2,1,5,2,0.25,Learn Again,LEARN_AGAIN
+STU094,SESS_194,methods,0.75,2,50,none,0.15,8,2,0,0,0.90,Strong Understanding,DONE
+STU095,SESS_195,operators,0.45,3,130,type_mismatch,0.45,5,2,2,1,0.60,Good Progress,DONE
+STU096,SESS_196,variables,0.65,2,72,none,0.2,8,1,1,0,0.85,Strong Understanding,DONE
+STU097,SESS_197,loops,0.20,5,260,boundary_error,0.88,2,1,4,3,0.25,Learn Again,LEARN_AGAIN
+STU098,SESS_198,arrays,0.85,1,27,none,0.07,9,1,0,0,0.95,Strong Understanding,DONE
+STU099,SESS_199,methods,0.50,3,125,logic_error,0.4,6,2,2,0,0.70,Good Progress,DONE
+STU100,SESS_200,operators,0.35,4,178,syntax_error,0.6,4,1,4,1,0.45,Needs More Practice,LEARN_AGAIN

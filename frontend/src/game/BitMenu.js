@@ -12,17 +12,15 @@
  * in this codebase does — scene.inputLocked = true — for the duration the
  * menu is open, then releases it once the player picks an option.
  *
- * All three options are wired:
- * - "Review the basics" restarts the scene with forceTutorial: true.
- * - "Get an extra life and try again" always calls GameManager.addLife(),
- *   and additionally calls the active scene's own addLife() when it has one
- *   (currently: Level25Scene only) — most methods-wing levels (25-88) track
- *   lives in a fully local this.lives, not GameManager.state.lives, so the
- *   global call alone has no visible effect there. See the comment at the
- *   call site below for the rollout status.
- * - "Go to menu list" navigates via scene.scene.start("MenuScene") — the
- *   same scene key every level's own "RETURN TO MENU" button uses in
- *   gameOver() (verified in Level25Scene.js and Level34Scene.js).
+ * "Review the basics" restarts the current scene with its tutorial forced —
+ * unless the scene sets its own `baseTutorialScene` (e.g. a rapid-fire
+ * Tuning-phase level pointing back at its wing's Accretion-phase intro),
+ * in which case it navigates there instead. "Get an extra life and try
+ * again" calls GameManager.addLife() for the global count, and also the
+ * scene's own addLife() when it defines one — most methods-wing levels
+ * track lives locally (this.lives / this.lifeIcons) rather than through
+ * GameManager, so the global-only call was previously a no-op for them.
+ * "Go to menu list" returns to MenuScene.
  */
 
 import { GameManager } from "./GameManager.js";
@@ -70,121 +68,69 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
 
     const panelW = Math.min(460, width - 40);
     const panelX = width / 2;
+    const panelY = height / 2;
 
-    // ── Content-driven panel height ─────────────────────────────────
-    // Was a fixed panelH=260 tuned for exactly 3 buttons at fixed 46px/
-    // 62px-spacing metrics -- which, worked out precisely, already
-    // overflowed the panel's own bottom edge by 2px (last button bottom
-    // = panelY+132 vs panel bottom = panelY+130). Measuring the actual
-    // title height and deriving panelH from the real button count fixes
-    // that at the source and generalizes to any label length/option count
-    // instead of a magic constant.
-    const titleMessage = title || (urgent
-      ? "Bit noticed you're frustrated AND struggling with this one..."
-      : "Bit has a suggestion...");
+    // Layout constants — panelH is derived from these plus the title's
+    // actual (possibly word-wrapped) rendered height, so the background
+    // always wraps its content exactly instead of a guessed fixed height.
+    const TOP_PADDING = 32;
+    const TITLE_GAP = 26;
+    const BUTTON_H = 46;
+    const BUTTON_GAP = 18;
+    const BOTTOM_PADDING = 32;
+    const buttonCount = OPTIONS.length;
 
-    const topPadding = 20;
-    const titleToButtonsGap = 20;
-    const bottomPadding = 20;
-    let buttonH = 46;
-    let buttonSpacing = 62;
-    let titleFontSize = 16;
-    let labelFontSize = 15;
-
-    // Measure the title at its base font size (wordWrap already fixed to
-    // panelW-40, independent of panelH) before panelH/panelY are known.
-    const titleText = scene.add.text(0, 0, titleMessage, {
-      fontFamily: "Arial",
-      fontSize: `${titleFontSize}px`,
-      color: "#ffffff",
-      fontStyle: "bold",
-      wordWrap: { width: panelW - 40 },
-      align: "center",
-    }).setOrigin(0.5).setDepth(depth + 2).setAlpha(0);
+    // Created first (off-panel position) purely to measure its wrapped
+    // height — repositioned once panelH/panelTop are known below.
+    const titleText = scene.add.text(
+      panelX,
+      0,
+      title || (urgent
+        ? "Bit noticed you're frustrated AND struggling with this one..."
+        : "Bit noticed you're struggling with this one..."),
+      {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        color: "#ffffff",
+        fontStyle: "bold",
+        wordWrap: { width: panelW - 40 },
+        align: "center",
+      }
+    ).setOrigin(0.5).setDepth(depth + 2).setAlpha(0);
     created.push(titleText);
 
-    const n = OPTIONS.length;
-    const buttonsBlockHeight = () => (n - 1) * buttonSpacing + buttonH;
-    let desiredPanelH = topPadding + titleText.height + titleToButtonsGap + buttonsBlockHeight() + bottomPadding;
+    const buttonsBlockH = buttonCount * BUTTON_H + (buttonCount - 1) * BUTTON_GAP;
+    const panelH = TOP_PADDING + titleText.height + TITLE_GAP + buttonsBlockH + BOTTOM_PADDING;
+    const panelTop = panelY - panelH / 2;
 
-    // Clamp to 85% of camera height; if the natural content doesn't fit,
-    // shrink spacing/button height/font sizes proportionally rather than
-    // letting buttons spill past the panel's bottom edge.
-    const maxPanelH = height * 0.85;
-    if (desiredPanelH > maxPanelH) {
-      const shrink = maxPanelH / desiredPanelH;
-      buttonH *= shrink;
-      buttonSpacing *= shrink;
-      titleFontSize = Math.max(11, Math.round(titleFontSize * shrink));
-      labelFontSize = Math.max(10, Math.round(labelFontSize * shrink));
-      titleText.setFontSize(titleFontSize);
-      desiredPanelH = topPadding + titleText.height + titleToButtonsGap + buttonsBlockHeight() + bottomPadding;
-    }
-    const panelH = Math.min(desiredPanelH, maxPanelH);
-
-    // Keep the whole panel (top to bottom edge) within [20, height-20] --
-    // the bottom-most button should never sit closer than 20px from the
-    // camera's bottom edge. Falls back to plain centering only in the
-    // (practically unreachable, given the clamp above) case where panelH
-    // alone already exceeds height-40.
-    const halfH = panelH / 2;
-    const minCenterY = 20 + halfH;
-    const maxCenterY = height - 20 - halfH;
-    const panelY = minCenterY <= maxCenterY
-      ? Math.min(Math.max(height / 2, minCenterY), maxCenterY)
-      : height / 2;
+    titleText.y = panelTop + TOP_PADDING + titleText.height / 2;
 
     const panelBg = scene.add.graphics().setDepth(depth + 1).setAlpha(0);
     panelBg.fillStyle(COLOR_PANEL_BG, 0.98);
-    panelBg.fillRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
+    panelBg.fillRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
     panelBg.lineStyle(2, urgent ? COLOR_URGENT : COLOR_CYAN);
-    panelBg.strokeRoundedRect(panelX - panelW / 2, panelY - panelH / 2, panelW, panelH, 16);
+    panelBg.strokeRoundedRect(panelX - panelW / 2, panelTop, panelW, panelH, 16);
     created.push(panelBg);
 
-    // Reposition the (already-measured) title into its final spot now
-    // that panelY/panelH are resolved.
-    titleText.setPosition(panelX, panelY - panelH / 2 + topPadding + titleText.height / 2);
-
-    const buttonY0 = panelY - panelH / 2 + topPadding + titleText.height + titleToButtonsGap + buttonH / 2;
+    const buttonY0 = panelTop + TOP_PADDING + titleText.height + TITLE_GAP + BUTTON_H / 2;
+    const buttonSpacing = BUTTON_H + BUTTON_GAP;
 
     const finish = (choice) => {
       created.forEach((obj) => obj.destroy());
       scene.inputLocked = false;
 
       if (choice === "extraLife") {
-        const globalLives = GameManager.addLife(1);
-        // GameManager.state.lives is the source of truth for early levels
-        // (index <21) that read it directly, but the methods-wing levels
-        // (25-88) track lives in a fully local this.lives/this.lifeIcons
-        // instead and never read GameManager's copy -- so on those, the
-        // call above alone has no visible effect. Call the scene's own
-        // addLife() too, when it has one, without removing the
-        // GameManager call (kept so its counter stays meaningful for any
-        // level that does read it).
-        if (typeof scene.addLife === "function") {
-          const sceneLives = scene.addLife(1);
-          console.log("BitMenu choice: extraLife — granted bonus life. GameManager.lives:", globalLives, "| scene.lives:", sceneLives);
-        } else {
-          console.log("BitMenu choice: extraLife — granted bonus life, lives now:", globalLives);
-        }
+        const lives = GameManager.addLife(1);
+        if (typeof scene.addLife === "function") scene.addLife();
+        console.log("BitMenu choice: extraLife — granted bonus life, lives now:", lives);
       } else if (choice === "review") {
-        // Only the 22 Accretion-phase levels (e.g. Level34) support
-        // init(data)/_forceTutorial/checkTutorial() honoring it -- verified
-        // Level26 (Tuning-phase) does NOT, so this is not a universal
-        // methods-wing pattern despite living in the original template.
-        // Harmless everywhere either way: scene.scene.restart() always
-        // works, it just won't force the tutorial to show on levels that
-        // don't read forceTutorial -- there it behaves like a plain retry.
-        console.log("BitMenu choice: review — restarting scene with forceTutorial: true");
-        scene.scene.restart({ forceTutorial: true });
+        if (scene.baseTutorialScene) {
+          scene.scene.start(scene.baseTutorialScene, { forceTutorial: true });
+        } else {
+          scene.scene.restart({ forceTutorial: true });
+        }
       } else if (choice === "menu") {
-        // Same scene key used by every level's own "RETURN TO MENU" button
-        // in gameOver() (verified in Level25Scene.js and Level34Scene.js) —
-        // consistent with existing in-game navigation elsewhere.
-        console.log("BitMenu choice: menu — navigating to MenuScene");
         scene.scene.start("MenuScene");
-      } else {
-        console.log("BitMenu choice:", choice);
       }
 
       resolve(choice);
@@ -194,7 +140,7 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
       const emphasize = urgent && opt.key === "review";
       const by = buttonY0 + i * buttonSpacing;
       const bw = panelW - 60;
-      const bh = buttonH;
+      const bh = 46;
 
       const container = scene.add.container(panelX, by).setDepth(depth + 2).setAlpha(0);
       const bg = scene.add.graphics();
@@ -210,7 +156,7 @@ export function showBitMenu(scene, { urgent = false, title } = {}) {
 
       const label = scene.add.text(0, 0, opt.label, {
         fontFamily: "Arial",
-        fontSize: `${labelFontSize}px`,
+        fontSize: "15px",
         color: "#e0e0e0",
         fontStyle: "bold",
       }).setOrigin(0.5);

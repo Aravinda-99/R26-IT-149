@@ -205,7 +205,7 @@ export class Level36Scene extends Phaser.Scene {
     this.currentMission = 0;
     this.score = 0;
     this.displayScore = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.flawlessCount = 0;
     this.runCount = 0;
     this.failedRunCount = 0;
@@ -216,7 +216,6 @@ export class Level36Scene extends Phaser.Scene {
     this.missionElements = [];
     this.slotContents = {};
     this.slotDefs = {};
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -230,6 +229,12 @@ export class Level36Scene extends Phaser.Scene {
     this._bubble = null;
     this._dragHoverSlotKey = null;
     this._janitorRecorded = false;
+    this._modalLockedInput = false;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this drag-and-drop Restructuring-phase level with nothing
+    // to review.
+    this.baseTutorialScene = "Level34Scene";
   }
 
   preload() {}
@@ -273,6 +278,21 @@ export class Level36Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Lock inputs so the player cannot drag blocks or click RUN while an ML
+    // intervention modal is open. Tracks whether WE were the one who locked
+    // it (this._modalLockedInput) so resuming here never clobbers a lock the
+    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
+    // feedback) — only undo what this branch itself did.
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
+
     this.updateAmbient(time, delta);
     this.updateWallClock(time);
   }
@@ -1201,8 +1221,8 @@ export class Level36Scene extends Phaser.Scene {
     this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 30, y: 26 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 26 }).setDepth(51);
       lg.lineStyle(2, C_GREEN, 1);
       lg.strokeRoundedRect(-8, -6, 16, 11, 2);
       lg.fillStyle(C_GREEN, 1);
@@ -1338,36 +1358,13 @@ export class Level36Scene extends Phaser.Scene {
   async runTutorial() {
     const A = () => this._alive;
     await this.delay(400); if (!A()) return;
-    await this.bitSay("Morning shift, Clerk — walk-ins are lining up! Every mission is a real form: read what they type, do the work, print the answer. Same tape, same nozzles — YOU write the programs now.");
+    await this.bitSay("Morning shift, Clerk — walk-ins are lining up! Every mission is a real form: read what they type, do the work, print the answer. Let's get to your station!");
     if (!A()) return;
-    await Promise.race([this.waitForClick(), this.delay(4500)]); if (!A()) return;
+    await this.delay(1500); if (!A()) return;
     this.hideBubble();
-
-    const a1 = this.floatingAnnotation(CX + CW / 2, CY - 20, "assemble the intake program", HEX_CYAN);
-    await this.delay(350); if (!A()) return;
-    const a2 = this.floatingAnnotation(CX + 200, CY + 20, "already built for you — carry on", HEX_GRAY);
-    await this.delay(350); if (!A()) return;
-    const a3 = this.floatingAnnotation(OX + OW / 2, OY - 20, "your program runs LIVE against the tape", HEX_GREEN_BRIGHT);
-    await this.delay(350); if (!A()) return;
-    const a4 = this.floatingAnnotation(OX + OW / 2, TICKER_Y - 20, "whatever you print appears here", HEX_GOLD);
-    await this.delay(350); if (!A()) return;
-    const a5 = this.floatingAnnotation(RX + RW / 2, RY - 12, "expected vs actual — the mismatches teach you", HEX_PURPLE);
-    await this.delay(400); if (!A()) return;
-
-    await this.bitSay("One promise from me: the tape never lies. If your build reads the wrong token or leaves crumbs behind, you'll SEE it happen. Build, run, read the report, repair. To your station!");
-    if (!A()) return;
-    await Promise.race([this.waitForClick(), this.delay(4500)]); if (!A()) return;
-    this.hideBubble();
-    [a1, a2, a3, a4, a5].forEach((a) => this.tweens.add({ targets: a, alpha: 0, duration: 250, onComplete: () => a.destroy() }));
 
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
-  }
-
-  floatingAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "bold 13px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
-    this.tweens.add({ targets: t, alpha: 1, duration: 300 });
-    return t;
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -1382,17 +1379,17 @@ export class Level36Scene extends Phaser.Scene {
     const card = this.add.container(W / 2, H + 200).setDepth(90);
     const g = this.add.graphics();
     g.fillStyle(0x0d1117, 1);
-    g.fillRoundedRect(-260, -105, 520, 210, 12);
+    g.fillRoundedRect(-260, -115, 520, 230, 12);
     g.lineStyle(2, C_GOLD, 1);
-    g.strokeRoundedRect(-260, -105, 520, 210, 12);
+    g.strokeRoundedRect(-260, -115, 520, 230, 12);
     g.fillStyle(C_GOLD, 1);
-    g.fillRect(-260, -105, 5, 210);
-    const badge = this.add.circle(-225, -75, 18, C_GOLD);
-    const badgeNum = this.add.text(-225, -75, String(mission.mission), { font: "bold 18px Arial", color: "#0a0e14" }).setOrigin(0.5);
-    const title = this.add.text(-195, -85, mission.title, { font: "bold 21px Arial", color: "#ffffff" }).setOrigin(0, 0.5);
-    const desc = this.add.text(-225, -35, mission.brief, { font: "15px Arial", color: "#b0bec5", wordWrap: { width: 460 } }).setOrigin(0, 0);
+    g.fillRect(-260, -115, 5, 230);
+    const badge = this.add.circle(-225, -80, 18, C_GOLD);
+    const badgeNum = this.add.text(-225, -80, String(mission.mission), { font: "bold 18px Arial", color: "#0a0e14" }).setOrigin(0.5);
+    const title = this.add.text(-195, -90, mission.title, { font: "bold 21px Arial", color: "#ffffff" }).setOrigin(0, 0.5);
+    const desc = this.add.text(-225, -45, mission.brief, { font: "15px Arial", color: "#b0bec5", wordWrap: { width: 460 } }).setOrigin(0, 0);
 
-    const startBtn = this.add.container(0, 85).setDepth(1);
+    const startBtn = this.add.container(0, 75).setDepth(1);
     const sg = this.add.graphics();
     sg.fillStyle(C_GOLD, 1);
     sg.fillRoundedRect(-70, -20, 140, 40, 20);
@@ -1783,6 +1780,10 @@ export class Level36Scene extends Phaser.Scene {
       });
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
+      // before onMissionComplete()'s wait-loop starts polling for it.
+      await this.delay(100);
     } catch (e) {
       console.warn("Level36Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1802,14 +1803,9 @@ export class Level36Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    if (compileErr && compileErr.tag) tagsThisRun.add(compileErr.tag);
-    tagsThisRun.forEach((tag) => {
-      if (!tag) return;
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
 
     // compileErr.tag is authoritative (computed directly from the actual
     // cause) — several slots can each hold a distractor simultaneously, so
@@ -1850,9 +1846,26 @@ export class Level36Scene extends Phaser.Scene {
     this.showBitFeedback(hints[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
-    if (this.gameEnded) return;
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next mission.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
     this.updateScore(250 + (flawless ? 100 : 0));
@@ -1899,6 +1912,14 @@ export class Level36Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
@@ -1954,7 +1975,7 @@ export class Level36Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(35, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(36, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("scanner_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level36_results", JSON.stringify({

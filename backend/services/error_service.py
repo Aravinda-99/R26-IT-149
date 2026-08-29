@@ -1351,7 +1351,23 @@ class ErrorService:
     @classmethod
     def get_latest(cls, user_id):
         """Returns the full response payload of the user's most recent analysis."""
-        return cls._last_analysis.get(user_id)
+        if user_id in cls._last_analysis:
+            return cls._last_analysis[user_id]
+        
+        user_history = [h for h in cls._history if h.get("student_id") == user_id]
+        if user_history:
+            latest_entry = user_history[-1]
+            code = latest_entry.get("code", "")
+            if code:
+                try:
+                    res = cls.analyze({
+                        "student_id": user_id,
+                        "code": code
+                    })
+                    return res
+                except Exception as e:
+                    print(f"Error analyzing latest history entry: {e}")
+        return None
 
     @classmethod
     def get_summary(cls, user_id):

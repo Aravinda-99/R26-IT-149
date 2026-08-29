@@ -91,8 +91,8 @@ export function renderLanding(container, onNavigate) {
     // Full-bleed: landing ignores the default page max-width
     container.classList.add("page-landing");
 
-    const goRegister = () => onNavigate && onNavigate("register");
-    const goLogin = () => onNavigate && onNavigate("login");
+    const goRegister = () => onNavigate && onNavigate("/signup");
+    const goLogin = () => onNavigate && onNavigate("/login");
 
     container.querySelector("#landing-start")?.addEventListener("click", goRegister);
     container.querySelector("#landing-start-bottom")?.addEventListener("click", goRegister);

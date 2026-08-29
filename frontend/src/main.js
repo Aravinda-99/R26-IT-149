@@ -1,228 +1,284 @@
 /**
- * Main Entry Point
- * =================
- * Initializes Firebase, sets up navigation, and loads the default page.
+ * Main Entry Point â CodeQuest LMS Platform
+ * ==========================================
+ * Dual-Role Learning Platform:
+ * - Public Views (Welcome, Onboarding, Login, Signup)
+ * - Student LMS Interface (StudentLayout: Dashboard, Modules, Practice, Diagnostic Quiz, PostTest, Profile)
+ * - Educator & Admin Portal (TeacherLayout: Dashboard, Generation, Review, Question Bank, Analytics, Settings)
  */
 
 import "./style.css";
 import { initFirebase } from "./config/firebase.js";
-import { initAuthListener, onAuthChange, logout, getCurrentUser } from "./utils/auth.js";
-import { renderDashboard } from "./pages/dashboard.js";
-import { renderLearningPath } from "./pages/learning-path.js";
+import { 
+    initAuthListener, 
+    onAuthChange, 
+    getCurrentUser, 
+    getUserRole, 
+    isAuthLoading 
+} from "./utils/auth.js";
+import { checkRouteAccess, renderLoadingScreen } from "./components/RoleGuard.js";
+
+// Layouts
+import { renderPublicLayout } from "./layouts/PublicLayout.js";
+import { renderStudentLayout } from "./layouts/StudentLayout.js";
+import { renderTeacherLayout } from "./layouts/TeacherLayout.js";
+
+// Public Pages
+import { renderOnboarding } from "./pages/auth/Onboarding.js";
+import { renderLogin } from "./pages/auth/Login.js";
+import { renderSignup } from "./pages/auth/Signup.js";
+import { renderLanding, disposeLanding } from "./pages/landing.js";
+
+// Student Pages
+import { renderStudentDashboard } from "./pages/student/StudentDashboard.js";
+import { renderModules } from "./pages/student/Modules.js";
+import { renderProfile } from "./pages/student/Profile.js";
+import { renderPostTest } from "./pages/student/posttest.js";
 import { renderQuizLab } from "./pages/quiz-lab.js";
 import { renderGames, disposeGames, launchModuleFromQuery } from "./pages/games.js";
-import { renderErrorAnalysis } from "./pages/error-analysis.js";
-import { renderMastery } from "./pages/mastery.js";
-
 import { renderQuizResults } from "./pages/quiz-results.js";
 import { renderQuizSummary } from "./pages/quiz-summary.js";
 
-import { renderDemoFlow } from "./pages/demo-flow.js";
+// Teacher Pages
+import { renderTeacherDashboard } from "./pages/teacher/TeacherDashboard.js";
+import { renderGenerateQuestions } from "./pages/teacher/GenerateQuestions.js";
+import { renderPendingReview } from "./pages/teacher/PendingReview.js";
+import { renderApprovedQuestionBank } from "./pages/teacher/ApprovedQuestionBank.js";
+import { renderRejectedArchive } from "./pages/teacher/RejectedArchive.js";
+import { renderPostTestAnalytics } from "./pages/teacher/PostTestAnalytics.js";
+import { renderTeacherSettings } from "./pages/teacher/TeacherSettings.js";
 
-import { renderLogin } from "./pages/login.js";
-import { renderRegister } from "./pages/register.js";
-import { renderProfile } from "./pages/profile.js";
-import { renderLanding, disposeLanding } from "./pages/landing.js";
-
+// Initialize Firebase & Auth
 initFirebase();
 initAuthListener();
 
-const pages = {
-    dashboard: renderDashboard,
-    "learning-path": renderLearningPath,
-    "quiz-lab": renderQuizLab,
-    games: renderGames,
-    "error-analysis": renderErrorAnalysis,
-    mastery: renderMastery,
-    "quiz-results": renderQuizResults,
-    "quiz-summary": renderQuizSummary,
+let currentRoute = "/welcome";
+let currentParams = {};
 
-    "demo-flow": renderDemoFlow,
-    profile: renderProfile,
+/**
+ * Maps normalized route strings to their respective layout and render handlers.
+ */
+function resolveRoute(route) {
+    const r = (route || "/").toLowerCase().trim();
 
-};
+    // 1. Public Routes — student-friendly marketing landing at /
+    if (r === "/welcome" || r === "welcome" || r === "/" || r === "" || r === "/landing" || r === "landing") {
+        return { layout: "bare", render: (c) => renderLanding(c, navigateTo) };
+    }
+    if (r === "/onboarding" || r === "onboarding") {
+        return { layout: "public", render: (c) => renderOnboarding(c, navigateTo) };
+    }
+    if (r === "/signup" || r === "signup" || r === "/register" || r === "register") {
+        return { layout: "public", render: (c) => renderSignup(c, navigateTo) };
+    }
+    if (r === "/login" || r === "login" || r === "/forgot-password") {
+        return { layout: "public", render: (c) => renderLogin(c, navigateTo) };
+    }
 
-const authPages = {
-    landing: (c) => renderLanding(c, navigateTo),
-    login: (c) => renderLogin(c, navigateTo),
-    register: (c) => renderRegister(c, navigateTo),
-};
+    // 2. Teacher & Admin Routes
+    if (r === "/teacher/dashboard" || r === "/admin/dashboard" || r === "teacher-dashboard" || r === "/teacher") {
+        return { layout: "teacher", render: (c) => renderTeacherDashboard(c, navigateTo) };
+    }
+    if (r === "/teacher/questions/generate" || r === "teacher/question-generation") {
+        return { layout: "teacher", render: (c) => renderGenerateQuestions(c, navigateTo) };
+    }
+    if (r === "/teacher/questions/pending" || r === "teacher/pending-review") {
+        return { layout: "teacher", render: (c) => renderPendingReview(c, navigateTo) };
+    }
+    if (r === "/teacher/questions/approved" || r === "/teacher/question-bank" || r === "question-bank") {
+        return { layout: "teacher", render: (c) => renderApprovedQuestionBank(c, navigateTo) };
+    }
+    if (r === "/teacher/questions/rejected") {
+        return { layout: "teacher", render: (c) => renderRejectedArchive(c, navigateTo) };
+    }
+    if (r === "/teacher/analytics" || r === "teacher/post-test-analytics") {
+        return { layout: "teacher", render: (c) => renderPostTestAnalytics(c, navigateTo) };
+    }
+    if (r === "/teacher/settings") {
+        return { layout: "teacher", render: (c) => renderTeacherSettings(c, navigateTo) };
+    }
 
-/** Pages that require a logged-in user. Login/register stay public. */
-const PROTECTED_PAGES = new Set([
-    "dashboard",
-    "learning-path",
-    "quiz-lab",
-    "games",
-    "error-analysis",
-    "mastery",
-    "quiz-results",
-    "quiz-summary",
-    "demo-flow",
-    "profile",
-]);
+    // 3. Student Routes
+    if (r === "/student/dashboard" || r === "dashboard") {
+        return { layout: "student", render: (c) => renderStudentDashboard(c, navigateTo) };
+    }
+    if (r === "/student/modules" || r === "modules" || r === "/student/curriculum") {
+        return { layout: "student", render: (c) => renderModules(c, navigateTo) };
+    }
+    if (r === "/student/profile" || r === "profile" || r === "/student/settings") {
+        return { layout: "student", render: (c) => renderProfile(c, navigateTo) };
+    }
+    if (r === "/student/pre-test" || r === "/student/quiz" || r === "quiz-lab") {
+        return { layout: "student", render: (c) => renderQuizLab(c) };
+    }
+    if (r === "/student/games" || r === "games") {
+        return { layout: "student", render: (c) => renderGames(c) };
+    }
+    if (r.startsWith("/student/post-test") || r === "post-test") {
+        return { layout: "student", render: (c) => renderPostTest(c, currentParams, navigateTo) };
+    }
+    if (r === "quiz-results") {
+        return { layout: "student", render: (c) => renderQuizResults(c) };
+    }
+    if (r === "quiz-summary") {
+        return { layout: "student", render: (c) => renderQuizSummary(c) };
+    }
 
-let currentPage = "landing";
+    // Legacy Redirects (Redirects old demo/learning-journey paths directly to student dashboard)
+    if (
+        r === "/student/learn" || 
+        r === "/student/lessons" || 
+        r === "demo-flow" || 
+        r === "/demo-flow" || 
+        r === "/demo" || 
+        r === "demo" || 
+        r === "learning-path" ||
+        r === "/flow" ||
+        r === "/learning-journey" ||
+        r === "/test-flow"
+    ) {
+        return { layout: "student", render: (c) => renderStudentDashboard(c, navigateTo) };
+    }
 
-function isLoggedIn() {
-    return !!getCurrentUser() || !!localStorage.getItem("codequest_user");
+    // Default 404 Fallback
+    return {
+        layout: "student",
+        render: (c) => {
+            c.innerHTML = `
+                <div class="card" style="max-width: 500px; margin: 4rem auto; text-align: center; padding: 3rem 1.5rem; border-radius: var(--radius-md);">
+                    <div style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Page Not Found</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">The page you are looking for does not exist or has moved.</p>
+                    <button class="btn btn-primary" onclick="window.navigateTo('/student/dashboard')">Return to Dashboard</button>
+                </div>
+            `;
+        }
+    };
 }
 
-function navigateTo(page) {
-    // Require login for app routes; send guests to the landing page
-    if (PROTECTED_PAGES.has(page) && !isLoggedIn()) {
-        page = "landing";
+export function navigateTo(route, params = {}) {
+    if (
+        (currentRoute === "/student/games" || currentRoute === "games") &&
+        route !== "/student/games" &&
+        route !== "games"
+    ) {
+        try {
+            disposeGames();
+        } catch {}
     }
 
-    // Bug fix: ensure the gamified (Phaser) UI is fully removed when navigating away.
-    // `#phaser-container` lives outside `#page-container`, so it won't unmount automatically.
-    if (currentPage === "games" && page !== "games") {
-        disposeGames();
+    // Clean landing full-bleed class when leaving
+    if (
+        (currentRoute === "/welcome" || currentRoute === "/" || currentRoute === "/landing") &&
+        route !== "/welcome" &&
+        route !== "/" &&
+        route !== "/landing"
+    ) {
+        const appEl = document.getElementById("app");
+        disposeLanding(appEl);
     }
 
-    const container = document.getElementById("page-container");
-    if (currentPage === "landing" && page !== "landing") {
-        disposeLanding(container);
-    }
+    currentRoute = route.startsWith("/") ? route : `/${route}`;
+    currentParams = params || {};
 
-    currentPage = page;
+    // Update browser URL history without reloading
+    try {
+        if (window.location.pathname !== currentRoute) {
+            window.history.pushState(currentParams, "", currentRoute);
+        }
+    } catch {}
 
-    document.querySelectorAll(".nav-link").forEach((link) => {
-        link.classList.toggle("active", link.dataset.page === page);
-    });
-
-    const renderFn = pages[page] || authPages[page];
-
-    if (renderFn) {
-        renderFn(container);
-    } else {
-        container.innerHTML = `<h2>Page not found</h2>`;
-    }
+    renderApp();
 }
 
-// expose navigateTo globally
 window.navigateTo = navigateTo;
 
-function updateNavForUser(user) {
-    const actionsEl = document.getElementById("nav-actions");
-    const navLinks = document.getElementById("nav-links");
+function renderApp() {
+    const appEl = document.getElementById("app");
+    if (!appEl) return;
 
-    if (!actionsEl) return;
+    // Check RoleGuard access
+    const access = checkRouteAccess(currentRoute);
 
-    // Hide main nav while logged out so guests only see Sign In / Register
-    if (navLinks) {
-        navLinks.style.display = user ? "" : "none";
-    }
-
-    if (user) {
-        actionsEl.innerHTML = `
-            <button 
-                class="btn" 
-                id="nav-profile-btn"
-                style="background: rgba(255,255,255,0.05); color: var(--text-primary); font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; margin-right: 0.75rem; display: flex; align-items: center; gap: 0.5rem;"
-            >
-                <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">
-                    ${(user.display_name || user.email || '?').charAt(0).toUpperCase()}
-                </div>
-                ${user.display_name || user.email}
-            </button>
-
-            <button 
-                class="btn" 
-                id="logout-btn"
-                style="background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.8rem;"
-            >
-                Logout
-            </button>
-        `;
-
-        document.getElementById("nav-profile-btn").addEventListener("click", () => {
-            navigateTo("profile");
-        });
-
-        document.getElementById("logout-btn").addEventListener("click", async () => {
-            await logout();
-            navigateTo("landing");
-        });
-
-    } else {
-
-        actionsEl.innerHTML = `
-            <button 
-                class="btn" 
-                id="nav-login-btn"
-                style="font-size: 0.8rem; background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); margin-right: 0.5rem;"
-            >
-                Sign In
-            </button>
-            <button 
-                class="btn btn-primary" 
-                id="nav-register-btn"
-                style="font-size: 0.8rem;"
-            >
-                Get Started
-            </button>
-        `;
-
-        document.getElementById("nav-login-btn").addEventListener("click", () => {
-            navigateTo("login");
-        });
-        document.getElementById("nav-register-btn").addEventListener("click", () => {
-            navigateTo("register");
-        });
-
-        // If session ended while on a protected page, return to landing
-        if (PROTECTED_PAGES.has(currentPage)) {
-            navigateTo("landing");
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("[OK] CodeQuest app loaded");
-
-    const brandEl = document.getElementById("nav-brand");
-    if (brandEl) {
-        const goHome = () => navigateTo(isLoggedIn() ? "learning-path" : "landing");
-        brandEl.addEventListener("click", goHome);
-        brandEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                goHome();
-            }
-        });
-    }
-
-    document.querySelectorAll(".nav-link").forEach((link) => {
-        link.addEventListener("click", (e) => {
-            e.preventDefault();
-            navigateTo(link.dataset.page);
-        });
-    });
-
-    onAuthChange((user) => {
-        updateNavForUser(user);
-    });
-
-    // If this tab was opened via a "Launch Module" button (new-tab flow from
-    // the Games page), show only the game itself — skip rendering the Games
-    // category/module cards behind it.
-    const launchModule = new URLSearchParams(window.location.search).get("launchModule");
-    if (launchModule) {
-        if (!isLoggedIn()) {
-            navigateTo("landing");
-            return;
-        }
-        currentPage = "games";
-        document.querySelectorAll(".nav-link").forEach((link) => {
-            link.classList.toggle("active", link.dataset.page === "games");
-        });
-        document.getElementById("page-container").innerHTML = "";
-        launchModuleFromQuery(launchModule);
-        window.history.replaceState({}, "", window.location.pathname);
+    if (access.status === "LOADING") {
+        renderLoadingScreen(appEl);
         return;
     }
 
-    // Guests see the landing page; signed-in users go to Home
-    navigateTo(isLoggedIn() ? "learning-path" : "landing");
+    if (access.status === "REDIRECT" && access.target) {
+        currentRoute = access.target;
+        try {
+            window.history.replaceState({}, "", currentRoute);
+        } catch {}
+    }
+
+    const routeInfo = resolveRoute(currentRoute);
+
+    // Apply appropriate theme class to document body
+    if (routeInfo.layout === "teacher") {
+        document.body.className = "theme-teacher";
+    } else if (routeInfo.layout === "public") {
+        document.body.className = "theme-student";
+    } else {
+        document.body.className = "theme-student";
+    }
+
+    // Render Layout Container
+    let contentContainer = null;
+    if (routeInfo.layout === "teacher") {
+        contentContainer = renderTeacherLayout(appEl, currentRoute, navigateTo);
+    } else if (routeInfo.layout === "public") {
+        contentContainer = renderPublicLayout(appEl, currentRoute, navigateTo);
+    } else if (routeInfo.layout === "bare") {
+        // Full-bleed pages (marketing landing) — no chrome layout
+        appEl.innerHTML = "";
+        contentContainer = appEl;
+    } else {
+        contentContainer = renderStudentLayout(appEl, currentRoute, navigateTo);
+    }
+
+    // Render Target Page View
+    if (contentContainer && typeof routeInfo.render === "function") {
+        routeInfo.render(contentContainer);
+    }
+}
+
+// Global Browser Navigation Listener
+window.addEventListener("popstate", () => {
+    currentRoute = window.location.pathname || "/welcome";
+    renderApp();
+});
+
+// Initialization on DOMContentLoaded
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("[OK] CodeQuest LMS initialized");
+
+    const pathname = window.location.pathname;
+    if (pathname && pathname !== "/") {
+        currentRoute = pathname;
+    } else {
+        const user = getCurrentUser();
+        currentRoute = user ? "/student/dashboard" : "/welcome";
+    }
+
+    // Listen for auth state transitions
+    onAuthChange(({ user, role, loading }) => {
+        if (!loading) {
+            renderApp();
+        }
+    });
+
+    // Check query params for specific module launchers
+    const launchModule = new URLSearchParams(window.location.search).get("launchModule");
+    if (launchModule) {
+        currentRoute = "/student/games";
+        renderApp();
+        launchModuleFromQuery(launchModule);
+        window.history.replaceState({}, "", "/student/games");
+        return;
+    }
+
+    renderApp();
 });

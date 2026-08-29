@@ -20,6 +20,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -222,7 +223,7 @@ export class Level32Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.fastBonusCount = 0;
     this.totalTimePctUsed = 0;
@@ -243,6 +244,10 @@ export class Level32Scene extends Phaser.Scene {
     this._alive = true;
     this._bubble = null;
     this._keyHandler = null;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this rapid-fire Tuning-phase level with nothing to review.
+    this.baseTutorialScene = "Level31Scene";
   }
 
   preload() {}
@@ -282,6 +287,19 @@ export class Level32Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Pause dynamic game elements if an ML intervention menu is currently on screen
+    if (GameManager.interventionInFlight) {
+      if (this.coolingTween && this.coolingTween.isPlaying()) {
+        this.coolingTween.pause();
+      }
+      return; // Return early to stop particles, furnace, and stopwatch from animating
+    } else {
+      // Resume the cooling timer tween if the menu was just dismissed
+      if (this.coolingTween && this.coolingTween.isPaused()) {
+        this.coolingTween.resume();
+      }
+    }
+
     this.updateParticles(time, delta);
     this.updateFurnace(time);
     this.updateStopwatch(time);
@@ -861,7 +879,7 @@ export class Level32Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE PRESS GAUNTLET", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Tuning Phase — String Methods: toUpperCase() / toLowerCase()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 36, "Tuning Phase — toUpperCase() / toLowerCase()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
 
     this.waveText = this.add.text(640, 12, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(51);
     this.waveSquares = [];
@@ -872,11 +890,11 @@ export class Level32Scene extends Phaser.Scene {
 
     this.add.text(1050, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
     this.scoreText = this.add.text(1050, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    this.comboText = this.add.text(1140, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1195 + i * 26, y: 30 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 30 }).setDepth(51);
       lg.lineStyle(2, C_PURPLE, 1);
       lg.lineBetween(-6, -6, 6, 6);
       lg.lineBetween(-6, 6, 6, -6);
@@ -1755,14 +1773,38 @@ export class Level32Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
+      await this.delay(100);
     } catch (e) {
       console.warn("Level32Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next round.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) { this.levelComplete(); return; }
     if (ROUNDS[next].wave !== ROUNDS[this.currentRound].wave) this.startWave(ROUNDS[next].wave);
@@ -1805,6 +1847,14 @@ export class Level32Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
@@ -1882,7 +1932,7 @@ export class Level32Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(31, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(32, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("case_methods_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level32_results", JSON.stringify({

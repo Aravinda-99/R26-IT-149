@@ -129,11 +129,18 @@ cp .env.example .env
 
 > The app runs in **offline mode** without this file — API calls return placeholder data.
 
-### 4. Start the Backend
+### 4. Train Component 4 ML Models (Optional / Recommended)
 
 ```bash
 cd backend
-venv\Scripts\activate
+python ml/train_schema_mastery_models.py
+```
+> This trains the **Random Forest Classifier** (`schema_mastery_level_model.pkl`) and **Decision Tree Classifier** (`schema_next_action_model.pkl`) using `data/schema_mastery_dataset.csv`. If skipped, fallback rule-based mode is automatically used.
+
+### 5. Start the Backend
+
+```bash
+cd backend
 python app.py
 ```
 
