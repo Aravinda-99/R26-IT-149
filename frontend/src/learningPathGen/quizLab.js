@@ -632,7 +632,11 @@ export function setupQuizUI(root = document) {
                     if (nextSessionBtn) {
                         nextSessionBtn.addEventListener("click", () => {
                             sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
-                            window.navigateTo("quiz-lab");
+                            if (window.__onNavigate) {
+                                window.__onNavigate("/student/dashboard");
+                            } else if (typeof window.navigateTo === "function") {
+                                window.navigateTo("/student/dashboard");
+                            }
                         });
                     }
                 }
@@ -664,7 +668,11 @@ export function setupQuizUI(root = document) {
             const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
             if (viewDetailsBtn) {
                 viewDetailsBtn.addEventListener("click", () => {
-                    window.navigateTo("quiz-results");
+                    if (window.__onNavigate) {
+                        window.__onNavigate("/student/progress");
+                    } else if (typeof window.navigateTo === "function") {
+                        window.navigateTo("quiz-results");
+                    }
                 });
             }
 
@@ -672,7 +680,11 @@ export function setupQuizUI(root = document) {
             const finishBtn = quizBox.querySelector("#finish-quiz-btn");
             if (finishBtn) {
                 finishBtn.addEventListener("click", () => {
-                    window.navigateTo("quiz-summary");
+                    if (window.__onNavigate) {
+                        window.__onNavigate("/student/dashboard");
+                    } else if (typeof window.navigateTo === "function") {
+                        window.navigateTo("/student/dashboard");
+                    }
                 });
             }
 
