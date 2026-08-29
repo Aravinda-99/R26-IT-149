@@ -19,20 +19,21 @@ function normalizeStudent(s = {}) {
 }
 
 export async function renderDashboard(container) {
+    const userStr = localStorage.getItem("codequest_user");
+    if (!userStr) {
+        container.innerHTML = `<div style="text-align: center; padding: 4rem; color: #fff;"><h3>Please Sign In</h3><p>You need to be logged in to view your dashboard.</p></div>`;
+        return;
+    }
+    const user = JSON.parse(userStr);
+    const userId = user.id || user.user_id;
+
     container.innerHTML = `
         <div class="dashboard-page">
             <div class="dashboard-header">
                 <div>
-                    <h1>CodeQuest - Learning Progress Dashboard</h1>
-                    <p class="dashboard-subtitle">Track your Java programming journey across all concepts</p>
+                    <h1>Welcome, ${user.display_name}!</h1>
+                    <p class="dashboard-subtitle">Track your Java programming journey and review your latest progress.</p>
                 </div>
-            </div>
-
-            <div class="dashboard-student-bar">
-                <label class="dashboard-student-label">Viewing as:</label>
-                <select class="input-field" id="dashboard-student-select" style="width: auto; min-width: 220px; display: inline-block;">
-                    <option value="">Loading...</option>
-                </select>
             </div>
 
             <div id="dashboard-content">
@@ -41,36 +42,7 @@ export async function renderDashboard(container) {
         </div>
     `;
 
-    await loadDashboardStudents();
-}
-
-async function loadDashboardStudents() {
-    const select = document.getElementById("dashboard-student-select");
-    try {
-        const data = await MasteryAPI.getStudents();
-        const students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
-
-        if (students.length === 0) {
-            select.innerHTML = `<option value="">No students found</option>`;
-            return;
-        }
-
-        select.innerHTML = students.map(s =>
-            `<option value="${s.studentId}">${s.studentName}</option>`
-        ).join("");
-
-        select.addEventListener("change", () => {
-            if (select.value) loadDashboardData(select.value);
-        });
-
-        // Auto-load first student
-        loadDashboardData(students[0].studentId);
-
-    } catch (err) {
-        select.innerHTML = `<option value="">Failed to load</option>`;
-        document.getElementById("dashboard-content").innerHTML =
-            `<p style="color: var(--accent-orange); text-align: center;">Could not load student data${err?.message ? `: ${err.message}` : ""}</p>`;
-    }
+    await loadDashboardData(userId);
 }
 
 async function loadDashboardData(studentId) {
@@ -80,7 +52,12 @@ async function loadDashboardData(studentId) {
     try {
         const data = await MasteryAPI.getStatus(studentId);
         if (!data.found) {
-            content.innerHTML = `<p style="color: var(--accent-orange); text-align: center;">No data found</p>`;
+            content.innerHTML = `
+                <div class="dashboard-card" style="text-align: center; padding: 4rem 2rem;">
+                    <h2 style="margin-bottom: 1rem;">Welcome to your Dashboard!</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 2rem;">You haven't generated any mastery data yet. Complete some learning modules or games to see your personalized stats here!</p>
+                </div>
+            `;
             return;
         }
 

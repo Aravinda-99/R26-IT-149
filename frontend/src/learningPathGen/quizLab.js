@@ -614,6 +614,23 @@ export function setupQuizUI(root = document) {
 
     nextBtn.addEventListener("click", async () => {
 
+        // ── Require an answer before allowing progression ────────────────
+        // WHY: The ML models rely on accurate behavioral signals. A skipped
+        // question would be recorded as "incorrect" in scoring but excluded
+        // from avg_attempts/engagement calculations (which only look at
+        // `completed` questions) — creating a mismatch between what the
+        // student actually did and what the model sees. Blocking skips
+        // keeps every recorded data point meaning the same thing: "the
+        // student tried and got X", which is essential for research validity.
+        if (!state.submitted && state.selectedAnswers[state.current] === null) {
+            const feedback = quizBox.querySelector("#quiz-feedback");
+            if (feedback) {
+                feedback.textContent = "Please select an answer before continuing.";
+                feedback.classList.add("lp-feedback-warning");
+            }
+            return;
+        }
+
         // Record current question before moving
         recordQuestionData(state.current);
 
@@ -621,6 +638,29 @@ export function setupQuizUI(root = document) {
             state.current += 1;
             renderQuestion();
             return;
+        }
+
+        // ── Final safety net: verify ALL questions are answered ───────────
+        // The per-question check above should already guarantee this by
+        // the time the student reaches the last question, since they
+        // cannot advance past any question without answering it. This is
+        // a defensive second check — if it ever finds a gap (e.g. future
+        // code changes to navigation), it blocks submission and jumps the
+        // student to the first unanswered question instead of silently
+        // submitting an incomplete quiz.
+        if (!state.submitted) {
+            const firstUnanswered = state.selectedAnswers.findIndex(a => a === null);
+            if (firstUnanswered !== -1) {
+                state.current = firstUnanswered;
+                renderQuestion();
+                const feedback = quizBox.querySelector("#quiz-feedback");
+                if (feedback) {
+                    feedback.textContent =
+                        `Question ${firstUnanswered + 1} is unanswered. Please answer all ${state.quizBank.length} questions before submitting.`;
+                    feedback.classList.add("lp-feedback-warning");
+                }
+                return;
+            }
         }
 
         if (!state.submitted) {

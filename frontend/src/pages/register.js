@@ -1,35 +1,164 @@
 /**
  * Register Page
  * ==============
- * Firebase email/password registration with profile creation.
+ * Custom registration against Firestore 'users' collection.
  */
-
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 export function renderRegister(container, onNavigate) {
     container.innerHTML = `
-        <div style="max-width: 400px; margin: 4rem auto; text-align: center;">
-            <h1 style="margin-bottom: 0.5rem;">Create Account</h1>
-            <p style="color: var(--text-secondary); margin-bottom: 2rem;">Join CodeQuest and start learning</p>
+        <div style="min-height: 85vh; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+            
+            <style>
+                @keyframes floatCard {
+                    0% { transform: translateY(0px); }
+                    50% { transform: translateY(-10px); }
+                    100% { transform: translateY(0px); }
+                }
+                @keyframes pulseGlow {
+                    0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); }
+                    70% { box-shadow: 0 0 20px 10px rgba(74, 144, 226, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
+                }
+                .premium-login-card {
+                    background: rgba(30, 42, 58, 0.4);
+                    backdrop-filter: blur(16px);
+                    -webkit-backdrop-filter: blur(16px);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 24px;
+                    padding: 3rem;
+                    width: 100%;
+                    max-width: 440px;
+                    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    animation: floatCard 6s ease-in-out infinite;
+                    position: relative;
+                    z-index: 2;
+                }
+                .login-bg-blob {
+                    position: absolute;
+                    filter: blur(80px);
+                    z-index: 1;
+                    opacity: 0.5;
+                    animation: floatCard 10s ease-in-out infinite reverse;
+                }
+                .blob-1 {
+                    width: 300px; height: 300px;
+                    background: var(--accent-purple);
+                    top: -100px; right: -100px;
+                    border-radius: 50%;
+                }
+                .blob-2 {
+                    width: 400px; height: 400px;
+                    background: var(--accent-blue);
+                    bottom: -150px; left: -150px;
+                    border-radius: 50%;
+                }
+                .premium-input-wrap {
+                    position: relative;
+                    margin-bottom: 1.5rem;
+                }
+                .premium-input-wrap i {
+                    position: absolute;
+                    left: 1rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    color: var(--text-secondary);
+                    transition: color 0.3s ease;
+                }
+                .premium-input {
+                    width: 100%;
+                    padding: 1rem 1rem 1rem 3rem;
+                    background: rgba(15, 23, 36, 0.6);
+                    border: 1px solid var(--border-color);
+                    border-radius: 12px;
+                    color: var(--text-primary);
+                    font-size: 0.95rem;
+                    outline: none;
+                    transition: all 0.3s ease;
+                    font-family: var(--font);
+                }
+                .premium-input:focus {
+                    border-color: var(--accent-purple);
+                    background: rgba(15, 23, 36, 0.8);
+                    box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15);
+                }
+                .premium-input:focus + i {
+                    color: var(--accent-purple);
+                }
+                .premium-btn {
+                    width: 100%;
+                    padding: 1rem;
+                    background: linear-gradient(135deg, var(--accent-purple), #8b5cf6);
+                    color: #fff;
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    margin-top: 1rem;
+                    letter-spacing: 0.5px;
+                }
+                .premium-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 16px rgba(167, 139, 250, 0.3);
+                }
+                .premium-btn:active {
+                    transform: translateY(0);
+                }
+                .form-title {
+                    font-size: 2rem;
+                    font-weight: 700;
+                    color: #fff;
+                    margin-bottom: 0.5rem;
+                    background: linear-gradient(to right, #e8edf4, #a78bfa);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+            </style>
 
-            <div class="card" style="text-align: left;">
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Display Name</label>
-                    <input type="text" id="reg-name" class="input-field" placeholder="Your name" />
+            <div class="login-bg-blob blob-1"></div>
+            <div class="login-bg-blob blob-2"></div>
+
+            <div class="premium-login-card">
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <div style="font-size: 3rem; color: var(--accent-purple); margin-bottom: 1rem; animation: pulseGlow 2s infinite; border-radius: 50%; display: inline-block;">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h1 class="form-title">Join CodeQuest</h1>
+                    <p style="color: var(--text-secondary); font-size: 0.95rem;">Start your learning journey today</p>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Email</label>
-                    <input type="email" id="reg-email" class="input-field" placeholder="you@example.com" />
+
+                <div>
+                    <div class="premium-input-wrap">
+                        <input type="text" id="reg-name" class="premium-input" placeholder="Display Name" />
+                        <i class="fas fa-user"></i>
+                    </div>
+
+                    <div class="premium-input-wrap">
+                        <input type="email" id="reg-email" class="premium-input" placeholder="Email Address" />
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    
+                    <div class="premium-input-wrap">
+                        <input type="password" id="reg-password" class="premium-input" placeholder="Password (Min 6 characters)" />
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    
+                    <div id="reg-error" style="color: #ef4444; font-size: 0.85rem; padding: 0.5rem; background: rgba(239, 68, 68, 0.1); border-radius: 8px; margin-bottom: 1rem; display: none; text-align: center; border: 1px solid rgba(239, 68, 68, 0.2);">
+                    </div>
+
+                    <button class="premium-btn" id="reg-btn">
+                        <span>Create Account</span>
+                    </button>
+                    
+                    <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                        Already have an account? 
+                        <a href="#" id="go-login" style="color: var(--accent-blue); text-decoration: none; font-weight: 600; margin-left: 0.3rem;">Sign In</a>
+                    </p>
+                    <p style="text-align: center; margin-top: 0.75rem; font-size: 0.85rem;">
+                        <a href="#" id="go-landing" style="color: var(--text-secondary); text-decoration: none;">← Back to home</a>
+                    </p>
                 </div>
-                <div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Password</label>
-                    <input type="password" id="reg-password" class="input-field" placeholder="Min 6 characters" />
-                </div>
-                <div id="reg-error" style="color: var(--accent-orange); font-size: 0.85rem; margin-bottom: 1rem; display: none;"></div>
-                <button class="btn btn-primary" id="reg-btn" style="width: 100%;">Create Account</button>
-                <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
-                    Already have an account? <a href="#" id="go-login" style="color: var(--accent-blue);">Sign In</a>
-                </p>
             </div>
         </div>
     `;
@@ -48,29 +177,35 @@ export function renderRegister(container, onNavigate) {
         }
 
         btn.disabled = true;
-        btn.textContent = "Creating account...";
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
         errorEl.style.display = "none";
 
         try {
-            const auth = getAuth();
-            const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-            await fetch("/api/auth/register", {
+            const response = await fetch("http://localhost:5000/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    uid: cred.user.uid,
                     email: email,
                     display_name: name,
+                    password: password
                 }),
             });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Failed to create account");
+            }
+            
+            // Login user on successful register
+            localStorage.setItem("codequest_user", JSON.stringify(data.user));
+            window.dispatchEvent(new Event("custom_auth_change"));
 
             if (onNavigate) onNavigate("dashboard");
         } catch (e) {
-            errorEl.textContent = e.message.replace("Firebase: ", "");
+            errorEl.innerHTML = '<i class="fas fa-exclamation-circle" style="margin-right:0.4rem;"></i> ' + e.message;
             errorEl.style.display = "block";
             btn.disabled = false;
-            btn.textContent = "Create Account";
+            btn.innerHTML = '<span>Create Account</span>';
         }
     });
 
@@ -79,6 +214,14 @@ export function renderRegister(container, onNavigate) {
         loginLink.addEventListener("click", (e) => {
             e.preventDefault();
             onNavigate("login");
+        });
+    }
+
+    const homeLink = document.getElementById("go-landing");
+    if (homeLink && onNavigate) {
+        homeLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            onNavigate("landing");
         });
     }
 }

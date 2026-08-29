@@ -13,27 +13,69 @@ from datetime import datetime, timezone
 auth_bp = Blueprint("auth", __name__)
 
 
+from werkzeug.security import generate_password_hash
+import uuid
+
 @auth_bp.route("/register", methods=["POST"])
-@require_json("uid", "email", "display_name")
+@require_json("email", "display_name", "password")
 def register_user():
-    """Create user profile in Firestore after Firebase Auth registration."""
+    """Create user profile in Firestore directly in 'users' collection."""
+    if not db:
+        return jsonify({"error": "Database not available"}), 503
+        
     data = request.get_json()
-    uid = data["uid"]
+    email = data["email"]
+    display_name = data["display_name"]
+    password = data["password"]
+    
+    # Check if user exists
+    users_ref = db.collection("users")
+    existing_users = list(users_ref.where("email", "==", email).stream())
+    if existing_users:
+        return jsonify({"error": "User with this email already exists"}), 400
+        
+    # Create custom user ID like STU_XXXXXXXXXX
+    uid = f"STU_{uuid.uuid4().hex[:10].upper()}"
+    
     profile = {
-        "display_name": data["display_name"],
-        "email": data["email"],
-        "total_xp": 0,
+        "id": uid,
+        "name": display_name,
+        "display_name": display_name,
+        "email": email,
+        "password_hash": generate_password_hash(password),
+        "role": "student",
+        "experience": "beginner",
+        "learning_goal": "coursework",
+        "learning_pace": "steady",
         "games_played": 0,
-        "badges": [],
+        "onboarding_completed": True,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
-    if db:
-        db.collection("user_profiles").document(uid).set(profile)
-    else:
-        print(f"[OFFLINE] Would create profile for {uid}")
+    # Save to 'users' collection for auth/login
+    db.collection("users").document(uid).set(profile)
 
-    return jsonify({"message": "User registered", "user_id": uid}), 201
+    # Save to 'user_profiles' collection for app usage
+    user_profile = {
+        "user_id": uid,
+        "display_name": display_name,
+        "email": email,
+        "total_xp": 0,
+        "games_played": 0,
+        "badges": [],
+        "role": "student",
+        "created_at": profile["created_at"]
+    }
+    db.collection("user_profiles").document(uid).set(user_profile)
+
+    # Return profile without password
+    user_data = profile.copy()
+    user_data.pop("password_hash", None)
+    
+    return jsonify({
+        "message": "User registered successfully", 
+        "user": user_data
+    }), 201
 
 
 @auth_bp.route("/profile/<user_id>", methods=["GET"])
@@ -51,11 +93,61 @@ def get_user_profile(user_id):
 
     doc = db.collection("user_profiles").document(user_id).get()
     if not doc.exists:
-        abort(404, description="User not found")
-
-    profile = doc.to_dict()
+        # Fallback for accounts created during testing before dual-write
+        user_doc = db.collection("users").document(user_id).get()
+        if not user_doc.exists:
+            abort(404, description="User not found")
+        profile = user_doc.to_dict()
+    else:
+        profile = doc.to_dict()
+        
     profile["user_id"] = user_id
+    
+    # Ensure all required fields exist for the UI
+    profile.setdefault("total_xp", 0)
+    profile.setdefault("games_played", 0)
+    profile.setdefault("badges", [])
+    
     return jsonify(profile)
+
+from werkzeug.security import check_password_hash
+
+@auth_bp.route("/login", methods=["POST"])
+@require_json("email", "password")
+def custom_login():
+    """Custom login against the 'users' collection."""
+    if not db:
+        return jsonify({"error": "Database not available"}), 503
+        
+    data = request.get_json()
+    email = data["email"]
+    password = data["password"]
+    
+    users_ref = db.collection("users")
+    query = users_ref.where("email", "==", email).stream()
+    
+    user_doc = None
+    for doc in query:
+        user_doc = doc
+        break
+        
+    if not user_doc:
+        return jsonify({"error": "Invalid login credentials"}), 401
+        
+    user_data = user_doc.to_dict()
+    # verify password hash
+    pw_hash = user_data.get("password_hash")
+    if not pw_hash or not check_password_hash(pw_hash, password):
+        return jsonify({"error": "Invalid login credentials"}), 401
+        
+    # Remove password hash before sending to frontend
+    user_data.pop("password_hash", None)
+    
+    return jsonify({
+        "message": "Login successful",
+        "user": user_data
+    })
+
 
 
 @auth_bp.route("/verify-token", methods=["POST"])
