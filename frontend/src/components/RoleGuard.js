@@ -40,20 +40,22 @@ export function checkRouteAccess(route) {
         return { status: "AUTHORIZED", role };
     }
 
-    // 2. Public Auth Routes (Welcome, Onboarding, Login, Signup)
+    // 2. Public Auth Routes (Welcome/Landing, Onboarding, Login, Signup)
     if (
         cleanRoute === "/welcome" || 
+        cleanRoute === "/landing" ||
         cleanRoute === "/onboarding" || 
         cleanRoute === "/login" || 
         cleanRoute === "/signup" || 
         cleanRoute === "/register" ||
         cleanRoute === "welcome" ||
+        cleanRoute === "landing" ||
         cleanRoute === "onboarding" ||
         cleanRoute === "login" ||
         cleanRoute === "signup" ||
         cleanRoute === "register"
     ) {
-        if (user && cleanRoute !== "/welcome") {
+        if (user && cleanRoute !== "/welcome" && cleanRoute !== "/landing") {
             if (role === "teacher" || role === "admin") {
                 return { status: "REDIRECT", target: "/teacher/dashboard" };
             } else {

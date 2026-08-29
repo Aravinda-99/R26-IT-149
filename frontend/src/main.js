@@ -1,5 +1,5 @@
 /**
- * Main Entry Point — CodeQuest LMS Platform
+ * Main Entry Point - CodeQuest LMS Platform
  * ==========================================
  * Dual-Role Learning Platform:
  * - Public Views (Welcome, Onboarding, Login, Signup)
@@ -24,10 +24,10 @@ import { renderStudentLayout } from "./layouts/StudentLayout.js";
 import { renderTeacherLayout } from "./layouts/TeacherLayout.js";
 
 // Public Pages
-import { renderWelcome } from "./pages/public/Welcome.js";
 import { renderOnboarding } from "./pages/auth/Onboarding.js";
-import { renderLogin } from "./pages/auth/Login.js";
-import { renderSignup } from "./pages/auth/Signup.js";
+import { renderLogin } from "./pages/login.js";
+import { renderSignup } from "./pages/register.js";
+import { renderLanding, disposeLanding } from "./pages/landing.js";
 
 // Student Pages
 import { renderStudentDashboard } from "./pages/student/StudentDashboard.js";
@@ -61,9 +61,9 @@ let currentParams = {};
 function resolveRoute(route) {
     const r = (route || "/").toLowerCase().trim();
 
-    // 1. Public Routes
-    if (r === "/welcome" || r === "welcome" || r === "/" || r === "") {
-        return { layout: "public", render: (c) => renderWelcome(c, navigateTo) };
+    // 1. Public Routes Ã¢â¬â student-friendly marketing landing at /
+    if (r === "/welcome" || r === "welcome" || r === "/" || r === "" || r === "/landing" || r === "landing") {
+        return { layout: "bare", render: (c) => renderLanding(c, navigateTo) };
     }
     if (r === "/onboarding" || r === "onboarding") {
         return { layout: "public", render: (c) => renderOnboarding(c, navigateTo) };
@@ -159,10 +159,25 @@ function resolveRoute(route) {
 }
 
 export function navigateTo(route, params = {}) {
-    if (currentRoute === "/student/games" && route !== "/student/games") {
+    if (
+        (currentRoute === "/student/games" || currentRoute === "games") &&
+        route !== "/student/games" &&
+        route !== "games"
+    ) {
         try {
             disposeGames();
         } catch {}
+    }
+
+    // Clean landing full-bleed class when leaving
+    if (
+        (currentRoute === "/welcome" || currentRoute === "/" || currentRoute === "/landing") &&
+        route !== "/welcome" &&
+        route !== "/" &&
+        route !== "/landing"
+    ) {
+        const appEl = document.getElementById("app");
+        disposeLanding(appEl);
     }
 
     currentRoute = route.startsWith("/") ? route : `/${route}`;
@@ -216,6 +231,10 @@ function renderApp() {
         contentContainer = renderTeacherLayout(appEl, currentRoute, navigateTo);
     } else if (routeInfo.layout === "public") {
         contentContainer = renderPublicLayout(appEl, currentRoute, navigateTo);
+    } else if (routeInfo.layout === "bare") {
+        // Full-bleed pages (marketing landing) Ã¢â¬â no chrome layout
+        appEl.innerHTML = "";
+        contentContainer = appEl;
     } else {
         contentContainer = renderStudentLayout(appEl, currentRoute, navigateTo);
     }
