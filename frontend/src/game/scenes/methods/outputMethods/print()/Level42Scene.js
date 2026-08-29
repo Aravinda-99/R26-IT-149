@@ -43,7 +43,7 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-const LINE_H = 21;
+const LINE_H = 28;
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const MX = OX + OW / 2, MY = OY + OH / 2 + 4;
@@ -70,22 +70,17 @@ const MISSIONS = [
     slots: [{ id: "call1", hint: "start the line", capacity: 1 }, { id: "call2", hint: "finish the line", capacity: 1 }],
     palette: [
       { code: 'System.out.print("Score: " + points + " / ");', slot: "call1" },
-      { code: 'System.out.print("Score: ");', slot: "call1" },
-      { code: 'System.out.print("Score: " + points);', slot: "call1" },
       { code: "System.out.println(max);", slot: "call2" },
-      { code: 'System.out.println(points + " / " + max);', slot: "call2" },
-      { code: 'System.out.println(" / " + max);', slot: "call2" },
       { code: 'System.out.println("Score: " + points + " / ");', tag: "wrong_method_for_same_line", slot: "call1" },
       { code: "System.out.print(max);", tag: "wrong_method_for_new_line", slot: "call2" },
       { code: 'System.out.println("Score: points / max");', tag: "variable_as_literal_belief", slot: "call1" },
-      { code: 'System.out.print(points + " / " + max);', tag: "wrong_method_for_new_line", slot: "call2" },
     ],
     tests: [
       { subs: { points: "42", max: "50" }, expectedOutput: "Score: 42 / 50" },
       { subs: { points: "0", max: "100" }, expectedOutput: "Score: 0 / 100" },
       { subs: { points: "99", max: "99" }, expectedOutput: "Score: 99 / 99" },
     ],
-    postMissionNote: "Three valid splits, one clean line. WHERE you split doesn't matter — but every piece except the last is a print(), and the last is a println(). That rule is the whole trick.",
+    postMissionNote: "One clean line. Every piece except the last is a print(), and the last is a println(). That rule is the whole trick.",
     concept: "build_same_line_multi_call" },
 
   { mission: 2, title: "The Aligned Menu",
@@ -97,10 +92,8 @@ const MISSIONS = [
       { code: '"Water\\t1.00"', correct: true, slot: "row3" },
       { code: '"Item Price"', tag: "tab_replaced_with_space", slot: "header" },
       { code: '"Item\\nPrice"', tag: "newline_instead_of_tab", slot: "header" },
-      { code: '"ItemPrice"', tag: "missing_separator", slot: "header" },
       { code: '"Water 1.00"', tag: "tab_replaced_with_space", slot: "row3" },
       { code: '"Water\\n1.00"', tag: "newline_instead_of_tab", slot: "row3" },
-      { code: '"Water\\tone"', tag: "wrong_value", slot: "row3" },
     ],
     tests: [{ subs: {}, expectedOutput: "Item    Price⏎Coffee  3.50⏎Tea     2.00⏎Water   1.00" }],
     postMissionNote: "\\t is the difference between a table and a mess. Every row uses the same tab stop — the columns line up on their own.",
@@ -180,14 +173,8 @@ const MISSIONS = [
       { code: "anchor.toUpperCase()", correct: true, slot: "anchor_arg" },
       { code: "headline.toUpperCase()", correct: true, slot: "headline_arg" },
       { code: "System.out.println();", correct: true, slot: "blank" },
-      { code: 'System.out.println("");', correct: true, alsoCorrect: true, slot: "blank" },
       { code: 'System.out.println("Ready to broadcast.");', correct: true, slot: "footer" },
       { code: "anchor", tag: "no_normalization", slot: "anchor_arg" },
-      { code: "headline", tag: "no_normalization", slot: "headline_arg" },
-      { code: "anchor.toLowerCase()", tag: "method_direction_confusion", slot: "anchor_arg" },
-      { code: "anchor.toUpperCase", tag: "property_vs_method_syntax", slot: "anchor_arg" },
-      { code: '"anchor".toUpperCase()', tag: "literal_as_variable_belief", slot: "anchor_arg" },
-      { code: "(nothing)", label: "— leave empty —", empty: true, tag: "empty_println_ignored_belief", slot: "blank" },
       { code: 'System.out.print("Ready to broadcast.");', tag: "wrong_method_for_new_line", slot: "footer" },
     ],
     tests: [
@@ -229,7 +216,7 @@ export class Level42Scene extends Phaser.Scene {
     this.currentMission = 0;
     this.score = 0;
     this.displayScore = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.flawlessCount = 0;
     this.runCount = 0;
     this.failedRunCount = 0;
@@ -242,7 +229,6 @@ export class Level42Scene extends Phaser.Scene {
     this.missionElements = [];
     this.slotContents = {};
     this.slotDefs = {};
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -258,6 +244,12 @@ export class Level42Scene extends Phaser.Scene {
     this._bubble = null;
     this._dragHoverSlotKey = null;
     this._proactiveRecorded = {};
+    this._modalLockedInput = false;
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this drag-and-drop Restructuring-phase level with nothing
+    // to review.
+    this.baseTutorialScene = "Level40Scene";
   }
 
   preload() {}
@@ -299,6 +291,21 @@ export class Level42Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Lock inputs so the player cannot drag blocks or click RUN while an ML
+    // intervention modal is open. Tracks whether WE were the one who locked
+    // it (this._modalLockedInput) so resuming here never clobbers a lock the
+    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
+    // feedback) — only undo what this branch itself did.
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
+
     this.updateAmbient(time, delta);
     this.updateOnAirPulse(time);
   }
@@ -345,12 +352,12 @@ export class Level42Scene extends Phaser.Scene {
     this.newsHour = this.add.graphics();
     clock.add([ring, this.newsHour, this.newsMinute]);
 
-    const banner = this.add.graphics().setDepth(2);
+    const banner = this.add.graphics().setDepth(52);
     banner.fillStyle(0x0d1315, 1);
     banner.lineStyle(1, 0xe53935, 0.4);
-    banner.fillRoundedRect(230, 19, 300, 22, 4);
-    banner.strokeRoundedRect(230, 19, 300, 22, 4);
-    this.add.text(380, 30, "NEWS DESK — LIVE", { font: "bold 14px Arial", color: "#e53935" }).setOrigin(0.5).setAlpha(0.4).setDepth(3);
+    banner.fillRoundedRect(250, 20, 180, 24, 4);
+    banner.strokeRoundedRect(250, 20, 180, 24, 4);
+    this.add.text(340, 32, "NEWS DESK — LIVE", { font: "bold 13px Arial", color: "#e53935" }).setOrigin(0.5).setAlpha(0.8).setDepth(53);
   }
 
   createFloor() {
@@ -367,12 +374,12 @@ export class Level42Scene extends Phaser.Scene {
   }
 
   createOnAirSign() {
-    const g = this.add.graphics().setDepth(4);
+    const g = this.add.graphics().setDepth(52);
     g.fillStyle(0x0d1315, 1);
     g.lineStyle(1.5, 0xe53935, 1);
-    g.fillRoundedRect(845, 48, 90, 24, 4);
-    g.strokeRoundedRect(845, 48, 90, 24, 4);
-    this.onAirText = this.add.text(890, 60, "ON AIR", { font: "bold 14px Arial", color: "#e53935" }).setOrigin(0.5).setAlpha(0.3).setDepth(5);
+    g.fillRoundedRect(845, 20, 90, 24, 4);
+    g.strokeRoundedRect(845, 20, 90, 24, 4);
+    this.onAirText = this.add.text(890, 32, "ON AIR", { font: "bold 14px Arial", color: "#e53935" }).setOrigin(0.5).setAlpha(0.3).setDepth(53);
     this._onAirBright = false;
   }
 
@@ -488,11 +495,11 @@ export class Level42Scene extends Phaser.Scene {
 
     mission.skeleton.forEach((rawLine, i) => {
       const y = CODE_Y0 + i * LINE_H;
-      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "13px Courier New", color: "#3d4450" });
+      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "16px Courier New", color: "#3d4450" });
       this.codeContainer.add(numT);
 
       if (/^(Scanner sc = new Scanner)/.test(rawLine)) {
-        const t = this.add.text(CODE_X, y, rawLine, { font: "14px Courier New", color: "#3d4450" }).setAlpha(0.6);
+        const t = this.add.text(CODE_X, y, rawLine, { font: "18px Courier New", color: "#3d4450" }).setAlpha(0.6);
         this.codeContainer.add(t);
         return;
       }
@@ -503,7 +510,7 @@ export class Level42Scene extends Phaser.Scene {
         if (pi % 2 === 0) {
           if (!part) return;
           this._syntaxTokens(part).forEach((tok) => {
-            const t = this.add.text(x, y, tok.t, { font: "bold 14px Courier New", color: tok.c });
+            const t = this.add.text(x, y, tok.t, { font: "bold 18px Courier New", color: tok.c });
             this.codeContainer.add(t);
             x += t.width;
           });
@@ -511,7 +518,7 @@ export class Level42Scene extends Phaser.Scene {
           const slotId = part;
           const def = this.slotDefs[slotId];
           const w = 190;
-          def.rect = { x, y: y - 2, w, h: 17 };
+          def.rect = { x, y: y - 4, w, h: 22 };
           this._drawSlotPlaceholder(slotId);
           x += w + 6;
         }
@@ -544,7 +551,7 @@ export class Level42Scene extends Phaser.Scene {
     def.drawDash = draw;
     this.codeContainer.add(dg);
     if (!filled) {
-      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { font: "italic 11px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
+      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { font: "italic 14px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
       def.hintLabel = label;
       this.codeContainer.add(label);
     }
@@ -587,17 +594,17 @@ export class Level42Scene extends Phaser.Scene {
     this.paletteBlocks.forEach((b) => b.container.destroy());
     this.paletteBlocks = [];
     const shuffled = Phaser.Utils.Array.Shuffle(mission.palette.slice());
-    const rowY = [PY + 32, PY + 66, PY + 100];
+    const rowY = [PY + 22, PY + 52, PY + 82, PY + 112];
     let x = PX + 12, row = 0;
     const maxX = PX + PW - 12;
 
     shuffled.forEach((def) => {
-      const style = { font: "bold 14px Courier New", color: HEX_CYAN };
+      const style = { font: "bold 13px Courier New", color: HEX_CYAN };
       const label = def.label || def.code;
       const measure = this.add.text(0, 0, label, style);
       const w = measure.width + 16;
       measure.destroy();
-      if (x + w > maxX) { row = Math.min(row + 1, 2); x = PX + 12; }
+      if (x + w > maxX) { row = Math.min(row + 1, 3); x = PX + 12; }
       const home = { x: x + w / 2, y: rowY[row] };
       x += w + 8;
 
@@ -1145,7 +1152,7 @@ export class Level42Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE NEWSROOM", { font: "bold 15px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — Output Methods: print()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 32, "Restructuring Phase — print()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1159,8 +1166,8 @@ export class Level42Scene extends Phaser.Scene {
     this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 30, y: 26 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 26 }).setDepth(51);
       lg.lineStyle(2, C_GREEN_BRIGHT, 1);
       lg.strokeRoundedRect(-8, -6, 16, 11, 2);
       lg.fillStyle(C_GREEN_BRIGHT, 1);
@@ -1340,17 +1347,17 @@ export class Level42Scene extends Phaser.Scene {
     const card = this.add.container(W / 2, H + 200).setDepth(90);
     const g = this.add.graphics();
     g.fillStyle(0x0d1117, 1);
-    g.fillRoundedRect(-260, -105, 520, 210, 12);
+    g.fillRoundedRect(-260, -115, 520, 230, 12);
     g.lineStyle(2, C_GOLD, 1);
-    g.strokeRoundedRect(-260, -105, 520, 210, 12);
+    g.strokeRoundedRect(-260, -115, 520, 230, 12);
     g.fillStyle(C_GOLD, 1);
-    g.fillRect(-260, -105, 5, 210);
-    const badge = this.add.circle(-225, -75, 18, C_GOLD);
-    const badgeNum = this.add.text(-225, -75, String(mission.mission), { font: "bold 18px Arial", color: "#0a0e14" }).setOrigin(0.5);
-    const title = this.add.text(-195, -85, mission.title, { font: "bold 21px Arial", color: "#ffffff" }).setOrigin(0, 0.5);
-    const desc = this.add.text(-225, -35, mission.brief, { font: "15px Arial", color: "#b0bec5", wordWrap: { width: 460 } }).setOrigin(0, 0);
+    g.fillRect(-260, -115, 5, 230);
+    const badge = this.add.circle(-225, -80, 18, C_GOLD);
+    const badgeNum = this.add.text(-225, -80, String(mission.mission), { font: "bold 18px Arial", color: "#0a0e14" }).setOrigin(0.5);
+    const title = this.add.text(-195, -90, mission.title, { font: "bold 21px Arial", color: "#ffffff" }).setOrigin(0, 0.5);
+    const desc = this.add.text(-225, -45, mission.brief, { font: "15px Arial", color: "#b0bec5", wordWrap: { width: 460 } }).setOrigin(0, 0);
 
-    const startBtn = this.add.container(0, 85).setDepth(1);
+    const startBtn = this.add.container(0, 75).setDepth(1);
     const sg = this.add.graphics();
     sg.fillStyle(C_GOLD, 1);
     sg.fillRoundedRect(-70, -20, 140, 40, 20);
@@ -1881,6 +1888,10 @@ export class Level42Scene extends Phaser.Scene {
       });
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
+      // before onMissionComplete()'s wait-loop starts polling for it.
+      await this.delay(100);
     } catch (e) {
       console.warn("Level42Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -1901,13 +1912,9 @@ export class Level42Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.setOnAir(false);
 
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    tagsThisRun.forEach((tag) => {
-      if (!tag) return;
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
 
     const feedbackTag = wrongBlocksUsed[0] && wrongBlocksUsed[0].tag;
 
@@ -1916,6 +1923,21 @@ export class Level42Scene extends Phaser.Scene {
         const dead = this.loseLife();
         if (dead) { this.time.delayedCall(500, () => this.gameOver()); return; }
       }
+
+      if (this.missionRunsFailed === 3) {
+        await this.runBehavioralCheck();
+
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+
+      if (!this._alive) return;
       await this.showBitFeedback(MISCONCEPTION_FEEDBACK[feedbackTag] || "Check the report — the rig shows exactly what your code actually does.");
       if (!this._alive) return;
       this.unlockForRepair();
@@ -1944,9 +1966,26 @@ export class Level42Scene extends Phaser.Scene {
     this.showBitFeedback(hints[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
-    if (this.gameEnded) return;
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next mission.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
     this.updateScore(250 + (flawless ? 100 : 0));
@@ -2011,6 +2050,14 @@ export class Level42Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
+  }
+
   // ══════════════════════════════════════════════════════════════
   // END STATES
   // ══════════════════════════════════════════════════════════════
@@ -2046,7 +2093,7 @@ export class Level42Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(41, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(42, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("print_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level42_results", JSON.stringify({

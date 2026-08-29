@@ -176,7 +176,7 @@ export class Level31Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.attemptLog = [];
     this.roundElements = [];
@@ -227,7 +227,7 @@ export class Level31Scene extends Phaser.Scene {
     // a few px below its nominal text-box center -- unlike our vector-drawn
     // icon, which sits exactly at its given y. Compensating +3px so the two
     // line up visually; adjust further if still off once you can see it live.
-    addTutorialReplayButton(this, W, this.lifeIcons[2].g.x, this.lifeIcons[0].g.y + 3);
+    addTutorialReplayButton(this, W, this.lifeIcons[4].g.x, this.lifeIcons[0].g.y + 3);
     this.createExpressionMonitor();
     this.createTickerTape();
     this.createBit();
@@ -699,19 +699,19 @@ export class Level31Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE CASE PRESS", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Accretion Phase — String Methods: toUpperCase() / toLowerCase()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 36, "Accretion Phase — toUpperCase() / toLowerCase()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
 
     this.add.text(1050, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
     this.scoreText = this.add.text(1050, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    this.comboText = this.add.text(1140, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1175 + i * 28, y: 30 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1140 + i * 20, y: 30 }).setDepth(51);
       lg.lineStyle(2, C_PURPLE, 1);
       lg.strokeRect(-6, -6, 12, 12);
       lg.fillStyle(C_PURPLE, 1);
-      const t = this.add.text(1175 + i * 28, 30, "A", { font: "bold 10px Arial", color: HEX_PURPLE }).setOrigin(0.5).setDepth(51);
+      const t = this.add.text(1140 + i * 20, 30, "A", { font: "bold 10px Arial", color: HEX_PURPLE }).setOrigin(0.5).setDepth(51);
       this.lifeIcons.push({ g: lg, t });
     }
   }
@@ -782,7 +782,6 @@ export class Level31Scene extends Phaser.Scene {
       this.tweens.add({ targets: this.tickerStrip, displayHeight: h, duration: 250, onComplete: () => res() });
     });
     this.tickerText.setText(value).setPosition(1000, 78).setAlpha(1);
-    this.roundElements.push(this.tickerStrip, this.tickerText);
     await this.delay(500);
   }
 
@@ -1585,9 +1584,24 @@ export class Level31Scene extends Phaser.Scene {
     });
     this.time.delayedCall(900, () => this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }));
 
-    this.time.delayedCall(1300, () => {
+    this.time.delayedCall(1300, async () => {
       if (!this._alive || this.gameEnded) return;
-      if (this.currentRound === 2) this.runBehavioralCheck();
+      if (this.currentRound === 2) {
+        await this.runBehavioralCheck();
+
+        // Wait up to 1.5s for the 1Hz polling loop to catch the flag, then
+        // block until the modal (if any) is dismissed, before advancing —
+        // inputLocked is already true throughout this whole window.
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+      if (!this._alive || this.gameEnded) return;
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1602,9 +1616,21 @@ export class Level31Scene extends Phaser.Scene {
     if (dead) { this.time.delayedCall(600, () => this.gameOver()); return; }
     await this.showBitFeedback(MISCONCEPTION_FEEDBACK[tag] || "Recheck the die, the case, and the tray — the press never lies.");
     if (!this._alive || this.gameEnded) return;
-    this.time.delayedCall(300, () => {
+    this.time.delayedCall(300, async () => {
       if (!this._alive || this.gameEnded) return;
-      if (this.currentRound === 2) this.runBehavioralCheck();
+      if (this.currentRound === 2) {
+        await this.runBehavioralCheck();
+
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+      if (!this._alive || this.gameEnded) return;
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
       else this.startRound(this.currentRound + 1);
     });
@@ -1646,6 +1672,17 @@ export class Level31Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) { this.tweens.add({ targets: icon.g, alpha: 0.12, duration: 400 }); this.tweens.add({ targets: icon.t, alpha: 0.12, duration: 400 }); }
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) {
+        this.tweens.add({ targets: icon.g, alpha: 1, duration: 400 });
+        this.tweens.add({ targets: icon.t, alpha: 1, duration: 400 });
+      }
+      this.lives++;
+    }
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
@@ -1725,7 +1762,7 @@ export class Level31Scene extends Phaser.Scene {
     this.hideBubble();
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
-    try { GameManager.completeLevel(30, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(31, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("case_methods_schema"); } catch (_) {}
     try {
       localStorage.setItem("level31_results", JSON.stringify({

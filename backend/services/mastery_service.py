@@ -11,23 +11,42 @@ Handles:
 """
 
 from firebase.firebase_service import db
-from mastery_calculator import (
-    VALID_CONCEPTS,
-    calculate_mastery_score,
-    classify_schema_state,
-    needs_posttest,
-    determine_final_state,
-    get_state_color,
-    process_student,
-    calculate_interaction_score,
-    calculate_posttest_validation_score,
-    calculate_final_mastery_score,
-    apply_heuristic_overrides,
-    calculate_learning_gain,
-    determine_progression,
-    map_confidence,
-    process_diagnostic,
-)
+try:
+    from ml.component4_schema_mastery.legacy_rule_based.mastery_calculator import (
+        VALID_CONCEPTS,
+        calculate_mastery_score,
+        classify_schema_state,
+        needs_posttest,
+        determine_final_state,
+        get_state_color,
+        process_student,
+        calculate_interaction_score,
+        calculate_posttest_validation_score,
+        calculate_final_mastery_score,
+        apply_heuristic_overrides,
+        calculate_learning_gain,
+        determine_progression,
+        map_confidence,
+        process_diagnostic,
+    )
+except ImportError:
+    from mastery_calculator import (
+        VALID_CONCEPTS,
+        calculate_mastery_score,
+        classify_schema_state,
+        needs_posttest,
+        determine_final_state,
+        get_state_color,
+        process_student,
+        calculate_interaction_score,
+        calculate_posttest_validation_score,
+        calculate_final_mastery_score,
+        apply_heuristic_overrides,
+        calculate_learning_gain,
+        determine_progression,
+        map_confidence,
+        process_diagnostic,
+    )
 from utils.helpers import timestamp_now
 
 
@@ -281,11 +300,7 @@ class MasteryService:
         doc = doc_ref.get()
 
         if not doc.exists:
-            return {
-                "error": f"No behaviour data found for student '{user_id}'",
-                "user_id": user_id,
-                "found": False,
-            }
+            return MasteryService._offline_status(user_id)
 
         student_data = doc.to_dict()
         result = process_student(student_data)
@@ -384,23 +399,41 @@ class MasteryService:
     @staticmethod
     def get_all_students():
         """Fetch all students from Firestore and compute mastery for each."""
-        if not db:
-            return []
-
-        docs = db.collection("student_behaviour").stream()
         students = []
+        if db:
+            try:
+                docs = db.collection("student_behaviour").stream()
+                for doc in docs:
+                    student_data = doc.to_dict()
+                    result = process_student(student_data)
+                    students.append({
+                        "studentId": result["studentId"],
+                        "studentName": result["studentName"],
+                        "name": result["studentName"],
+                        "overall_mastery": result["overall_mastery"],
+                        "overall_state": result["overall_state"],
+                        "overall_color": result["overall_color"],
+                        "total_concepts": result["total_concepts"],
+                    })
+            except Exception as e:
+                print(f"[WARN] Error fetching Firestore students: {e}")
 
-        for doc in docs:
-            student_data = doc.to_dict()
-            result = process_student(student_data)
-            students.append({
-                "studentId": result["studentId"],
-                "studentName": result["studentName"],
-                "overall_mastery": result["overall_mastery"],
-                "overall_state": result["overall_state"],
-                "overall_color": result["overall_color"],
-                "total_concepts": result["total_concepts"],
-            })
+        if not students:
+            from data.mock_students import mock_students
+            focus_concepts = ["Loops", "Arrays", "Methods"]
+            for idx, student in enumerate(mock_students[:3]):
+                result = process_student(student)
+                students.append({
+                    "studentId": result["studentId"],
+                    "studentName": result["studentName"],
+                    "name": result["studentName"],
+                    "conceptName": focus_concepts[idx] if idx < len(focus_concepts) else "Loops",
+                    "overall_mastery": result["overall_mastery"],
+                    "overall_state": result["overall_state"],
+                    "overall_color": result["overall_color"],
+                    "total_concepts": result["total_concepts"],
+                    "offline": True,
+                })
 
         return students
 

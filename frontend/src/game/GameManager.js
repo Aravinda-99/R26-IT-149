@@ -29,6 +29,11 @@ class _GameManager {
     this.state = { ...DEFAULT_STATE };
     this._listeners = {};
     this.fusionEngine = new FusionEngine();
+    // True while a Bit intervention (BitMenu / break suggestion) is on screen,
+    // set by main.js's handleFusionAction(). Scenes with their own timed
+    // elements (e.g. Level26Scene's conveyor crate tween) poll this in
+    // update() to pause/resume around the modal instead of racing it.
+    this.interventionInFlight = false;
   }
 
   // ── State Access ──────────────────────────────────────────────

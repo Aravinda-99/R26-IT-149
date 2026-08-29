@@ -211,6 +211,16 @@ export class Level11Scene extends Phaser.Scene {
   }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.opIndex = 0;
     this.roundIndex = 0;
     this.score = 0;
@@ -235,14 +245,18 @@ export class Level11Scene extends Phaser.Scene {
   _createBackground() {
     const bg = this.add.graphics().setDepth(0);
     bg.fillGradientStyle(C.bg_top, C.bg_top, C.bg_bottom, C.bg_bottom, 1);
-    bg.fillRect(0, 0, W, H);
+    // Massively oversized so the background covers the canvas regardless of
+    // camera position/zoom on any aspect ratio.
+    bg.fillRect(-W * 2, -H, W * 5, H * 3);
 
-    this.add.circle(100, 80, 180, C.primary_purple, 0.07).setDepth(1);
-    this.add.circle(700, 520, 220, C.success_green, 0.05).setDepth(1);
+    // Scaled up so these accent blobs reach further into the pillarbox area
+    // without moving their anchor point.
+    this.add.circle(100, 80, 180, C.primary_purple, 0.07).setDepth(1).setScale(3);
+    this.add.circle(700, 520, 220, C.success_green, 0.05).setDepth(1).setScale(3);
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 40; i++) { // Increased count for wider screen
       const star = this.add.circle(
-        Math.random() * W, Math.random() * H,
+        Phaser.Math.Between(-W * 2, W * 3), Math.random() * H,
         1 + Math.random() * 2, 0xC8C0F5, 0.3
       ).setDepth(2);
       this.tweens.add({
@@ -1204,13 +1218,13 @@ export class Level11Scene extends Phaser.Scene {
   _showFinalResults() {
     this._clear();
 
-    // Dark overlay with stars
-    const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x1a1a3e, 0.65).setDepth(200);
+    // Dark overlay with stars (Stretched to cover the pillarbox area too)
+    const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x1a1a3e, 0.65).setDepth(200);
     this._addEl(overlay);
 
     for (let i = 0; i < 40; i++) {
       const star = this.add.circle(
-        Math.random() * W, Math.random() * H,
+        Phaser.Math.Between(-W * 2, W * 3), Math.random() * H,
         Math.random() * 2 + 1, 0xFFFFFF, 0.5
       ).setDepth(201);
       this.tweens.add({

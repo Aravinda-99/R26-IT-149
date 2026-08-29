@@ -32,6 +32,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -284,7 +285,7 @@ export class Level63Scene extends Phaser.Scene {
   init() {
     this.currentMission = 0;
     this.score = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.flawlessCount = 0;
     this.runCount = 0;
     this.failedRunCount = 0;
@@ -300,7 +301,6 @@ export class Level63Scene extends Phaser.Scene {
     this.slotContents = {};
     this.slotDefs = {};
     this.paletteBlocks = [];
-    this.wrongBlockHistory = {};
     this.missionStartTime = 0;
     this.missionRunsFailed = 0;
     this.missionHintUsed = false;
@@ -309,6 +309,8 @@ export class Level63Scene extends Phaser.Scene {
     this.inputLocked = true;
     this.gameEnded = false;
     this._alive = true;
+    this._modalLockedInput = false;
+    this.baseTutorialScene = "Level61Scene";
   }
 
   preload() {}
@@ -346,6 +348,15 @@ export class Level63Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (GameManager.interventionInFlight) {
+      if (!this.inputLocked) this._modalLockedInput = true;
+      this.inputLocked = true;
+      return;
+    } else if (this._modalLockedInput) {
+      this._modalLockedInput = false;
+      this.inputLocked = false;
+      this.updateRunButtonState();
+    }
     this.updateAmbient(time, delta);
     this.updateCrestPulse(time);
     this.updateBitCompass(time);
@@ -1996,7 +2007,7 @@ export class Level63Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE FORMULA WORKS", { font: "bold 15px Georgia", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — Math Methods: pow()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 32, "Restructuring Phase — pow()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -2010,8 +2021,8 @@ export class Level63Scene extends Phaser.Scene {
     this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 26 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 26 }).setDepth(51);
       lg.lineStyle(2, C_BRASS, 1);
       lg.strokeCircle(0, 0, 6);
       lg.lineBetween(4, -4, 9, -9);
@@ -3000,7 +3011,9 @@ export class Level63Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level63Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
@@ -3021,14 +3034,9 @@ export class Level63Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    let livesLostThisRun = false;
-    const tagsThisRun = new Set(wrongBlocksUsed.map((b) => b.tag));
-    tagsThisRun.forEach((tag) => {
-      if (!tag) return;
-      this.wrongBlockHistory[tag] = (this.wrongBlockHistory[tag] || 0) + 1;
-      if (this.wrongBlockHistory[tag] >= 2) livesLostThisRun = true;
-    });
-
+    // Every failed run costs exactly one life, matching the strictness of
+    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
+    const livesLostThisRun = true;
     const feedbackTag = compileTag || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag);
 
     (async () => {
@@ -3036,6 +3044,21 @@ export class Level63Scene extends Phaser.Scene {
         const dead = this.loseLife();
         if (dead) { this.time.delayedCall(500, () => this.gameOver()); return; }
       }
+
+      if (this.missionRunsFailed === 3) {
+        await this.runBehavioralCheck();
+
+        let waitTime = 0;
+        while (!GameManager.interventionInFlight && waitTime < 1500) {
+          await this.delay(100);
+          waitTime += 100;
+        }
+        while (GameManager.interventionInFlight) {
+          await this.delay(200);
+        }
+      }
+
+      if (!this._alive) return;
       await this.showBitFeedback(MISCONCEPTION_FEEDBACK[feedbackTag] || "Check the report — the rig shows exactly what your code actually does.");
       if (!this._alive) return;
       this.unlockForRepair();
@@ -3056,8 +3079,19 @@ export class Level63Scene extends Phaser.Scene {
     this.showBitFeedback(HINTS[mission.mission] || "Reread the brief carefully — the answer is in the wording.");
   }
 
-  onMissionComplete() {
-    if (this.currentMission === 2) this.runBehavioralCheck();
+  async onMissionComplete() {
+    if (this.currentMission === 2) {
+      await this.runBehavioralCheck();
+
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
     if (this.gameEnded) return;
     const flawless = this.missionRunsFailed === 0 && !this.missionHintUsed;
     if (flawless) this.flawlessCount++;
@@ -3107,6 +3141,14 @@ export class Level63Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 320 }); }
+      this.lives++;
+    }
+  }
+
   // ══════════════════════════════════════════════════════════════
   // END STATES
   // ══════════════════════════════════════════════════════════════
@@ -3151,7 +3193,7 @@ export class Level63Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(62, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(63, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("math_pow_mastery"); } catch (_) {}
     try { BadgeSystem.unlock("math_wing_seal"); } catch (_) {}
     try {

@@ -16,11 +16,14 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const PLAYER_SPEED = 180;
 const TERMINAL_SIZE = 60;
+const MAX_LIVES = 5;
 
 /* ═══════════════════════════════════════════════════════════════
  *  SCENE
@@ -30,7 +33,24 @@ export class Level6Scene extends Phaser.Scene {
     super({ key: "Level6Scene" });
   }
 
+  init() {
+    this.wrongAttempts = 0;
+    this.lives = MAX_LIVES;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
+  }
+
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
     this.physics.world.setBounds(0, 0, W, H);
 
@@ -73,12 +93,13 @@ export class Level6Scene extends Phaser.Scene {
     // Dark tech-room floor
     const g = this.add.graphics().setDepth(0);
     g.fillStyle(0x0a0f1a, 1);
-    g.fillRect(0, 0, W, H);
+    // Stretched width: start at -W, span W * 3
+    g.fillRect(-W, 0, W * 3, H);
 
-    // Grid lines (subtle neon)
+    // Grid lines (subtle neon) — Stretched
     g.lineStyle(1, 0x1a2744, 0.3);
-    for (let x = 0; x < W; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath(); }
-    for (let y = 0; y < H; y += 40) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.strokePath(); }
+    for (let x = -W; x <= W * 2; x += 40) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.strokePath(); }
+    for (let y = 0; y <= H; y += 40) { g.beginPath(); g.moveTo(-W, y); g.lineTo(W * 2, y); g.strokePath(); }
 
     // Floor accent lines
     g.lineStyle(1, 0x00d4ff, 0.06);
@@ -169,9 +190,9 @@ export class Level6Scene extends Phaser.Scene {
   _createTerminals() {
     this.terminals = [];
     const defs = [
-      { x: 120, y: 130, label: "T1: Power\nRouting", color: 0x00d4ff, solvedColor: 0x00d4ff },
-      { x: W - 120, y: 130, label: "T2: Coolant\nStabilize", color: 0x3b82f6, solvedColor: 0x3b82f6 },
-      { x: W / 2, y: H - 100, label: "T3: Laser\nAlignment", color: 0xf472b6, solvedColor: 0xf472b6 },
+      { x: 360, y: 190, label: "T1: Power\nRouting", color: 0x00d4ff, solvedColor: 0x00d4ff },
+      { x: W - 360, y: 190, label: "T2: Coolant\nStabilize", color: 0x3b82f6, solvedColor: 0x3b82f6 },
+      { x: W / 2, y: H - 160, label: "T3: Laser\nAlignment", color: 0xf472b6, solvedColor: 0xf472b6 },
     ];
 
     defs.forEach((d, i) => {
@@ -207,7 +228,7 @@ export class Level6Scene extends Phaser.Scene {
    *  PLAYER
    * ───────────────────────────────────────────────────────────── */
   _createPlayer() {
-    this.player = this.physics.add.sprite(W / 2, H / 2 + 120, "engineer");
+    this.player = this.physics.add.sprite(W / 2, H / 2 + 130, "engineer");
     this.player.setCollideWorldBounds(true);
     this.player.setDrag(300);
     this.player.body.setAllowGravity(false);
@@ -253,6 +274,15 @@ export class Level6Scene extends Phaser.Scene {
     this.hintTxt = this.add.text(W / 2, H - 16, "Walk to a terminal to interact", {
       fontFamily: "monospace", fontSize: "11px", color: "#475569",
     }).setOrigin(0.5).setDepth(dp);
+
+    // ── Lives (top-right) ──
+    this.livesIcons = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const heart = this.add.text(W - 40 - i * 35, 115, "❤️", {
+        fontSize: "22px",
+      }).setOrigin(0.5).setDepth(dp);
+      this.livesIcons.push(heart);
+    }
   }
 
   _updateProgress() {
@@ -293,15 +323,15 @@ export class Level6Scene extends Phaser.Scene {
 
     const pg = track(this.add.graphics().setDepth(201));
     pg.fillStyle(0x0a0f1a, 0.98);
-    pg.fillRoundedRect(70, 70, 660, 490, 16);
+    pg.fillRoundedRect(W / 2 - 330, 70, 660, 490, 16);
     pg.lineStyle(3, 0x4ade80);
-    pg.strokeRoundedRect(70, 70, 660, 490, 16);
+    pg.strokeRoundedRect(W / 2 - 330, 70, 660, 490, 16);
 
-    track(this.add.text(400, 105, "MISSION 6: CYBER-CORE RESTORATION", {
+    track(this.add.text(W / 2, 105, "MISSION 6: CYBER-CORE RESTORATION", {
       fontFamily: "Arial Black", fontSize: "22px", color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202));
 
-    track(this.add.text(400, 137, "Float Restructuring Phase", {
+    track(this.add.text(W / 2, 137, "Float Restructuring Phase", {
       fontFamily: "Arial", fontSize: "16px", color: "#86efac", fontStyle: "italic",
     }).setOrigin(0.5).setDepth(202));
 
@@ -315,14 +345,14 @@ export class Level6Scene extends Phaser.Scene {
       "Solve the code challenge to restore each system.\n\n" +
       "Restore ALL 3 terminals to bring the Core online!";
 
-    track(this.add.text(400, 185, desc, {
+    track(this.add.text(W / 2, 185, desc, {
       fontFamily: "Arial", fontSize: "13px", color: "#cbd5e1",
       align: "center", lineSpacing: 6, wordWrap: { width: 560 },
     }).setOrigin(0.5, 0).setDepth(202));
 
-    const btnBg = track(this.add.rectangle(400, 517, 220, 44, 0x166534).setDepth(210));
+    const btnBg = track(this.add.rectangle(W / 2, 517, 220, 44, 0x166534).setDepth(210));
     btnBg.setStrokeStyle(2, 0x4ade80);
-    track(this.add.text(400, 517, ">>  BEGIN MISSION", {
+    track(this.add.text(W / 2, 517, ">>  BEGIN MISSION", {
       fontFamily: "Arial", fontSize: "17px", color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(211));
 
@@ -332,6 +362,7 @@ export class Level6Scene extends Phaser.Scene {
     btnBg.on("pointerup", () => {
       els.forEach(e => { try { e.destroy(); } catch (_) {} });
       this.gameStarted = true;
+      this.startTime = this.time.now;
     });
   }
 
@@ -424,6 +455,14 @@ export class Level6Scene extends Phaser.Scene {
       } else {
         el.querySelector("#t1Feedback").textContent = `Wrong! 4.50 + 5.25 + ${val || "?"} != 12.75. Try again.`;
         this.cameras.main.shake(150, 0.008);
+        this.wrongAttempts++;
+        this.lives = Math.max(0, this.lives - 1);
+        this._updateLives();
+        if (this.wrongAttempts === 3) this.runBehavioralCheck();
+        if (this.lives <= 0) {
+          this._closePanel();
+          this.time.delayedCall(500, () => this._gameOver());
+        }
       }
     });
 
@@ -478,6 +517,14 @@ export class Level6Scene extends Phaser.Scene {
       } else {
         el.querySelector("#t2Feedback").textContent = `Wrong! 105.5 - 82.2 = ? (not "${val || "?"}"). Try again.`;
         this.cameras.main.shake(150, 0.008);
+        this.wrongAttempts++;
+        this.lives = Math.max(0, this.lives - 1);
+        this._updateLives();
+        if (this.wrongAttempts === 3) this.runBehavioralCheck();
+        if (this.lives <= 0) {
+          this._closePanel();
+          this.time.delayedCall(500, () => this._gameOver());
+        }
       }
     });
 
@@ -531,6 +578,14 @@ export class Level6Scene extends Phaser.Scene {
           el.querySelector("#t3Feedback").textContent =
             `42.5 + ${adj} = ${result.toFixed(1)} — NOT in [45.0, 46.0]. Try another!`;
           this.cameras.main.shake(150, 0.008);
+          this.wrongAttempts++;
+          this.lives = Math.max(0, this.lives - 1);
+          this._updateLives();
+          if (this.wrongAttempts === 3) this.runBehavioralCheck();
+          if (this.lives <= 0) {
+            this._closePanel();
+            this.time.delayedCall(500, () => this._gameOver());
+          }
         }
       });
     });
@@ -641,31 +696,31 @@ export class Level6Scene extends Phaser.Scene {
 
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x0a0f1a, 0.96);
-    pg.fillRoundedRect(100, 80, 600, 420, 16);
+    pg.fillRoundedRect(W / 2 - 300, 80, 600, 420, 16);
     pg.lineStyle(3, 0x4ade80);
-    pg.strokeRoundedRect(100, 80, 600, 420, 16);
+    pg.strokeRoundedRect(W / 2 - 300, 80, 600, 420, 16);
 
-    const title = this.add.text(400, 120, "SYSTEM RESTORED!", {
+    const title = this.add.text(W / 2, 120, "SYSTEM RESTORED!", {
       fontFamily: "Arial Black", fontSize: "32px", color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202).setAlpha(0).setScale(0.5);
 
     this.tweens.add({ targets: title, alpha: 1, scale: 1, duration: 600, ease: "Back.out" });
 
-    this.add.text(400, 165, "All terminals calibrated. Core is online.", {
+    this.add.text(W / 2, 165, "All terminals calibrated. Core is online.", {
       fontFamily: "Arial", fontSize: "15px", color: "#cbd5e1",
     }).setOrigin(0.5).setDepth(202);
 
     // Badge box
     const badgeG = this.add.graphics().setDepth(202);
     badgeG.fillStyle(0x0f172a, 0.95);
-    badgeG.fillRoundedRect(230, 200, 340, 70, 12);
+    badgeG.fillRoundedRect(W / 2 - 170, 200, 340, 70, 12);
     badgeG.lineStyle(2, 0x4ade80);
-    badgeG.strokeRoundedRect(230, 200, 340, 70, 12);
+    badgeG.strokeRoundedRect(W / 2 - 170, 200, 340, 70, 12);
 
-    this.add.text(400, 222, "FLOAT MASTER", {
+    this.add.text(W / 2, 222, "FLOAT MASTER", {
       fontFamily: "Arial Black", fontSize: "20px", color: "#4ade80",
     }).setOrigin(0.5).setDepth(203);
-    this.add.text(400, 248, "Badge Unlocked: Calculation Wizard!", {
+    this.add.text(W / 2, 248, "Badge Unlocked: Calculation Wizard!", {
       fontFamily: "Arial", fontSize: "12px", color: "#86efac",
     }).setOrigin(0.5).setDepth(203);
 
@@ -675,20 +730,20 @@ export class Level6Scene extends Phaser.Scene {
       `Score: ${this.score}`,
     ];
     stats.forEach((s, i) => {
-      this.add.text(400, 295 + i * 26, s, {
+      this.add.text(W / 2, 295 + i * 26, s, {
         fontFamily: "monospace", fontSize: "15px", color: "#ecf0f1",
       }).setOrigin(0.5).setDepth(202);
     });
 
-    this.add.text(400, 365, "You applied float addition, subtraction, and\nconstraint logic to restore a cyber system!", {
+    this.add.text(W / 2, 365, "You applied float addition, subtraction, and\nconstraint logic to restore a cyber system!", {
       fontFamily: "Arial", fontSize: "13px", color: "#94a3b8",
       align: "center", lineSpacing: 5,
     }).setOrigin(0.5).setDepth(202);
 
     // Buttons
-    const finishBtn = this.add.rectangle(300, 440, 220, 44, 0x166534).setDepth(210);
+    const finishBtn = this.add.rectangle(W / 2 - 100, 440, 220, 44, 0x166534).setDepth(210);
     finishBtn.setStrokeStyle(2, 0x4ade80);
-    this.add.text(300, 440, "Finish Module", {
+    this.add.text(W / 2 - 100, 440, "Finish Module", {
       fontFamily: "Arial", fontSize: "15px", color: "#4ade80", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(211);
     finishBtn.setInteractive({ useHandCursor: true });
@@ -699,9 +754,9 @@ export class Level6Scene extends Phaser.Scene {
       this.scene.start("MenuScene");
     });
 
-    const replayBtn = this.add.rectangle(500, 440, 140, 44, 0x1e293b).setDepth(210);
+    const replayBtn = this.add.rectangle(W / 2 + 100, 440, 140, 44, 0x1e293b).setDepth(210);
     replayBtn.setStrokeStyle(2, 0x3b82f6);
-    this.add.text(500, 440, "Replay", {
+    this.add.text(W / 2 + 100, 440, "Replay", {
       fontFamily: "Arial", fontSize: "15px", color: "#3b82f6", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(211);
     replayBtn.setInteractive({ useHandCursor: true });
@@ -717,6 +772,11 @@ export class Level6Scene extends Phaser.Scene {
    *  UPDATE LOOP
    * ═══════════════════════════════════════════════════════════════ */
   update() {
+    if (GameManager.interventionInFlight) {
+      if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+      return;
+    }
+
     if (!this.gameStarted || this.isComplete) return;
 
     /* ── Player movement (blocked when panel open) ── */
@@ -756,6 +816,77 @@ export class Level6Scene extends Phaser.Scene {
       this.hintTxt.setText(nearTerminal ? "Walk into the terminal to interact!" : "Walk to a terminal to interact");
       this.hintTxt.setColor(nearTerminal ? "#4ade80" : "#475569");
     }
+  }
+
+  _updateLives() {
+    for (let i = 0; i < MAX_LIVES; i++) {
+      if (this.livesIcons[i]) {
+        this.livesIcons[i].setText(i < this.lives ? "❤️" : "🖤");
+        if (i >= this.lives) {
+          this.tweens.add({ targets: this.livesIcons[i], scaleX: 1.3, scaleY: 1.3, yoyo: true, duration: 150 });
+        }
+      }
+    }
+  }
+
+  addLife() {
+    // BitMenu already calls GameManager.addLife() for the global count before
+    // calling this — only touch local state here, or the global count would
+    // be incremented twice per bonus life (matches Level1Scene's convention).
+    if (this.lives < MAX_LIVES) {
+      this.lives++;
+      this._updateLives();
+    }
+  }
+
+  /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
+  async runBehavioralCheck() {
+    const attempts_count = this.wrongAttempts;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level6Scene: /api/wellbeing/predict-struggle unreachable", e);
+    }
+  }
+
+  _gameOver() {
+    this.isComplete = true;
+    if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+    this.cameras.main.shake(500, 0.025);
+    this.cameras.main.flash(400, 255, 0, 0);
+
+    this.time.delayedCall(600, () => {
+      const d = 200;
+      this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(d);
+
+      this.add.text(W / 2, H / 2 - 80, "💀 SYSTEM CRASH", {
+        fontFamily: "Arial Black", fontSize: "32px", color: "#ef4444", fontStyle: "bold"
+      }).setOrigin(0.5).setDepth(d + 1);
+
+      this.add.text(W / 2, H / 2 - 30, "You ran out of lives!", {
+        fontFamily: "Arial", fontSize: "17px", color: "#e2e8f0"
+      }).setOrigin(0.5).setDepth(d + 1);
+
+      const btnBg1 = this.add.rectangle(W / 2 - 110, H / 2 + 50, 190, 42, 0xef4444).setDepth(d + 1).setStrokeStyle(2, 0xffffff);
+      const txt1 = this.add.text(W / 2 - 110, H / 2 + 50, "REBOOT TERMINALS", { fontFamily: "Arial", fontSize: "14px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 2);
+      btnBg1.setInteractive({ useHandCursor: true });
+      btnBg1.on("pointerup", () => { GameManager.resetLevel(); this.scene.restart(); });
+
+      const btnBg2 = this.add.rectangle(W / 2 + 110, H / 2 + 50, 190, 42, 0x334155).setDepth(d + 1).setStrokeStyle(2, 0xffffff);
+      const txt2 = this.add.text(W / 2 + 110, H / 2 + 50, "MENU", { fontFamily: "Arial", fontSize: "14px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(d + 2);
+      btnBg2.setInteractive({ useHandCursor: true });
+      btnBg2.on("pointerup", () => { this.scene.stop("UIScene"); this.scene.start("MenuScene"); });
+    });
   }
 
   shutdown() {

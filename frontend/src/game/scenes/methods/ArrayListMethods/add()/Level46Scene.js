@@ -1,33 +1,9 @@
-/**
- * Level 46 — "The Archive" (ArrayList Methods: Accretion Phase — add(),
- * opening the ArrayList Wing after the 9-level Output Wing)
- * ===========================================================================
- * Teaches ArrayList<T> and add(): the list is a tall numbered bookshelf,
- * each add() places a book on the next empty shelf (0-based indices,
- * insertion order). The generic type parameter is a "shelf type stamp" —
- * enforced honestly at parse time: a wrong-type book is rejected with the
- * same "wrong type for the container" choreography established by
- * Scanner's InputMismatchException (L34/35) and printf's slot rejection
- * (L43/44/45), now at compile time instead of runtime.
- *
- * DESIGN NOTE — list-state panel formatting: Java's real ArrayList
- * toString() does NOT include quotes around String elements
- * (System.out.println(list) on ["Hello"] prints [Hello], not ["Hello"]).
- * The panel renders bare values, matching real Java; only the physical
- * BOOK SPINES show quotes (since that's how the String literal was
- * WRITTEN in code). Command-mission grading compares the honest
- * evaluator's resulting array (value+type, in order) against each
- * mission's target array directly — never a scripted bracket-notation
- * string comparison — which sidesteps the quote-formatting question
- * entirely and stays robust regardless of which valid cartridge order
- * or type-parameter form the player assembles.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -232,7 +208,7 @@ export class Level46Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.totalTime = 0;
     this.attemptLog = [];
@@ -281,7 +257,7 @@ export class Level46Scene extends Phaser.Scene {
     this.createListStatePanel();
     this.createSourceDisplay();
     this.createHUD();
-    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y);
+    addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y);
     this.createExpressionMonitor();
     this.createBit();
     this.setupDragEvents();
@@ -791,15 +767,15 @@ export class Level46Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE ARCHIVE", { font: "bold 17px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — ArrayList Methods: add()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 32, "Accretion Phase — add()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
 
     this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
     this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
     this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 24 }).setDepth(50);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 24 }).setDepth(50);
       lg.lineStyle(2, C_BRASS, 1);
       lg.strokeRoundedRect(-5, -7, 10, 14, 1);
       lg.lineStyle(1, C_BRASS, 0.6);
@@ -1552,6 +1528,14 @@ export class Level46Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
     this.attemptLog.push({
       round: config.round, type: config.type, concept: config.concept,
@@ -1584,14 +1568,38 @@ export class Level46Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
+      await this.delay(100);
     } catch (e) {
       console.warn("Level46Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next round.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
@@ -1628,7 +1636,7 @@ export class Level46Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(45, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(46, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_add_schema"); } catch (_) {}
     try {
       localStorage.setItem("level46_results", JSON.stringify({

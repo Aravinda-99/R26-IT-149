@@ -24,6 +24,7 @@ import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -257,7 +258,7 @@ export class Level55Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.totalTime = 0;
     this.attemptLog = [];
@@ -310,7 +311,7 @@ export class Level55Scene extends Phaser.Scene {
     this.createAstronomersSlate();
     this.createSourceDisplay();
     this.createHUD();
-    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y);
+    addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y);
     this.createExpressionMonitor();
     this.createBit();
     this.setupDragEvents();
@@ -906,15 +907,15 @@ export class Level55Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE OBSERVATORY", { font: "bold 17px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — Math Methods: max() & min()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 32, "Accretion Phase — max() & min()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
 
     this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
     this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
     this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 24 }).setDepth(50);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 24 }).setDepth(50);
       lg.lineStyle(2, C_BRASS, 1);
       lg.beginPath();
       lg.moveTo(-7, 3); lg.lineTo(7, -3);
@@ -1839,6 +1840,14 @@ export class Level55Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 400 }); }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
     this.attemptLog.push({
       round: config.round, type: config.type, concept: config.concept,
@@ -1871,14 +1880,28 @@ export class Level55Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      GameManager.fusionEngine.checkBehavioral(prediction);
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
       console.warn("Level55Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
@@ -1924,7 +1947,7 @@ export class Level55Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(54, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(55, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("math_max_min_schema"); } catch (_) {}
     try {
       localStorage.setItem("level55_results", JSON.stringify({

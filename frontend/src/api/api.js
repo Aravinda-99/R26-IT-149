@@ -78,7 +78,7 @@ export const GamificationAPI = {
     getProfile: (userId) => apiRequest(`/gamification/profile/${userId}`),
 };
 
-// --- Component 4: Mastery Tracker ---
+// --- Component 4: Mastery Tracker & Schema Mastery ---
 export const MasteryAPI = {
     getStatus: (userId) => apiRequest(`/mastery/status/${userId}`),
     getStudents: () => apiRequest("/mastery/students"),
@@ -86,6 +86,25 @@ export const MasteryAPI = {
     getQuestions: (concept) => apiRequest(`/mastery/questions/${concept}`),
     submitDiagnostic: (data) => apiRequest("/mastery/diagnostic", "POST", data),
     getHistory: (userId, schema) => apiRequest(`/mastery/history/${userId}/${schema}`),
+    predictSchemaMastery: (data) => apiRequest("/schema-mastery/predict", "POST", data),
+};
+
+export const SchemaMasteryAPI = {
+    predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
+    generateQuestions: (data) => apiRequest("/schema-mastery/questions/generate", "POST", data),
+    getPendingQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/pending${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
+    updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
+    approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
+    rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
+    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getPostTestQuestions: (params = {}) => {
+        const studentId = params.student_id || params.studentId || "STU001";
+        const concept = params.concept || params.concept_name || "Loops";
+        const errorType = params.error_type || params.errorType || "";
+        const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
+        return apiRequest(`/schema-mastery/post-test/questions?${query}`);
+    },
+    submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
 };
 
 // --- Wellbeing / Struggle Detection ---

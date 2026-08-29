@@ -42,7 +42,7 @@ const ANTENNA_TOP_X = 260, ANTENNA_TOP_Y = 62;
 const LOG_X = 640, LOG_Y = 96, LOG_W = 600, LOG_H = 470;
 const LOG_CONTENT_Y0 = LOG_Y + 44;
 const ROW_H = 30;
-const SRC_Y = 165;
+const SRC_Y = 350;
 const TUTORIAL_KEY = "level37_tutorial_done";
 let firstNewlineAnnotationShown = false;
 
@@ -224,7 +224,7 @@ export class Level37Scene extends Phaser.Scene {
     this.displayScore = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.lives = 3;
+    this.lives = 5;
     this.correctFirstTry = 0;
     this.attemptLog = [];
     this.roundElements = [];
@@ -272,7 +272,7 @@ export class Level37Scene extends Phaser.Scene {
     this.createSourceDisplay();
     this.createBroadcastLog();
     this.createHUD();
-    addTutorialReplayButton(this, W, this.lifeIcons[2].x, this.lifeIcons[0].y);
+    addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y);
     this.createExpressionMonitor();
     this.createBit();
     this.setupDragEvents();
@@ -618,7 +618,7 @@ export class Level37Scene extends Phaser.Scene {
 
   updateCartridgeCache(types) {
     this.cacheContainer.removeAll(true);
-    let x = 415;
+    let x = MARQUEE_X;
     types.forEach((type) => {
       const label = type === "newline" ? "⏎" : type;
       const style = { font: "bold 12px Arial", color: "#0a0e14" };
@@ -627,10 +627,10 @@ export class Level37Scene extends Phaser.Scene {
       tmp.destroy();
       const g = this.add.graphics();
       g.fillStyle(this._typeColorInt(type), 1);
-      g.fillRoundedRect(x, 130 - 11, w, 22, 11);
+      g.fillRoundedRect(x, 310 - 11, w, 22, 11);
       g.lineStyle(1, 0x0d1117, 1);
-      g.strokeRoundedRect(x, 130 - 11, w, 22, 11);
-      const t = this.add.text(x + w / 2, 130, label, style).setOrigin(0.5);
+      g.strokeRoundedRect(x, 310 - 11, w, 22, 11);
+      const t = this.add.text(x + w / 2, 310, label, style).setOrigin(0.5);
       this.cacheContainer.add([g, t]);
       x += w + 8;
     });
@@ -675,7 +675,7 @@ export class Level37Scene extends Phaser.Scene {
         const w = tmp.width; tmp.destroy(); return w;
       });
       const totalW = measured.reduce((a, b) => a + b, 0);
-      let x = 480 - totalW / 2;
+      let x = MARQUEE_X - totalW / 2;
       const y = SRC_Y + i * (fontSize + 6) - ((lines.length - 1) * (fontSize + 6)) / 2;
       tokens.forEach((tok, ti) => {
         const t = this.add.text(x, y, tok.t, { font: `${fontSize}px Courier New`, color: tok.c }).setOrigin(0, 0.5);
@@ -691,13 +691,13 @@ export class Level37Scene extends Phaser.Scene {
     g.fillRoundedRect(W / 2 - 190, 10, 380, 44, 8);
     g.lineStyle(1, 0x2a2a4a, 1);
     g.strokeRoundedRect(W / 2 - 190, 10, 380, 44, 8);
-    this.monitorText = this.add.text(W / 2, 32, "", { font: "15px Courier New", color: "#e0e0e0" }).setOrigin(0.5).setDepth(51);
+    this.monitorText = this.add.text(W / 2, 32, "", { font: "bold 18px Courier New", color: "#e0e0e0" }).setOrigin(0.5).setDepth(51);
   }
 
   updateExpressionMonitor(text) {
     this.monitorText.setText(text);
-    if (this.monitorText.width > 360) this.monitorText.setFontSize(11);
-    else this.monitorText.setFontSize(13);
+    if (this.monitorText.width > 360) this.monitorText.setFontSize(15);
+    else this.monitorText.setFontSize(18);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -823,8 +823,8 @@ export class Level37Scene extends Phaser.Scene {
     this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(51);
 
     this.lifeIcons = [];
-    for (let i = 0; i < 3; i++) {
-      const lg = this.add.graphics({ x: 1150 + i * 26, y: 24 }).setDepth(51);
+    for (let i = 0; i < 5; i++) {
+      const lg = this.add.graphics({ x: 1150 + i * 20, y: 24 }).setDepth(51);
       lg.lineStyle(2, C_CYAN, 1);
       lg.lineBetween(0, -6, 0, 8);
       lg.lineBetween(-4, -2, 0, -6);
@@ -1098,7 +1098,7 @@ export class Level37Scene extends Phaser.Scene {
   }
 
   showCompileErrorStamp() {
-    const stamp = this.add.text(480, SRC_Y + 40, "COMPILE ERROR", { font: "bold 23px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(80).setScale(1.6).setAngle(-6).setAlpha(0);
+    const stamp = this.add.text(MARQUEE_X, SRC_Y + 40, "COMPILE ERROR", { font: "bold 23px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(80).setScale(1.6).setAngle(-6).setAlpha(0);
     this.sourceContainer.add(stamp);
     this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 200 });
     this.screenShake(0.004, 160);
@@ -1444,7 +1444,7 @@ export class Level37Scene extends Phaser.Scene {
     const def = this.slotDefs[slotId];
     const totalLines = config.sourceTemplate.length;
     const y = SRC_Y + def.lineIndex * 19 - ((totalLines - 1) * 19) / 2;
-    return { x: 480 - 60, y: y - 12, w: 120, h: 24 };
+    return { x: MARQUEE_X - 60, y: y - 12, w: 120, h: 24 };
   }
 
   updateSlotVisual(slotId) {
@@ -1620,6 +1620,16 @@ export class Level37Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) {
+        this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+      }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
     this.attemptLog.push({
       round: config.round, type: config.type, concept: config.concept,
@@ -1658,8 +1668,26 @@ export class Level37Scene extends Phaser.Scene {
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next round.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
@@ -1704,7 +1732,7 @@ export class Level37Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(36, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(37, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("println_schema"); } catch (_) {}
     try {
       localStorage.setItem("level37_results", JSON.stringify({

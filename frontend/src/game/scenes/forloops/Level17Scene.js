@@ -160,13 +160,23 @@ export class Level17Scene extends Phaser.Scene {
   preload() {}
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     if (this.scene.isActive('UIScene')) this.scene.stop('UIScene');
 
     const pg = this.make.graphics({ add: false });
     pg.fillStyle(0xffffff); pg.fillCircle(4, 4, 4);
     pg.generateTexture('p17', 8, 8); pg.destroy();
 
-    this.add.rectangle(W / 2, H / 2, W, H, 0x050510);
+    this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x050510);
     this._createArenaFloor();
     this._createBarrierWalls();
     this._createFragments();
@@ -184,7 +194,7 @@ export class Level17Scene extends Phaser.Scene {
   update(time) {
     this._fragments.forEach(f => {
       f.y -= 0.15;
-      if (f.y < 28) { f.y = 385; f.x = Phaser.Math.Between(30, W - 30); }
+      if (f.y < 28) { f.y = 385; f.x = Phaser.Math.Between(-W * 2, W * 3); }
     });
     // Animated dashed divider
     this._dashOff = (this._dashOff + 0.5) % 12;
@@ -207,14 +217,14 @@ export class Level17Scene extends Phaser.Scene {
   _createArenaFloor() {
     const g = this.add.graphics();
     g.fillStyle(0x0a1628, 1);
-    g.fillRect(0, 358, W, H - 358);
+    g.fillRect(-W * 2, 358, W * 5, H);
     g.lineStyle(1, 0x00e5ff, 0.07);
-    for (let x = 0; x <= W; x += 40) g.lineBetween(x, 358, x, H);
-    for (let y = 358; y <= H; y += 30) g.lineBetween(0, y, W, y);
+    for (let x = -W * 2; x <= W * 3; x += 40) g.lineBetween(x, 358, x, H);
+    for (let y = 358; y <= H; y += 30) g.lineBetween(-W * 2, y, W * 3, y);
     g.lineStyle(2, 0x00e5ff, 0.28);
-    g.lineBetween(0, 358, W, 358);
+    g.lineBetween(-W * 2, 358, W * 3, 358);
     g.lineStyle(1, 0x00e5ff, 0.1);
-    g.lineBetween(0, 362, W, 362);
+    g.lineBetween(-W * 2, 362, W * 3, 362);
   }
 
   _createBarrierWalls() {
@@ -234,7 +244,7 @@ export class Level17Scene extends Phaser.Scene {
     const syms = ['01','10','if','{}','i++','<=','for','int','0x','&&','||','!='];
     for (let i = 0; i < 18; i++) {
       const t = this.add.text(
-        Phaser.Math.Between(30, W - 30),
+        Phaser.Math.Between(-W * 2, W * 3),
         Phaser.Math.Between(28, 380),
         syms[i % syms.length],
         { fontFamily: 'Courier New', fontSize: '10px' }
@@ -251,8 +261,8 @@ export class Level17Scene extends Phaser.Scene {
 
   _createHUD() {
     const bg = this.add.graphics();
-    bg.fillStyle(0x000814, 0.95); bg.fillRect(0, 0, W, HUD_H);
-    bg.lineStyle(1, 0x00e5ff, 0.28); bg.lineBetween(0, HUD_H, W, HUD_H);
+    bg.fillStyle(0x000814, 0.95); bg.fillRect(-W * 2, 0, W * 5, HUD_H);
+    bg.lineStyle(1, 0x00e5ff, 0.28); bg.lineBetween(-W * 2, HUD_H, W * 5, HUD_H);
 
     this._hudWaveTxt = this.add.text(22, 14, 'WAVE 1 / 15', {
       fontFamily: 'Courier New', fontSize: '12px', color: '#00e5ff', fontStyle: 'bold'
@@ -367,7 +377,7 @@ export class Level17Scene extends Phaser.Scene {
   _waveTransition(n) {
     return new Promise(resolve => {
       const overlay = this.add.graphics().setDepth(190);
-      overlay.fillStyle(0x000000, 0.45); overlay.fillRect(0, 0, W, H);
+      overlay.fillStyle(0x000000, 0.45); overlay.fillRect(-W * 2, -H, W * 5, H * 3);
       const t = this.add.text(W / 2, H / 2 - 20, `WAVE ${n}`, {
         fontFamily: 'Arial Black', fontSize: '40px', color: '#ffd740'
       }).setOrigin(0.5).setScale(0).setDepth(200);
@@ -887,7 +897,7 @@ export class Level17Scene extends Phaser.Scene {
         onComplete: () => {
           bolt.destroy();
           this._playerStumble();
-          this._flashRect(0, 0, W, H, 0xf44336);
+          this._flashRect(-W * 2, -H, W * 5, H * 3, 0xf44336);
           resolve();
         }
       });
@@ -952,7 +962,7 @@ export class Level17Scene extends Phaser.Scene {
   _gameOver() {
     this._clearWave();
     const ov = this.add.graphics().setDepth(200);
-    ov.fillStyle(0x000000, 0.88); ov.fillRect(0, 0, W, H);
+    ov.fillStyle(0x000000, 0.88); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     this.add.text(W / 2, 155, 'GAME OVER', {
       fontFamily: 'Arial Black', fontSize: '44px', color: '#f44336'
     }).setOrigin(0.5).setDepth(201);
@@ -980,7 +990,7 @@ export class Level17Scene extends Phaser.Scene {
     }
 
     const ov = this.add.graphics().setDepth(200);
-    ov.fillStyle(0x000814, 0.93); ov.fillRect(0, 0, W, H);
+    ov.fillStyle(0x000814, 0.93); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     ov.lineStyle(2, 0x14b8a6, 0.75); ov.strokeRoundedRect(W / 2 - 205, 60, 410, 445, 12);
 
     this.add.text(W / 2, 108, 'ITERATION ARENA', {

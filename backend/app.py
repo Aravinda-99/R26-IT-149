@@ -4,7 +4,7 @@ Main Flask Application
 Entry point for the Gamified Adaptive Learning Framework.
 """
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from middleware.error_handler import register_error_handlers
@@ -21,6 +21,7 @@ def create_app():
     from routes.error_routes import error_bp
     from routes.gamification_routes import gamification_bp
     from routes.mastery_routes import mastery_bp
+    from routes.schema_mastery_routes import schema_mastery_bp
     from routes.auth_routes import auth_bp
     from routes.wellbeing import wellbeing_bp
 
@@ -28,6 +29,7 @@ def create_app():
     app.register_blueprint(error_bp, url_prefix="/api/errors")
     app.register_blueprint(gamification_bp, url_prefix="/api/gamification")
     app.register_blueprint(mastery_bp, url_prefix="/api/mastery")
+    app.register_blueprint(schema_mastery_bp, url_prefix="/api/schema-mastery")
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(wellbeing_bp, url_prefix="/api/wellbeing")
 
