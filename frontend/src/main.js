@@ -1,5 +1,5 @@
 /**
- * Main Entry Point â CodeQuest LMS Platform
+ * Main Entry Point - CodeQuest LMS Platform
  * ==========================================
  * Dual-Role Learning Platform:
  * - Public Views (Welcome, Onboarding, Login, Signup)
@@ -25,8 +25,8 @@ import { renderTeacherLayout } from "./layouts/TeacherLayout.js";
 
 // Public Pages
 import { renderOnboarding } from "./pages/auth/Onboarding.js";
-import { renderLogin } from "./pages/auth/Login.js";
-import { renderSignup } from "./pages/auth/Signup.js";
+import { renderLogin } from "./pages/login.js";
+import { renderSignup } from "./pages/register.js";
 import { renderLanding, disposeLanding } from "./pages/landing.js";
 
 // Student Pages
@@ -61,7 +61,7 @@ let currentParams = {};
 function resolveRoute(route) {
     const r = (route || "/").toLowerCase().trim();
 
-    // 1. Public Routes — student-friendly marketing landing at /
+    // 1. Public Routes Ã¢â¬â student-friendly marketing landing at /
     if (r === "/welcome" || r === "welcome" || r === "/" || r === "" || r === "/landing" || r === "landing") {
         return { layout: "bare", render: (c) => renderLanding(c, navigateTo) };
     }
@@ -232,7 +232,7 @@ function renderApp() {
     } else if (routeInfo.layout === "public") {
         contentContainer = renderPublicLayout(appEl, currentRoute, navigateTo);
     } else if (routeInfo.layout === "bare") {
-        // Full-bleed pages (marketing landing) — no chrome layout
+        // Full-bleed pages (marketing landing) Ã¢â¬â no chrome layout
         appEl.innerHTML = "";
         contentContainer = appEl;
     } else {
