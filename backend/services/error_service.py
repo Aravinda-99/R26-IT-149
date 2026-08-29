@@ -1077,7 +1077,7 @@ class ErrorService:
         _now = datetime.datetime.now()
         _week_bucket = _now.strftime("%Y-W%V")   # ISO week string e.g. "2025-W32"
 
-        cls._history.append({
+        history_entry = {
             "student_id": student_id,
             "code": code if len(code) <= 100 else code[:100] + "...",
             "label": final_label,
@@ -1089,7 +1089,16 @@ class ErrorService:
             "week_bucket": _week_bucket,          # Feature 1 — analytics bucketing
             "reason_group": reason_group,          # Feature 3 — learning report detail
             "full_response": response,             # Full payload for history item click-through
-        })
+        }
+
+        cls._history.append(history_entry)
+
+        if db:
+            try:
+                db.collection("error_history").add(history_entry)
+                print(f"[OK] Saved error analysis to Firestore error_history for student {student_id}")
+            except Exception as e:
+                print(f"[WARN] Failed to save error analysis to Firestore: {e}")
 
         cls._last_analysis[student_id] = response
 
@@ -1340,9 +1349,23 @@ class ErrorService:
         }
 
     @classmethod
+    def _get_user_history(cls, user_id):
+        """Helper to get user history from Firestore (if online) or in-memory fallback."""
+        if db:
+            try:
+                docs = db.collection("error_history").where("student_id", "==", user_id).stream()
+                user_history = [doc.to_dict() for doc in docs]
+                user_history.sort(key=lambda x: x.get("timestamp", ""))
+                return user_history
+            except Exception as e:
+                print(f"[WARN] Error reading from Firestore error_history: {e}")
+        
+        return [h for h in cls._history if h["student_id"] == user_id]
+
+    @classmethod
     def get_history(cls, user_id):
         """Returns error analysis history (last 10 items)."""
-        user_history = [h for h in cls._history if h["student_id"] == user_id]
+        user_history = cls._get_user_history(user_id)
         return {
             "user_id": user_id,
             "total": len(user_history),
@@ -1357,7 +1380,7 @@ class ErrorService:
     @classmethod
     def get_summary(cls, user_id):
         """Aggregates error patterns for the user."""
-        user_history = [h for h in cls._history if h["student_id"] == user_id]
+        user_history = cls._get_user_history(user_id)
         if not user_history:
             return {"user_id": user_id, "total_analyses": 0, "counts": {}}
 
@@ -1404,7 +1427,7 @@ class ErrorService:
 
         Returns a fully structured response ready for Chart.js consumption.
         """
-        user_history = [h for h in cls._history if h["student_id"] == user_id]
+        user_history = cls._get_user_history(user_id)
 
         if not user_history:
             return {
@@ -1551,7 +1574,7 @@ class ErrorService:
 
         The summary narrative is dynamically generated — not a fixed template.
         """
-        user_history = [h for h in cls._history if h["student_id"] == user_id]
+        user_history = cls._get_user_history(user_id)
 
         if not user_history:
             return {
