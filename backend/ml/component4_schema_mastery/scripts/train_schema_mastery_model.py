@@ -258,21 +258,74 @@ best_model_name = max(model_results.keys(), key=lambda m: model_results[m]["macr
 print(f"\n[OK] Best Performing Model: {best_model_name}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Fit Best Model on Full Dataset & Save Artifacts
+# 3. Fit Best Model 1 on Full Dataset & Train Model 2 (Next Action Model)
 # ─────────────────────────────────────────────────────────────────────────────
 best_pipeline = models[best_model_name]
-print(f"\nTraining {best_model_name} on full dataset (N={len(df)})...")
+print(f"\nTraining Model 1 ({best_model_name}) on full dataset (N={len(df)})...")
 best_pipeline.fit(X, y)
-
 joblib.dump(best_pipeline, MODEL_PATH)
 
+# Train Model 2: Next Action Recommendation Model
+from sklearn.tree import DecisionTreeClassifier
+print("\nTraining Model 2: Next Action Recommendation Decision Model...")
+ACTION_MODEL_PATH = os.path.join(MODELS_DIR, "schema_next_action_model.pkl")
+
+# Generate Model 1 probabilities on full dataset to serve as an input feature for Model 2
+m1_probs = best_pipeline.predict_proba(X)[:, 1] if hasattr(best_pipeline, "predict_proba") else best_pipeline.predict(X)
+
+# Model 2 uses preprocessed features + Model 1 mastery probability
+prep_transformer = best_pipeline.named_steps["preprocess"]
+X_trans = prep_transformer.transform(X)
+if hasattr(X_trans, "toarray"):
+    X_trans = X_trans.toarray()
+
+X_action = np.column_stack([X_trans, m1_probs])
+y_action = y.copy()
+
+action_model = DecisionTreeClassifier(max_depth=6, min_samples_leaf=10, class_weight="balanced", random_state=42)
+
+# Cross-validate Model 2
+action_f1_scores = []
+action_acc_scores = []
+for fold_idx, (train_idx, val_idx) in enumerate(cv.split(X, y, groups=groups)):
+    X_tr, y_tr = X_action[train_idx], y_action.iloc[train_idx]
+    X_va, y_va = X_action[val_idx], y_action.iloc[val_idx]
+    action_model.fit(X_tr, y_tr)
+    y_va_pred = action_model.predict(X_va)
+    action_f1_scores.append(f1_score(y_va, y_va_pred, average="macro"))
+    action_acc_scores.append(accuracy_score(y_va, y_va_pred))
+
+action_model.fit(X_action, y_action)
+joblib.dump(action_model, ACTION_MODEL_PATH)
+print(f"[OK] Model 2 (Next Action) Macro F1: {np.mean(action_f1_scores):.4f} ± {np.std(action_f1_scores):.4f}")
+
+# Also save standalone Level Model and Preprocessor
+LEVEL_MODEL_PATH = os.path.join(MODELS_DIR, "schema_mastery_level_model.pkl")
+PREPROCESSOR_PATH = os.path.join(MODELS_DIR, "schema_preprocessor.pkl")
+joblib.dump(best_pipeline.named_steps["model"], LEVEL_MODEL_PATH)
+joblib.dump(prep_transformer, PREPROCESSOR_PATH)
+
 metadata = {
-    "best_model": best_model_name,
+    "architecture": "Dual ML Model Pipeline",
+    "model_1": {
+        "name": "schema_mastery_pipeline",
+        "type": f"Pipeline (ColumnTransformer + {best_model_name})",
+        "target": "future_success / mastery_probability",
+        "results": model_results[best_model_name],
+    },
+    "model_2": {
+        "name": "schema_next_action_model",
+        "type": "DecisionTreeClassifier (Evidence + Mastery Probability)",
+        "target": "next_action (DONE vs LEARN_AGAIN)",
+        "macro_f1": float(np.mean(action_f1_scores)),
+        "accuracy": float(np.mean(action_acc_scores)),
+    },
     "dataset_path": "ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv",
     "dataset_rows": int(len(df)),
     "unique_students": int(unique_students),
+    "concept_distribution": df["concept_name"].value_counts().to_dict(),
+    "error_type_distribution": df["error_type"].value_counts().to_dict(),
     "features": feature_columns,
-    "target": "future_success",
     "score_scale": "0.0-1.0",
     "validation_method": f"StratifiedGroupKFold grouped by student_id, n_splits={n_splits}",
     "baseline_results": baseline_results,
@@ -282,7 +335,8 @@ metadata = {
 with open(META_PATH, "w") as f:
     json.dump(metadata, f, indent=2)
 
-print(f"[SUCCESS] Model saved to: {MODEL_PATH}")
+print(f"[SUCCESS] Model 1 saved to: {MODEL_PATH}")
+print(f"[SUCCESS] Model 2 saved to: {ACTION_MODEL_PATH}")
 print(f"[SUCCESS] Metadata saved to: {META_PATH}")
 
 # ─────────────────────────────────────────────────────────────────────────────

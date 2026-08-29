@@ -22,6 +22,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
 
 const W = 1280, H = 720;
 
@@ -310,6 +311,10 @@ export class Level50Scene extends Phaser.Scene {
     this._lastStreamDot = 0;
     this._waveSquares = [];
     this._trackerRows = [];
+    // "Review the basics" in the Bit menu sends the player back to this
+    // wing's Accretion-phase intro (which has the real tutorial) instead of
+    // restarting this rapid-fire Tuning-phase level with nothing to review.
+    this.baseTutorialScene = "Level49Scene";
     this._consoleLines = [];
   }
 
@@ -349,6 +354,22 @@ export class Level50Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    // Pause dynamic game elements if an ML intervention menu is currently on screen
+    if (GameManager.interventionInFlight) {
+      if (this._drainTween && this._drainTween.isPlaying()) {
+        this._drainTween.pause();
+        this._sandFrozen = true;
+      }
+      return; // Return early to stop particles, lantern, and sand from animating
+    } else {
+      // Resume the hourglass timer tween if the menu was just dismissed
+      if (this._drainTween && this._drainTween.isPaused()) {
+        this._drainTween.resume();
+        this._sandFrozen = false;
+        this._sandRunning = true;
+      }
+    }
+
     this.updateParticles(time, delta);
     this.updateLanternFlame(time);
     this.updateSandVisuals(time);
@@ -1373,7 +1394,7 @@ export class Level50Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE STACKS", { font: "bold 17px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Tuning Phase — ArrayList Methods: get()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 32, "Tuning Phase — get()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
 
     this.waveText = this.add.text(640, 18, "WAVE 1 / 3", { font: "bold 16px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
     this._waveSquares = [];
@@ -1795,6 +1816,14 @@ export class Level50Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) { this.tweens.add({ targets: icon, alpha: 1, duration: 350 }); }
+      this.lives++;
+    }
+  }
+
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs, timePctUsed) {
     this.roundAttempts = (this.roundAttempts || 0) + 1;
     this.totalTimePctUsed += timePctUsed !== undefined ? timePctUsed : 1;
@@ -1829,16 +1858,38 @@ export class Level50Scene extends Phaser.Scene {
         combo_breaks,
       });
       if (!this._alive) return;
-      const effectivePrediction = (prediction === "typical" && misconception_repeat_count === 3)
-        ? "struggling" : prediction;
+
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+
+      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
+      await this.delay(100);
     } catch (e) {
       console.warn("Level50Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next round.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) { this.levelComplete(); return; }

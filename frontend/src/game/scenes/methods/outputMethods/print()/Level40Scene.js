@@ -728,12 +728,12 @@ export class Level40Scene extends Phaser.Scene {
     g.fillRoundedRect(W / 2 - 200, 10, 400, 44, 8);
     g.lineStyle(1, 0x2a2a4a, 1);
     g.strokeRoundedRect(W / 2 - 200, 10, 400, 44, 8);
-    this.monitorText = this.add.text(W / 2, 32, "", { font: "15px Courier New", color: "#e0e0e0" }).setOrigin(0.5).setDepth(51);
+    this.monitorText = this.add.text(W / 2, 32, "", { font: "bold 18px Courier New", color: "#e0e0e0" }).setOrigin(0.5).setDepth(51);
   }
 
   updateExpressionMonitor(text) {
     this.monitorText.setText(text);
-    this.monitorText.setFontSize(this.monitorText.width > 380 ? 11 : 13);
+    this.monitorText.setFontSize(this.monitorText.width > 380 ? 15 : 18);
   }
 
   showCompileErrorStamp() {
@@ -756,7 +756,7 @@ export class Level40Scene extends Phaser.Scene {
     g.lineBetween(0, 64, W, 64);
 
     this.add.text(20, 14, "THE WHISPER BOOTH", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — Output Methods: print()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 32, "Accretion Phase — print()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
 
     this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
     this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
@@ -1269,11 +1269,10 @@ export class Level40Scene extends Phaser.Scene {
       this.loseLife();
       this.updateCombo(false);
       if (this.lives <= 0) { this.time.delayedCall(400, () => this.gameOver()); return; }
-      await this.showBitFeedback(MISCONCEPTION_FEEDBACK[opt.tag] || "Not quite — watch the log and try again.");
+      await this.showBitFeedback(MISCONCEPTION_FEEDBACK[opt.tag] || "Not quite — moving to the next item.");
       if (!this._alive) return;
-      this.clearRound();
-      await this.clearLog();
-      this.setupPredict(config, decls);
+      await this.delay(300);
+      this.advanceRound();
     }
   }
 
@@ -1490,18 +1489,10 @@ export class Level40Scene extends Phaser.Scene {
         if (this.lives <= 0) { this.time.delayedCall(400, () => this.gameOver()); return; }
       }
       this.updateCombo(false);
-      await this.showBitFeedback(MISCONCEPTION_FEEDBACK[firstWrongTag] || "That combination doesn't whisper what the mission needs — check the log and try another cartridge.");
+      await this.showBitFeedback(MISCONCEPTION_FEEDBACK[firstWrongTag] || "That combination isn't quite right — moving on.");
       if (!this._alive) return;
-      this.inputLocked = false;
-      await this.clearLog();
-      this.updateSourceDisplay(config.sourceTemplate.map((l) => l.replace(/<slot:\w+>/g, "____")));
-      this.cartridges.forEach((cart) => {
-        cart.container.setData("placedIn", null);
-        const home = cart.container.getData("home");
-        this.tweens.add({ targets: cart.container, x: home.x, y: home.y, duration: 200 });
-      });
-      this.slotContents = {};
-      this.disableWhisperButton();
+      await this.delay(300);
+      this.advanceRound();
     }
   }
 
@@ -1537,6 +1528,16 @@ export class Level40Scene extends Phaser.Scene {
     const icon = this.lifeIcons[this.lives];
     if (icon) this.tweens.add({ targets: icon, alpha: 0.12, duration: 400 });
     return this.lives <= 0;
+  }
+
+  addLife() {
+    if (this.lives < 5) {
+      const icon = this.lifeIcons[this.lives];
+      if (icon) {
+        this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
+      }
+      this.lives++;
+    }
   }
 
   logAttempt(config, correct, selectedAnswer, misconceptionTag, timeMs) {
@@ -1577,8 +1578,26 @@ export class Level40Scene extends Phaser.Scene {
     }
   }
 
-  advanceRound() {
-    if (this.currentRound === 2) this.runBehavioralCheck();
+  async advanceRound() {
+    if (this.currentRound === 2) {
+      await this.runBehavioralCheck();
+
+      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
+      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
+      // open the menu before we mistakenly advance to the next round.
+      let waitTime = 0;
+      while (!GameManager.interventionInFlight && waitTime < 1500) {
+        await this.delay(100);
+        waitTime += 100;
+      }
+
+      // If the menu DID open, wait indefinitely until the player closes it.
+      while (GameManager.interventionInFlight) {
+        await this.delay(200);
+      }
+    }
+
+    if (!this._alive || this.gameEnded) return;
     this.clearRound();
     const next = this.currentRound + 1;
     if (next >= ROUNDS.length) this.levelComplete();
@@ -1619,7 +1638,7 @@ export class Level40Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(39, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(40, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("print_schema"); } catch (_) {}
     try {
       localStorage.setItem("level40_results", JSON.stringify({

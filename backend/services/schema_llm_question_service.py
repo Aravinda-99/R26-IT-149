@@ -10,6 +10,10 @@ Generates concept-specific draft post-test questions with option quality labels:
 Saves drafts to `generated_questions` with status PENDING for teacher review.
 Includes an extensible structure for real LLM APIs (OpenAI / Gemini) with
 a high-fidelity mock generator fallback.
+
+DISTRIBUTION REQUIREMENT:
+All generated and approved questions distribute correct answer positions across
+A, B, C, and D evenly (never hardcoding or biasing option A).
 """
 
 import os
@@ -22,7 +26,7 @@ VALID_CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
 VALID_TYPES = ["Basic Understanding", "Code Output Prediction", "Error Recognition", "Application", "Transfer"]
 VALID_DIFFICULTIES = ["Easy", "Medium", "Hard"]
 
-# Template library for high-fidelity draft generation
+# Template library for high-fidelity draft generation with varied canonical correct option positions
 QUESTION_TEMPLATES = {
     "Variables": [
         {
@@ -43,11 +47,11 @@ QUESTION_TEMPLATES = {
             "type": "Code Output Prediction",
             "text": "What is the output of the following integer division and type conversion?",
             "code": "int a = 7;\nint b = 2;\ndouble result = a / b;\nSystem.out.println(result);",
-            "opt_a": "3.0", "q_a": "Correct",
-            "opt_b": "3.5", "q_b": "Nearly Correct",
+            "opt_a": "3.5", "q_a": "Nearly Correct",
+            "opt_b": "3.0", "q_b": "Correct",
             "opt_c": "3", "q_c": "Wrong",
             "opt_d": "Compilation Error", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "a / b performs integer division (7 / 2 = 3). The integer 3 is then widened to double 3.0.",
             "group": "GRP_VAR_DIV_TRUNC",
             "outcome": "Trace integer division truncation before double assignment",
@@ -57,11 +61,11 @@ QUESTION_TEMPLATES = {
             "type": "Error Recognition",
             "text": "Which error will be reported by the Java compiler for the following code?",
             "code": "final int MAX_USERS = 50;\nMAX_USERS = 60;",
-            "opt_a": "Cannot assign a value to final variable MAX_USERS", "q_a": "Correct",
-            "opt_b": "Variable MAX_USERS is out of scope", "q_b": "Nearly Correct",
-            "opt_c": "NullPointerException at runtime", "q_c": "Wrong",
+            "opt_a": "Variable MAX_USERS is out of scope", "q_a": "Nearly Correct",
+            "opt_b": "NullPointerException at runtime", "q_b": "Wrong",
+            "opt_c": "Cannot assign a value to final variable MAX_USERS", "q_c": "Correct",
             "opt_d": "MAX_USERS must be declared as double", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "Variables marked 'final' cannot be reassigned once initialized.",
             "group": "GRP_VAR_FINAL_ERR",
             "outcome": "Identify final variable immutability compiler errors",
@@ -71,11 +75,11 @@ QUESTION_TEMPLATES = {
             "type": "Application",
             "text": "Which statement correctly converts a String '125' into a primitive int in Java?",
             "code": "String s = \"125\";",
-            "opt_a": "int num = Integer.parseInt(s);", "q_a": "Correct",
-            "opt_b": "int num = (int) s;", "q_b": "Nearly Correct",
-            "opt_c": "int num = s.toInt();", "q_c": "Wrong",
-            "opt_d": "int num = new Integer(s);", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "int num = (int) s;", "q_a": "Nearly Correct",
+            "opt_b": "int num = s.toInt();", "q_b": "Wrong",
+            "opt_c": "int num = new Integer(s);", "q_c": "Clearly Wrong",
+            "opt_d": "int num = Integer.parseInt(s);", "q_d": "Correct",
+            "correct": "D",
             "explanation": "Integer.parseInt() parses the string argument as a signed decimal integer.",
             "group": "GRP_VAR_PARSE_INT",
             "outcome": "Apply wrapper parsing methods for string-to-numeric conversions",
@@ -85,11 +89,11 @@ QUESTION_TEMPLATES = {
             "type": "Transfer",
             "text": "How does Java manage memory for a primitive 'int' compared to an object reference variable on the JVM stack?",
             "code": "",
-            "opt_a": "The primitive stores its raw binary value directly on the stack frame, while an object variable stores a heap address", "q_a": "Correct",
-            "opt_b": "Primitives are stored on the garbage collected heap while references live on the CPU cache", "q_b": "Nearly Correct",
+            "opt_a": "Primitives are stored on the garbage collected heap while references live on the CPU cache", "q_a": "Nearly Correct",
+            "opt_b": "The primitive stores its raw binary value directly on the stack frame, while an object variable stores a heap address", "q_b": "Correct",
             "opt_c": "Both primitives and objects are stored in the metaspace", "q_c": "Wrong",
             "opt_d": "Primitives have methods and fields just like objects", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "Primitive local variables hold their actual values directly on the thread stack frame.",
             "group": "GRP_VAR_JVM_MEM",
             "outcome": "Transfer memory layout principles between stack primitives and heap references",
@@ -101,11 +105,11 @@ QUESTION_TEMPLATES = {
             "type": "Basic Understanding",
             "text": "What is the effect of the bitwise XOR operator (^) when applied to two boolean values in Java?",
             "code": "boolean result = (a ^ b);",
-            "opt_a": "Returns true if exactly one operand is true, and false if both are equal", "q_a": "Correct",
-            "opt_b": "Returns true only if both operands are true", "q_b": "Nearly Correct",
-            "opt_c": "Performs logical negation of variable a", "q_c": "Wrong",
+            "opt_a": "Returns true only if both operands are true", "q_a": "Nearly Correct",
+            "opt_b": "Performs logical negation of variable a", "q_b": "Wrong",
+            "opt_c": "Returns true if exactly one operand is true, and false if both are equal", "q_c": "Correct",
             "opt_d": "Raises an operator precedence compilation error", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "The XOR (^) operator evaluates to true if and only if its arguments differ.",
             "group": "GRP_OP_XOR",
             "outcome": "Understand logical XOR behavior",
@@ -115,11 +119,11 @@ QUESTION_TEMPLATES = {
             "type": "Code Output Prediction",
             "text": "What is the printed value of x after this compound assignment executes?",
             "code": "int x = 10;\nx += 5 * 2;\nSystem.out.println(x);",
-            "opt_a": "20", "q_a": "Correct",
-            "opt_b": "30", "q_b": "Nearly Correct",
-            "opt_c": "25", "q_c": "Wrong",
-            "opt_d": "15", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "30", "q_a": "Nearly Correct",
+            "opt_b": "25", "q_b": "Wrong",
+            "opt_c": "15", "q_c": "Clearly Wrong",
+            "opt_d": "20", "q_d": "Correct",
+            "correct": "D",
             "explanation": "Multiplication has higher precedence than compound addition: 5 * 2 = 10, then x = 10 + 10 = 20.",
             "group": "GRP_OP_PREC_COMPOUND",
             "outcome": "Trace operator precedence with compound assignment operators",
@@ -143,11 +147,11 @@ QUESTION_TEMPLATES = {
             "type": "Application",
             "text": "Which expression checks if an integer 'val' is strictly between 10 and 50 (exclusive)?",
             "code": "int val = 25;",
-            "opt_a": "(val > 10) && (val < 50)", "q_a": "Correct",
-            "opt_b": "10 < val < 50", "q_b": "Nearly Correct",
+            "opt_a": "10 < val < 50", "q_a": "Nearly Correct",
+            "opt_b": "(val > 10) && (val < 50)", "q_b": "Correct",
             "opt_c": "(val >= 10) || (val <= 50)", "q_c": "Wrong",
             "opt_d": "(val == 10) && (val == 50)", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "Java requires explicit compound conditions joined by logical AND (&&). '10 < val < 50' is invalid Java syntax.",
             "group": "GRP_OP_RANGE_CHECK",
             "outcome": "Apply compound logical conditions for range verification",
@@ -157,11 +161,11 @@ QUESTION_TEMPLATES = {
             "type": "Transfer",
             "text": "In Java bit shifting, what is the key difference between '>>' (arithmetic right shift) and '>>>' (logical right shift)?",
             "code": "int neg = -8;\nint r1 = neg >> 2;\nint r2 = neg >>> 2;",
-            "opt_a": "'>>' preserves the sign bit (fills with 1s for negatives), whereas '>>>' always fills the leftmost bits with 0s", "q_a": "Correct",
-            "opt_b": "'>>>' performs floating point shifts while '>>' is integer only", "q_b": "Nearly Correct",
-            "opt_c": "'>>' multiplies by 2 while '>>>' divides by 2", "q_c": "Wrong",
+            "opt_a": "'>>>' performs floating point shifts while '>>' is integer only", "q_a": "Nearly Correct",
+            "opt_b": "'>>' multiplies by 2 while '>>>' divides by 2", "q_b": "Wrong",
+            "opt_c": "'>>' preserves the sign bit (fills with 1s for negatives), whereas '>>>' always fills the leftmost bits with 0s", "q_c": "Correct",
             "opt_d": "'>>>' is only valid in C++, not in Java", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "'>>>' is the unsigned right shift operator in Java, padding the leading bits with zero regardless of sign.",
             "group": "GRP_OP_BIT_SHIFT",
             "outcome": "Transfer binary two's complement knowledge to bitwise operations",
@@ -173,11 +177,11 @@ QUESTION_TEMPLATES = {
             "type": "Basic Understanding",
             "text": "What is the key structural difference between a 'while' loop and a 'do-while' loop?",
             "code": "",
-            "opt_a": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution", "q_a": "Correct",
-            "opt_b": "A while loop can only iterate over arrays", "q_b": "Nearly Correct",
-            "opt_c": "A do-while loop does not support the break statement", "q_c": "Wrong",
-            "opt_d": "A while loop always executes an infinite number of times", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "A while loop can only iterate over arrays", "q_a": "Nearly Correct",
+            "opt_b": "A do-while loop does not support the break statement", "q_b": "Wrong",
+            "opt_c": "A while loop always executes an infinite number of times", "q_c": "Clearly Wrong",
+            "opt_d": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution", "q_d": "Correct",
+            "correct": "D",
             "explanation": "'do-while' is a post-test loop: the condition is checked after executing the loop body.",
             "group": "GRP_LOOP_DOWHILE",
             "outcome": "Distinguish pre-test and post-test loop execution mechanics",
@@ -201,11 +205,11 @@ QUESTION_TEMPLATES = {
             "type": "Error Recognition",
             "text": "What causes this while loop to never terminate?",
             "code": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
-            "opt_a": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false", "q_a": "Correct",
-            "opt_b": "i is not initialized properly", "q_b": "Nearly Correct",
+            "opt_a": "i is not initialized properly", "q_a": "Nearly Correct",
+            "opt_b": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false", "q_b": "Correct",
             "opt_c": "System.out.println freezes the CPU", "q_c": "Wrong",
             "opt_d": "while loops cannot use '!=' as a condition", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "Incrementing by 2 produces odd numbers. i jumps from 9 to 11, missing 10 and looping indefinitely.",
             "group": "GRP_LOOP_OFF_BY_TWO",
             "outcome": "Recognize parity mismatch causing infinite loop condition failures",
@@ -215,11 +219,11 @@ QUESTION_TEMPLATES = {
             "type": "Application",
             "text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
             "code": "int N = 5;\nlong fact = 1;",
-            "opt_a": "for (int i = 1; i <= N; i++) { fact *= i; }", "q_a": "Correct",
-            "opt_b": "for (int i = 0; i < N; i++) { fact *= i; }", "q_b": "Nearly Correct",
-            "opt_c": "for (int i = 1; i < N; i++) { fact += i; }", "q_c": "Wrong",
+            "opt_a": "for (int i = 0; i < N; i++) { fact *= i; }", "q_a": "Nearly Correct",
+            "opt_b": "for (int i = 1; i < N; i++) { fact += i; }", "q_b": "Wrong",
+            "opt_c": "for (int i = 1; i <= N; i++) { fact *= i; }", "q_c": "Correct",
             "opt_d": "while (N > 0) { fact += N; N--; }", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "Starting at 1 up to N with multiplication (fact *= i) computes N! correctly. Starting at 0 makes fact 0.",
             "group": "GRP_LOOP_FACTORIAL",
             "outcome": "Apply accumulator loops for mathematical series calculations",
@@ -229,11 +233,11 @@ QUESTION_TEMPLATES = {
             "type": "Transfer",
             "text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
             "code": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
-            "opt_a": "Direct access to the current index position and the ability to modify array elements in-place", "q_a": "Correct",
-            "opt_b": "The ability to read array element values", "q_b": "Nearly Correct",
-            "opt_c": "Type safety during iteration", "q_c": "Wrong",
-            "opt_d": "Enhanced for loops cannot run on primitive arrays", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "The ability to read array element values", "q_a": "Nearly Correct",
+            "opt_b": "Type safety during iteration", "q_b": "Wrong",
+            "opt_c": "Enhanced for loops cannot run on primitive arrays", "q_c": "Clearly Wrong",
+            "opt_d": "Direct access to the current index position and the ability to modify array elements in-place", "q_d": "Correct",
+            "correct": "D",
             "explanation": "Enhanced for-each loops do not provide an explicit index variable, making in-place assignment to array slots impossible.",
             "group": "GRP_LOOP_FOREACH_LIMIT",
             "outcome": "Transfer iteration paradigms between indexed and iterator-based loops",
@@ -243,7 +247,7 @@ QUESTION_TEMPLATES = {
     "Arrays": [
         {
             "type": "Basic Understanding",
-            "text": "What are all elements of a newly created 'int[] data = new int[4];' initialized to by default?",
+            "text": "What are all elements of a newly created 'int[] data = new int[4];' initialized to by default in Java?",
             "code": "int[] data = new int[4];",
             "opt_a": "0", "q_a": "Correct",
             "opt_b": "null", "q_b": "Nearly Correct",
@@ -259,11 +263,11 @@ QUESTION_TEMPLATES = {
             "type": "Code Output Prediction",
             "text": "What is the output of the following array reference assignment?",
             "code": "int[] a = {1, 2, 3};\nint[] b = a;\nb[0] = 99;\nSystem.out.println(a[0]);",
-            "opt_a": "99 (Both a and b reference the exact same array in heap memory)", "q_a": "Correct",
-            "opt_b": "1 (b is an independent deep copy of a)", "q_b": "Nearly Correct",
+            "opt_a": "1 (b is an independent deep copy of a)", "q_a": "Nearly Correct",
+            "opt_b": "99 (Both a and b reference the exact same array in heap memory)", "q_b": "Correct",
             "opt_c": "0", "q_c": "Wrong",
             "opt_d": "Compilation Error", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "'b = a' copies the object reference, meaning modifications via 'b' affect the array pointed to by 'a'.",
             "group": "GRP_ARR_ALIASING",
             "outcome": "Predict array aliasing and reference sharing side effects",
@@ -273,11 +277,11 @@ QUESTION_TEMPLATES = {
             "type": "Error Recognition",
             "text": "What error occurs when trying to access 'arr[arr.length]' on an array?",
             "code": "int[] arr = {10, 20, 30};\nSystem.out.println(arr[arr.length]);",
-            "opt_a": "ArrayIndexOutOfBoundsException because valid indices end at arr.length - 1", "q_a": "Correct",
-            "opt_b": "NullPointerException", "q_b": "Nearly Correct",
-            "opt_c": "Prints 0", "q_c": "Wrong",
+            "opt_a": "NullPointerException", "q_a": "Nearly Correct",
+            "opt_b": "Prints 0", "q_b": "Wrong",
+            "opt_c": "ArrayIndexOutOfBoundsException because valid indices end at arr.length - 1", "q_c": "Correct",
             "opt_d": "Compilation error because .length is a method", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "An array with length 3 has valid indices 0, 1, and 2. Index 3 is out of bounds.",
             "group": "GRP_ARR_LEN_BOUND",
             "outcome": "Recognize classic length boundary off-by-one errors",
@@ -287,11 +291,11 @@ QUESTION_TEMPLATES = {
             "type": "Application",
             "text": "Which code snippet correctly makes an independent copy of array 'src' into 'dest' without reference aliasing?",
             "code": "int[] src = {5, 10, 15};",
-            "opt_a": "int[] dest = src.clone();", "q_a": "Correct",
-            "opt_b": "int[] dest = src;", "q_b": "Nearly Correct",
-            "opt_c": "int[] dest = (int[]) src.toString();", "q_c": "Wrong",
-            "opt_d": "int[] dest = new int[src];", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "int[] dest = src;", "q_a": "Nearly Correct",
+            "opt_b": "int[] dest = (int[]) src.toString();", "q_b": "Wrong",
+            "opt_c": "int[] dest = new int[src];", "q_c": "Clearly Wrong",
+            "opt_d": "int[] dest = src.clone();", "q_d": "Correct",
+            "correct": "D",
             "explanation": "src.clone() or Arrays.copyOf() creates a new array object with copied elements.",
             "group": "GRP_ARR_CLONE",
             "outcome": "Apply cloning techniques to avoid unintended reference sharing",
@@ -317,11 +321,11 @@ QUESTION_TEMPLATES = {
             "type": "Basic Understanding",
             "text": "In Java, what does declaring a method with the 'static' keyword mean?",
             "code": "public static int add(int a, int b) { return a + b; }",
-            "opt_a": "The method belongs to the class itself and can be called without instantiating an object", "q_a": "Correct",
-            "opt_b": "The method return value can never change", "q_b": "Nearly Correct",
+            "opt_a": "The method return value can never change", "q_a": "Nearly Correct",
+            "opt_b": "The method belongs to the class itself and can be called without instantiating an object", "q_b": "Correct",
             "opt_c": "The method cannot take parameters", "q_c": "Wrong",
             "opt_d": "The method is executed automatically when the program launches", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "Static methods are associated with the class rather than any specific instance of the class.",
             "group": "GRP_METH_STATIC",
             "outcome": "Understand static vs instance method mechanics",
@@ -331,11 +335,11 @@ QUESTION_TEMPLATES = {
             "type": "Code Output Prediction",
             "text": "What is the return value of mystery(3, 4)?",
             "code": "public static int mystery(int a, int b) {\n    if (b == 0) return 0;\n    return a + mystery(a, b - 1);\n}",
-            "opt_a": "12 (Multiplies a and b using recursive addition)", "q_a": "Correct",
-            "opt_b": "7", "q_b": "Nearly Correct",
-            "opt_c": "0", "q_c": "Wrong",
+            "opt_a": "7", "q_a": "Nearly Correct",
+            "opt_b": "0", "q_b": "Wrong",
+            "opt_c": "12 (Multiplies a and b using recursive addition)", "q_c": "Correct",
             "opt_d": "StackOverflowError", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "C",
             "explanation": "The recursion computes 3 + 3 + 3 + 3 + 0 = 12 (multiplication via repeated addition).",
             "group": "GRP_METH_REC_MULT",
             "outcome": "Trace recursive method accumulation and base-case termination",
@@ -345,11 +349,11 @@ QUESTION_TEMPLATES = {
             "type": "Error Recognition",
             "text": "What compiler error is produced by this method signature conflict?",
             "code": "public class Calc {\n    public int compute(int x) { return x * 2; }\n    public double compute(int x) { return x * 2.0; }\n}",
-            "opt_a": "Method compute(int) is already defined (Overloading cannot differ only by return type)", "q_a": "Correct",
-            "opt_b": "Variable x is declared twice", "q_b": "Nearly Correct",
-            "opt_c": "Methods cannot return double", "q_c": "Wrong",
-            "opt_d": "compute is a reserved keyword in Java", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "opt_a": "Variable x is declared twice", "q_a": "Nearly Correct",
+            "opt_b": "Methods cannot return double", "q_b": "Wrong",
+            "opt_c": "compute is a reserved keyword in Java", "q_c": "Clearly Wrong",
+            "opt_d": "Method compute(int) is already defined (Overloading cannot differ only by return type)", "q_d": "Correct",
+            "correct": "D",
             "explanation": "In Java, method signatures consist of the method name and parameter list only. Return types are not part of the signature.",
             "group": "GRP_METH_OVERLOAD_ERR",
             "outcome": "Recognize invalid method overload definitions",
@@ -373,11 +377,11 @@ QUESTION_TEMPLATES = {
             "type": "Transfer",
             "text": "How do object references passed as method arguments behave when their internal fields are mutated inside the method?",
             "code": "public static void reset(StringBuilder sb) {\n    sb.append(\" world\");\n}",
-            "opt_a": "The caller's object is modified because both the caller and method parameter point to the same heap object", "q_a": "Correct",
-            "opt_b": "The caller's object is unchanged because Java is strictly pass-by-value", "q_b": "Nearly Correct",
+            "opt_a": "The caller's object is unchanged because Java is strictly pass-by-value", "q_a": "Nearly Correct",
+            "opt_b": "The caller's object is modified because both the caller and method parameter point to the same heap object", "q_b": "Correct",
             "opt_c": "Causes a concurrent modification exception", "q_c": "Wrong",
             "opt_d": "Strings and StringBuilders are completely immutable in Java", "q_d": "Clearly Wrong",
-            "correct": "A",
+            "correct": "B",
             "explanation": "Java passes object references by value (copy of reference address). Mutating the referenced object affects the shared heap instance.",
             "group": "GRP_METH_MUTATION_TRANSFER",
             "outcome": "Transfer pass-by-value-of-reference concepts to mutable object modification",
@@ -385,6 +389,47 @@ QUESTION_TEMPLATES = {
         },
     ],
 }
+
+
+def _rotate_question_options(opt_dict, qual_dict, target_correct_letter):
+    """
+    Given 4 options and their 4 qualities, rearranges them so that the option
+    with quality 'Correct' is placed at target_correct_letter ('A', 'B', 'C', or 'D'),
+    and the remaining options/qualities fill the other positions.
+    """
+    letters = ["A", "B", "C", "D"]
+    items = []
+    for k in letters:
+        items.append({
+            "text": opt_dict.get(k, ""),
+            "quality": qual_dict.get(k, "Wrong"),
+        })
+
+    correct_item = next((it for it in items if it["quality"] == "Correct"), items[0])
+    other_items = [it for it in items if it is not correct_item]
+
+    # Target assignment
+    target_idx = letters.index(target_correct_letter) if target_correct_letter in letters else 0
+    assigned = [None, None, None, None]
+    assigned[target_idx] = correct_item
+
+    other_idx = 0
+    for i in range(4):
+        if assigned[i] is None:
+            assigned[i] = other_items[other_idx]
+            other_idx += 1
+
+    return {
+        "option_a": assigned[0]["text"],
+        "option_b": assigned[1]["text"],
+        "option_c": assigned[2]["text"],
+        "option_d": assigned[3]["text"],
+        "option_a_quality": assigned[0]["quality"],
+        "option_b_quality": assigned[1]["quality"],
+        "option_c_quality": assigned[2]["quality"],
+        "option_d_quality": assigned[3]["quality"],
+        "correct_option": target_correct_letter,
+    }
 
 
 class SchemaLLMQuestionService:
@@ -401,6 +446,7 @@ class SchemaLLMQuestionService:
     ) -> list:
         """
         Generates `count` draft questions for the given concept and filters.
+        Enforces balanced distribution of correct options (A, B, C, D) across the batch.
         Saves all generated questions to `generated_questions` with status PENDING.
         """
         concept = concept_name.strip() if concept_name else "Loops"
@@ -422,9 +468,52 @@ class SchemaLLMQuestionService:
         if not generated_raw:
             generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
 
-        # 3. Save into generated_questions table as PENDING
-        saved = SchemaQuestionBankService.save_generated_questions(generated_raw)
+        # 3. Post-process to guarantee balanced correct option distribution across the batch
+        generated_balanced = cls._rebalance_batch_options(generated_raw)
+
+        # 4. Save into generated_questions table as PENDING
+        saved = SchemaQuestionBankService.save_generated_questions(generated_balanced)
         return saved
+
+    @classmethod
+    def _rebalance_batch_options(cls, questions: list) -> list:
+        """
+        Ensures that within any generated batch, correct_option values are distributed
+        across A, B, C, D rather than clustering on a single letter (e.g. all A).
+        """
+        if not questions:
+            return []
+
+        letters = ["A", "B", "C", "D"]
+        # Check if all questions have the same correct option
+        correct_positions = [q.get("correct_option", "A") for q in questions]
+        all_same = len(set(correct_positions)) == 1
+
+        rebalanced = []
+        for i, q in enumerate(questions):
+            q_copy = dict(q)
+            target_letter = letters[i % 4]
+
+            # If all are same or if current question is missing correct_option, rotate
+            if all_same or q_copy.get("correct_option") != target_letter:
+                opt_dict = {
+                    "A": q_copy.get("option_a", ""),
+                    "B": q_copy.get("option_b", ""),
+                    "C": q_copy.get("option_c", ""),
+                    "D": q_copy.get("option_d", ""),
+                }
+                qual_dict = {
+                    "A": q_copy.get("option_a_quality", "Correct"),
+                    "B": q_copy.get("option_b_quality", "Nearly Correct"),
+                    "C": q_copy.get("option_c_quality", "Wrong"),
+                    "D": q_copy.get("option_d_quality", "Clearly Wrong"),
+                }
+                rotated = _rotate_question_options(opt_dict, qual_dict, target_letter)
+                q_copy.update(rotated)
+
+            rebalanced.append(q_copy)
+
+        return rebalanced
 
     @classmethod
     def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count):
@@ -454,9 +543,10 @@ Each question MUST strictly follow this exact 4-tier schema:
     - Exactly one "Nearly Correct" (worth 0.5 - represents a common misconception or off-by-one/partial reasoning)
     - Exactly one "Wrong" (worth 0.0 - weak conceptual understanding)
     - Exactly one "Clearly Wrong" (worth 0.0 - severe misconception or nonsense)
+- IMPORTANT: Distribute correct_option across A, B, C, and D across the questions in the batch. DO NOT make option A the correct answer for every question!
 - "correct_option" MUST be "A", "B", "C", or "D" corresponding to the option marked "Correct"
 - Include Java code snippet if applicable (or empty string "")
-- Include concise pedagogical explanation
+- Include concise pedagogical explanation for teachers
 - Include learning_outcome and target_error_type
 
 Return ONLY a JSON object with a single key "questions" containing a list of {count} question objects formatted as:
@@ -467,14 +557,14 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
       "question_text": "...",
       "code_snippet": "...",
       "option_a": "...",
-      "option_a_quality": "Correct",
+      "option_a_quality": "...",
       "option_b": "...",
-      "option_b_quality": "Nearly Correct",
+      "option_b_quality": "...",
       "option_c": "...",
-      "option_c_quality": "Wrong",
+      "option_c_quality": "...",
       "option_d": "...",
-      "option_d_quality": "Clearly Wrong",
-      "correct_option": "A",
+      "option_d_quality": "...",
+      "correct_option": "B",
       "explanation": "...",
       "learning_outcome": "...",
       "target_error_type": "..."
@@ -486,7 +576,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels."},
+                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels. You ensure correct answer positions are evenly distributed across A, B, C, D."},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"},
@@ -586,7 +676,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 
     @classmethod
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
-        """High-fidelity template generator producing varied questions matching the exact schema."""
+        """High-fidelity template generator producing varied questions with distributed answer positions."""
         templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES["Loops"])
         
         # Filter by question_type if specified
@@ -597,12 +687,29 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 
         results = []
         now = datetime.utcnow().isoformat() + "Z"
+        letters = ["A", "B", "C", "D"]
 
         for i in range(count):
             base = templates[i % len(templates)]
             variant_suffix = f"_{random.randint(100, 999)}"
             qid_prefix = concept[:4].upper()
             q_id = f"{qid_prefix}_Q{uuid.uuid4().hex[:4].upper()}"
+            target_letter = letters[i % 4]
+
+            opt_dict = {
+                "A": base.get("opt_a", "Option A"),
+                "B": base.get("opt_b", "Option B"),
+                "C": base.get("opt_c", "Option C"),
+                "D": base.get("opt_d", "Option D"),
+            }
+            qual_dict = {
+                "A": base.get("q_a", "Correct"),
+                "B": base.get("q_b", "Nearly Correct"),
+                "C": base.get("q_c", "Wrong"),
+                "D": base.get("q_d", "Clearly Wrong"),
+            }
+
+            rotated = _rotate_question_options(opt_dict, qual_dict, target_letter)
 
             question_obj = {
                 "id": f"GEN_{uuid.uuid4().hex[:8].upper()}",
@@ -615,15 +722,15 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "equivalent_group_id": f"{base.get('group', 'GRP_' + concept[:3].upper())}{variant_suffix}",
                 "question_text": base.get("text", f"Question about {concept}"),
                 "code_snippet": base.get("code", ""),
-                "option_a": base.get("opt_a", "Option A"),
-                "option_b": base.get("opt_b", "Option B"),
-                "option_c": base.get("opt_c", "Option C"),
-                "option_d": base.get("opt_d", "Option D"),
-                "correct_option": base.get("correct", "A"),
-                "option_a_quality": base.get("q_a", "Correct"),
-                "option_b_quality": base.get("q_b", "Nearly Correct"),
-                "option_c_quality": base.get("q_c", "Wrong"),
-                "option_d_quality": base.get("q_d", "Clearly Wrong"),
+                "option_a": rotated["option_a"],
+                "option_b": rotated["option_b"],
+                "option_c": rotated["option_c"],
+                "option_d": rotated["option_d"],
+                "correct_option": rotated["correct_option"],
+                "option_a_quality": rotated["option_a_quality"],
+                "option_b_quality": rotated["option_b_quality"],
+                "option_c_quality": rotated["option_c_quality"],
+                "option_d_quality": rotated["option_d_quality"],
                 "explanation": base.get("explanation", ""),
                 "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
                 "status": "PENDING",

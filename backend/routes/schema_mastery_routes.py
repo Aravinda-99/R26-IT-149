@@ -152,7 +152,7 @@ def get_approved_bank():
     Teacher views approved questions with exposure statistics and answer keys.
     """
     concept = request.args.get("concept")
-    active_only = request.args.get("active_only", "true").lower() == "true"
+    active_only = request.args.get("active_only", "false").lower() == "true"
     try:
         bank = SchemaQuestionBankService.get_approved_question_bank(concept=concept, active_only=active_only)
         return jsonify({
@@ -162,6 +162,49 @@ def get_approved_bank():
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6b. Teacher Dashboard Overview & Rejected Questions (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/teacher/overview", methods=["GET"])
+def get_teacher_overview():
+    """Returns overview counts for teacher dashboard cards."""
+    try:
+        stats = SchemaQuestionBankService.get_teacher_overview_stats()
+        return jsonify({"success": True, "stats": stats}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@schema_mastery_bp.route("/questions/rejected", methods=["GET"])
+def get_rejected_questions():
+    """Returns all rejected questions for teacher archive inspection."""
+    concept = request.args.get("concept")
+    try:
+        rejected = SchemaQuestionBankService.get_rejected_questions(concept=concept)
+        return jsonify({"success": True, "count": len(rejected), "questions": rejected}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@schema_mastery_bp.route("/questions/<question_id>/toggle-active", methods=["POST"])
+def toggle_question_active(question_id):
+    """Toggles active state of an approved question."""
+    data = request.get_json(silent=True) or {}
+    active_val = data.get("active")
+    try:
+        updated = SchemaQuestionBankService.toggle_approved_question_active(question_id, active=active_val)
+        if not updated:
+            return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
+        return jsonify({
+            "success": True,
+            "message": f"Question '{question_id}' active status set to {updated.get('active')}",
+            "question": updated,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -176,12 +219,14 @@ def get_post_test_questions():
     student_id = request.args.get("student_id", "STU001")
     concept = request.args.get("concept") or request.args.get("concept_name", "Loops")
     error_type = request.args.get("error_type")
+    session_id = request.args.get("session_id")
 
     try:
         payload = SchemaPostTestService.select_post_test_questions(
             student_id=student_id,
             concept=concept,
             error_type=error_type,
+            session_id=session_id,
         )
         return jsonify(payload), 200
     except Exception as e:

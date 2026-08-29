@@ -59,7 +59,19 @@ from firebase.firebase_service import db
 
 # ── Load trained ML model once when app starts ──────────────────────
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'model.pkl')
-model = joblib.load(MODEL_PATH)
+if not os.path.exists(MODEL_PATH):
+    MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml', 'model.pkl')
+
+try:
+    if os.path.exists(MODEL_PATH):
+        model = joblib.load(MODEL_PATH)
+    else:
+        model = None
+        print(f"[WARN] Adaptive model file not found at {MODEL_PATH}. Running adaptive service in fallback mode.")
+except Exception as e:
+    model = None
+    print(f"[WARN] Adaptive model could not be loaded. Running adaptive service in fallback mode.")
+
 
 TOPICS      = ["variables", "operators", "conditionals", "loops", "arrays", "methods"]
 LABEL_MAP   = {0: 'maintain', 1: 'promote', 2: 'demote'}
@@ -185,10 +197,21 @@ class AdaptiveService:
         ]]
 
         # ── ML model prediction (Model 1) ─────────────────────────────
-        prediction    = model.predict(features)[0]
-        probabilities = model.predict_proba(features)[0]
-        raw_action    = LABEL_MAP[int(prediction)]
-        confidence    = round(float(max(probabilities)) * 100, 1)
+        if model is not None:
+            try:
+                prediction    = model.predict(features)[0]
+                probabilities = model.predict_proba(features)[0]
+                raw_action    = LABEL_MAP[int(prediction)]
+                confidence    = round(float(max(probabilities)) * 100, 1)
+            except Exception as e:
+                print(f"[WARN] Adaptive ML prediction failed: {e}. Using fallback heuristic.")
+                overall_accuracy = AdaptiveService._get_overall_accuracy(session_data)
+                raw_action = 'promote' if overall_accuracy >= 0.8 else ('demote' if overall_accuracy < 0.4 else 'maintain')
+                confidence = 75.0
+        else:
+            overall_accuracy = AdaptiveService._get_overall_accuracy(session_data)
+            raw_action = 'promote' if overall_accuracy >= 0.8 else ('demote' if overall_accuracy < 0.4 else 'maintain')
+            confidence = 75.0
 
         # ── Safety Validation Layer ────────────────────────────────────
         # Corrects predictions that contradict the student's actual
