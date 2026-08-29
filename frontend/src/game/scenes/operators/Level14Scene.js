@@ -54,6 +54,16 @@ export class Level14Scene extends Phaser.Scene {
   constructor() { super({ key: "Level14Scene" }); }
 
   create() {
+    const cam = this.cameras.main;
+    const updateCamera = () => {
+      const zoom = Math.min(this.scale.width / W, this.scale.height / H);
+      cam.setZoom(zoom);
+      cam.centerOn(W / 2, H / 2);
+    };
+    updateCamera();
+    this.scale.on('resize', updateCamera, this);
+    this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
+
     this.physics.world.gravity.y = 0;
     this.waveIdx = 0; this.enemyIdx = 0; this.score = 0; this.combo = 0;
     this.playerHP = 100; this.playerMaxHP = 100; this.enemyHP = 0; this.enemyMaxHP = 0;
@@ -77,13 +87,15 @@ export class Level14Scene extends Phaser.Scene {
 
   _drawArena() {
     const gfx = this.add.graphics().setDepth(0);
-    for (let i = 0; i < 60; i++) { const t = i / 60; gfx.fillStyle(lerpColor(0x1a0a0a, 0x0a0a1a, t), 1); gfx.fillRect(0, Math.floor(H * i / 60), W, Math.ceil(H / 60) + 1); }
-    // Floor
+    // Stretched width: start at -W*2, span W*5 (Y span untouched — it
+    // already correctly tiles 0..H)
+    for (let i = 0; i < 60; i++) { const t = i / 60; gfx.fillStyle(lerpColor(0x1a0a0a, 0x0a0a1a, t), 1); gfx.fillRect(-W * 2, Math.floor(H * i / 60), W * 5, Math.ceil(H / 60) + 1); }
+    // Floor (Stretched)
     const fg = this.add.graphics().setDepth(1);
-    fg.fillStyle(0x333333, 1); fg.fillRect(0, 480, W, 120);
+    fg.fillStyle(0x333333, 1); fg.fillRect(-W * 2, 480, W * 5, 120);
     fg.lineStyle(1, 0x555555, 0.3);
-    for (let x = 0; x < W; x += 40)fg.lineBetween(x, 480, x, H);
-    for (let y = 480; y < H; y += 40)fg.lineBetween(0, y, W, y);
+    for (let x = -W * 2; x < W * 3; x += 40)fg.lineBetween(x, 480, x, H);
+    for (let y = 480; y < H; y += 40)fg.lineBetween(-W * 2, y, W * 3, y);
     // Torches
     [80, 720].forEach(x => {
       [200, 400].forEach(y => {
@@ -151,7 +163,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showIntro() {
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0a0a, 0.98); pg.fillRoundedRect(W / 2 - 280, 70, 560, 440, 16);
     pg.lineStyle(3, 0xef4444); pg.strokeRoundedRect(W / 2 - 280, 70, 560, 440, 16);
@@ -292,7 +304,7 @@ export class Level14Scene extends Phaser.Scene {
 
   _showGameOver() {
     this._clear();
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     this.add.text(W / 2, H / 2 - 30, "💀 Defeated!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
     this.add.text(W / 2, H / 2 + 10, `Score: ${this.score} | Battles: ${this.battlesWon}/${this.battlesDone}`, { fontFamily: "Arial", fontSize: "14px", color: "#94a3b8" }).setOrigin(0.5).setDepth(201);
     const rb = this.add.rectangle(W / 2 - 90, H / 2 + 60, 150, 44, 0xef4444).setDepth(201).setInteractive({ useHandCursor: true });
@@ -308,7 +320,7 @@ export class Level14Scene extends Phaser.Scene {
     const acc = this.battlesDone > 0 ? Math.round((this.battlesWon / this.battlesDone) * 100) : 0;
     const passed = acc >= 60;
     if (passed) { GameManager.completeLevel(13, acc); BadgeSystem.unlock("combat_calculator"); /* saved by GameManager */ this.cameras.main.flash(600, 100, 255, 100); }
-    const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
+    const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0a0a, 0.98); pg.fillRoundedRect(W / 2 - 260, 80, 520, 440, 16);
     pg.lineStyle(3, passed ? 0x4ade80 : 0xef4444); pg.strokeRoundedRect(W / 2 - 260, 80, 520, 440, 16);

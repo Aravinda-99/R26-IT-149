@@ -1,28 +1,3 @@
-/**
- * Level 46 — "The Archive" (ArrayList Methods: Accretion Phase — add(),
- * opening the ArrayList Wing after the 9-level Output Wing)
- * ===========================================================================
- * Teaches ArrayList<T> and add(): the list is a tall numbered bookshelf,
- * each add() places a book on the next empty shelf (0-based indices,
- * insertion order). The generic type parameter is a "shelf type stamp" —
- * enforced honestly at parse time: a wrong-type book is rejected with the
- * same "wrong type for the container" choreography established by
- * Scanner's InputMismatchException (L34/35) and printf's slot rejection
- * (L43/44/45), now at compile time instead of runtime.
- *
- * DESIGN NOTE — list-state panel formatting: Java's real ArrayList
- * toString() does NOT include quotes around String elements
- * (System.out.println(list) on ["Hello"] prints [Hello], not ["Hello"]).
- * The panel renders bare values, matching real Java; only the physical
- * BOOK SPINES show quotes (since that's how the String literal was
- * WRITTEN in code). Command-mission grading compares the honest
- * evaluator's resulting array (value+type, in order) against each
- * mission's target array directly — never a scripted bracket-notation
- * string comparison — which sidesteps the quote-formatting question
- * entirely and stays robust regardless of which valid cartridge order
- * or type-parameter form the player assembles.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";

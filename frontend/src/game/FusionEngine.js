@@ -81,6 +81,9 @@ export class FusionEngine {
   }
 
   resetForNewLevel() {
+    this.faceEmotionBuffer = [];
+    this.detectedEmotion = null;
+    this.fatigueLowEarStreak = 0;
     this.behavioralFlag = false;
   }
 

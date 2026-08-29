@@ -774,19 +774,19 @@ export class Level23Scene extends Phaser.Scene {
     const x = Phaser.Math.Between(250, 1030);
     const y = 235;
     const container = this.add.container(x, y).setDepth(25);
-    const header = this.add.rectangle(0, -18, 130, 6, C_AMBER).setOrigin(0.5, 0);
+    const header = this.add.rectangle(0, -18, 200, 6, C_AMBER).setOrigin(0.5, 0);
     const body = this.add.graphics();
     body.fillStyle(0x1a1a2e, 1);
-    body.fillRoundedRect(-65, -21, 130, 42, 8);
+    body.fillRoundedRect(-100, -21, 200, 42, 8);
     body.lineStyle(1, 0x3a4a5a, 1);
-    body.strokeRoundedRect(-65, -21, 130, 42, 8);
-    const label = expression.length > 20 ? expression.slice(0, 19) + "…" : expression;
+    body.strokeRoundedRect(-100, -21, 200, 42, 8);
+    const label = expression.length > 24 ? expression.slice(0, 23) + "…" : expression;
     const text = this.add.text(0, 2, label, {
       font: "bold 12px Courier New", color: "#e0e0e0",
     }).setOrigin(0.5);
     const bin1 = this.add.text(0, -19, "01101", { font: "7px Courier New", color: "#3d4450" }).setOrigin(0.5).setAlpha(0.3);
     const bin2 = this.add.text(0, 19, "10010", { font: "7px Courier New", color: "#3d4450" }).setOrigin(0.5).setAlpha(0.3);
-    const dot = this.add.circle(60, 0, 3, C_AMBER, 0.8);
+    const dot = this.add.circle(88, 0, 3, C_AMBER, 0.8);
     this.tweens.add({ targets: dot, alpha: 0.3, duration: 400, yoyo: true, repeat: -1 });
     container.add([body, header, text, bin1, bin2, dot]);
 
@@ -858,9 +858,9 @@ export class Level23Scene extends Phaser.Scene {
       const rightHalf = this.add.container(cx, cy).setDepth(25);
       const rg = this.add.graphics();
       rg.fillStyle(0x1a1a2e, 1);
-      rg.fillRoundedRect(0, -21, 65, 42, 8);
+      rg.fillRoundedRect(0, -21, 100, 42, 8);
       rg.lineStyle(1, C_RED, 1);
-      rg.strokeRoundedRect(0, -21, 65, 42, 8);
+      rg.strokeRoundedRect(0, -21, 100, 42, 8);
       rightHalf.add(rg);
       this.tweens.add({ targets: p.container, x: cx - 60, angle: -15, alpha: 0, duration: 300 });
       this.tweens.add({
@@ -1094,7 +1094,8 @@ export class Level23Scene extends Phaser.Scene {
   renderPredictOutput(cfg) {
     const panel = this.createCodePanel(cfg.code);
     this._codePanel = panel;
-    const positions = [[660, 260], [890, 260], [660, 335], [890, 335]];
+    // Shifted X coordinates further right, closer together
+    const positions = [[730, 260], [920, 260], [730, 335], [920, 335]];
     this._predictButtons = cfg.options.map((opt, i) => {
       const [x, y] = positions[i];
       const c = this.add.container(x, y).setDepth(20);
@@ -1102,14 +1103,15 @@ export class Level23Scene extends Phaser.Scene {
       const draw = (stroke) => {
         g.clear();
         g.fillStyle(0x1a1a2e, 1);
-        g.fillRoundedRect(-105, -29, 210, 58, 10);
+        // Reduced width from 210 to 170
+        g.fillRoundedRect(-85, -29, 170, 58, 10);
         g.lineStyle(1.5, stroke, 1);
-        g.strokeRoundedRect(-105, -29, 210, 58, 10);
+        g.strokeRoundedRect(-85, -29, 170, 58, 10);
       };
       draw(0x30363d);
       const t = this.add.text(0, 0, opt, { font: "bold 15px Courier New", color: "#e0e0e0" }).setOrigin(0.5);
       c.add([g, t]);
-      c.setSize(210, 58);
+      c.setSize(170, 58); // Update interactive size
       c.setInteractive({ useHandCursor: true });
       c.on("pointerover", () => { if (!this.answered) { draw(C_CYAN); c.setScale(1.03); } });
       c.on("pointerout", () => { draw(0x30363d); c.setScale(1); });
@@ -1625,7 +1627,13 @@ export class Level23Scene extends Phaser.Scene {
       font: "16px Arial", color: HEX_GRAY,
     }).setOrigin(0.5).setDepth(91);
 
-    this._makeButton(640, 420, "RETRY", 180, 50, { stroke: C_RED, textColor: HEX_RED }, () => this.scene.restart());
+    this._makeButton(540, 420, "RETRY", 160, 50, {
+      stroke: C_RED, textColor: HEX_RED,
+    }, () => this.scene.restart());
+
+    this._makeButton(740, 420, "MENU", 160, 50, {
+      stroke: C_GRAY, textColor: HEX_GRAY,
+    }, () => this.scene.start("MenuScene"));
   }
 
   levelComplete() {

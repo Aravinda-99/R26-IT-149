@@ -1640,9 +1640,13 @@ export class Level22Scene extends Phaser.Scene {
       font: "16px Arial", color: HEX_GRAY,
     }).setOrigin(0.5).setDepth(91);
 
-    this._makeButton(640, 420, "RETRY", 180, 50, {
+    this._makeButton(540, 420, "RETRY", 160, 50, {
       stroke: C_RED, textColor: HEX_RED,
     }, () => this.scene.restart());
+
+    this._makeButton(740, 420, "MENU", 160, 50, {
+      stroke: C_GRAY, textColor: HEX_GRAY,
+    }, () => this.scene.start("MenuScene"));
   }
 
   levelComplete() {
