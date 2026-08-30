@@ -427,10 +427,72 @@ class SchemaLLMQuestionService:
         return saved
 
     @classmethod
+    def rebalance_options_dict(cls, opt_items: list, target_correct_letter: str = None) -> dict:
+        """
+        Given a list of 4 (text, quality) tuples/dicts, places 'Correct' at target_correct_letter
+        (or rotates across A/B/C/D) and distributes distractors across the other slots.
+        Returns a dictionary with option_a..d, option_a_quality..d_quality, and correct_option.
+        """
+        letters = ["A", "B", "C", "D"]
+        correct_item = None
+        distractors = []
+
+        for item in opt_items:
+            t = str(item.get("text", "")).strip()
+            q = str(item.get("quality", "")).strip()
+            if q == "Correct":
+                correct_item = (t, q)
+            else:
+                distractors.append((t, q))
+
+        # Fallback if no Correct label found
+        if not correct_item:
+            if distractors:
+                correct_item = (distractors[0][0], "Correct")
+                distractors = distractors[1:]
+            else:
+                correct_item = ("Correct Answer", "Correct")
+
+        # Ensure we have exactly 3 distractors
+        default_qualities = ["Nearly Correct", "Wrong", "Clearly Wrong"]
+        while len(distractors) < 3:
+            dq = default_qualities[len(distractors)]
+            distractors.append((f"Distractor ({dq})", dq))
+        distractors = distractors[:3]
+
+        random.shuffle(distractors)
+
+        if not target_correct_letter or target_correct_letter.upper() not in letters:
+            target_correct_letter = random.choice(letters)
+        else:
+            target_correct_letter = target_correct_letter.upper()
+
+        assigned = {}
+        dist_idx = 0
+        for l in letters:
+            if l == target_correct_letter:
+                assigned[l] = correct_item
+            else:
+                assigned[l] = distractors[dist_idx]
+                dist_idx += 1
+
+        return {
+            "option_a": assigned["A"][0],
+            "option_a_quality": assigned["A"][1],
+            "option_b": assigned["B"][0],
+            "option_b_quality": assigned["B"][1],
+            "option_c": assigned["C"][0],
+            "option_c_quality": assigned["C"][1],
+            "option_d": assigned["D"][0],
+            "option_d_quality": assigned["D"][1],
+            "correct_option": target_correct_letter,
+        }
+
+    @classmethod
     def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count):
         """
         Generates draft questions using OpenAI API if OPENAI_API_KEY is available.
-        Validates JSON schema, 4-tier answer qualities, and returns draft question dicts.
+        Validates JSON schema, 4-tier answer qualities, and enforces balanced A/B/C/D positions.
         """
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key or api_key.startswith("your_openai"):
@@ -454,7 +516,8 @@ Each question MUST strictly follow this exact 4-tier schema:
     - Exactly one "Nearly Correct" (worth 0.5 - represents a common misconception or off-by-one/partial reasoning)
     - Exactly one "Wrong" (worth 0.0 - weak conceptual understanding)
     - Exactly one "Clearly Wrong" (worth 0.0 - severe misconception or nonsense)
-- "correct_option" MUST be "A", "B", "C", or "D" corresponding to the option marked "Correct"
+- "correct_option" MUST be "A", "B", "C", or "D" corresponding to the option marked "Correct".
+- BALANCED ANSWER DISTRIBUTION: You MUST vary and distribute the "Correct" option across A, B, C, and D evenly throughout the {count} questions (e.g. Q1 -> A, Q2 -> B, Q3 -> C, Q4 -> D, etc.). Do NOT make option A always the correct answer!
 - Include Java code snippet if applicable (or empty string "")
 - Include concise pedagogical explanation
 - Include learning_outcome and target_error_type
@@ -467,14 +530,14 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
       "question_text": "...",
       "code_snippet": "...",
       "option_a": "...",
-      "option_a_quality": "Correct",
+      "option_a_quality": "Wrong",
       "option_b": "...",
-      "option_b_quality": "Nearly Correct",
+      "option_b_quality": "Correct",
       "option_c": "...",
-      "option_c_quality": "Wrong",
+      "option_c_quality": "Nearly Correct",
       "option_d": "...",
       "option_d_quality": "Clearly Wrong",
-      "correct_option": "A",
+      "correct_option": "B",
       "explanation": "...",
       "learning_outcome": "...",
       "target_error_type": "..."
@@ -486,7 +549,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels."},
+                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels and balanced option positions."},
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"},
@@ -499,8 +562,10 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 
             validated = []
             now = datetime.utcnow().isoformat() + "Z"
-            for item in raw_list:
-                val_q = cls._validate_and_format_question(item, concept, difficulty, target_error_type, now, source="OpenAI GPT-4o-mini")
+            letters = ["A", "B", "C", "D"]
+            for idx, item in enumerate(raw_list):
+                target_letter = letters[idx % len(letters)]
+                val_q = cls._validate_and_format_question(item, concept, difficulty, target_error_type, now, source="OpenAI GPT-4o-mini", target_correct_letter=target_letter)
                 if val_q:
                     validated.append(val_q)
 
@@ -514,8 +579,8 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         return None
 
     @classmethod
-    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM_Generator"):
-        """Validates and enforces strict 4-tier quality labels and 4 options A/B/C/D."""
+    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM_Generator", target_correct_letter=None):
+        """Validates and enforces strict 4-tier quality labels and 4 options A/B/C/D with balanced positions."""
         if not isinstance(q, dict):
             return None
 
@@ -536,25 +601,15 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         qual_c = q.get("option_c_quality") or q.get("q_c") or "Wrong"
         qual_d = q.get("option_d_quality") or q.get("q_d") or "Clearly Wrong"
 
-        valid_qualities = {"Correct", "Nearly Correct", "Wrong", "Clearly Wrong"}
-        qualities = [qual_a, qual_b, qual_c, qual_d]
-        if not all(k in valid_qualities for k in qualities):
-            # Attempt gentle fix
-            qual_a, qual_b, qual_c, qual_d = "Correct", "Nearly Correct", "Wrong", "Clearly Wrong"
+        raw_opts = [
+            {"text": opt_a, "quality": qual_a},
+            {"text": opt_b, "quality": qual_b},
+            {"text": opt_c, "quality": qual_c},
+            {"text": opt_d, "quality": qual_d},
+        ]
 
-        # Determine correct_option based on "Correct" label
-        correct_letter = "A"
-        if qual_a == "Correct":
-            correct_letter = "A"
-        elif qual_b == "Correct":
-            correct_letter = "B"
-        elif qual_c == "Correct":
-            correct_letter = "C"
-        elif qual_d == "Correct":
-            correct_letter = "D"
-        else:
-            qual_a = "Correct"
-            correct_letter = "A"
+        # Rebalance options so correct answer is at target_correct_letter
+        balanced = cls.rebalance_options_dict(raw_opts, target_correct_letter=target_correct_letter)
 
         qid_prefix = concept[:4].upper()
         return {
@@ -568,26 +623,28 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             "equivalent_group_id": q.get("equivalent_group_id") or f"GRP_{concept[:3].upper()}_{random.randint(100, 999)}",
             "question_text": str(text).strip(),
             "code_snippet": q.get("code_snippet") or q.get("code", ""),
-            "option_a": opt_a,
-            "option_b": opt_b,
-            "option_c": opt_c,
-            "option_d": opt_d,
-            "correct_option": correct_letter,
-            "option_a_quality": qual_a,
-            "option_b_quality": qual_b,
-            "option_c_quality": qual_c,
-            "option_d_quality": qual_d,
-            "explanation": q.get("explanation") or f"The correct answer is {correct_letter}.",
+            "option_a": balanced["option_a"],
+            "option_b": balanced["option_b"],
+            "option_c": balanced["option_c"],
+            "option_d": balanced["option_d"],
+            "correct_option": balanced["correct_option"],
+            "option_a_quality": balanced["option_a_quality"],
+            "option_b_quality": balanced["option_b_quality"],
+            "option_c_quality": balanced["option_c_quality"],
+            "option_d_quality": balanced["option_d_quality"],
+            "explanation": q.get("explanation") or f"The correct answer is Option {balanced['correct_option']}.",
             "generated_by": f"{source} (Teacher-Review Pipeline)",
             "status": "PENDING",
+            "active": True,
+            "deleted": False,
             "created_at": timestamp,
             "updated_at": timestamp,
         }
 
     @classmethod
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
-        """High-fidelity template generator producing varied questions matching the exact schema."""
-        templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES["Loops"])
+        """High-fidelity template generator producing varied questions with balanced A/B/C/D correct options."""
+        templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES.get("Loops", []))
         
         # Filter by question_type if specified
         if question_type and question_type in VALID_TYPES:
@@ -597,12 +654,23 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 
         results = []
         now = datetime.utcnow().isoformat() + "Z"
+        letters = ["A", "B", "C", "D"]
 
         for i in range(count):
             base = templates[i % len(templates)]
             variant_suffix = f"_{random.randint(100, 999)}"
             qid_prefix = concept[:4].upper()
             q_id = f"{qid_prefix}_Q{uuid.uuid4().hex[:4].upper()}"
+            target_letter = letters[i % len(letters)]
+
+            raw_opts = [
+                {"text": base.get("opt_a", "Option A"), "quality": base.get("q_a", "Correct")},
+                {"text": base.get("opt_b", "Option B"), "quality": base.get("q_b", "Nearly Correct")},
+                {"text": base.get("opt_c", "Option C"), "quality": base.get("q_c", "Wrong")},
+                {"text": base.get("opt_d", "Option D"), "quality": base.get("q_d", "Clearly Wrong")},
+            ]
+
+            balanced = cls.rebalance_options_dict(raw_opts, target_correct_letter=target_letter)
 
             question_obj = {
                 "id": f"GEN_{uuid.uuid4().hex[:8].upper()}",
@@ -615,18 +683,20 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "equivalent_group_id": f"{base.get('group', 'GRP_' + concept[:3].upper())}{variant_suffix}",
                 "question_text": base.get("text", f"Question about {concept}"),
                 "code_snippet": base.get("code", ""),
-                "option_a": base.get("opt_a", "Option A"),
-                "option_b": base.get("opt_b", "Option B"),
-                "option_c": base.get("opt_c", "Option C"),
-                "option_d": base.get("opt_d", "Option D"),
-                "correct_option": base.get("correct", "A"),
-                "option_a_quality": base.get("q_a", "Correct"),
-                "option_b_quality": base.get("q_b", "Nearly Correct"),
-                "option_c_quality": base.get("q_c", "Wrong"),
-                "option_d_quality": base.get("q_d", "Clearly Wrong"),
-                "explanation": base.get("explanation", ""),
+                "option_a": balanced["option_a"],
+                "option_b": balanced["option_b"],
+                "option_c": balanced["option_c"],
+                "option_d": balanced["option_d"],
+                "correct_option": balanced["correct_option"],
+                "option_a_quality": balanced["option_a_quality"],
+                "option_b_quality": balanced["option_b_quality"],
+                "option_c_quality": balanced["option_c_quality"],
+                "option_d_quality": balanced["option_d_quality"],
+                "explanation": base.get("explanation") or f"The correct answer is Option {balanced['correct_option']}.",
                 "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
                 "status": "PENDING",
+                "active": True,
+                "deleted": False,
                 "created_at": now,
                 "updated_at": now,
             }

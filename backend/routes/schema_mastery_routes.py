@@ -74,16 +74,37 @@ def get_pending_questions():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. Edit Draft Question (Teacher/Admin)
+# 2b. Get Rejected Questions Archive (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/rejected", methods=["GET"])
+def get_rejected_questions():
+    """
+    Retrieves all rejected draft questions for teacher audit & reactivation.
+    """
+    concept = request.args.get("concept")
+    try:
+        rejected = SchemaQuestionBankService.get_rejected_questions(concept=concept)
+        return jsonify({
+            "success": True,
+            "count": len(rejected),
+            "questions": rejected,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Edit Question (Teacher/Admin)
 # ─────────────────────────────────────────────────────────────────────────────
 @schema_mastery_bp.route("/questions/<question_id>", methods=["PUT"])
 def edit_question(question_id):
     """
-    Teacher edits a draft question before approving.
+    Teacher edits a draft or approved question.
     """
     updates = request.get_json(silent=True) or {}
+    updated_by = updates.get("updated_by", "Teacher")
     try:
-        updated = SchemaQuestionBankService.update_generated_question(question_id, updates)
+        updated = SchemaQuestionBankService.update_question(question_id, updates, updated_by=updated_by)
         if not updated:
             return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
         return jsonify({
@@ -91,6 +112,8 @@ def edit_question(question_id):
             "message": f"Question '{question_id}' updated successfully",
             "question": updated,
         }), 200
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -115,6 +138,8 @@ def approve_question(question_id):
             "message": f"Question '{question_id}' approved and added to active question bank",
             "question": approved,
         }), 200
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -129,15 +154,85 @@ def reject_question(question_id):
     """
     data = request.get_json(silent=True) or {}
     reason = data.get("reason", "Rejected by teacher review")
+    rejected_by = data.get("rejected_by", "Teacher")
 
     try:
-        rejected = SchemaQuestionBankService.reject_question(question_id, reason=reason)
+        rejected = SchemaQuestionBankService.reject_question(question_id, reason=reason, rejected_by=rejected_by)
         if not rejected:
             return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
         return jsonify({
             "success": True,
             "message": f"Question '{question_id}' marked as REJECTED",
             "question": rejected,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5b. Deactivate Question (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/<question_id>/deactivate", methods=["POST"])
+def deactivate_question(question_id):
+    """
+    Deactivates an approved question so it is not sampled for student post-tests.
+    """
+    data = request.get_json(silent=True) or {}
+    updated_by = data.get("updated_by", "Teacher")
+    try:
+        deactivated = SchemaQuestionBankService.deactivate_question(question_id, updated_by=updated_by)
+        if not deactivated:
+            return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
+        return jsonify({
+            "success": True,
+            "message": f"Question '{question_id}' deactivated",
+            "question": deactivated,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5c. Reactivate Question (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/<question_id>/reactivate", methods=["POST"])
+def reactivate_question(question_id):
+    """
+    Reactivates a deactivated or rejected question.
+    """
+    data = request.get_json(silent=True) or {}
+    updated_by = data.get("updated_by", "Teacher")
+    try:
+        reactivated = SchemaQuestionBankService.reactivate_question(question_id, updated_by=updated_by)
+        if not reactivated:
+            return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
+        return jsonify({
+            "success": True,
+            "message": f"Question '{question_id}' reactivated",
+            "question": reactivated,
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5d. Delete Question (Teacher/Admin - Soft Delete)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/<question_id>", methods=["DELETE"])
+@schema_mastery_bp.route("/questions/<question_id>/delete", methods=["POST"])
+def delete_question(question_id):
+    """
+    Soft deletes a question, removing it from active assessment rotation.
+    """
+    data = request.get_json(silent=True) or {}
+    deleted_by = data.get("deleted_by", "Teacher")
+    try:
+        deleted = SchemaQuestionBankService.delete_question(question_id, deleted_by=deleted_by)
+        if not deleted:
+            return jsonify({"success": False, "error": f"Question '{question_id}' not found"}), 404
+        return jsonify({
+            "success": True,
+            "message": f"Question '{question_id}' deleted successfully",
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -152,9 +247,14 @@ def get_approved_bank():
     Teacher views approved questions with exposure statistics and answer keys.
     """
     concept = request.args.get("concept")
-    active_only = request.args.get("active_only", "true").lower() == "true"
+    active_only = request.args.get("active_only", "false").lower() == "true"
+    include_deleted = request.args.get("include_deleted", "false").lower() == "true"
     try:
-        bank = SchemaQuestionBankService.get_approved_question_bank(concept=concept, active_only=active_only)
+        bank = SchemaQuestionBankService.get_approved_question_bank(
+            concept=concept,
+            active_only=active_only,
+            include_deleted=include_deleted
+        )
         return jsonify({
             "success": True,
             "count": len(bank),

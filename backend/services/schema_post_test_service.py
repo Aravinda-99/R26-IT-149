@@ -108,31 +108,59 @@ class SchemaPostTestService:
                 selected_questions.append(pool[idx % len(pool)])
                 idx += 1
 
-        # 6. Sanitize for student delivery (MUST NOT expose correct_option or option_qualities)
+        # 6. Sanitize and Shuffle Options for student delivery
+        # MUST NOT expose correct_option or option_qualities to the student
+        session_id = f"SES_{uuid.uuid4().hex[:8].upper()}"
+        session_shuffle = {}
         student_safe_questions = []
+        letters = ["A", "B", "C", "D"]
+
         for q in selected_questions:
+            qid = q.get("question_id")
+            canonical_items = [
+                ("A", q.get("option_a", "")),
+                ("B", q.get("option_b", "")),
+                ("C", q.get("option_c", "")),
+                ("D", q.get("option_d", "")),
+            ]
+            
+            # Shuffle the 4 options for this student session
+            shuffled_items = list(canonical_items)
+            import random
+            random.shuffle(shuffled_items)
+
+            disp_opts = {}
+            q_map = {}
+            for idx, disp_let in enumerate(letters):
+                canon_let, text = shuffled_items[idx]
+                disp_opts[disp_let] = text
+                q_map[disp_let] = canon_let
+
+            session_shuffle[qid] = q_map
+
             student_safe_questions.append({
-                "question_id": q.get("question_id"),
+                "question_id": qid,
                 "concept_name": q.get("concept_name"),
                 "question_type": q.get("question_type"),
                 "difficulty": q.get("difficulty"),
                 "question_text": q.get("question_text") or q.get("question"),
                 "code_snippet": q.get("code_snippet") or q.get("code", ""),
-                "options": {
-                    "A": q.get("option_a", ""),
-                    "B": q.get("option_b", ""),
-                    "C": q.get("option_c", ""),
-                    "D": q.get("option_d", ""),
-                },
+                "options": disp_opts,
             })
+
+        # Cache session shuffle map in memory
+        cls._SESSION_SHUFFLE_CACHE[session_id] = session_shuffle
 
         return {
             "success": True,
+            "session_id": session_id,
             "student_id": student_id,
             "concept_name": concept_clean,
             "total_questions": len(student_safe_questions),
             "questions": student_safe_questions,
         }
+
+    _SESSION_SHUFFLE_CACHE = {}
 
     @classmethod
     def grade_and_predict(cls, submission: dict) -> dict:
@@ -162,28 +190,33 @@ class SchemaPostTestService:
         used_qids = []
         review_items = []
 
+        session_map = cls._SESSION_SHUFFLE_CACHE.get(session_id, {})
+
         # Evaluate each answer
         for idx, item in enumerate(answers):
             qid = item.get("question_id")
-            selected = str(item.get("selected_option", "")).strip().upper()
+            selected_disp = str(item.get("selected_option", "")).strip().upper()
             used_qids.append(qid)
 
-            # Look up hidden metadata
+            # Map displayed student option back to canonical option key (A/B/C/D)
+            q_map = session_map.get(qid, {})
+            canonical_selected = q_map.get(selected_disp, selected_disp)
+
+            # Look up hidden metadata in approved bank
             q_meta = SchemaQuestionBankService.get_approved_question_by_id(qid)
             if not q_meta:
-                # Fallback search in pending or mock defaults
                 q_meta = SchemaQuestionBankService.get_generated_question_by_id(qid) or {}
 
             correct_option = str(q_meta.get("correct_option", "A")).upper()
             
-            # Map quality of selected option
+            # Map quality of canonical selected option
             quality_map = {
                 "A": q_meta.get("option_a_quality", "Correct" if correct_option == "A" else "Wrong"),
                 "B": q_meta.get("option_b_quality", "Correct" if correct_option == "B" else "Wrong"),
                 "C": q_meta.get("option_c_quality", "Correct" if correct_option == "C" else "Wrong"),
                 "D": q_meta.get("option_d_quality", "Correct" if correct_option == "D" else "Wrong"),
             }
-            selected_quality = quality_map.get(selected, "Wrong")
+            selected_quality = quality_map.get(canonical_selected, "Wrong")
 
             if selected_quality == "Correct":
                 correct_count += 1
@@ -205,7 +238,8 @@ class SchemaPostTestService:
                 "concept_name": concept_name,
                 "question_id": qid,
                 "equivalent_group_id": q_meta.get("equivalent_group_id", "GRP_DEFAULT"),
-                "selected_option": selected,
+                "selected_option": canonical_selected,
+                "displayed_option": selected_disp,
                 "answer_quality": selected_quality,
                 "is_correct": is_correct,
                 "attempt_no": attempt_count,
@@ -221,7 +255,8 @@ class SchemaPostTestService:
             review_items.append({
                 "question_id": qid,
                 "question": q_meta.get("question_text") or f"Question {idx+1}",
-                "selected": selected,
+                "selected": canonical_selected,
+                "selected_displayed": selected_disp,
                 "correct": correct_option,
                 "is_correct": is_correct,
                 "answer_quality": selected_quality,

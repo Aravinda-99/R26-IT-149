@@ -10,6 +10,7 @@ import { getCurrentUser } from "../utils/auth.js";
 
 // ── State ───────────────────────────────────────────────────────────
 let currentStudentId = null;
+let currentSessionId = null;
 let currentConcept = "Loops";
 let currentErrorType = "LOOP_CONDITION_ERROR";
 let currentPreTestScore = 0.50;
@@ -143,9 +144,14 @@ async function loadQuestionsAndStart(container) {
     `;
 
     try {
-        const res = await SchemaMasteryAPI.getPostTestQuestions(currentConcept, 15);
+        const res = await SchemaMasteryAPI.getPostTestQuestions({
+            concept: currentConcept,
+            student_id: currentStudentId,
+            error_type: currentErrorType,
+        });
         if (res && res.questions && res.questions.length > 0) {
             questions = res.questions;
+            currentSessionId = res.session_id || null;
         } else {
             throw new Error("No approved questions found for this topic.");
         }
@@ -312,6 +318,7 @@ async function submitPostTest(container) {
     try {
         const payload = {
             student_id: currentStudentId,
+            session_id: currentSessionId,
             concept_name: currentConcept,
             pre_test_score: currentPreTestScore,
             attempt_count: currentAttemptCount,
