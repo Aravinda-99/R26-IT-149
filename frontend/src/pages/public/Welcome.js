@@ -269,6 +269,6 @@ export function renderWelcome(container) {
         };
 
         setCurrentUser(studentUser);
-        window.location.hash = "#/student/dashboard";
+        window.location.hash = "#/student/home";
     });
 }

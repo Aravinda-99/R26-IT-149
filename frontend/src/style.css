@@ -6485,7 +6485,19 @@ textarea.input-field {
     .hub-workspace-grid {
         grid-template-columns: 1fr !important;
     }
+    .auth-card-split {
+        grid-template-columns: 1fr !important;
+    }
+    .auth-side-pane {
+        padding: 2rem 1.5rem !important;
+        border-right: none !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+    }
+    .auth-main-pane {
+        padding: 2.25rem 1.5rem !important;
+    }
 }
+
 
 
 

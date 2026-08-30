@@ -212,10 +212,10 @@ function renderQuestionScreen(container, index) {
                 <!-- MCQ Options -->
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     ${optKeys.map((key) => {
-                        const optText = (q.options && q.options[key]) || "";
-                        if (!optText) return "";
-                        const isSelected = selectedAnswers[q.question_id] === key;
-                        return `
+        const optText = (q.options && q.options[key]) || "";
+        if (!optText) return "";
+        const isSelected = selectedAnswers[q.question_id] === key;
+        return `
                             <button class="opt-choice-btn" data-key="${key}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; background: ${isSelected ? 'var(--primary-soft)' : '#FFFFFF'}; border: 2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; color: var(--text-primary);">
                                 <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${isSelected ? 'var(--primary)' : 'var(--bg-subtle)'}; color: ${isSelected ? '#FFFFFF' : 'var(--text-secondary)'}; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
                                     ${key}
@@ -223,7 +223,7 @@ function renderQuestionScreen(container, index) {
                                 <span style="font-size: 0.95rem; font-weight: ${isSelected ? '600' : '400'};">${escapeHtml(optText)}</span>
                             </button>
                         `;
-                    }).join("")}
+    }).join("")}
                 </div>
             </div>
 
@@ -234,23 +234,23 @@ function renderQuestionScreen(container, index) {
                 </button>
 
                 ${isLast
-                    ? `<button class="btn btn-primary" id="submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''} style="padding: 0.7rem 2rem; font-weight: 700;">Submit Check <i class="fa-solid fa-check"></i></button>`
-                    : `<button class="btn btn-primary" id="next-btn" ${!selectedAnswers[q.question_id] ? 'disabled' : ''} style="padding: 0.6rem 1.8rem; font-weight: 600;">Next →</button>`
-                }
+            ? `<button class="btn btn-primary" id="submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''} style="padding: 0.7rem 2rem; font-weight: 700;">Submit Check <i class="fa-solid fa-check"></i></button>`
+            : `<button class="btn btn-primary" id="next-btn" ${!selectedAnswers[q.question_id] ? 'disabled' : ''} style="padding: 0.6rem 1.8rem; font-weight: 600;">Next →</button>`
+        }
             </div>
 
             <!-- Question Dot Palette -->
             <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
                 ${questions.map((item, i) => {
-                    const isAnswered = Boolean(selectedAnswers[item.question_id]);
-                    const isCurrent = i === index;
-                    let bg = "var(--border-color)";
-                    if (isAnswered) bg = "var(--success)";
-                    if (isCurrent) bg = "var(--primary)";
-                    return `
+            const isAnswered = Boolean(selectedAnswers[item.question_id]);
+            const isCurrent = i === index;
+            let bg = "var(--border-color)";
+            if (isAnswered) bg = "var(--success)";
+            if (isCurrent) bg = "var(--primary)";
+            return `
                         <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;"></span>
                     `;
-                }).join("")}
+        }).join("")}
             </div>
         </div>
     `;
@@ -355,6 +355,7 @@ function renderResultScreen(container, res) {
     const levelColor = levelColors[res.mastery_level] || (isDone ? "var(--success)" : "var(--danger)");
 
     const friendlyAction = isDone ? "Continue" : "Review Again";
+    const learningStatus = res.learning_status || (isDone ? "Progressing Well" : "Developing");
     const scorePct = Math.round((res.post_test_score || 0) * 100);
 
     const message = isDone
@@ -371,6 +372,9 @@ function renderResultScreen(container, res) {
                     ${isDone ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-rotate-left"></i>'}
                 </div>
 
+                <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">
+                    Understanding Level
+                </div>
                 <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.3rem;">
                     ${res.mastery_level}
                 </h1>
@@ -385,6 +389,9 @@ function renderResultScreen(container, res) {
                     </div>
                     <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 0.3rem;">
                         Recommended Step: <span style="color: ${levelColor}">${friendlyAction}</span>
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.25rem;">
+                        Learning Status: <strong>${escapeHtml(learningStatus)}</strong>
                     </div>
                     <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
                         Score Achieved: <strong>${scorePct}%</strong>
@@ -418,12 +425,15 @@ function renderResultScreen(container, res) {
                     <p style="margin: 0; font-weight: 500;">${message}</p>
                 </div>
 
-                <!-- Primary Action Button -->
-                <div>
+                <!-- Primary Action Buttons -->
+                <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     ${isDone
-                        ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 3rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue to Dashboard</a>`
-                        : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 3rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Review with Game Lesson</a>`
-                    }
+            ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue</a>`
+            : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Review with Game Lesson</a>`
+        }
+                    <a href="#/student/profile" class="btn btn-outline btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;">
+                        <i class="fa-solid fa-user"></i> ${isDone ? "Done / View Profile" : "Done"}
+                    </a>
                 </div>
             </div>
 

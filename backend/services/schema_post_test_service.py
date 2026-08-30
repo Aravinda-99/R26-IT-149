@@ -14,6 +14,7 @@ Manages:
 import uuid
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
+from services.schema_post_test_result_service import SchemaPostTestResultService
 from firebase.firebase_service import db
 
 BLUEPRINT = {
@@ -290,6 +291,8 @@ class SchemaPostTestService:
         mastery_level = ml_prediction.get("mastery_level", "Needs More Practice")
         next_action = ml_prediction.get("next_action", "LEARN_AGAIN")
         model_used = ml_prediction.get("model_used", "schema_mastery_pipeline")
+        learning_status = SchemaPostTestResultService.learning_status_for_level(mastery_level)
+        student_next_action_label = SchemaPostTestResultService.student_next_action_label(next_action)
 
         # Friendly explanation message for student
         if next_action == "DONE":
@@ -318,61 +321,87 @@ class SchemaPostTestService:
             "model_used": model_used,
         }
 
-        SchemaQuestionBankService.save_mastery_session(session_record)
+        SchemaQuestionBankService.save_mastery_session(session_record, sync_firestore=False)
         SchemaQuestionBankService.save_question_attempts(question_attempts)
         SchemaQuestionBankService.increment_exposure_counts(used_qids)
 
-        # Write to mcq_posttest_results so mastery_service.get_status can set
-        # postTestCompleted=True and mcqPostTestScore when the dashboard reloads.
-        # Doc ID pattern must match the READ side in mastery_service.py:
-        #   mcq_doc_id = f"{user_id}_{concept_key}"  (concept_key is lowercase)
-        if db:
-            try:
-                concept_key = concept_name.strip().lower()
-                mcq_doc_id = f"{student_id}_{concept_key}"
-                mcq_ref = db.collection("mcq_posttest_results").document(mcq_doc_id)
-                existing_doc = mcq_ref.get()
-                created_at_ts = None
-                attempt_number = 1
-                if existing_doc.exists:
-                    prev = existing_doc.to_dict() or {}
-                    created_at_ts = prev.get("createdAt")
-                    attempt_number = int(prev.get("attemptNumber", 0) or 0) + 1
+        try:
+            from services.user_storage_service import UserStorageService
+            student_profile = UserStorageService.get_user(student_id) or {}
+        except Exception:
+            student_profile = {}
 
-                from utils.helpers import timestamp_now
-                now_ts = timestamp_now()
-                # currentLevel must end with " Level" — mastery_service strips it
-                if next_action == "DONE":
-                    current_level_label = "Developing Level"
-                else:
-                    current_level_label = "Fragile Level"
+        from utils.helpers import timestamp_now
+        now_ts = timestamp_now()
+        result_id = SchemaPostTestResultService.make_result_id(student_id, session_id)
+        current_level_label = {
+            "Strong Understanding": "Stable Level",
+            "Good Progress": "Developing Level",
+            "Needs More Practice": "Fragile Level",
+            "Learn Again": "Misconception Level",
+        }.get(mastery_level, "Fragile Level")
 
-                mcq_ref.set({
-                    "studentId": student_id,
-                    "conceptName": concept_name,
-                    "currentLevel": current_level_label,
-                    "postTestStatus": "PASSED" if next_action == "DONE" else "FAILED",
-                    "scorePercentage": round(post_test_score * 100, 2),
-                    "mcqScore": post_test_score,
-                    "evidenceScore": error_pattern_score,
-                    "finalSchemaScore": post_test_score,
-                    "totalQuestions": total_questions,
-                    "correctAnswers": correct_count,
-                    "masteryLevel": mastery_level,
-                    "nextAction": next_action,
-                    "masteryProbability": mastery_probability,
-                    "modelUsed": model_used,
-                    "attemptNumber": attempt_number,
-                    "createdAt": created_at_ts or now_ts,
-                    "updatedAt": now_ts,
-                })
-            except Exception as _e:
-                print(f"[WARN] Failed to write mcq_posttest_results: {_e}")
+        result_record = {
+            "result_id": result_id,
+            "student_id": student_id,
+            "student_name": submission.get("student_name") or submission.get("studentName") or student_profile.get("display_name") or student_profile.get("name") or student_id,
+            "student_email": submission.get("student_email") or submission.get("studentEmail") or student_profile.get("email", ""),
+            "session_id": session_id,
+            "concept_name": concept_name,
+            "error_type": error_type,
+            "pre_test_score": pre_test_score,
+            "attempt_count": attempt_count,
+            "time_taken_seconds": time_taken_seconds,
+            "error_pattern_score": error_pattern_score,
+            "post_test_correct_count": correct_count,
+            "post_test_nearly_correct_count": nearly_correct_count,
+            "post_test_wrong_count": wrong_count,
+            "post_test_clearly_wrong_count": clearly_wrong_count,
+            "post_test_score": post_test_score,
+            "score_percentage": round(post_test_score * 100, 1),
+            "mastery_probability": mastery_probability,
+            "mastery_level": mastery_level,
+            "learning_status": learning_status,
+            "next_action": next_action,
+            "student_next_action_label": student_next_action_label,
+            "model_used": model_used,
+            "created_at": now_ts,
+            "updated_at": now_ts,
+            "source": "post_test_submit",
+        }
+
+        saved_result = SchemaPostTestResultService.save_local_result(result_record)
+
+        mcq_record = {
+            "studentId": student_id,
+            "conceptName": concept_name,
+            "currentLevel": current_level_label,
+            "postTestStatus": "PASSED" if next_action == "DONE" else "FAILED",
+            "scorePercentage": round(post_test_score * 100, 2),
+            "mcqScore": post_test_score,
+            "evidenceScore": error_pattern_score,
+            "finalSchemaScore": post_test_score,
+            "totalQuestions": total_questions,
+            "correctAnswers": correct_count,
+            "masteryLevel": mastery_level,
+            "nextAction": next_action,
+            "masteryProbability": mastery_probability,
+            "modelUsed": model_used,
+            "attemptNumber": attempt_count,
+            "createdAt": saved_result.get("created_at"),
+            "updatedAt": saved_result.get("updated_at"),
+        }
+        persistence_status = SchemaPostTestResultService.save_firestore_best_effort(saved_result, mcq_record)
+        saved_result["persistence_status"] = persistence_status
+        SchemaPostTestResultService.save_local_result(saved_result)
 
         return {
             "success": True,
+            "result_id": saved_result.get("result_id"),
             "session_id": session_id,
             "student_id": student_id,
+            "student_name": saved_result.get("student_name"),
+            "student_email": saved_result.get("student_email"),
             "concept_name": concept_name,
             "post_test_score": post_test_score,
             "score_percentage": round(post_test_score * 100, 1),
@@ -383,8 +412,11 @@ class SchemaPostTestService:
             "post_test_clearly_wrong_count": clearly_wrong_count,
             "mastery_probability": mastery_probability,
             "mastery_level": mastery_level,
+            "learning_status": learning_status,
             "next_action": next_action,
+            "student_next_action_label": student_next_action_label,
             "model_used": model_used,
+            "persistence_status": persistence_status,
             "explanation_message": explanation_msg,
             "results": review_items,
         }

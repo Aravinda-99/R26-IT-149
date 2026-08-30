@@ -10,52 +10,40 @@ from firebase.firebase_service import db
 from middleware.error_handler import require_json
 from datetime import datetime, timezone
 
+from services.user_storage_service import UserStorageService
+
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/register", methods=["POST"])
-@require_json("uid", "email", "display_name")
+@require_json("uid", "email")
 def register_user():
-    """Create user profile in Firestore after Firebase Auth registration."""
+    """Create and persist user profile."""
     data = request.get_json()
-    uid = data["uid"]
-    profile = {
-        "display_name": data["display_name"],
-        "email": data["email"],
-        "total_xp": 0,
-        "games_played": 0,
-        "badges": [],
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-    if db:
-        db.collection("user_profiles").document(uid).set(profile)
-    else:
-        print(f"[OFFLINE] Would create profile for {uid}")
-
-    return jsonify({"message": "User registered", "user_id": uid}), 201
+    profile = UserStorageService.save_user(data)
+    return jsonify({"message": "User registered", "user_id": profile["uid"], "profile": profile}), 201
 
 
 @auth_bp.route("/profile/<user_id>", methods=["GET"])
 def get_user_profile(user_id):
-    """Fetch a user profile from Firestore."""
-    if not db:
-        return jsonify({
-            "user_id": user_id,
-            "display_name": "Offline User",
-            "email": "",
-            "total_xp": 0,
-            "games_played": 0,
-            "badges": [],
-        })
-
-    doc = db.collection("user_profiles").document(user_id).get()
-    if not doc.exists:
-        abort(404, description="User not found")
-
-    profile = doc.to_dict()
-    profile["user_id"] = user_id
+    """Fetch a user profile."""
+    profile = UserStorageService.get_user(user_id)
     return jsonify(profile)
+
+
+@auth_bp.route("/users", methods=["GET"])
+@auth_bp.route("/students", methods=["GET"])
+def get_all_registered_users():
+    """Fetch all real registered students/users."""
+    all_users = UserStorageService.get_all_users()
+    students = UserStorageService.get_all_students()
+    
+    return jsonify({
+        "success": True,
+        "count": len(students),
+        "users": all_users,
+        "students": students,
+    })
 
 
 @auth_bp.route("/verify-token", methods=["POST"])

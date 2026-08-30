@@ -554,7 +554,7 @@ class SchemaQuestionBankService:
         return _write_json(ATTEMPTS_FILE, existing)
 
     @classmethod
-    def save_mastery_session(cls, session_data: dict) -> dict:
+    def save_mastery_session(cls, session_data: dict, sync_firestore: bool = True) -> dict:
         """Saves a completed Schema Mastery post-test session."""
         existing = _read_json(SESSIONS_FILE, default=[])
         s_copy = dict(session_data)
@@ -566,7 +566,7 @@ class SchemaQuestionBankService:
         _write_json(SESSIONS_FILE, existing)
 
         # Firestore sync if available
-        if db:
+        if db and sync_firestore:
             try:
                 db.collection("schema_mastery_sessions").document(s_copy["session_id"]).set(s_copy)
             except Exception as e:
