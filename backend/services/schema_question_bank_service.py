@@ -428,9 +428,164 @@ class SchemaQuestionBankService:
         Retrieves the displayed_key -> canonical_key mapping for a specific question in a session.
         Returns dict like {"A": "C", "B": "A", "C": "D", "D": "B"} or {} if not found.
         """
-        session_mappings = cls.get_session_option_mappings(session_id)
-        return session_mappings.get(str(question_id), {})
+    # ─────────────────────────────────────────────────────────────────────────
+    # Question Bank Coverage Analysis & Gap Detection
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def get_coverage_analysis(cls) -> dict:
+        """
+        Analyzes the approved active question bank and pending drafts to identify
+        coverage health and missing gaps across concepts, cognitive types, difficulties,
+        and concept-specific error patterns.
+        """
+        cls.initialize_seed_data()
+        approved = _read_json(APP_QUESTIONS_FILE, default=[])
+        pending = _read_json(GEN_QUESTIONS_FILE, default=[])
+
+        active_approved = [q for q in approved if q.get("active", True) is True]
+        active_pending = [q for q in pending if q.get("status") == "PENDING"]
+
+        concepts = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
+        q_types = ["Basic Understanding", "Code Output Prediction", "Error Recognition", "Application", "Transfer"]
+        difficulties = ["Easy", "Medium", "Hard"]
+        concept_error_map = {
+            "Variables": ["VARIABLE_SCOPE_ERROR", "TYPE_MISMATCH", "UNINITIALIZED_VARIABLE", "SYNTAX_ERROR", "LOGIC_ERROR"],
+            "Operators": ["TYPE_MISMATCH", "OPERATOR_PRECEDENCE_ERROR", "LOGIC_ERROR", "SYNTAX_ERROR"],
+            "Loops": ["LOOP_CONDITION_ERROR", "OFF_BY_ONE", "INFINITE_LOOP", "LOGIC_ERROR", "SYNTAX_ERROR"],
+            "Arrays": ["INDEX_ERROR", "OFF_BY_ONE", "ARRAY_BOUNDS_ERROR", "TYPE_MISMATCH", "LOGIC_ERROR"],
+            "Methods": ["METHOD_SIGNATURE_ERROR", "PARAMETER_MISMATCH", "RETURN_TYPE_ERROR", "VARIABLE_SCOPE_ERROR", "RECURSION_ERROR", "LOGIC_ERROR", "SYNTAX_ERROR"],
+        }
+
+        # Recommended minimum thresholds
+        rec_min_type = 3
+        rec_min_diff = {"Easy": 3, "Medium": 6, "Hard": 3}
+        rec_min_error = 2
+
+        concepts_coverage = {}
+        gaps_list = []
+        healthy_count = 0
+        low_count = 0
+        missing_count = 0
+
+        for concept in concepts:
+            c_approved = [q for q in active_approved if q.get("concept_name", "").strip().lower() == concept.lower()]
+            c_pending = [q for q in active_pending if q.get("concept_name", "").strip().lower() == concept.lower()]
+
+            # 1. Question Types Coverage
+            types_cov = []
+            for t in q_types:
+                app_c = len([q for q in c_approved if q.get("question_type") == t])
+                pen_c = len([q for q in c_pending if q.get("question_type") == t])
+                rec = rec_min_type
+                gap = max(0, rec - app_c)
+
+                status = "OK" if app_c >= rec else ("LOW" if app_c > 0 else "MISSING")
+                if status == "OK":
+                    healthy_count += 1
+                elif status == "LOW":
+                    low_count += 1
+                else:
+                    missing_count += 1
+
+                types_cov.append({
+                    "name": t,
+                    "approved_count": app_c,
+                    "pending_count": pen_c,
+                    "recommended_min_count": rec,
+                    "gap_count": gap,
+                    "status": status,
+                })
+                if gap > 0:
+                    gaps_list.append({
+                        "concept_name": concept,
+                        "gap_type": "question_type",
+                        "target_value": t,
+                        "approved_count": app_c,
+                        "pending_count": pen_c,
+                        "recommended_count": rec,
+                        "gap_count": gap,
+                        "description": f"{concept} needs {gap} more '{t}' questions",
+                    })
+
+            # 2. Difficulties Coverage
+            diffs_cov = []
+            for d in difficulties:
+                app_c = len([q for q in c_approved if q.get("difficulty") == d])
+                pen_c = len([q for q in c_pending if q.get("difficulty") == d])
+                rec = rec_min_diff.get(d, 3)
+                gap = max(0, rec - app_c)
+
+                status = "OK" if app_c >= rec else ("LOW" if app_c > 0 else "MISSING")
+                diffs_cov.append({
+                    "name": d,
+                    "approved_count": app_c,
+                    "pending_count": pen_c,
+                    "recommended_min_count": rec,
+                    "gap_count": gap,
+                    "status": status,
+                })
+
+            # 3. Concept-Specific Error Patterns Coverage
+            errors_cov = []
+            valid_errors = concept_error_map.get(concept, [])
+            for e in valid_errors:
+                app_c = len([q for q in c_approved if q.get("target_error_type") == e])
+                pen_c = len([q for q in c_pending if q.get("target_error_type") == e])
+                rec = rec_min_error
+                gap = max(0, rec - app_c)
+
+                status = "OK" if app_c >= rec else ("LOW" if app_c > 0 else "MISSING")
+                if status == "OK":
+                    healthy_count += 1
+                elif status == "LOW":
+                    low_count += 1
+                else:
+                    missing_count += 1
+
+                errors_cov.append({
+                    "name": e,
+                    "approved_count": app_c,
+                    "pending_count": pen_c,
+                    "recommended_min_count": rec,
+                    "gap_count": gap,
+                    "status": status,
+                })
+                if gap > 0:
+                    gaps_list.append({
+                        "concept_name": concept,
+                        "gap_type": "error_type",
+                        "target_value": e,
+                        "approved_count": app_c,
+                        "pending_count": pen_c,
+                        "recommended_count": rec,
+                        "gap_count": gap,
+                        "description": f"{concept} needs {gap} more questions targeting '{e}'",
+                    })
+
+            concepts_coverage[concept] = {
+                "concept_name": concept,
+                "total_approved": len(c_approved),
+                "total_pending": len(c_pending),
+                "question_types": types_cov,
+                "difficulties": diffs_cov,
+                "error_types": errors_cov,
+            }
+
+        return {
+            "summary": {
+                "total_approved": len(active_approved),
+                "total_pending": len(active_pending),
+                "healthy_areas": healthy_count,
+                "low_areas": low_count,
+                "missing_areas": missing_count,
+                "total_gaps": len(gaps_list),
+            },
+            "concepts_coverage": concepts_coverage,
+            "gaps_list": gaps_list,
+        }
 
 
 # Initialize seed data upon module load
 SchemaQuestionBankService.initialize_seed_data()
+

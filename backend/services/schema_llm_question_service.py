@@ -7,13 +7,13 @@ Generates concept-specific draft post-test questions with option quality labels:
   - Wrong (0.0 - weak understanding)
   - Clearly Wrong (0.0 - serious confusion)
 
-Saves drafts to `generated_questions` with status PENDING for teacher review.
-Includes an extensible structure for real LLM APIs (OpenAI / Gemini) with
-a high-fidelity mock generator fallback.
+Supports 3 Generation Modes:
+  1. Manual Draft Batch (single concept, type, difficulty, error misconception)
+  2. Auto Balanced Pack (full-pack multi-concept generation following 4-tier pedagogical blueprints)
+  3. Fill Missing Gaps (targeted generation for deficit areas identified by Question Bank Coverage analysis)
 
-DISTRIBUTION REQUIREMENT:
-All generated and approved questions distribute correct answer positions across
-A, B, C, and D evenly (never hardcoding or biasing option A).
+Saves all drafts to `generated_questions` with status PENDING for teacher review.
+Guarantees balanced correct answer option distribution across A, B, C, and D.
 """
 
 import os
@@ -26,11 +26,52 @@ VALID_CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
 VALID_TYPES = ["Basic Understanding", "Code Output Prediction", "Error Recognition", "Application", "Transfer"]
 VALID_DIFFICULTIES = ["Easy", "Medium", "Hard"]
 
-# Template library for high-fidelity draft generation with varied canonical correct option positions
+# Concept-Specific Target Error Types Mapping
+CONCEPT_ERROR_MAP = {
+    "Variables": [
+        "VARIABLE_SCOPE_ERROR",
+        "TYPE_MISMATCH",
+        "UNINITIALIZED_VARIABLE",
+        "SYNTAX_ERROR",
+        "LOGIC_ERROR",
+    ],
+    "Operators": [
+        "TYPE_MISMATCH",
+        "OPERATOR_PRECEDENCE_ERROR",
+        "LOGIC_ERROR",
+        "SYNTAX_ERROR",
+    ],
+    "Loops": [
+        "LOOP_CONDITION_ERROR",
+        "OFF_BY_ONE",
+        "INFINITE_LOOP",
+        "LOGIC_ERROR",
+        "SYNTAX_ERROR",
+    ],
+    "Arrays": [
+        "INDEX_ERROR",
+        "OFF_BY_ONE",
+        "ARRAY_BOUNDS_ERROR",
+        "TYPE_MISMATCH",
+        "LOGIC_ERROR",
+    ],
+    "Methods": [
+        "METHOD_SIGNATURE_ERROR",
+        "PARAMETER_MISMATCH",
+        "RETURN_TYPE_ERROR",
+        "VARIABLE_SCOPE_ERROR",
+        "RECURSION_ERROR",
+        "LOGIC_ERROR",
+        "SYNTAX_ERROR",
+    ],
+}
+
+# Template library covering all concepts, cognitive levels, and concept-specific error types
 QUESTION_TEMPLATES = {
     "Variables": [
         {
             "type": "Basic Understanding",
+            "difficulty": "Easy",
             "text": "What is the default value of an uninitialized instance variable of type boolean in Java?",
             "code": "public class Demo {\n    boolean flag;\n}",
             "opt_a": "false", "q_a": "Correct",
@@ -41,10 +82,11 @@ QUESTION_TEMPLATES = {
             "explanation": "Instance boolean variables in Java default to 'false'. Primitive booleans cannot be null.",
             "group": "GRP_VAR_BOOL_DEF",
             "outcome": "Recognize default primitive initialization values in Java",
-            "error_type": "TYPE_MISMATCH",
+            "error_type": "UNINITIALIZED_VARIABLE",
         },
         {
             "type": "Code Output Prediction",
+            "difficulty": "Medium",
             "text": "What is the output of the following integer division and type conversion?",
             "code": "int a = 7;\nint b = 2;\ndouble result = a / b;\nSystem.out.println(result);",
             "opt_a": "3.5", "q_a": "Nearly Correct",
@@ -59,20 +101,37 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Error Recognition",
-            "text": "Which error will be reported by the Java compiler for the following code?",
-            "code": "final int MAX_USERS = 50;\nMAX_USERS = 60;",
-            "opt_a": "Variable MAX_USERS is out of scope", "q_a": "Nearly Correct",
-            "opt_b": "NullPointerException at runtime", "q_b": "Wrong",
-            "opt_c": "Cannot assign a value to final variable MAX_USERS", "q_c": "Correct",
-            "opt_d": "MAX_USERS must be declared as double", "q_d": "Clearly Wrong",
-            "correct": "C",
-            "explanation": "Variables marked 'final' cannot be reassigned once initialized.",
-            "group": "GRP_VAR_FINAL_ERR",
-            "outcome": "Identify final variable immutability compiler errors",
+            "difficulty": "Medium",
+            "text": "Which error will be reported by the Java compiler for the following local variable usage?",
+            "code": "int total;\nif (args.length > 0) {\n    total = 100;\n}\nSystem.out.println(total);",
+            "opt_a": "Variable total might not have been initialized", "q_a": "Correct",
+            "opt_b": "Cannot assign integer to total", "q_b": "Nearly Correct",
+            "opt_c": "NullPointerException at runtime", "q_c": "Wrong",
+            "opt_d": "args is out of scope", "q_d": "Clearly Wrong",
+            "correct": "A",
+            "explanation": "Local variables in Java are not given default values and must be definitively initialized before use.",
+            "group": "GRP_VAR_UNINIT_LOCAL",
+            "outcome": "Identify uninitialized local variable compiler errors",
+            "error_type": "UNINITIALIZED_VARIABLE",
+        },
+        {
+            "type": "Error Recognition",
+            "difficulty": "Medium",
+            "text": "What error occurs when accessing variable 'count' outside the inner block?",
+            "code": "public void process() {\n    if (true) {\n        int count = 5;\n    }\n    System.out.println(count);\n}",
+            "opt_a": "count is out of scope and cannot be resolved as a variable", "q_a": "Correct",
+            "opt_b": "count is initialized to null", "q_b": "Nearly Correct",
+            "opt_c": "count overflows heap memory", "q_c": "Wrong",
+            "opt_d": "if statement cannot contain variable declarations", "q_d": "Clearly Wrong",
+            "correct": "A",
+            "explanation": "The variable 'count' has block scope limited to the if-statement body.",
+            "group": "GRP_VAR_BLOCK_SCOPE",
+            "outcome": "Recognize block scoping boundaries in Java",
             "error_type": "VARIABLE_SCOPE_ERROR",
         },
         {
             "type": "Application",
+            "difficulty": "Medium",
             "text": "Which statement correctly converts a String '125' into a primitive int in Java?",
             "code": "String s = \"125\";",
             "opt_a": "int num = (int) s;", "q_a": "Nearly Correct",
@@ -87,6 +146,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Transfer",
+            "difficulty": "Hard",
             "text": "How does Java manage memory for a primitive 'int' compared to an object reference variable on the JVM stack?",
             "code": "",
             "opt_a": "Primitives are stored on the garbage collected heap while references live on the CPU cache", "q_a": "Nearly Correct",
@@ -103,20 +163,22 @@ QUESTION_TEMPLATES = {
     "Operators": [
         {
             "type": "Basic Understanding",
-            "text": "What is the effect of the bitwise XOR operator (^) when applied to two boolean values in Java?",
-            "code": "boolean result = (a ^ b);",
-            "opt_a": "Returns true only if both operands are true", "q_a": "Nearly Correct",
-            "opt_b": "Performs logical negation of variable a", "q_b": "Wrong",
-            "opt_c": "Returns true if exactly one operand is true, and false if both are equal", "q_c": "Correct",
-            "opt_d": "Raises an operator precedence compilation error", "q_d": "Clearly Wrong",
-            "correct": "C",
-            "explanation": "The XOR (^) operator evaluates to true if and only if its arguments differ.",
-            "group": "GRP_OP_XOR",
-            "outcome": "Understand logical XOR behavior",
-            "error_type": "SYNTAX_ERROR",
+            "difficulty": "Easy",
+            "text": "What is the result of applying the modulus operator '17 % 5' in Java?",
+            "code": "int r = 17 % 5;",
+            "opt_a": "3 (quotient)", "q_a": "Nearly Correct",
+            "opt_b": "2 (remainder)", "q_b": "Correct",
+            "opt_c": "3.4", "q_c": "Wrong",
+            "opt_d": "0", "q_d": "Clearly Wrong",
+            "correct": "B",
+            "explanation": "The modulus operator (%) returns the remainder of integer division: 17 = 5 * 3 + 2.",
+            "group": "GRP_OP_MOD",
+            "outcome": "Understand modulus arithmetic operator rules",
+            "error_type": "LOGIC_ERROR",
         },
         {
             "type": "Code Output Prediction",
+            "difficulty": "Medium",
             "text": "What is the printed value of x after this compound assignment executes?",
             "code": "int x = 10;\nx += 5 * 2;\nSystem.out.println(x);",
             "opt_a": "30", "q_a": "Nearly Correct",
@@ -127,24 +189,26 @@ QUESTION_TEMPLATES = {
             "explanation": "Multiplication has higher precedence than compound addition: 5 * 2 = 10, then x = 10 + 10 = 20.",
             "group": "GRP_OP_PREC_COMPOUND",
             "outcome": "Trace operator precedence with compound assignment operators",
-            "error_type": "SYNTAX_ERROR",
+            "error_type": "OPERATOR_PRECEDENCE_ERROR",
         },
         {
             "type": "Error Recognition",
-            "text": "Identify why the following equality check produces unexpected logic behavior for Strings:",
-            "code": "String s1 = new String(\"hello\");\nString s2 = new String(\"hello\");\nif (s1 == s2) {\n    System.out.println(\"Equal\");\n}",
-            "opt_a": "'==' compares memory references, not String contents. It should use s1.equals(s2)", "q_a": "Correct",
-            "opt_b": "String objects cannot be initialized with 'new'", "q_b": "Nearly Correct",
-            "opt_c": "The code will not compile due to type mismatch", "q_c": "Wrong",
-            "opt_d": "System.out.println cannot print inside an if statement", "q_d": "Clearly Wrong",
+            "difficulty": "Medium",
+            "text": "Why does the expression '1 + 2 + \"3\" + 4 + 5' output '3345' instead of '15'?",
+            "code": "System.out.println(1 + 2 + \"3\" + 4 + 5);",
+            "opt_a": "1 + 2 evaluates to 3, then encountering String '3' converts all subsequent + operations to String concatenation", "q_a": "Correct",
+            "opt_b": "The compiler adds brackets around the String literal", "q_b": "Nearly Correct",
+            "opt_c": "Integer values cannot be combined with string literals", "q_c": "Wrong",
+            "opt_d": "Java evaluates addition from right to left", "q_d": "Clearly Wrong",
             "correct": "A",
-            "explanation": "'==' tests for reference identity. Two distinct objects with identical characters have different references.",
-            "group": "GRP_OP_STR_EQUALS",
-            "outcome": "Recognize reference equality vs content equality bug patterns",
-            "error_type": "LOGIC_ERROR",
+            "explanation": "+ is left-associative: 1 + 2 = 3. 3 + '3' = '33'. '33' + 4 = '334'. '334' + 5 = '3345'.",
+            "group": "GRP_OP_STR_CONCAT_PREC",
+            "outcome": "Recognize string concatenation precedence behavior",
+            "error_type": "OPERATOR_PRECEDENCE_ERROR",
         },
         {
             "type": "Application",
+            "difficulty": "Medium",
             "text": "Which expression checks if an integer 'val' is strictly between 10 and 50 (exclusive)?",
             "code": "int val = 25;",
             "opt_a": "10 < val < 50", "q_a": "Nearly Correct",
@@ -159,22 +223,24 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Transfer",
-            "text": "In Java bit shifting, what is the key difference between '>>' (arithmetic right shift) and '>>>' (logical right shift)?",
-            "code": "int neg = -8;\nint r1 = neg >> 2;\nint r2 = neg >>> 2;",
-            "opt_a": "'>>>' performs floating point shifts while '>>' is integer only", "q_a": "Nearly Correct",
-            "opt_b": "'>>' multiplies by 2 while '>>>' divides by 2", "q_b": "Wrong",
-            "opt_c": "'>>' preserves the sign bit (fills with 1s for negatives), whereas '>>>' always fills the leftmost bits with 0s", "q_c": "Correct",
-            "opt_d": "'>>>' is only valid in C++, not in Java", "q_d": "Clearly Wrong",
-            "correct": "C",
-            "explanation": "'>>>' is the unsigned right shift operator in Java, padding the leading bits with zero regardless of sign.",
-            "group": "GRP_OP_BIT_SHIFT",
-            "outcome": "Transfer binary two's complement knowledge to bitwise operations",
+            "difficulty": "Hard",
+            "text": "What is the result of the short-circuit evaluation in this expression?",
+            "code": "int a = 5;\nboolean res = (a > 10) && (++a > 5);\nSystem.out.println(a);",
+            "opt_a": "6 (both sides always execute)", "q_a": "Nearly Correct",
+            "opt_b": "5 (the right operand is skipped because the left operand is false)", "q_b": "Correct",
+            "opt_c": "0", "q_c": "Wrong",
+            "opt_d": "Compilation Error", "q_d": "Clearly Wrong",
+            "correct": "B",
+            "explanation": "The logical AND (&&) short-circuits: since 'a > 10' is false, '++a > 5' is never evaluated, leaving 'a' at 5.",
+            "group": "GRP_OP_SHORT_CIRCUIT",
+            "outcome": "Transfer short-circuit evaluation to side-effect analysis",
             "error_type": "LOGIC_ERROR",
         },
     ],
     "Loops": [
         {
             "type": "Basic Understanding",
+            "difficulty": "Easy",
             "text": "What is the key structural difference between a 'while' loop and a 'do-while' loop?",
             "code": "",
             "opt_a": "A while loop can only iterate over arrays", "q_a": "Nearly Correct",
@@ -189,7 +255,8 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Code Output Prediction",
-            "text": "What will be printed to the screen when this code runs?",
+            "difficulty": "Medium",
+            "text": "What will be printed to the screen when this loop runs?",
             "code": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
             "opt_a": "0 4 ", "q_a": "Correct",
             "opt_b": "0 2 4 ", "q_b": "Nearly Correct",
@@ -203,20 +270,37 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Error Recognition",
-            "text": "What causes this while loop to never terminate?",
+            "difficulty": "Medium",
+            "text": "What causes this while loop to never terminate (infinite loop)?",
             "code": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
             "opt_a": "i is not initialized properly", "q_a": "Nearly Correct",
-            "opt_b": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false", "q_b": "Correct",
+            "opt_b": "i steps over 10 (1, 3, 5, 7, 9, 11...), so i != 10 is never false", "q_b": "Correct",
             "opt_c": "System.out.println freezes the CPU", "q_c": "Wrong",
             "opt_d": "while loops cannot use '!=' as a condition", "q_d": "Clearly Wrong",
             "correct": "B",
             "explanation": "Incrementing by 2 produces odd numbers. i jumps from 9 to 11, missing 10 and looping indefinitely.",
             "group": "GRP_LOOP_OFF_BY_TWO",
             "outcome": "Recognize parity mismatch causing infinite loop condition failures",
-            "error_type": "LOOP_CONDITION_ERROR",
+            "error_type": "INFINITE_LOOP",
+        },
+        {
+            "type": "Error Recognition",
+            "difficulty": "Medium",
+            "text": "How many times does this loop execute, and what error occurs?",
+            "code": "int count = 0;\nfor (int i = 0; i <= 5; i++) {\n    count++;\n}",
+            "opt_a": "Executes 5 times with no error", "q_a": "Nearly Correct",
+            "opt_b": "Executes 6 times due to '<=' causing an off-by-one iteration", "q_b": "Correct",
+            "opt_c": "Executes 4 times", "q_c": "Wrong",
+            "opt_d": "Causes an infinite loop", "q_d": "Clearly Wrong",
+            "correct": "B",
+            "explanation": "Indices 0, 1, 2, 3, 4, 5 total 6 iterations. For 5 iterations, 'i < 5' should be used.",
+            "group": "GRP_LOOP_OFF_BY_ONE",
+            "outcome": "Identify off-by-one loop condition boundaries",
+            "error_type": "OFF_BY_ONE",
         },
         {
             "type": "Application",
+            "difficulty": "Medium",
             "text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
             "code": "int N = 5;\nlong fact = 1;",
             "opt_a": "for (int i = 0; i < N; i++) { fact *= i; }", "q_a": "Nearly Correct",
@@ -231,6 +315,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Transfer",
+            "difficulty": "Hard",
             "text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
             "code": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
             "opt_a": "The ability to read array element values", "q_a": "Nearly Correct",
@@ -247,6 +332,7 @@ QUESTION_TEMPLATES = {
     "Arrays": [
         {
             "type": "Basic Understanding",
+            "difficulty": "Easy",
             "text": "What are all elements of a newly created 'int[] data = new int[4];' initialized to by default in Java?",
             "code": "int[] data = new int[4];",
             "opt_a": "0", "q_a": "Correct",
@@ -261,6 +347,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Code Output Prediction",
+            "difficulty": "Medium",
             "text": "What is the output of the following array reference assignment?",
             "code": "int[] a = {1, 2, 3};\nint[] b = a;\nb[0] = 99;\nSystem.out.println(a[0]);",
             "opt_a": "1 (b is an independent deep copy of a)", "q_a": "Nearly Correct",
@@ -271,11 +358,12 @@ QUESTION_TEMPLATES = {
             "explanation": "'b = a' copies the object reference, meaning modifications via 'b' affect the array pointed to by 'a'.",
             "group": "GRP_ARR_ALIASING",
             "outcome": "Predict array aliasing and reference sharing side effects",
-            "error_type": "VARIABLE_SCOPE_ERROR",
+            "error_type": "LOGIC_ERROR",
         },
         {
             "type": "Error Recognition",
-            "text": "What error occurs when trying to access 'arr[arr.length]' on an array?",
+            "difficulty": "Medium",
+            "text": "What exception is thrown when executing 'arr[arr.length]' on an array of length 3?",
             "code": "int[] arr = {10, 20, 30};\nSystem.out.println(arr[arr.length]);",
             "opt_a": "NullPointerException", "q_a": "Nearly Correct",
             "opt_b": "Prints 0", "q_b": "Wrong",
@@ -285,10 +373,26 @@ QUESTION_TEMPLATES = {
             "explanation": "An array with length 3 has valid indices 0, 1, and 2. Index 3 is out of bounds.",
             "group": "GRP_ARR_LEN_BOUND",
             "outcome": "Recognize classic length boundary off-by-one errors",
-            "error_type": "INDEX_ERROR",
+            "error_type": "ARRAY_BOUNDS_ERROR",
+        },
+        {
+            "type": "Error Recognition",
+            "difficulty": "Medium",
+            "text": "What runtime error occurs in this backward array traversal loop?",
+            "code": "int[] nums = {4, 8, 12};\nfor (int i = nums.length; i >= 0; i--) {\n    System.out.println(nums[i]);\n}",
+            "opt_a": "ArrayIndexOutOfBoundsException on the very first iteration at index nums.length", "q_a": "Correct",
+            "opt_b": "Infinite loop", "q_b": "Nearly Correct",
+            "opt_c": "NullPointerException", "q_c": "Wrong",
+            "opt_d": "Compilation Error", "q_d": "Clearly Wrong",
+            "correct": "A",
+            "explanation": "The loop starts at i = nums.length, which is out of bounds. It must start at nums.length - 1.",
+            "group": "GRP_ARR_REVERSE_BOUNDS",
+            "outcome": "Identify boundary initialization errors in reverse array traversal",
+            "error_type": "OFF_BY_ONE",
         },
         {
             "type": "Application",
+            "difficulty": "Medium",
             "text": "Which code snippet correctly makes an independent copy of array 'src' into 'dest' without reference aliasing?",
             "code": "int[] src = {5, 10, 15};",
             "opt_a": "int[] dest = src;", "q_a": "Nearly Correct",
@@ -303,6 +407,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Transfer",
+            "difficulty": "Hard",
             "text": "How does the memory layout of an Array compare with an ArrayList in Java?",
             "code": "",
             "opt_a": "Arrays use fixed contiguous memory blocks for primitives/references; ArrayList is a resizable object wrapper over an internal array", "q_a": "Correct",
@@ -319,6 +424,7 @@ QUESTION_TEMPLATES = {
     "Methods": [
         {
             "type": "Basic Understanding",
+            "difficulty": "Easy",
             "text": "In Java, what does declaring a method with the 'static' keyword mean?",
             "code": "public static int add(int a, int b) { return a + b; }",
             "opt_a": "The method return value can never change", "q_a": "Nearly Correct",
@@ -333,6 +439,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Code Output Prediction",
+            "difficulty": "Medium",
             "text": "What is the return value of mystery(3, 4)?",
             "code": "public static int mystery(int a, int b) {\n    if (b == 0) return 0;\n    return a + mystery(a, b - 1);\n}",
             "opt_a": "7", "q_a": "Nearly Correct",
@@ -347,6 +454,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Error Recognition",
+            "difficulty": "Medium",
             "text": "What compiler error is produced by this method signature conflict?",
             "code": "public class Calc {\n    public int compute(int x) { return x * 2; }\n    public double compute(int x) { return x * 2.0; }\n}",
             "opt_a": "Variable x is declared twice", "q_a": "Nearly Correct",
@@ -360,7 +468,38 @@ QUESTION_TEMPLATES = {
             "error_type": "METHOD_SIGNATURE_ERROR",
         },
         {
+            "type": "Error Recognition",
+            "difficulty": "Medium",
+            "text": "Why does the following method fail to compile?",
+            "code": "public int getGrade(int score) {\n    if (score >= 50) {\n        return 1;\n    }\n}",
+            "opt_a": "Missing return statement for paths where score < 50", "q_a": "Correct",
+            "opt_b": "Return type must be void", "q_b": "Nearly Correct",
+            "opt_c": "if statements cannot return values", "q_c": "Wrong",
+            "opt_d": "getGrade is an invalid identifier", "q_d": "Clearly Wrong",
+            "correct": "A",
+            "explanation": "Non-void methods must guarantee a return statement along all possible execution branches.",
+            "group": "GRP_METH_RET_BRANCH",
+            "outcome": "Identify missing return statement compiler errors",
+            "error_type": "RETURN_TYPE_ERROR",
+        },
+        {
+            "type": "Error Recognition",
+            "difficulty": "Medium",
+            "text": "What compiler error occurs when calling 'printSum(5, 3.2)' on 'void printSum(int a, int b)'?",
+            "code": "public static void printSum(int a, int b) { ... }\n// Call:\nprintSum(5, 3.2);",
+            "opt_a": "Incompatible types: possible lossy conversion from double to int for parameter 2", "q_a": "Correct",
+            "opt_b": "printSum is not defined", "q_b": "Nearly Correct",
+            "opt_c": "Too many arguments passed to method", "q_c": "Wrong",
+            "opt_d": "Methods cannot take two parameters", "q_d": "Clearly Wrong",
+            "correct": "A",
+            "explanation": "A double literal (3.2) cannot be automatically narrowed to primitive int in a method argument.",
+            "group": "GRP_METH_PARAM_MISMATCH",
+            "outcome": "Recognize parameter type mismatch compiler errors",
+            "error_type": "PARAMETER_MISMATCH",
+        },
+        {
             "type": "Application",
+            "difficulty": "Medium",
             "text": "Which method header correctly defines a method that takes an array of Strings and returns a single concatenated String?",
             "code": "",
             "opt_a": "public static String joinWords(String[] words)", "q_a": "Correct",
@@ -375,6 +514,7 @@ QUESTION_TEMPLATES = {
         },
         {
             "type": "Transfer",
+            "difficulty": "Hard",
             "text": "How do object references passed as method arguments behave when their internal fields are mutated inside the method?",
             "code": "public static void reset(StringBuilder sb) {\n    sb.append(\" world\");\n}",
             "opt_a": "The caller's object is unchanged because Java is strictly pass-by-value", "q_a": "Nearly Correct",
@@ -408,7 +548,6 @@ def _rotate_question_options(opt_dict, qual_dict, target_correct_letter):
     correct_item = next((it for it in items if it["quality"] == "Correct"), items[0])
     other_items = [it for it in items if it is not correct_item]
 
-    # Target assignment
     target_idx = letters.index(target_correct_letter) if target_correct_letter in letters else 0
     assigned = [None, None, None, None]
     assigned[target_idx] = correct_item
@@ -436,6 +575,14 @@ class SchemaLLMQuestionService:
     """Orchestrates LLM generation of draft questions for teacher review."""
 
     @classmethod
+    def get_concept_errors(cls, concept: str) -> list:
+        """Returns valid concept-specific error types."""
+        return CONCEPT_ERROR_MAP.get(concept, CONCEPT_ERROR_MAP["Loops"])
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Mode 1: Manual Draft Batch Generation
+    # ─────────────────────────────────────────────────────────────────────────
+    @classmethod
     def generate_draft_questions(
         cls,
         concept_name: str,
@@ -445,8 +592,7 @@ class SchemaLLMQuestionService:
         count: int = 5,
     ) -> list:
         """
-        Generates `count` draft questions for the given concept and filters.
-        Enforces balanced distribution of correct options (A, B, C, D) across the batch.
+        Generates `count` draft questions for a single concept & filters.
         Saves all generated questions to `generated_questions` with status PENDING.
         """
         concept = concept_name.strip() if concept_name else "Loops"
@@ -456,7 +602,12 @@ class SchemaLLMQuestionService:
 
         count = max(1, min(20, int(count or 5)))
 
-        # 1. Attempt real LLM generation if API configured
+        # Validate target_error_type is concept-relevant
+        valid_errors = cls.get_concept_errors(concept)
+        if target_error_type and target_error_type != "UNKNOWN_ERROR" and target_error_type not in valid_errors:
+            target_error_type = valid_errors[0]
+
+        # 1. Attempt real LLM generation if configured
         generated_raw = None
         try:
             generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count)
@@ -475,17 +626,215 @@ class SchemaLLMQuestionService:
         saved = SchemaQuestionBankService.save_generated_questions(generated_balanced)
         return saved
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Mode 2: Auto Balanced Pack Generation
+    # ─────────────────────────────────────────────────────────────────────────
+    @classmethod
+    def generate_balanced_pack(
+        cls,
+        concepts: list = None,
+        questions_per_concept: int = 15,
+        difficulty_distribution: dict = None,
+        blueprint: dict = None,
+    ) -> dict:
+        """
+        Generates a full balanced draft question pack across multiple concepts in safe sub-batches.
+        All generated questions are saved with status PENDING for teacher review.
+        """
+        selected_concepts = concepts or VALID_CONCEPTS
+        selected_concepts = [c for c in selected_concepts if c in VALID_CONCEPTS]
+        if not selected_concepts:
+            selected_concepts = list(VALID_CONCEPTS)
+
+        q_count = int(questions_per_concept or 15)
+        if q_count not in (10, 15, 20, 30):
+            q_count = 15
+
+        # Blueprint counts per concept
+        # Default 15: 4 Basic, 4 Output, 3 Error, 2 App, 2 Transfer
+        type_ratios = {
+            "Basic Understanding": 4 / 15,
+            "Code Output Prediction": 4 / 15,
+            "Error Recognition": 3 / 15,
+            "Application": 2 / 15,
+            "Transfer": 2 / 15,
+        }
+        if blueprint and isinstance(blueprint, dict):
+            total_b = sum(blueprint.values())
+            if total_b > 0:
+                type_ratios = {k: v / total_b for k, v in blueprint.items()}
+
+        # Difficulty ratios (Default: 30% Easy, 50% Med, 20% Hard)
+        diff_ratios = {"Easy": 0.30, "Medium": 0.50, "Hard": 0.20}
+        if difficulty_distribution and isinstance(difficulty_distribution, dict):
+            total_d = sum(difficulty_distribution.values())
+            if total_d > 0:
+                diff_ratios = {k: v / total_d for k, v in difficulty_distribution.items()}
+
+        all_generated = []
+        breakdown_by_concept = {}
+        breakdown_by_difficulty = {"Easy": 0, "Medium": 0, "Hard": 0}
+        breakdown_by_type = {t: 0 for t in VALID_TYPES}
+
+        for concept in selected_concepts:
+            concept_questions = []
+            concept_errors = cls.get_concept_errors(concept)
+
+            # Build item blueprint plan for this concept
+            items_plan = []
+            for q_type, ratio in type_ratios.items():
+                num_for_type = max(1, round(ratio * q_count))
+                for _ in range(num_for_type):
+                    if len(items_plan) < q_count:
+                        items_plan.append(q_type)
+
+            # Fill remainder if any due to rounding
+            while len(items_plan) < q_count:
+                items_plan.append(VALID_TYPES[len(items_plan) % len(VALID_TYPES)])
+
+            # Assign difficulties
+            num_easy = max(1, round(diff_ratios.get("Easy", 0.3) * q_count))
+            num_hard = max(1, round(diff_ratios.get("Hard", 0.2) * q_count))
+            num_med = q_count - (num_easy + num_hard)
+            if num_med < 1:
+                num_med = 1
+
+            diff_assignments = (["Easy"] * num_easy) + (["Medium"] * num_med) + (["Hard"] * num_hard)
+            while len(diff_assignments) < q_count:
+                diff_assignments.append("Medium")
+            random.shuffle(diff_assignments)
+
+            # Safe sub-batch generation (e.g. batches of 3-5)
+            batch_size = 5
+            for i in range(0, q_count, batch_size):
+                sub_types = items_plan[i : i + batch_size]
+                sub_diffs = diff_assignments[i : i + batch_size]
+                sub_count = len(sub_types)
+
+                sub_generated = []
+                for j in range(sub_count):
+                    curr_type = sub_types[j]
+                    curr_diff = sub_diffs[j]
+                    curr_error = concept_errors[j % len(concept_errors)]
+
+                    # Generate single or small sub-item
+                    single_raw = None
+                    try:
+                        single_raw = cls._generate_with_real_llm(concept, curr_type, curr_diff, curr_error, 1)
+                    except Exception:
+                        single_raw = None
+
+                    if not single_raw:
+                        single_raw = cls._generate_mock_questions(concept, curr_type, curr_diff, curr_error, 1)
+
+                    if single_raw:
+                        sub_generated.extend(single_raw)
+
+                # Rebalance correct options across this sub-batch
+                rebalanced_sub = cls._rebalance_batch_options(sub_generated)
+                saved_sub = SchemaQuestionBankService.save_generated_questions(rebalanced_sub)
+                concept_questions.extend(saved_sub)
+
+            all_generated.extend(concept_questions)
+            breakdown_by_concept[concept] = len(concept_questions)
+            for q in concept_questions:
+                diff = q.get("difficulty", "Medium")
+                qtype = q.get("question_type", "Basic Understanding")
+                breakdown_by_difficulty[diff] = breakdown_by_difficulty.get(diff, 0) + 1
+                breakdown_by_type[qtype] = breakdown_by_type.get(qtype, 0) + 1
+
+        total_requested = len(selected_concepts) * q_count
+        return {
+            "success": True,
+            "total_requested": total_requested,
+            "total_generated": len(all_generated),
+            "questions": all_generated,
+            "by_concept": breakdown_by_concept,
+            "by_difficulty": breakdown_by_difficulty,
+            "by_question_type": breakdown_by_type,
+            "warnings": [] if len(all_generated) == total_requested else [f"Generated {len(all_generated)} of {total_requested} requested questions."],
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Mode 3: Fill Missing Gaps Generation
+    # ─────────────────────────────────────────────────────────────────────────
+    @classmethod
+    def generate_gap_fill_questions(cls, gaps: list = None, max_per_gap: int = 2) -> dict:
+        """
+        Generates targeted draft questions to fill identified gaps in the approved question bank.
+        Saves all generated questions with status PENDING for teacher review.
+        """
+        if gaps is None:
+            coverage = SchemaQuestionBankService.get_coverage_analysis()
+            gaps = coverage.get("gaps_list", [])
+
+        if not gaps:
+            return {
+                "success": True,
+                "message": "No missing question gaps detected in the approved bank.",
+                "total_generated": 0,
+                "questions": [],
+                "by_concept": {},
+            }
+
+        generated_all = []
+        breakdown_by_concept = {}
+
+        for gap in gaps:
+            concept = gap.get("concept_name", "Loops")
+            gap_type = gap.get("gap_type", "question_type")
+            target_value = gap.get("target_value")
+            needed = min(max(1, int(gap.get("gap_count", 1))), int(max_per_gap or 2))
+
+            concept_errors = cls.get_concept_errors(concept)
+
+            q_type = None
+            diff = "Medium"
+            err_type = concept_errors[0]
+
+            if gap_type == "question_type":
+                q_type = target_value
+            elif gap_type == "difficulty":
+                diff = target_value
+            elif gap_type == "error_type":
+                err_type = target_value
+                q_type = "Error Recognition"
+
+            raw = None
+            try:
+                raw = cls._generate_with_real_llm(concept, q_type, diff, err_type, needed)
+            except Exception:
+                raw = None
+
+            if not raw:
+                raw = cls._generate_mock_questions(concept, q_type, diff, err_type, needed)
+
+            balanced = cls._rebalance_batch_options(raw)
+            saved = SchemaQuestionBankService.save_generated_questions(balanced)
+            generated_all.extend(saved)
+            breakdown_by_concept[concept] = breakdown_by_concept.get(concept, 0) + len(saved)
+
+        return {
+            "success": True,
+            "message": f"Generated {len(generated_all)} gap-filling draft questions across {len(breakdown_by_concept)} concepts.",
+            "total_generated": len(generated_all),
+            "questions": generated_all,
+            "by_concept": breakdown_by_concept,
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Batch Option Rebalancing
+    # ─────────────────────────────────────────────────────────────────────────
     @classmethod
     def _rebalance_batch_options(cls, questions: list) -> list:
         """
         Ensures that within any generated batch, correct_option values are distributed
-        across A, B, C, D rather than clustering on a single letter (e.g. all A).
+        evenly across A, B, C, D so no single letter dominates.
         """
         if not questions:
             return []
 
         letters = ["A", "B", "C", "D"]
-        # Check if all questions have the same correct option
         correct_positions = [q.get("correct_option", "A") for q in questions]
         all_same = len(set(correct_positions)) == 1
 
@@ -494,7 +843,6 @@ class SchemaLLMQuestionService:
             q_copy = dict(q)
             target_letter = letters[i % 4]
 
-            # If all are same or if current question is missing correct_option, rotate
             if all_same or q_copy.get("correct_option") != target_letter:
                 opt_dict = {
                     "A": q_copy.get("option_a", ""),
@@ -515,12 +863,11 @@ class SchemaLLMQuestionService:
 
         return rebalanced
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Real LLM API Integration (OpenAI GPT-4o-mini with JSON Schema)
+    # ─────────────────────────────────────────────────────────────────────────
     @classmethod
     def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count):
-        """
-        Generates draft questions using OpenAI API if OPENAI_API_KEY is available.
-        Validates JSON schema, 4-tier answer qualities, and returns draft question dicts.
-        """
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key or api_key.startswith("your_openai"):
             return None
@@ -595,7 +942,6 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                     validated.append(val_q)
 
             if len(validated) > 0:
-                print(f"[OK] OpenAI generated {len(validated)} validated draft questions for {concept}")
                 return validated
 
         except Exception as e:
@@ -629,10 +975,8 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         valid_qualities = {"Correct", "Nearly Correct", "Wrong", "Clearly Wrong"}
         qualities = [qual_a, qual_b, qual_c, qual_d]
         if not all(k in valid_qualities for k in qualities):
-            # Attempt gentle fix
             qual_a, qual_b, qual_c, qual_d = "Correct", "Nearly Correct", "Wrong", "Clearly Wrong"
 
-        # Determine correct_option based on "Correct" label
         correct_letter = "A"
         if qual_a == "Correct":
             correct_letter = "A"
@@ -678,12 +1022,18 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
         """High-fidelity template generator producing varied questions with distributed answer positions."""
         templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES["Loops"])
-        
+
         # Filter by question_type if specified
         if question_type and question_type in VALID_TYPES:
-            filtered = [t for t in templates if t["type"] == question_type]
-            if filtered:
-                templates = filtered
+            filtered_by_type = [t for t in templates if t.get("type") == question_type]
+            if filtered_by_type:
+                templates = filtered_by_type
+
+        # Filter by target_error_type if specified
+        if target_error_type and target_error_type != "UNKNOWN_ERROR":
+            filtered_by_err = [t for t in templates if t.get("error_type") == target_error_type]
+            if filtered_by_err:
+                templates = filtered_by_err
 
         results = []
         now = datetime.utcnow().isoformat() + "Z"
@@ -717,7 +1067,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "concept_name": concept,
                 "learning_outcome": base.get("outcome", f"Demonstrate understanding of {concept}"),
                 "question_type": base.get("type", question_type or "Basic Understanding"),
-                "difficulty": difficulty or "Medium",
+                "difficulty": difficulty or base.get("difficulty", "Medium"),
                 "target_error_type": target_error_type if target_error_type != "UNKNOWN_ERROR" else base.get("error_type", "UNKNOWN_ERROR"),
                 "equivalent_group_id": f"{base.get('group', 'GRP_' + concept[:3].upper())}{variant_suffix}",
                 "question_text": base.get("text", f"Question about {concept}"),

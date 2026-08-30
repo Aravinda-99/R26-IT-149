@@ -2,8 +2,13 @@
 Component 4: Schema Mastery ML & Question Bank Routes
 =====================================================
 Endpoints for:
-  - Teacher LLM-assisted draft question generation, review, edit, approval, and rejection
-  - Approved question bank inspection
+  - Teacher LLM-assisted draft question generation:
+      * Mode 1: Manual Draft Batch
+      * Mode 2: Auto Balanced Pack
+      * Mode 3: Fill Missing Gaps
+  - Question Bank Coverage Analytics & Gap Analysis
+  - Draft Question Review, Edit, Approval, and Rejection
+  - Approved Question Bank Management
   - Student post-test question generation (blueprint-based, answer-safe)
   - Student post-test submission, scoring, and ML schema mastery prediction
   - Direct ML schema mastery prediction API
@@ -12,24 +17,26 @@ Endpoints for:
 from flask import Blueprint, jsonify, request
 from services.schema_mastery_service import predict_schema_mastery
 from services.schema_question_bank_service import SchemaQuestionBankService
-from services.schema_llm_question_service import SchemaLLMQuestionService
+from services.schema_llm_question_service import SchemaLLMQuestionService, CONCEPT_ERROR_MAP
 from services.schema_post_test_service import SchemaPostTestService
 
 schema_mastery_bp = Blueprint("schema_mastery", __name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. LLM Draft Question Generation (Teacher/Admin)
+# 1. Mode 1: Manual LLM Draft Question Generation (Teacher/Admin)
 # ─────────────────────────────────────────────────────────────────────────────
 @schema_mastery_bp.route("/questions/generate", methods=["POST"])
 def generate_questions():
     """
-    Teacher/Admin generates draft questions via LLM / template generator.
+    Teacher generates a manual draft batch.
     Drafts are saved into generated_questions with status PENDING.
     """
     data = request.get_json(silent=True) or {}
     concept_name = data.get("concept_name", "Loops")
     question_type = data.get("question_type")
+    if question_type and question_type.startswith("All"):
+        question_type = None
     difficulty = data.get("difficulty", "Medium")
     target_error_type = data.get("target_error_type", "UNKNOWN_ERROR")
     count = data.get("count", 5)
@@ -50,6 +57,73 @@ def generate_questions():
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1b. Mode 2: Auto Balanced Pack Generation (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/generate-balanced", methods=["POST"])
+def generate_balanced_pack():
+    """
+    Generates a balanced multi-concept draft pack according to the 4-tier blueprint.
+    Drafts are saved with status PENDING.
+    """
+    data = request.get_json(silent=True) or {}
+    concepts = data.get("concepts", ["Variables", "Operators", "Loops", "Arrays", "Methods"])
+    questions_per_concept = int(data.get("questions_per_concept", 15))
+    difficulty_distribution = data.get("difficulty_distribution")
+    blueprint = data.get("blueprint")
+
+    try:
+        result = SchemaLLMQuestionService.generate_balanced_pack(
+            concepts=concepts,
+            questions_per_concept=questions_per_concept,
+            difficulty_distribution=difficulty_distribution,
+            blueprint=blueprint,
+        )
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1c. Mode 3: Fill Missing Question Bank Gaps (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/fill-gaps", methods=["POST"])
+def fill_missing_gaps():
+    """
+    Inspects coverage gaps in the approved question bank and generates targeted draft questions.
+    """
+    data = request.get_json(silent=True) or {}
+    gaps = data.get("gaps")
+    max_per_gap = data.get("max_per_gap", 2)
+
+    try:
+        result = SchemaLLMQuestionService.generate_gap_fill_questions(gaps=gaps, max_per_gap=max_per_gap)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1d. Question Bank Coverage Analysis (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/question-bank/coverage", methods=["GET"])
+def get_question_bank_coverage():
+    """
+    Returns question bank coverage matrix across concepts, types, difficulties, and error patterns.
+    """
+    try:
+        coverage = SchemaQuestionBankService.get_coverage_analysis()
+        return jsonify({"success": True, "coverage": coverage}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@schema_mastery_bp.route("/questions/concept-errors", methods=["GET"])
+def get_concept_error_map():
+    """Returns valid concept-specific error types mapping."""
+    return jsonify({"success": True, "concept_error_map": CONCEPT_ERROR_MAP}), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +278,6 @@ def toggle_question_active(question_id):
         }), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -335,9 +335,9 @@
     "option_d_quality": "Clearly Wrong",
     "explanation": "Incrementing by 2 produces odd numbers. i jumps from 9 to 11, missing 10 and looping indefinitely.",
     "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
-    "status": "PENDING",
+    "status": "APPROVED",
     "created_at": "2026-08-27T18:57:46.303693Z",
-    "updated_at": "2026-08-27T18:57:46.317143Z"
+    "updated_at": "2026-08-30T10:37:10.384391Z"
   },
   {
     "id": "GEN_49302CBD",

@@ -92,6 +92,10 @@ export const MasteryAPI = {
 export const SchemaMasteryAPI = {
     predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
     generateQuestions: (data) => apiRequest("/schema-mastery/questions/generate", "POST", data),
+    generateBalancedPack: (data) => apiRequest("/schema-mastery/questions/generate-balanced", "POST", data),
+    fillQuestionBankGaps: (data = {}) => apiRequest("/schema-mastery/questions/fill-gaps", "POST", data),
+    getQuestionBankCoverage: () => apiRequest("/schema-mastery/question-bank/coverage"),
+    getConceptErrors: () => apiRequest("/schema-mastery/questions/concept-errors"),
     getPendingQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/pending${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
