@@ -96,12 +96,17 @@ function buildFullCodeFromTemplate(question, optionIndex) {
 
 function sendTelemetry(codeString) {
     const user = getCurrentUser();
-    const studentId = user?.uid || user?.id || "STU001";
+    const studentId = user?.uid || user?.id;
+    if (!studentId || !codeString) return;
     // Fire-and-forget — never blocks quiz interaction on the network call.
     ErrorAPI.analyze({
         student_id: studentId,
         code: codeString,
         pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
+    }).then(res => {
+        if (res && res.prediction) {
+            sessionStorage.setItem("latest_error_analysis", JSON.stringify(res));
+        }
     }).catch(err => console.error("Telemetry error:", err));
 }
 
@@ -663,15 +668,12 @@ export function setupQuizUI(root = document) {
                         🤖 Analyzing your performance...
                     </div>
 
-                    <div style="display:flex; gap:1rem; margin-top:1.5rem; justify-content:center;">
-                        <button id="retry-quiz-btn" class="btn btn-primary" style="margin-top:0; background:#2563EB;">
-                            Retry 25 Questions
+                    <div style="display:flex; gap:1rem; margin-top:1.5rem; justify-content:center; flex-wrap:wrap;">
+                        <button id="retry-quiz-btn" class="btn btn-secondary" style="margin-top:0;">
+                            <i class="fa-solid fa-rotate-right"></i> Retry Pre-Test
                         </button>
-                        <button id="view-details-btn" class="btn btn-secondary" style="margin-top:0; background:#0D9488; color:#FFFFFF;">
-                            View Details
-                        </button>
-                        <button id="finish-quiz-btn" class="btn btn-primary" style="margin-top:0; background:#2563EB;">
-                            Finish
+                        <button id="view-details-btn" class="btn btn-primary" style="margin-top:0;">
+                            <i class="fa-solid fa-arrow-right"></i> Continue to Error Feedback
                         </button>
                     </div>
                 </article>
@@ -682,6 +684,34 @@ export function setupQuizUI(root = document) {
             counter.textContent = `Completed: ${state.quizBank.length} questions`;
             prevBtn.disabled = true;
             nextBtn.textContent = "Review Again";
+
+            // Save structured student progress
+            const user = getCurrentUser();
+            const studentId = user?.uid || user?.id;
+            if (studentId) {
+                let weakConcept = "Arrays";
+                let minScore = 999;
+                Object.entries(topicBreakdown).forEach(([topic, data]) => {
+                    const acc = data.total > 0 ? (data.correct / data.total) : 0;
+                    if (acc < minScore) {
+                        minScore = acc;
+                        weakConcept = topic;
+                    }
+                });
+
+                const existingProgress = JSON.parse(localStorage.getItem(`cq_progress_${studentId}`) || "{}");
+                const progress = {
+                    ...existingProgress,
+                    preTestCompleted: true,
+                    currentStep: Math.max(existingProgress.currentStep || 1, 2),
+                    quizScore: score,
+                    totalQuestions: state.quizBank.length,
+                    percent: percent,
+                    targetConcept: weakConcept,
+                    completedAt: new Date().toISOString()
+                };
+                localStorage.setItem(`cq_progress_${studentId}`, JSON.stringify(progress));
+            }
 
             let mlResult = null;
             const mlLoading = quizBox.querySelector("#ml-loading");
@@ -698,15 +728,13 @@ export function setupQuizUI(root = document) {
                     if (nextSessionBtn) {
                         nextSessionBtn.addEventListener("click", () => {
                             sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
-                            window.navigateTo("quiz-lab");
+                            window.navigateTo("error-analysis");
                         });
                     }
                 } else if (mlLoading) {
-                    // ML call returned nothing — hide the spinner so it doesn't stay stuck
                     mlLoading.style.display = "none";
                 }
             } else if (mlLoading) {
-                // No session metrics (e.g. no questions answered) — hide spinner
                 mlLoading.style.display = "none";
             }
 
@@ -735,14 +763,7 @@ export function setupQuizUI(root = document) {
             const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
             if (viewDetailsBtn) {
                 viewDetailsBtn.addEventListener("click", () => {
-                    window.navigateTo("quiz-results");
-                });
-            }
-
-            const finishBtn = quizBox.querySelector("#finish-quiz-btn");
-            if (finishBtn) {
-                finishBtn.addEventListener("click", () => {
-                    window.navigateTo("quiz-summary");
+                    window.navigateTo("error-analysis");
                 });
             }
 

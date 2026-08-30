@@ -642,5 +642,22 @@ function showCategoryModules(container, category) {
 }
 
 export async function renderGames(container) {
+    const targetCategory = sessionStorage.getItem("codequest_target_category");
+    const targetModule = sessionStorage.getItem("codequest_target_module");
+
+    if (targetCategory) {
+        sessionStorage.removeItem("codequest_target_category");
+        showCategoryModules(container, targetCategory);
+
+        if (targetModule) {
+            sessionStorage.removeItem("codequest_target_module");
+            setTimeout(() => {
+                launchGame(targetModule);
+            }, 120);
+        }
+        return;
+    }
+
     renderCategoryView(container);
 }
+

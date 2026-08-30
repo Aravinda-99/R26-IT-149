@@ -117,6 +117,17 @@ export async function renderErrorAnalysis(container) {
                             </div>
                         </div>
 
+                        <!-- Recommended Game CTA Banner -->
+                        <div class="ea-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: var(--primary-soft); border: 1px solid rgba(37, 99, 235, 0.3); padding: 1rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.75rem;">
+                            <div>
+                                <strong style="color: var(--primary); font-size: 0.95rem; display: block;">🎯 Diagnostic Assessment Complete</strong>
+                                <span style="color: var(--text-secondary); font-size: 0.82rem;">Directly practice the recommended gamified lessons to resolve this misconception.</span>
+                            </div>
+                            <button class="btn btn-primary" id="btn-top-start-game" style="font-weight: 700;">
+                                <i class="fa-solid fa-gamepad"></i> Start Recommended Game
+                            </button>
+                        </div>
+
                         <!-- Main Feedback Cards -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
                             <div class="card" style="background: rgba(167, 139, 250, 0.05); border-top: 3px solid var(--accent-purple);">
@@ -192,21 +203,23 @@ export async function renderErrorAnalysis(container) {
                             </div>
                         </div>
 
-                        <!-- Gamification Recommendation -->
-                        <div id="diag-game-card" class="card" style="background: linear-gradient(90deg, #1e2a3a, #2a3a4e); border: 1px solid var(--accent-blue); padding: 1.2rem; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;" title="Click to play this game">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; gap: 1rem; align-items: center;">
-                                    <div style="font-size: 2.5rem;" id="diag-game-icon">🎮</div>
-                                    <div>
-                                        <div style="font-size: 0.65rem; color: var(--accent-blue); text-transform: uppercase; font-weight: 700;">Recommended Game Activity</div>
-                                        <div id="diag-game-name" style="font-size: 1.2rem; font-weight: 700; color: white;">---</div>
-                                        <div id="diag-game-meta" style="font-size: 0.75rem; color: var(--text-secondary);">---</div>
-                                    </div>
+                        <!-- Recommended Game Activity Card -->
+                        <div id="diag-game-card" class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); padding: 1.4rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div>
+                                    <span class="badge badge-warning" style="margin-bottom: 0.4rem; display: inline-block;">
+                                        <i class="fa-solid fa-gamepad"></i> Recommended Game Activity
+                                    </span>
+                                    <div id="diag-game-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0.2rem 0;">---</div>
+                                    <div id="diag-game-meta" style="font-size: 0.8rem; color: var(--text-secondary);">---</div>
                                 </div>
-                                <div style="text-align: center; background: rgba(0,0,0,0.2); padding: 0.5rem 1rem; border-radius: 12px; min-width: 80px;">
-                                    <div style="font-size: 1.5rem;">🏆</div>
-                                    <div id="diag-badge" style="font-size: 0.6rem; font-weight: 800; color: var(--accent-orange); text-transform: uppercase;">---</div>
-                                </div>
+                                <button class="btn btn-primary btn-lg" id="btn-start-game-inner" style="font-weight: 700;">
+                                    <i class="fa-solid fa-play"></i> Start Game Lesson
+                                </button>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.8rem; margin-top: 0.8rem;">
+                                <span id="diag-badge" style="font-size: 0.75rem; padding: 0.25rem 0.55rem; background: var(--warning-soft); color: #92400E; border-radius: 4px; font-weight: 600;">Reward Badge: ---</span>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-arrow-right"></i> Launch directly in Game Engine</span>
                             </div>
                         </div>
 
@@ -346,24 +359,33 @@ export async function renderErrorAnalysis(container) {
     const welcomeView = document.getElementById("welcome-view");
     const resultView = document.getElementById("result-view");
 
-    // Load initial stats
+    // Check if latest analysis exists in sessionStorage from pre-test
+    try {
+        const cachedAnalysis = sessionStorage.getItem("latest_error_analysis");
+        if (cachedAnalysis) {
+            const parsed = JSON.parse(cachedAnalysis);
+            if (parsed && parsed.prediction) {
+                showTelemetryResult(parsed);
+            }
+        }
+    } catch (e) {}
+
+    // Load initial stats and history
     refreshGlobalState(studentId);
 
-    // --- Live Telemetry Poller ---
+    // --- Live Telemetry Fetch ---
     let lastPolledTimestamp = null;
     async function pollLatestTelemetry() {
         try {
             const res = await ErrorAPI.getLatest(studentId);
             if (res && res.prediction) {
-                // Check if this is a new analysis
                 if (res.timestamp !== lastPolledTimestamp) {
                     lastPolledTimestamp = res.timestamp;
                     showTelemetryResult(res);
-                    refreshGlobalState(studentId);
                 }
             }
         } catch (err) {
-            // Silently ignore 404 or network errors during polling
+            // Silently ignore during initial mount
         }
     }
 
@@ -528,60 +550,41 @@ function updateInsightEngine(data) {
     document.getElementById("diag-next-step").textContent = adaptive.next_learning_step;
     document.getElementById("diag-insight").textContent = expl.beginner_explanation;
 
-    document.getElementById("diag-game-name").textContent = gamify.recommended_activity;
-    document.getElementById("diag-game-meta").textContent = `${gamify.game_type} • ${gamify.difficulty} intensity`;
-    document.getElementById("diag-badge").textContent = gamify.reward_badge;
-
-    const gameIcons = { "LOOP_ERROR": "🌀", "ARRAY_ERROR": "📦", "VARIABLE_ERROR": "💾", "METHOD_ERROR": "⚙️", "CORRECT": "🎉" };
-    document.getElementById("diag-game-icon").textContent = gameIcons[pred.label] || "🎮";
-
-    // ── Wire game card click → navigate to matching game ─────────────
-    const errorToCategory = {
-        "LOOP_ERROR": { category: "loops", cardId: "category-loops", launchId: "launch-loops-module-btn" },
-        "VARIABLE_ERROR": { category: "variables", cardId: "category-variables", launchId: "launch-int-module-btn" },
-        "ARRAY_ERROR": { category: "arrays", cardId: "category-arrays", launchId: "launch-arrays-module-btn" },
-        "METHOD_ERROR": { category: "methods", cardId: "category-methods", launchId: "launch-stringmethods-module-btn" },
+    const ERROR_TO_GAME = {
+        "ARRAY_ERROR": { category: "arrays", module: "arrays", title: "Array Index Rescue Game (Array Mastery Module)" },
+        "LOOP_ERROR": { category: "loops", module: "loops", title: "Loop Train Express (For Loop Mastery Module)" },
+        "VARIABLE_ERROR": { category: "variables", module: "integer", title: "Variable Tracker Arena (Integer Mastery Module)" },
+        "METHOD_ERROR": { category: "methods", module: "stringmethods", title: "Method Mastery Wing (String Methods)" },
+        "OPERATOR_ERROR": { category: "operators", module: "operators", title: "Operator Mastery Academy" },
+        "CORRECT": { category: "variables", module: "integer", title: "Java Foundation Arena" }
     };
+
+    const gameTarget = ERROR_TO_GAME[pred.label] || { category: "arrays", module: "arrays", title: gamify.recommended_activity || "Array Index Rescue Game" };
+
+    document.getElementById("diag-game-name").textContent = gameTarget.title || gamify.recommended_activity;
+    document.getElementById("diag-game-meta").textContent = `${gamify.game_type || "Interactive Challenge"} • ${gamify.difficulty || "Adaptive"} intensity • Target: ${pred.concept || "Core Java"}`;
+    document.getElementById("diag-badge").textContent = `Reward: ${gamify.reward_badge || "Mastery Badge"}`;
+
+    const launchTargetGame = () => {
+        sessionStorage.setItem("codequest_target_category", gameTarget.category);
+        sessionStorage.setItem("codequest_target_module", gameTarget.module);
+        window.location.hash = "#/student/games";
+    };
+
+    // Wire top banner button
+    document.getElementById("btn-top-start-game")?.addEventListener("click", launchTargetGame);
+
+    // Wire game card inner button and card click
+    document.getElementById("btn-start-game-inner")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        launchTargetGame();
+    });
+
     const gameCard = document.getElementById("diag-game-card");
     if (gameCard) {
-        // Remove any previously wired listener by replacing the element clone trick
         const fresh = gameCard.cloneNode(true);
         gameCard.parentNode.replaceChild(fresh, gameCard);
-
-        const target = errorToCategory[pred.label];
-        if (target) {
-            fresh.addEventListener("mouseenter", () => { fresh.style.borderColor = "#60a5fa"; fresh.style.boxShadow = "0 0 12px rgba(96,165,250,0.25)"; });
-            fresh.addEventListener("mouseleave", () => { fresh.style.borderColor = "var(--accent-blue)"; fresh.style.boxShadow = ""; });
-            fresh.addEventListener("click", () => {
-                // Step 1: Navigate to Games page
-                const gamesLink = document.querySelector('.nav-link[data-page="games"]');
-                gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
-
-                const startedAt = Date.now();
-                const tryLaunch = () => {
-                    // Step 2: Click the category card to open the module list
-                    const categoryCard = document.getElementById(target.cardId);
-                    if (categoryCard) {
-                        categoryCard.click();
-                        // Step 3: Click the launch button once it renders
-                        const tryClickLaunch = () => {
-                            const btn = document.getElementById(target.launchId);
-                            if (btn) { btn.click(); return; }
-                            if (Date.now() - startedAt > 5000) return;
-                            setTimeout(tryClickLaunch, 80);
-                        };
-                        setTimeout(tryClickLaunch, 0);
-                        return;
-                    }
-                    if (Date.now() - startedAt > 4000) return;
-                    setTimeout(tryLaunch, 80);
-                };
-                setTimeout(tryLaunch, 0);
-            });
-        } else {
-            // CORRECT — no redirect, just a visual hint
-            fresh.style.cursor = "default";
-        }
+        fresh.addEventListener("click", launchTargetGame);
     }
 
     document.getElementById("diag-alignment").textContent = data.pretest_alignment.message;

@@ -39,7 +39,10 @@ let pendingQuestions = [];
 let approvedQuestions = [];
 let editingQuestionId = null;
 
-export async function renderQuestionBank(container) {
+export async function renderQuestionBank(container, opts = {}) {
+    if (opts.initialTab) {
+        activeTab = opts.initialTab;
+    }
     container.innerHTML = `
         <div class="qbank-page" style="padding: 1.5rem 2rem; max-width: 1280px; margin: 0 auto; color: var(--text-primary);">
             <!-- Header -->
@@ -133,22 +136,22 @@ function renderGenerateTab(content) {
     content.innerHTML = `
         <div style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem; align-items: start;">
             <!-- Generation Form -->
-            <div class="card" style="background: var(--card-bg, #181c28); border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.5rem;">
-                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem; color: #818cf8;">
+            <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.5rem; box-shadow: var(--shadow-sm);">
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
                     <i class="fa-solid fa-sliders"></i> LLM Generation Parameters
                 </h3>
 
                 <form id="gen-form" style="display: flex; flex-direction: column; gap: 1rem;">
                     <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Target Concept</label>
-                        <select id="gen-concept" class="input" style="width: 100%; padding: 0.6rem; background: var(--bg-dark, #0f121d); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                        <select id="gen-concept" class="input input-field" style="width: 100%; padding: 0.6rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
                             ${CONCEPTS.map(c => `<option value="${c}" ${c === 'Loops' ? 'selected' : ''}>${c}</option>`).join("")}
                         </select>
                     </div>
 
                     <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Question Type</label>
-                        <select id="gen-type" class="input" style="width: 100%; padding: 0.6rem; background: var(--bg-dark, #0f121d); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                        <select id="gen-type" class="input input-field" style="width: 100%; padding: 0.6rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
                             <option value="">All Types (Balanced Blueprint)</option>
                             ${QUESTION_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
                         </select>
@@ -156,7 +159,7 @@ function renderGenerateTab(content) {
 
                     <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Difficulty</label>
-                        <select id="gen-difficulty" class="input" style="width: 100%; padding: 0.6rem; background: var(--bg-dark, #0f121d); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                        <select id="gen-difficulty" class="input input-field" style="width: 100%; padding: 0.6rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
                             <option value="Easy">Easy</option>
                             <option value="Medium" selected>Medium</option>
                             <option value="Hard">Hard</option>
@@ -165,17 +168,17 @@ function renderGenerateTab(content) {
 
                     <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Target Error Focus (Component 2)</label>
-                        <select id="gen-error-type" class="input" style="width: 100%; padding: 0.6rem; background: var(--bg-dark, #0f121d); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                        <select id="gen-error-type" class="input input-field" style="width: 100%; padding: 0.6rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">
                             ${ERROR_TYPES.map(e => `<option value="${e}" ${e === 'LOOP_CONDITION_ERROR' ? 'selected' : ''}>${e}</option>`).join("")}
                         </select>
                     </div>
 
                     <div>
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 0.3rem;">Draft Count</label>
-                        <input type="number" id="gen-count" min="1" max="15" value="5" class="input" style="width: 100%; padding: 0.6rem; background: var(--bg-dark, #0f121d); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;" />
+                        <input type="number" id="gen-count" min="1" max="15" value="5" class="input input-field" style="width: 100%; padding: 0.6rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;" />
                     </div>
 
-                    <button type="submit" class="btn btn-primary" id="gen-submit-btn" style="margin-top: 0.5rem; padding: 0.75rem; font-weight: 600; background: linear-gradient(135deg, #6366f1, #4f46e5); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary" id="gen-submit-btn" style="margin-top: 0.5rem; padding: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions
                     </button>
                 </form>
@@ -183,13 +186,13 @@ function renderGenerateTab(content) {
 
             <!-- Draft Output & Workflow Info -->
             <div id="gen-results-container">
-                <div class="card" style="background: var(--card-bg, #181c28); border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.5rem; margin-bottom: 1.5rem;">
-                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.8rem; color: #38bdf8;">
+                <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.8rem; color: var(--primary);">
                         <i class="fa-solid fa-circle-info"></i> How the LLM-Assisted Pipeline Works
                     </h3>
                     <ul style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; padding-left: 1.2rem;">
                         <li><strong>Step 1:</strong> LLM drafts concept-specific MCQ questions with 4 distinct answer quality grades (<em>Correct, Nearly Correct, Wrong, Clearly Wrong</em>).</li>
-                        <li><strong>Step 2:</strong> Drafts are automatically stored in the <span style="color: #f59e0b; font-weight: 600;">PENDING</span> state.</li>
+                        <li><strong>Step 2:</strong> Drafts are automatically stored in the <span style="color: var(--warning); font-weight: 600;">PENDING</span> state.</li>
                         <li><strong>Step 3:</strong> Unapproved questions are <u>never</u> exposed to students. Teachers review, edit, and approve them.</li>
                         <li><strong>Step 4:</strong> Approved questions enter the active bank used for 15-question post-tests and ML mastery validation.</li>
                     </ul>
@@ -369,32 +372,32 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
     ];
 
     return `
-        <div class="card q-card" data-qid="${q.id}" style="background: var(--card-bg, #181c28); border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.3rem; transition: transform 0.15s ease;">
+        <div class="card q-card" data-qid="${q.id}" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 0.8rem; padding: 1.3rem; box-shadow: var(--shadow-sm); transition: transform 0.15s ease;">
             <!-- Header Metadata -->
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <span style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
+                    <span style="background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
                         ${q.question_id || q.id}
                     </span>
-                    <span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
+                    <span style="background: var(--bg-subtle); color: var(--text-primary); font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
                         ${q.concept_name}
                     </span>
-                    <span style="background: rgba(139, 92, 246, 0.15); color: #c084fc; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
+                    <span style="background: var(--bg-subtle); color: var(--text-secondary); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">
                         ${q.question_type || "Basic"}
                     </span>
                     <span style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.2rem 0.5rem;">
                         Difficulty: <strong>${q.difficulty || "Medium"}</strong>
                     </span>
-                    ${q.target_error_type ? `<span style="background: rgba(244, 63, 94, 0.15); color: #fb7185; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">Focus: ${q.target_error_type}</span>` : ""}
+                    ${q.target_error_type ? `<span style="background: var(--danger-soft); color: var(--danger); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 0.3rem;">Focus: ${q.target_error_type}</span>` : ""}
                 </div>
 
                 <div>
                     ${isDraft ? `
-                        <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
+                        <span style="background: var(--warning-soft); color: var(--warning); font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
                             <i class="fa-solid fa-hourglass-half"></i> PENDING REVIEW
                         </span>
                     ` : `
-                        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
+                        <span style="background: var(--success-soft); color: var(--success); font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px;">
                             <i class="fa-solid fa-circle-check"></i> APPROVED (Exposures: ${q.exposure_count || 0})
                         </span>
                     `}
@@ -402,11 +405,11 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
             </div>
 
             <!-- Question Text -->
-            <p style="font-size: 1.05rem; font-weight: 600; margin-bottom: 0.8rem; line-height: 1.4;">${escapeHtml(q.question_text || "")}</p>
+            <p style="font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.8rem; line-height: 1.4;">${escapeHtml(q.question_text || "")}</p>
 
             <!-- Code Snippet (if any) -->
             ${q.code_snippet ? `
-                <div style="background: #0b0e17; border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem 1rem; margin-bottom: 1rem; font-family: monospace; font-size: 0.9rem; overflow-x: auto; color: #38bdf8;">
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.8rem 1rem; margin-bottom: 1rem; font-family: monospace; font-size: 0.9rem; overflow-x: auto; color: var(--text-primary);">
                     <pre style="margin: 0;"><code>${escapeHtml(q.code_snippet)}</code></pre>
                 </div>
             ` : ""}
@@ -414,9 +417,9 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
             <!-- 4-Tier Options -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1rem;">
                 ${options.map(opt => `
-                    <div style="padding: 0.6rem 0.8rem; border-radius: 0.4rem; background: var(--bg-dark, #0f121d); border: 1px solid ${q.correct_option === opt.key ? 'rgba(16, 185, 129, 0.6)' : 'var(--border-color)'}; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                    <div style="padding: 0.6rem 0.8rem; border-radius: 0.4rem; background: ${q.correct_option === opt.key ? 'var(--success-soft)' : '#FFFFFF'}; border: 1px solid ${q.correct_option === opt.key ? 'var(--success)' : 'var(--border-color)'}; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; color: var(--text-primary);">
                         <div>
-                            <strong style="color: ${q.correct_option === opt.key ? '#10b981' : 'var(--text-secondary)'}; margin-right: 0.4rem;">${opt.key}.</strong>
+                            <strong style="color: ${q.correct_option === opt.key ? 'var(--success)' : 'var(--text-secondary)'}; margin-right: 0.4rem;">${opt.key}.</strong>
                             <span>${escapeHtml(opt.text || "")}</span>
                         </div>
                         <span style="font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 0.3rem; ${qualityStyles[opt.quality] || qualityStyles['Wrong']}">
@@ -427,7 +430,7 @@ function renderQuestionCard(q, { showActions = true, isDraft = true } = {}) {
             </div>
 
             <!-- Explanation / Outcome Footer -->
-            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <div style="border-top: 1px solid var(--border-color); padding-top: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="font-size: 0.8rem; color: var(--text-secondary); max-width: 70%;">
                     ${q.explanation ? `<strong>Explanation:</strong> ${escapeHtml(q.explanation)}` : `<em>Outcome: ${escapeHtml(q.learning_outcome || "")}</em>`}
                 </div>
@@ -463,19 +466,19 @@ function renderEditQuestionCard(q) {
             <form class="edit-q-form" data-id="${q.id}" style="display: flex; flex-direction: column; gap: 0.8rem;">
                 <div>
                     <label style="font-size: 0.8rem; color: var(--text-secondary);">Question Text</label>
-                    <textarea class="input edit-text" rows="2" style="width: 100%; padding: 0.5rem; background: #0f121d; color: white; border: 1px solid var(--border-color); border-radius: 0.4rem;">${escapeHtml(q.question_text || "")}</textarea>
+                    <textarea class="input input-field edit-text" rows="2" style="width: 100%; padding: 0.5rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 0.4rem;">${escapeHtml(q.question_text || "")}</textarea>
                 </div>
 
                 <div>
                     <label style="font-size: 0.8rem; color: var(--text-secondary);">Code Snippet (Optional Java)</label>
-                    <textarea class="input edit-code" rows="3" style="width: 100%; padding: 0.5rem; background: #0f121d; color: #38bdf8; font-family: monospace; border: 1px solid var(--border-color); border-radius: 0.4rem;">${escapeHtml(q.code_snippet || "")}</textarea>
+                    <textarea class="input input-field edit-code" rows="3" style="width: 100%; padding: 0.5rem; background: var(--bg-subtle); color: var(--text-primary); font-family: monospace; border: 1px solid var(--border-color); border-radius: 0.4rem;">${escapeHtml(q.code_snippet || "")}</textarea>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
                     <div>
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Option A</label>
-                        <input type="text" class="input edit-opt-a" value="${escapeHtml(q.option_a || "")}" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white; border: 1px solid var(--border-color);" />
-                        <select class="input edit-qa" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #0f121d; color: white;">
+                        <input type="text" class="input input-field edit-opt-a" value="${escapeHtml(q.option_a || "")}" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color);" />
+                        <select class="input input-field edit-qa" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #FFFFFF; color: var(--text-primary);">
                             <option value="Correct" ${q.option_a_quality === 'Correct' ? 'selected' : ''}>Correct (1.0)</option>
                             <option value="Nearly Correct" ${q.option_a_quality === 'Nearly Correct' ? 'selected' : ''}>Nearly Correct (0.5)</option>
                             <option value="Wrong" ${q.option_a_quality === 'Wrong' ? 'selected' : ''}>Wrong (0.0)</option>
@@ -485,8 +488,8 @@ function renderEditQuestionCard(q) {
 
                     <div>
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Option B</label>
-                        <input type="text" class="input edit-opt-b" value="${escapeHtml(q.option_b || "")}" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white; border: 1px solid var(--border-color);" />
-                        <select class="input edit-qb" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #0f121d; color: white;">
+                        <input type="text" class="input input-field edit-opt-b" value="${escapeHtml(q.option_b || "")}" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color);" />
+                        <select class="input input-field edit-qb" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #FFFFFF; color: var(--text-primary);">
                             <option value="Correct" ${q.option_b_quality === 'Correct' ? 'selected' : ''}>Correct (1.0)</option>
                             <option value="Nearly Correct" ${q.option_b_quality === 'Nearly Correct' ? 'selected' : ''}>Nearly Correct (0.5)</option>
                             <option value="Wrong" ${q.option_b_quality === 'Wrong' ? 'selected' : ''}>Wrong (0.0)</option>
@@ -496,8 +499,8 @@ function renderEditQuestionCard(q) {
 
                     <div>
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Option C</label>
-                        <input type="text" class="input edit-opt-c" value="${escapeHtml(q.option_c || "")}" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white; border: 1px solid var(--border-color);" />
-                        <select class="input edit-qc" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #0f121d; color: white;">
+                        <input type="text" class="input input-field edit-opt-c" value="${escapeHtml(q.option_c || "")}" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color);" />
+                        <select class="input input-field edit-qc" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #FFFFFF; color: var(--text-primary);">
                             <option value="Correct" ${q.option_c_quality === 'Correct' ? 'selected' : ''}>Correct (1.0)</option>
                             <option value="Nearly Correct" ${q.option_c_quality === 'Nearly Correct' ? 'selected' : ''}>Nearly Correct (0.5)</option>
                             <option value="Wrong" ${q.option_c_quality === 'Wrong' ? 'selected' : ''}>Wrong (0.0)</option>
@@ -507,8 +510,8 @@ function renderEditQuestionCard(q) {
 
                     <div>
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Option D</label>
-                        <input type="text" class="input edit-opt-d" value="${escapeHtml(q.option_d || "")}" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white; border: 1px solid var(--border-color);" />
-                        <select class="input edit-qd" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #0f121d; color: white;">
+                        <input type="text" class="input input-field edit-opt-d" value="${escapeHtml(q.option_d || "")}" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color);" />
+                        <select class="input input-field edit-qd" style="width: 100%; margin-top: 0.2rem; padding: 0.3rem; background: #FFFFFF; color: var(--text-primary);">
                             <option value="Correct" ${q.option_d_quality === 'Correct' ? 'selected' : ''}>Correct (1.0)</option>
                             <option value="Nearly Correct" ${q.option_d_quality === 'Nearly Correct' ? 'selected' : ''}>Nearly Correct (0.5)</option>
                             <option value="Wrong" ${q.option_d_quality === 'Wrong' ? 'selected' : ''}>Wrong (0.0)</option>
@@ -520,7 +523,7 @@ function renderEditQuestionCard(q) {
                 <div style="display: flex; gap: 1rem;">
                     <div style="flex: 1;">
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Correct Option Key</label>
-                        <select class="input edit-correct-opt" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white;">
+                        <select class="input input-field edit-correct-opt" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary);">
                             <option value="A" ${q.correct_option === 'A' ? 'selected' : ''}>A</option>
                             <option value="B" ${q.correct_option === 'B' ? 'selected' : ''}>B</option>
                             <option value="C" ${q.correct_option === 'C' ? 'selected' : ''}>C</option>
@@ -529,15 +532,13 @@ function renderEditQuestionCard(q) {
                     </div>
                     <div style="flex: 2;">
                         <label style="font-size: 0.75rem; color: var(--text-secondary);">Explanation</label>
-                        <input type="text" class="input edit-exp" value="${escapeHtml(q.explanation || "")}" style="width: 100%; padding: 0.4rem; background: #0f121d; color: white; border: 1px solid var(--border-color);" />
+                        <input type="text" class="input input-field edit-exp" value="${escapeHtml(q.explanation || "")}" style="width: 100%; padding: 0.4rem; background: #FFFFFF; color: var(--text-primary); border: 1px solid var(--border-color);" />
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;">
-                    <button type="button" class="btn btn-sm cancel-edit-btn" style="background: rgba(255,255,255,0.1); color: var(--text-primary);">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-sm" style="background: #6366f1; color: white; font-weight: 600;">
+                    <button type="button" class="btn btn-outline btn-sm cancel-edit-btn" style="color: var(--text-primary);">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary" style="font-weight: 600;">
                         <i class="fa-solid fa-floppy-disk"></i> Save Changes
                     </button>
                 </div>

@@ -14,12 +14,6 @@ import { renderPostTest } from "./posttest.js";
 let currentContainer = null;
 let loadedStudents = [];
 
-const fallbackStudents = [
-    { studentId: "STU001", studentName: "Student 01", name: "Student 01", conceptName: "Loops", offline: true },
-    { studentId: "STU002", studentName: "Student 02", name: "Student 02", conceptName: "Arrays", offline: true },
-    { studentId: "STU003", studentName: "Student 03", name: "Student 03", conceptName: "Methods", offline: true },
-];
-
 function normalizeStudent(s = {}) {
     const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
     const studentName =
@@ -249,16 +243,26 @@ export async function renderMastery(container) {
 
 async function loadStudents() {
     const select = document.getElementById("student-select");
+    const grid = document.getElementById("mastery-grid");
     try {
         const data = await MasteryAPI.getStudents();
         let students = normalizeStudentsResponse(data);
 
-        if (students.length === 0) {
-            students = fallbackStudents.map(normalizeStudent);
-        }
         loadedStudents = students;
 
-        // Student-friendly dropdown — no research scores in the label
+        if (students.length === 0) {
+            if (select) select.innerHTML = `<option value="">No student submissions yet</option>`;
+            if (grid) grid.innerHTML = `
+                <div class="card" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary); background: #FFFFFF; border: 1px solid var(--border-color); grid-column: 1 / -1;">
+                    <div style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"><i class="fa-solid fa-user-clock"></i></div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;">No Post-Test Submissions Yet</h3>
+                    <p style="font-size: 0.9rem; max-width: 400px; margin: 0 auto;">Student understanding check scores and mastery validations will appear here once students complete their post-tests.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Student dropdown
         select.innerHTML = `<option value="">Choose a student</option>` +
             students.map(s => `
                 <option value="${s.studentId}"
