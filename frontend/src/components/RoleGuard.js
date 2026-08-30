@@ -10,7 +10,7 @@ import { getCurrentUser, getUserRole, isAuthLoading } from "../utils/auth.js";
 export function checkRouteAccess(route) {
     const loading = isAuthLoading();
     if (loading) {
-        return { status: "LOADING" };
+        return { allowed: false, loading: true, status: "LOADING" };
     }
 
     const user = getCurrentUser();
@@ -21,23 +21,24 @@ export function checkRouteAccess(route) {
     if (cleanRoute === "/" || cleanRoute === "") {
         if (user) {
             if (role === "teacher" || role === "admin") {
-                return { status: "REDIRECT", target: "/teacher/dashboard" };
+                return { allowed: false, redirectTo: "/teacher/dashboard", target: "/teacher/dashboard", status: "REDIRECT" };
             } else {
-                return { status: "REDIRECT", target: "/student/dashboard" };
+                return { allowed: false, redirectTo: "/student/dashboard", target: "/student/dashboard", status: "REDIRECT" };
             }
         }
-        return { status: "REDIRECT", target: "/welcome" };
+        return { allowed: false, redirectTo: "/welcome", target: "/welcome", status: "REDIRECT" };
     }
 
     // 1. Teacher & Admin Routes
     if (cleanRoute.startsWith("/teacher") || cleanRoute.startsWith("teacher/") || cleanRoute.startsWith("/admin")) {
         if (!user) {
-            return { status: "REDIRECT", target: `/login?returnUrl=${encodeURIComponent(route)}` };
+            const redirectUrl = `/login?returnUrl=${encodeURIComponent(route)}`;
+            return { allowed: false, redirectTo: redirectUrl, target: redirectUrl, status: "REDIRECT" };
         }
         if (role !== "teacher" && role !== "admin") {
-            return { status: "REDIRECT", target: "/student/dashboard" };
+            return { allowed: false, redirectTo: "/student/dashboard", target: "/student/dashboard", status: "REDIRECT" };
         }
-        return { status: "AUTHORIZED", role };
+        return { allowed: true, role, status: "AUTHORIZED" };
     }
 
     // 2. Public Auth Routes (Welcome, Onboarding, Login, Signup)
@@ -55,20 +56,20 @@ export function checkRouteAccess(route) {
     ) {
         if (user && cleanRoute !== "/welcome") {
             if (role === "teacher" || role === "admin") {
-                return { status: "REDIRECT", target: "/teacher/dashboard" };
+                return { allowed: false, redirectTo: "/teacher/dashboard", target: "/teacher/dashboard", status: "REDIRECT" };
             } else {
-                return { status: "REDIRECT", target: "/student/dashboard" };
+                return { allowed: false, redirectTo: "/student/dashboard", target: "/student/dashboard", status: "REDIRECT" };
             }
         }
-        return { status: "AUTHORIZED", role: "guest" };
+        return { allowed: true, role: "guest", status: "AUTHORIZED" };
     }
 
     // 3. Student Protected Routes
     if (cleanRoute.startsWith("/student") || cleanRoute.startsWith("student/")) {
-        return { status: "AUTHORIZED", role: role || "student" };
+        return { allowed: true, role: role || "student", status: "AUTHORIZED" };
     }
 
-    return { status: "AUTHORIZED", role: role || "student" };
+    return { allowed: true, role: role || "student", status: "AUTHORIZED" };
 }
 
 export function renderLoadingScreen(container) {

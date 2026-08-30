@@ -31,6 +31,7 @@ import { renderSignup } from "./pages/auth/Signup.js";
 
 // Student Adaptive Pages
 import { renderStudentDashboard } from "./pages/student/StudentDashboard.js";
+import { renderFocusArea } from "./pages/student/FocusArea.js";
 import { renderLearningPath } from "./pages/student/LearningPath.js";
 import { renderPractice } from "./pages/student/Practice.js";
 import { renderAssessments } from "./pages/student/Assessments.js";
@@ -104,6 +105,9 @@ function resolveRoute(route) {
     // 3. Student Adaptive Routes
     if (r === "/student/dashboard" || r === "dashboard") {
         return { layout: "student", render: (c) => renderStudentDashboard(c, navigateTo) };
+    }
+    if (r === "/student/focus-area" || r === "/student/recommended-practice" || r === "focus-area" || r === "recommended-practice") {
+        return { layout: "student", render: (c) => renderFocusArea(c, navigateTo) };
     }
     if (r === "/student/learning-path" || r === "learning-path" || r === "/student/modules" || r === "modules" || r === "/student/curriculum") {
         return { layout: "student", render: (c) => renderLearningPath(c, navigateTo) };

@@ -48,25 +48,19 @@ export function renderStudentLayout(container, activeRoute, renderPageContent, o
                     <li>
                         <a href="/student/dashboard" class="student-nav-item ${r === "/student/dashboard" || r === "/dashboard" ? "active" : ""}" data-route="/student/dashboard">
                             <i class="fa-solid fa-house"></i>
-                            <span>Home</span>
+                            <span>Dashboard</span>
                         </a>
                     </li>
                     <li>
                         <a href="/student/learning-path" class="student-nav-item ${r.includes("learning-path") || r.includes("modules") ? "active" : ""}" data-route="/student/learning-path">
                             <i class="fa-solid fa-route"></i>
-                            <span>Learning Path</span>
+                            <span>Learn</span>
                         </a>
                     </li>
                     <li>
                         <a href="/student/practice" class="student-nav-item ${r.includes("practice") || r.includes("games") ? "active" : ""}" data-route="/student/practice">
                             <i class="fa-solid fa-gamepad"></i>
                             <span>Practice</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/student/assessments" class="student-nav-item ${r.includes("assessments") || r.includes("pre-test") || r.includes("diagnostic") || r.includes("post-test") ? "active" : ""}" data-route="/student/assessments">
-                            <i class="fa-solid fa-list-check"></i>
-                            <span>Assessments</span>
                         </a>
                     </li>
                     <li>

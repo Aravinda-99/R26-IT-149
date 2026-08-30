@@ -343,6 +343,8 @@ async function submitPostTest(container, onNavigate) {
 
     try {
         const result = await SchemaMasteryAPI.submitPostTest(payload);
+        sessionStorage.setItem("last_post_test_result", JSON.stringify(result));
+        localStorage.setItem("last_post_test_result", JSON.stringify(result));
         renderResultScreen(container, result, onNavigate);
     } catch (err) {
         container.innerHTML = `

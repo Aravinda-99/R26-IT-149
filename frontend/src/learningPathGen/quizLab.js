@@ -2,7 +2,7 @@ import { QUIZ_BANK } from "./data.js";
 import { ErrorAPI } from "../api/api.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
-const ML_API_URL = "http://127.0.0.1:5000/api/adaptive/predict";
+const ML_API_URL = "/api/adaptive/predict";
 
 // ── Default difficulty (can be passed in from quiz lab page) ───────────
 let currentDifficulty = "beginner";
@@ -643,14 +643,25 @@ export function setupQuizUI(root = document) {
             }
 
             // Save full results including ML output
-            sessionStorage.setItem("quiz-results", JSON.stringify({
+            const weakConcept = mlResult?.next_topic || (topicScores ? Object.entries(topicScores).sort((a, b) => a[1] - b[1])[0]?.[0] : "Loops") || "Loops";
+            const conceptCapitalized = weakConcept.charAt(0).toUpperCase() + weakConcept.slice(1);
+
+            const pretestPayload = {
                 score,
                 percent,
+                weak_concept: conceptCapitalized,
+                focus_concept: conceptCapitalized,
                 topicBreakdown,
-                answeredCount:   state.selectedAnswers.filter(a => a !== null).length,
+                answeredCount: state.selectedAnswers.filter(a => a !== null).length,
                 sessionMetrics,
                 mlResult
-            }));
+            };
+
+            sessionStorage.setItem("quiz-results", JSON.stringify(pretestPayload));
+            sessionStorage.setItem("codequest_pretest_result", JSON.stringify(pretestPayload));
+            localStorage.setItem("codequest_pretest_result", JSON.stringify(pretestPayload));
+            sessionStorage.setItem("cq_focus_concept", conceptCapitalized);
+            localStorage.setItem("cq_focus_concept", conceptCapitalized);
 
             // Retry button
             const retryBtn = quizBox.querySelector("#retry-quiz-btn");

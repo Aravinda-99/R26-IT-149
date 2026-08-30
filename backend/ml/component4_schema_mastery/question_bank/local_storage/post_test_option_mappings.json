@@ -7194,5 +7194,1545 @@
         }
       }
     ]
+  },
+  "SES_A8AA721A": {
+    "session_id": "SES_A8AA721A",
+    "created_at": "2026-08-29T22:09:51.834088Z",
+    "mappings": {
+      "LOOP_Q8C93": {
+        "A": "D",
+        "B": "A",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_QBB3F": {
+        "A": "C",
+        "B": "A",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q385D": {
+        "A": "A",
+        "B": "C",
+        "C": "B",
+        "D": "D"
+      },
+      "LOOP_Q97A5": {
+        "A": "D",
+        "B": "C",
+        "C": "B",
+        "D": "A"
+      },
+      "LOOP_Q1A60": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q002": {
+        "A": "C",
+        "B": "A",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q5C3D": {
+        "A": "D",
+        "B": "A",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_QD23F": {
+        "A": "D",
+        "B": "C",
+        "C": "B",
+        "D": "A"
+      },
+      "LOOP_Q45A5": {
+        "A": "D",
+        "B": "C",
+        "C": "A",
+        "D": "B"
+      },
+      "LOOP_Q003": {
+        "A": "D",
+        "B": "B",
+        "C": "C",
+        "D": "A"
+      },
+      "LOOP_QBB00": {
+        "A": "B",
+        "B": "C",
+        "C": "A",
+        "D": "D"
+      },
+      "LOOP_Q004": {
+        "A": "C",
+        "B": "D",
+        "C": "A",
+        "D": "B"
+      },
+      "LOOP_Q4662": {
+        "A": "C",
+        "B": "B",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_Q005": {
+        "A": "C",
+        "B": "A",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q0E17": {
+        "A": "C",
+        "B": "B",
+        "C": "D",
+        "D": "A"
+      }
+    },
+    "questions": [
+      {
+        "question_id": "LOOP_Q8C93",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop always executes an infinite number of times",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB3F",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop does not support the break statement",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_Q385D",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop can only iterate over arrays",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q97A5",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop always executes an infinite number of times",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop can only iterate over arrays",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1A60",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 2 4 ",
+          "B": "0 2 4 6 ",
+          "C": "2 4 ",
+          "D": "0 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_Q002",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What is the final printed value of sum after the nested loops execute?",
+        "code_snippet": "int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 2; j++) {\n        sum += (i + j);\n    }\n}\nSystem.out.println(sum);",
+        "options": {
+          "A": "15",
+          "B": "6",
+          "C": "9",
+          "D": "12"
+        }
+      },
+      {
+        "question_id": "LOOP_Q5C3D",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Hard",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "2 4 ",
+          "B": "0 2 4 ",
+          "C": "0 2 4 6 ",
+          "D": "0 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_QD23F",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "while loops cannot use '!=' as a condition",
+          "B": "System.out.println freezes the CPU",
+          "C": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "D": "i is not initialized properly"
+        }
+      },
+      {
+        "question_id": "LOOP_Q45A5",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "while loops cannot use '!=' as a condition",
+          "B": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "C": "i is not initialized properly",
+          "D": "System.out.println freezes the CPU"
+        }
+      },
+      {
+        "question_id": "LOOP_Q003",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What critical runtime issue exists in the following while loop?",
+        "code_snippet": "int k = 10;\nwhile (k > 0) {\n    System.out.print(k + \" \");\n    // no counter change\n}",
+        "options": {
+          "A": "Compilation error because while loop condition is not valid",
+          "B": "NullPointerException on System.out",
+          "C": "Array out of bounds exception",
+          "D": "Infinite loop because variable k is never decremented toward 0"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB00",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
+        "code_snippet": "int N = 5;\nlong fact = 1;",
+        "options": {
+          "A": "for (int i = 1; i < N; i++) { fact += i; }",
+          "B": "while (N > 0) { fact += N; N--; }",
+          "C": "for (int i = 0; i < N; i++) { fact *= i; }",
+          "D": "for (int i = 1; i <= N; i++) { fact *= i; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q004",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "You want to find the first multiple of 7 in an array and stop searching immediately. Which loop structure achieves this?",
+        "code_snippet": "int[] numbers = {4, 9, 14, 21, 35};\nint found = -1;",
+        "options": {
+          "A": "for (int n : numbers) { found = n; }",
+          "B": "while (numbers.length > 0) { found = 7; }",
+          "C": "for (int n : numbers) { if (n % 7 == 0) { found = n; continue; } }",
+          "D": "for (int n : numbers) { if (n % 7 == 0) { found = n; break; } }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q4662",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Medium",
+        "question_text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
+        "code_snippet": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
+        "options": {
+          "A": "Type safety during iteration",
+          "B": "The ability to read array element values",
+          "C": "Enhanced for loops cannot run on primitive arrays",
+          "D": "Direct access to the current index position and the ability to modify array elements in-place"
+        }
+      },
+      {
+        "question_id": "LOOP_Q005",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Hard",
+        "question_text": "If an outer loop runs N times and an inner loop runs N times, how many total times does the inner statement execute?",
+        "code_snippet": "for (int i = 0; i < N; i++) {\n    for (int j = 0; j < N; j++) {\n        doWork();\n    }\n}",
+        "options": {
+          "A": "N * N (N squared times)",
+          "B": "2 * N times",
+          "C": "N times",
+          "D": "N + 1 times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q0E17",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop does not support the break statement",
+          "B": "A while loop can only iterate over arrays",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      }
+    ]
+  },
+  "SES_C773D197": {
+    "session_id": "SES_C773D197",
+    "created_at": "2026-08-29T22:09:56.691874Z",
+    "mappings": {
+      "LOOP_Q8C93": {
+        "A": "D",
+        "B": "B",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_QBB3F": {
+        "A": "A",
+        "B": "B",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_Q385D": {
+        "A": "C",
+        "B": "B",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_Q97A5": {
+        "A": "B",
+        "B": "A",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_Q1A60": {
+        "A": "C",
+        "B": "B",
+        "C": "A",
+        "D": "D"
+      },
+      "LOOP_Q002": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q5C3D": {
+        "A": "D",
+        "B": "C",
+        "C": "B",
+        "D": "A"
+      },
+      "LOOP_QD23F": {
+        "A": "C",
+        "B": "A",
+        "C": "B",
+        "D": "D"
+      },
+      "LOOP_Q45A5": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q003": {
+        "A": "D",
+        "B": "C",
+        "C": "B",
+        "D": "A"
+      },
+      "LOOP_QBB00": {
+        "A": "D",
+        "B": "B",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q004": {
+        "A": "A",
+        "B": "B",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_Q4662": {
+        "A": "B",
+        "B": "A",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_Q005": {
+        "A": "D",
+        "B": "B",
+        "C": "C",
+        "D": "A"
+      },
+      "LOOP_QD7C5": {
+        "A": "C",
+        "B": "B",
+        "C": "A",
+        "D": "D"
+      }
+    },
+    "questions": [
+      {
+        "question_id": "LOOP_Q8C93",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop always executes an infinite number of times",
+          "B": "A while loop can only iterate over arrays",
+          "C": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "D": "A do-while loop does not support the break statement"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB3F",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop can only iterate over arrays",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q385D",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop does not support the break statement",
+          "B": "A while loop can only iterate over arrays",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      },
+      {
+        "question_id": "LOOP_Q97A5",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1A60",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 2 4 6 ",
+          "B": "0 4 ",
+          "C": "0 2 4 ",
+          "D": "2 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_Q002",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What is the final printed value of sum after the nested loops execute?",
+        "code_snippet": "int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 2; j++) {\n        sum += (i + j);\n    }\n}\nSystem.out.println(sum);",
+        "options": {
+          "A": "6",
+          "B": "15",
+          "C": "9",
+          "D": "12"
+        }
+      },
+      {
+        "question_id": "LOOP_Q5C3D",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Hard",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "2 4 ",
+          "B": "0 2 4 6 ",
+          "C": "0 4 ",
+          "D": "0 2 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_QD23F",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "System.out.println freezes the CPU",
+          "B": "i is not initialized properly",
+          "C": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "D": "while loops cannot use '!=' as a condition"
+        }
+      },
+      {
+        "question_id": "LOOP_Q45A5",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "i is not initialized properly",
+          "B": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "C": "while loops cannot use '!=' as a condition",
+          "D": "System.out.println freezes the CPU"
+        }
+      },
+      {
+        "question_id": "LOOP_Q003",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What critical runtime issue exists in the following while loop?",
+        "code_snippet": "int k = 10;\nwhile (k > 0) {\n    System.out.print(k + \" \");\n    // no counter change\n}",
+        "options": {
+          "A": "Compilation error because while loop condition is not valid",
+          "B": "Array out of bounds exception",
+          "C": "NullPointerException on System.out",
+          "D": "Infinite loop because variable k is never decremented toward 0"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB00",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
+        "code_snippet": "int N = 5;\nlong fact = 1;",
+        "options": {
+          "A": "for (int i = 1; i <= N; i++) { fact *= i; }",
+          "B": "for (int i = 1; i < N; i++) { fact += i; }",
+          "C": "for (int i = 0; i < N; i++) { fact *= i; }",
+          "D": "while (N > 0) { fact += N; N--; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q004",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "You want to find the first multiple of 7 in an array and stop searching immediately. Which loop structure achieves this?",
+        "code_snippet": "int[] numbers = {4, 9, 14, 21, 35};\nint found = -1;",
+        "options": {
+          "A": "for (int n : numbers) { if (n % 7 == 0) { found = n; continue; } }",
+          "B": "for (int n : numbers) { if (n % 7 == 0) { found = n; break; } }",
+          "C": "while (numbers.length > 0) { found = 7; }",
+          "D": "for (int n : numbers) { found = n; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q4662",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Medium",
+        "question_text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
+        "code_snippet": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
+        "options": {
+          "A": "The ability to read array element values",
+          "B": "Direct access to the current index position and the ability to modify array elements in-place",
+          "C": "Type safety during iteration",
+          "D": "Enhanced for loops cannot run on primitive arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_Q005",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Hard",
+        "question_text": "If an outer loop runs N times and an inner loop runs N times, how many total times does the inner statement execute?",
+        "code_snippet": "for (int i = 0; i < N; i++) {\n    for (int j = 0; j < N; j++) {\n        doWork();\n    }\n}",
+        "options": {
+          "A": "N times",
+          "B": "N + 1 times",
+          "C": "N * N (N squared times)",
+          "D": "2 * N times"
+        }
+      },
+      {
+        "question_id": "LOOP_QD7C5",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop does not support the break statement",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A while loop can only iterate over arrays",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      }
+    ]
+  },
+  "SES_C2BE5535": {
+    "session_id": "SES_C2BE5535",
+    "created_at": "2026-08-29T22:16:27.714725Z",
+    "mappings": {
+      "LOOP_Q2BAC": {
+        "A": "B",
+        "B": "C",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_Q8C93": {
+        "A": "B",
+        "B": "A",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_QBB3F": {
+        "A": "D",
+        "B": "B",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q385D": {
+        "A": "A",
+        "B": "D",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_Q1A60": {
+        "A": "B",
+        "B": "C",
+        "C": "A",
+        "D": "D"
+      },
+      "LOOP_Q002": {
+        "A": "B",
+        "B": "D",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q5C3D": {
+        "A": "B",
+        "B": "A",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_QD23F": {
+        "A": "D",
+        "B": "B",
+        "C": "C",
+        "D": "A"
+      },
+      "LOOP_Q45A5": {
+        "A": "D",
+        "B": "A",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_Q003": {
+        "A": "B",
+        "B": "A",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_QBB00": {
+        "A": "A",
+        "B": "C",
+        "C": "B",
+        "D": "D"
+      },
+      "LOOP_Q004": {
+        "A": "D",
+        "B": "A",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_Q4662": {
+        "A": "C",
+        "B": "B",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_Q005": {
+        "A": "B",
+        "B": "C",
+        "C": "A",
+        "D": "D"
+      },
+      "LOOP_Q1B3A": {
+        "A": "C",
+        "B": "D",
+        "C": "B",
+        "D": "A"
+      }
+    },
+    "questions": [
+      {
+        "question_id": "LOOP_Q2BAC",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      },
+      {
+        "question_id": "LOOP_Q8C93",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB3F",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop always executes an infinite number of times",
+          "B": "A while loop can only iterate over arrays",
+          "C": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "D": "A do-while loop does not support the break statement"
+        }
+      },
+      {
+        "question_id": "LOOP_Q385D",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop always executes an infinite number of times",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1A60",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 4 ",
+          "B": "0 2 4 6 ",
+          "C": "0 2 4 ",
+          "D": "2 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_Q002",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What is the final printed value of sum after the nested loops execute?",
+        "code_snippet": "int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 2; j++) {\n        sum += (i + j);\n    }\n}\nSystem.out.println(sum);",
+        "options": {
+          "A": "12",
+          "B": "9",
+          "C": "6",
+          "D": "15"
+        }
+      },
+      {
+        "question_id": "LOOP_Q5C3D",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Hard",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 4 ",
+          "B": "0 2 4 ",
+          "C": "2 4 ",
+          "D": "0 2 4 6 "
+        }
+      },
+      {
+        "question_id": "LOOP_QD23F",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "while loops cannot use '!=' as a condition",
+          "B": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "C": "System.out.println freezes the CPU",
+          "D": "i is not initialized properly"
+        }
+      },
+      {
+        "question_id": "LOOP_Q45A5",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "while loops cannot use '!=' as a condition",
+          "B": "i is not initialized properly",
+          "C": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "D": "System.out.println freezes the CPU"
+        }
+      },
+      {
+        "question_id": "LOOP_Q003",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What critical runtime issue exists in the following while loop?",
+        "code_snippet": "int k = 10;\nwhile (k > 0) {\n    System.out.print(k + \" \");\n    // no counter change\n}",
+        "options": {
+          "A": "NullPointerException on System.out",
+          "B": "Infinite loop because variable k is never decremented toward 0",
+          "C": "Compilation error because while loop condition is not valid",
+          "D": "Array out of bounds exception"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB00",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
+        "code_snippet": "int N = 5;\nlong fact = 1;",
+        "options": {
+          "A": "for (int i = 0; i < N; i++) { fact *= i; }",
+          "B": "while (N > 0) { fact += N; N--; }",
+          "C": "for (int i = 1; i < N; i++) { fact += i; }",
+          "D": "for (int i = 1; i <= N; i++) { fact *= i; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q004",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "You want to find the first multiple of 7 in an array and stop searching immediately. Which loop structure achieves this?",
+        "code_snippet": "int[] numbers = {4, 9, 14, 21, 35};\nint found = -1;",
+        "options": {
+          "A": "while (numbers.length > 0) { found = 7; }",
+          "B": "for (int n : numbers) { if (n % 7 == 0) { found = n; continue; } }",
+          "C": "for (int n : numbers) { found = n; }",
+          "D": "for (int n : numbers) { if (n % 7 == 0) { found = n; break; } }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q4662",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Medium",
+        "question_text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
+        "code_snippet": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
+        "options": {
+          "A": "Type safety during iteration",
+          "B": "The ability to read array element values",
+          "C": "Enhanced for loops cannot run on primitive arrays",
+          "D": "Direct access to the current index position and the ability to modify array elements in-place"
+        }
+      },
+      {
+        "question_id": "LOOP_Q005",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Hard",
+        "question_text": "If an outer loop runs N times and an inner loop runs N times, how many total times does the inner statement execute?",
+        "code_snippet": "for (int i = 0; i < N; i++) {\n    for (int j = 0; j < N; j++) {\n        doWork();\n    }\n}",
+        "options": {
+          "A": "N + 1 times",
+          "B": "N * N (N squared times)",
+          "C": "2 * N times",
+          "D": "N times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1B3A",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop always executes an infinite number of times",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop can only iterate over arrays"
+        }
+      }
+    ]
+  },
+  "SES_A0AAFEF8": {
+    "session_id": "SES_A0AAFEF8",
+    "created_at": "2026-08-29T22:16:32.200528Z",
+    "mappings": {
+      "LOOP_Q2BAC": {
+        "A": "B",
+        "B": "A",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_Q8C93": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_QBB3F": {
+        "A": "A",
+        "B": "D",
+        "C": "B",
+        "D": "C"
+      },
+      "LOOP_Q385D": {
+        "A": "B",
+        "B": "C",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_Q1A60": {
+        "A": "B",
+        "B": "C",
+        "C": "A",
+        "D": "D"
+      },
+      "LOOP_Q002": {
+        "A": "D",
+        "B": "A",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_Q5C3D": {
+        "A": "A",
+        "B": "B",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_QD23F": {
+        "A": "B",
+        "B": "D",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q45A5": {
+        "A": "A",
+        "B": "B",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_Q003": {
+        "A": "B",
+        "B": "A",
+        "C": "D",
+        "D": "C"
+      },
+      "LOOP_QBB00": {
+        "A": "B",
+        "B": "D",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q004": {
+        "A": "D",
+        "B": "B",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q4662": {
+        "A": "C",
+        "B": "D",
+        "C": "A",
+        "D": "B"
+      },
+      "LOOP_Q005": {
+        "A": "B",
+        "B": "D",
+        "C": "A",
+        "D": "C"
+      },
+      "LOOP_Q6213": {
+        "A": "C",
+        "B": "D",
+        "C": "B",
+        "D": "A"
+      }
+    },
+    "questions": [
+      {
+        "question_id": "LOOP_Q2BAC",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop does not support the break statement"
+        }
+      },
+      {
+        "question_id": "LOOP_Q8C93",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB3F",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop always executes an infinite number of times",
+          "C": "A while loop can only iterate over arrays",
+          "D": "A do-while loop does not support the break statement"
+        }
+      },
+      {
+        "question_id": "LOOP_Q385D",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1A60",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 4 ",
+          "B": "0 2 4 6 ",
+          "C": "0 2 4 ",
+          "D": "2 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_Q002",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What is the final printed value of sum after the nested loops execute?",
+        "code_snippet": "int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 2; j++) {\n        sum += (i + j);\n    }\n}\nSystem.out.println(sum);",
+        "options": {
+          "A": "9",
+          "B": "6",
+          "C": "15",
+          "D": "12"
+        }
+      },
+      {
+        "question_id": "LOOP_Q5C3D",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Hard",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 2 4 ",
+          "B": "0 4 ",
+          "C": "2 4 ",
+          "D": "0 2 4 6 "
+        }
+      },
+      {
+        "question_id": "LOOP_QD23F",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "B": "while loops cannot use '!=' as a condition",
+          "C": "i is not initialized properly",
+          "D": "System.out.println freezes the CPU"
+        }
+      },
+      {
+        "question_id": "LOOP_Q45A5",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "i is not initialized properly",
+          "B": "System.out.println freezes the CPU",
+          "C": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "D": "while loops cannot use '!=' as a condition"
+        }
+      },
+      {
+        "question_id": "LOOP_Q003",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What critical runtime issue exists in the following while loop?",
+        "code_snippet": "int k = 10;\nwhile (k > 0) {\n    System.out.print(k + \" \");\n    // no counter change\n}",
+        "options": {
+          "A": "NullPointerException on System.out",
+          "B": "Infinite loop because variable k is never decremented toward 0",
+          "C": "Compilation error because while loop condition is not valid",
+          "D": "Array out of bounds exception"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB00",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
+        "code_snippet": "int N = 5;\nlong fact = 1;",
+        "options": {
+          "A": "for (int i = 1; i < N; i++) { fact += i; }",
+          "B": "for (int i = 1; i <= N; i++) { fact *= i; }",
+          "C": "for (int i = 0; i < N; i++) { fact *= i; }",
+          "D": "while (N > 0) { fact += N; N--; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q004",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "You want to find the first multiple of 7 in an array and stop searching immediately. Which loop structure achieves this?",
+        "code_snippet": "int[] numbers = {4, 9, 14, 21, 35};\nint found = -1;",
+        "options": {
+          "A": "while (numbers.length > 0) { found = 7; }",
+          "B": "for (int n : numbers) { if (n % 7 == 0) { found = n; break; } }",
+          "C": "for (int n : numbers) { if (n % 7 == 0) { found = n; continue; } }",
+          "D": "for (int n : numbers) { found = n; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q4662",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Medium",
+        "question_text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
+        "code_snippet": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
+        "options": {
+          "A": "Type safety during iteration",
+          "B": "Enhanced for loops cannot run on primitive arrays",
+          "C": "Direct access to the current index position and the ability to modify array elements in-place",
+          "D": "The ability to read array element values"
+        }
+      },
+      {
+        "question_id": "LOOP_Q005",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Hard",
+        "question_text": "If an outer loop runs N times and an inner loop runs N times, how many total times does the inner statement execute?",
+        "code_snippet": "for (int i = 0; i < N; i++) {\n    for (int j = 0; j < N; j++) {\n        doWork();\n    }\n}",
+        "options": {
+          "A": "N + 1 times",
+          "B": "N times",
+          "C": "2 * N times",
+          "D": "N * N (N squared times)"
+        }
+      },
+      {
+        "question_id": "LOOP_Q6213",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop always executes an infinite number of times",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop can only iterate over arrays"
+        }
+      }
+    ]
+  },
+  "SES_49476EDE": {
+    "session_id": "SES_49476EDE",
+    "created_at": "2026-08-29T22:20:07.445051Z",
+    "mappings": {
+      "LOOP_Q2BAC": {
+        "A": "B",
+        "B": "A",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_Q8C93": {
+        "A": "A",
+        "B": "D",
+        "C": "C",
+        "D": "B"
+      },
+      "LOOP_QBB3F": {
+        "A": "A",
+        "B": "D",
+        "C": "B",
+        "D": "C"
+      },
+      "LOOP_QE143": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q1A60": {
+        "A": "D",
+        "B": "C",
+        "C": "A",
+        "D": "B"
+      },
+      "LOOP_Q002": {
+        "A": "D",
+        "B": "B",
+        "C": "C",
+        "D": "A"
+      },
+      "LOOP_Q5C3D": {
+        "A": "B",
+        "B": "A",
+        "C": "C",
+        "D": "D"
+      },
+      "LOOP_QD23F": {
+        "A": "D",
+        "B": "C",
+        "C": "B",
+        "D": "A"
+      },
+      "LOOP_Q45A5": {
+        "A": "C",
+        "B": "A",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q003": {
+        "A": "B",
+        "B": "C",
+        "C": "D",
+        "D": "A"
+      },
+      "LOOP_QBB00": {
+        "A": "A",
+        "B": "C",
+        "C": "D",
+        "D": "B"
+      },
+      "LOOP_Q004": {
+        "A": "D",
+        "B": "A",
+        "C": "B",
+        "D": "C"
+      },
+      "LOOP_Q4662": {
+        "A": "A",
+        "B": "C",
+        "C": "B",
+        "D": "D"
+      },
+      "LOOP_Q005": {
+        "A": "D",
+        "B": "C",
+        "C": "A",
+        "D": "B"
+      },
+      "LOOP_Q7F90": {
+        "A": "B",
+        "B": "C",
+        "C": "D",
+        "D": "A"
+      }
+    },
+    "questions": [
+      {
+        "question_id": "LOOP_Q2BAC",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop always executes an infinite number of times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q8C93",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop always executes an infinite number of times",
+          "C": "A do-while loop does not support the break statement",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB3F",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A while loop always executes an infinite number of times",
+          "C": "A while loop can only iterate over arrays",
+          "D": "A do-while loop does not support the break statement"
+        }
+      },
+      {
+        "question_id": "LOOP_QE143",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "Edited Teacher Text",
+        "code_snippet": "",
+        "options": {
+          "A": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A while loop can only iterate over arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_Q1A60",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "2 4 ",
+          "B": "0 2 4 6 ",
+          "C": "0 2 4 ",
+          "D": "0 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_Q002",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Medium",
+        "question_text": "What is the final printed value of sum after the nested loops execute?",
+        "code_snippet": "int sum = 0;\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 2; j++) {\n        sum += (i + j);\n    }\n}\nSystem.out.println(sum);",
+        "options": {
+          "A": "9",
+          "B": "12",
+          "C": "15",
+          "D": "6"
+        }
+      },
+      {
+        "question_id": "LOOP_Q5C3D",
+        "concept_name": "Loops",
+        "question_type": "Code Output Prediction",
+        "difficulty": "Hard",
+        "question_text": "What will be printed to the screen when this code runs?",
+        "code_snippet": "for (int i = 0; i < 6; i += 2) {\n    if (i == 2) continue;\n    System.out.print(i + \" \");\n}",
+        "options": {
+          "A": "0 4 ",
+          "B": "0 2 4 ",
+          "C": "0 2 4 6 ",
+          "D": "2 4 "
+        }
+      },
+      {
+        "question_id": "LOOP_QD23F",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "while loops cannot use '!=' as a condition",
+          "B": "System.out.println freezes the CPU",
+          "C": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "D": "i is not initialized properly"
+        }
+      },
+      {
+        "question_id": "LOOP_Q45A5",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What causes this while loop to never terminate?",
+        "code_snippet": "int i = 1;\nwhile (i != 10) {\n    System.out.println(i);\n    i += 2;\n}",
+        "options": {
+          "A": "i skips 10 (1, 3, 5, 7, 9, 11...), so the condition i != 10 is never false",
+          "B": "i is not initialized properly",
+          "C": "while loops cannot use '!=' as a condition",
+          "D": "System.out.println freezes the CPU"
+        }
+      },
+      {
+        "question_id": "LOOP_Q003",
+        "concept_name": "Loops",
+        "question_type": "Error Recognition",
+        "difficulty": "Medium",
+        "question_text": "What critical runtime issue exists in the following while loop?",
+        "code_snippet": "int k = 10;\nwhile (k > 0) {\n    System.out.print(k + \" \");\n    // no counter change\n}",
+        "options": {
+          "A": "NullPointerException on System.out",
+          "B": "Array out of bounds exception",
+          "C": "Compilation error because while loop condition is not valid",
+          "D": "Infinite loop because variable k is never decremented toward 0"
+        }
+      },
+      {
+        "question_id": "LOOP_QBB00",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "Which loop correctly computes the factorial of an integer N (e.g. 5! = 120)?",
+        "code_snippet": "int N = 5;\nlong fact = 1;",
+        "options": {
+          "A": "for (int i = 0; i < N; i++) { fact *= i; }",
+          "B": "while (N > 0) { fact += N; N--; }",
+          "C": "for (int i = 1; i <= N; i++) { fact *= i; }",
+          "D": "for (int i = 1; i < N; i++) { fact += i; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q004",
+        "concept_name": "Loops",
+        "question_type": "Application",
+        "difficulty": "Medium",
+        "question_text": "You want to find the first multiple of 7 in an array and stop searching immediately. Which loop structure achieves this?",
+        "code_snippet": "int[] numbers = {4, 9, 14, 21, 35};\nint found = -1;",
+        "options": {
+          "A": "while (numbers.length > 0) { found = 7; }",
+          "B": "for (int n : numbers) { if (n % 7 == 0) { found = n; continue; } }",
+          "C": "for (int n : numbers) { if (n % 7 == 0) { found = n; break; } }",
+          "D": "for (int n : numbers) { found = n; }"
+        }
+      },
+      {
+        "question_id": "LOOP_Q4662",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Medium",
+        "question_text": "When rewriting a traditional index-based for loop into an enhanced for-each loop in Java, what capability is lost?",
+        "code_snippet": "// Traditional\nfor (int i = 0; i < arr.length; i++) { ... }\n// Enhanced\nfor (int x : arr) { ... }",
+        "options": {
+          "A": "Direct access to the current index position and the ability to modify array elements in-place",
+          "B": "Type safety during iteration",
+          "C": "The ability to read array element values",
+          "D": "Enhanced for loops cannot run on primitive arrays"
+        }
+      },
+      {
+        "question_id": "LOOP_Q005",
+        "concept_name": "Loops",
+        "question_type": "Transfer",
+        "difficulty": "Hard",
+        "question_text": "If an outer loop runs N times and an inner loop runs N times, how many total times does the inner statement execute?",
+        "code_snippet": "for (int i = 0; i < N; i++) {\n    for (int j = 0; j < N; j++) {\n        doWork();\n    }\n}",
+        "options": {
+          "A": "N times",
+          "B": "N * N (N squared times)",
+          "C": "2 * N times",
+          "D": "N + 1 times"
+        }
+      },
+      {
+        "question_id": "LOOP_Q7F90",
+        "concept_name": "Loops",
+        "question_type": "Basic Understanding",
+        "difficulty": "Medium",
+        "question_text": "What is the key structural difference between a 'while' loop and a 'do-while' loop?",
+        "code_snippet": "",
+        "options": {
+          "A": "A while loop can only iterate over arrays",
+          "B": "A do-while loop does not support the break statement",
+          "C": "A while loop always executes an infinite number of times",
+          "D": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution"
+        }
+      }
+    ]
   }
 }

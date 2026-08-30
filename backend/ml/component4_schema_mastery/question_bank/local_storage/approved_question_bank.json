@@ -330,7 +330,7 @@
     "explanation": "i=0: (0+0)+(0+1)=1; i=1: (1+0)+(1+1)=3; i=2: (2+0)+(2+1)=5. Total sum = 1 + 3 + 5 = 9.",
     "approved_by": "System Seed",
     "source_generated_question_id": "SEED",
-    "exposure_count": 47,
+    "exposure_count": 52,
     "active": true,
     "created_at": "2026-08-22T10:00:00Z",
     "updated_at": "2026-08-27T16:46:04.944825Z"
@@ -358,7 +358,7 @@
     "explanation": "Since k remains 10, the condition k > 0 stays permanently true, creating an infinite loop.",
     "approved_by": "System Seed",
     "source_generated_question_id": "SEED",
-    "exposure_count": 47,
+    "exposure_count": 52,
     "active": true,
     "created_at": "2026-08-22T10:00:00Z",
     "updated_at": "2026-08-27T16:46:04.944825Z"
@@ -386,7 +386,7 @@
     "explanation": "'break' terminates the loop immediately upon finding the first match (14), preventing unnecessary iterations.",
     "approved_by": "System Seed",
     "source_generated_question_id": "SEED",
-    "exposure_count": 47,
+    "exposure_count": 52,
     "active": true,
     "created_at": "2026-08-22T10:00:00Z",
     "updated_at": "2026-08-27T16:46:04.944825Z"
@@ -414,7 +414,7 @@
     "explanation": "For each of the N outer iterations, the inner loop completes N iterations, yielding N * N total executions.",
     "approved_by": "System Seed",
     "source_generated_question_id": "SEED",
-    "exposure_count": 47,
+    "exposure_count": 52,
     "active": true,
     "created_at": "2026-08-22T10:00:00Z",
     "updated_at": "2026-08-27T16:46:04.944825Z"
@@ -726,7 +726,7 @@
     "updated_at": "2026-08-27T16:46:04.944825Z",
     "approved_by": "Senior Teacher",
     "source_generated_question_id": "GEN_5C435CA2",
-    "exposure_count": 47,
+    "exposure_count": 52,
     "active": true
   },
   {
@@ -936,7 +936,7 @@
     "updated_at": "2026-08-27T16:46:04.944825Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_CEDC7FDD",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -966,7 +966,7 @@
     "updated_at": "2026-08-27T17:07:07.792032Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_D8E355C1",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -996,7 +996,7 @@
     "updated_at": "2026-08-27T17:07:54.960029Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_9AA734D7",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -1026,7 +1026,7 @@
     "updated_at": "2026-08-27T17:18:59.707719Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_111FFA0A",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -1056,7 +1056,7 @@
     "updated_at": "2026-08-27T17:33:31.400064Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_B00B7822",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -1086,7 +1086,7 @@
     "updated_at": "2026-08-27T17:53:09.252168Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_B7746022",
-    "exposure_count": 27,
+    "exposure_count": 32,
     "active": true
   },
   {
@@ -1176,7 +1176,7 @@
     "updated_at": "2026-08-27T17:53:10.190148Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_AB876CA0",
-    "exposure_count": 10,
+    "exposure_count": 11,
     "active": true
   },
   {
@@ -1206,7 +1206,7 @@
     "updated_at": "2026-08-27T17:53:10.464620Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_6C9222FD",
-    "exposure_count": 27,
+    "exposure_count": 32,
     "active": true
   },
   {
@@ -1236,7 +1236,7 @@
     "updated_at": "2026-08-27T17:53:10.702149Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_52AD22B1",
-    "exposure_count": 27,
+    "exposure_count": 32,
     "active": true
   },
   {
@@ -1266,7 +1266,7 @@
     "updated_at": "2026-08-27T17:53:10.932052Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_DC4F1350",
-    "exposure_count": 27,
+    "exposure_count": 32,
     "active": true
   },
   {
@@ -1296,7 +1296,7 @@
     "updated_at": "2026-08-27T17:53:11.147309Z",
     "approved_by": "Teacher Batch",
     "source_generated_question_id": "GEN_C29E9F44",
-    "exposure_count": 27,
+    "exposure_count": 32,
     "active": true
   },
   {
@@ -1596,7 +1596,7 @@
     "updated_at": "2026-08-28T17:39:55.954864Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_6AB032D5",
-    "exposure_count": 8,
+    "exposure_count": 10,
     "active": true
   },
   {
@@ -1626,7 +1626,7 @@
     "updated_at": "2026-08-28T17:52:54.682601Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_59A8EA4C",
-    "exposure_count": 6,
+    "exposure_count": 10,
     "active": true
   },
   {
@@ -1656,7 +1656,67 @@
     "updated_at": "2026-08-28T18:26:42.131234Z",
     "approved_by": "TeacherTest",
     "source_generated_question_id": "GEN_7F5B1D72",
-    "exposure_count": 4,
+    "exposure_count": 9,
+    "active": true
+  },
+  {
+    "id": "APP_87820F3C",
+    "question_id": "LOOP_Q8C93",
+    "concept_name": "Loops",
+    "learning_outcome": "Distinguish pre-test and post-test loop execution mechanics",
+    "question_type": "Basic Understanding",
+    "difficulty": "Medium",
+    "target_error_type": "LOOP_CONDITION_ERROR",
+    "equivalent_group_id": "GRP_LOOP_DOWHILE_647",
+    "question_text": "Edited Teacher Text",
+    "code_snippet": "",
+    "option_a": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+    "option_b": "A while loop can only iterate over arrays",
+    "option_c": "A do-while loop does not support the break statement",
+    "option_d": "A while loop always executes an infinite number of times",
+    "correct_option": "A",
+    "option_a_quality": "Correct",
+    "option_b_quality": "Nearly Correct",
+    "option_c_quality": "Wrong",
+    "option_d_quality": "Clearly Wrong",
+    "explanation": "'do-while' is a post-test loop: the condition is checked after executing the loop body.",
+    "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
+    "status": "APPROVED",
+    "created_at": "2026-08-29T22:09:50.311789Z",
+    "updated_at": "2026-08-29T22:09:50.346481Z",
+    "approved_by": "TeacherTest",
+    "source_generated_question_id": "GEN_6AE4636E",
+    "exposure_count": 5,
+    "active": true
+  },
+  {
+    "id": "APP_4BD06B51",
+    "question_id": "LOOP_Q2BAC",
+    "concept_name": "Loops",
+    "learning_outcome": "Distinguish pre-test and post-test loop execution mechanics",
+    "question_type": "Basic Understanding",
+    "difficulty": "Medium",
+    "target_error_type": "LOOP_CONDITION_ERROR",
+    "equivalent_group_id": "GRP_LOOP_DOWHILE_265",
+    "question_text": "Edited Teacher Text",
+    "code_snippet": "",
+    "option_a": "A do-while loop evaluates its condition after the body, guaranteeing at least one execution",
+    "option_b": "A while loop can only iterate over arrays",
+    "option_c": "A do-while loop does not support the break statement",
+    "option_d": "A while loop always executes an infinite number of times",
+    "correct_option": "A",
+    "option_a_quality": "Correct",
+    "option_b_quality": "Nearly Correct",
+    "option_c_quality": "Wrong",
+    "option_d_quality": "Clearly Wrong",
+    "explanation": "'do-while' is a post-test loop: the condition is checked after executing the loop body.",
+    "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
+    "status": "APPROVED",
+    "created_at": "2026-08-29T22:16:26.263601Z",
+    "updated_at": "2026-08-29T22:16:26.292427Z",
+    "approved_by": "TeacherTest",
+    "source_generated_question_id": "GEN_C7C4FEA3",
+    "exposure_count": 3,
     "active": true
   }
 ]

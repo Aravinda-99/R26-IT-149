@@ -8,7 +8,7 @@
 
 import { getCurrentUser, logout } from "../utils/auth.js";
 
-export function renderTeacherLayout(targetElement, activeRoute, onNavigate) {
+export function renderTeacherLayout(targetElement, activeRoute, renderPageContent, onNavigate) {
     const user = getCurrentUser();
     const role = (user?.role || "Teacher").toUpperCase();
     const email = user?.email || "teacher@codequest.lk";
@@ -111,5 +111,10 @@ export function renderTeacherLayout(targetElement, activeRoute, onNavigate) {
         if (onNavigate) onNavigate("/login");
     });
 
-    return document.getElementById("teacher-content-area");
+    const contentArea = document.getElementById("teacher-content-area");
+    if (typeof renderPageContent === "function" && contentArea) {
+        renderPageContent(contentArea);
+    }
+
+    return contentArea;
 }
