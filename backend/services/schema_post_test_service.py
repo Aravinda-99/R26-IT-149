@@ -14,6 +14,7 @@ Manages:
 import uuid
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
+from firebase.firebase_service import db
 
 BLUEPRINT = {
     "Basic Understanding": 4,
@@ -285,6 +286,53 @@ class SchemaPostTestService:
         SchemaQuestionBankService.save_mastery_session(session_record)
         SchemaQuestionBankService.save_question_attempts(question_attempts)
         SchemaQuestionBankService.increment_exposure_counts(used_qids)
+
+        # Write to mcq_posttest_results so mastery_service.get_status can set
+        # postTestCompleted=True and mcqPostTestScore when the dashboard reloads.
+        # Doc ID pattern must match the READ side in mastery_service.py:
+        #   mcq_doc_id = f"{user_id}_{concept_key}"  (concept_key is lowercase)
+        if db:
+            try:
+                concept_key = concept_name.strip().lower()
+                mcq_doc_id = f"{student_id}_{concept_key}"
+                mcq_ref = db.collection("mcq_posttest_results").document(mcq_doc_id)
+                existing_doc = mcq_ref.get()
+                created_at_ts = None
+                attempt_number = 1
+                if existing_doc.exists:
+                    prev = existing_doc.to_dict() or {}
+                    created_at_ts = prev.get("createdAt")
+                    attempt_number = int(prev.get("attemptNumber", 0) or 0) + 1
+
+                from utils.helpers import timestamp_now
+                now_ts = timestamp_now()
+                # currentLevel must end with " Level" — mastery_service strips it
+                if next_action == "DONE":
+                    current_level_label = "Developing Level"
+                else:
+                    current_level_label = "Fragile Level"
+
+                mcq_ref.set({
+                    "studentId": student_id,
+                    "conceptName": concept_name,
+                    "currentLevel": current_level_label,
+                    "postTestStatus": "PASSED" if next_action == "DONE" else "FAILED",
+                    "scorePercentage": round(post_test_score * 100, 2),
+                    "mcqScore": post_test_score,
+                    "evidenceScore": error_pattern_score,
+                    "finalSchemaScore": post_test_score,
+                    "totalQuestions": total_questions,
+                    "correctAnswers": correct_count,
+                    "masteryLevel": mastery_level,
+                    "nextAction": next_action,
+                    "masteryProbability": mastery_probability,
+                    "modelUsed": model_used,
+                    "attemptNumber": attempt_number,
+                    "createdAt": created_at_ts or now_ts,
+                    "updatedAt": now_ts,
+                })
+            except Exception as _e:
+                print(f"[WARN] Failed to write mcq_posttest_results: {_e}")
 
         return {
             "success": True,

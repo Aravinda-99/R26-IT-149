@@ -11,16 +11,28 @@ Chart.register(...registerables);
 
 
 let latestAnalysisResponse = null;
+let liveAnalysisResponse = null;
 
-function showTelemetryResult(res) {
+function showTelemetryResult(res, isHistory = false) {
     if (!res || !res.prediction) return;
     latestAnalysisResponse = res;
+    if (!isHistory) {
+        liveAnalysisResponse = res;
+    }
+    
     const welcomeView = document.getElementById("welcome-view");
     if (welcomeView) welcomeView.classList.add("hidden");
     const invalidView = document.getElementById("invalid-view");
     if (invalidView) invalidView.classList.add("hidden");
     const resultView = document.getElementById("result-view");
     if (resultView) resultView.classList.remove("hidden");
+    
+    const historyBanner = document.getElementById("history-banner");
+    if (historyBanner) {
+        if (isHistory) historyBanner.classList.remove("hidden");
+        else historyBanner.classList.add("hidden");
+    }
+
     updateInsightEngine(res);
 }
 
@@ -90,6 +102,10 @@ export async function renderErrorAnalysis(container) {
                         <!-- Top Header -->
                         <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
                             <div>
+                                <div id="history-banner" class="hidden" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 0.75rem; color: #4a90e2; background: rgba(74, 144, 226, 0.1); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 600;">🕒 Viewing History Record</span>
+                                    <button id="btn-back-live" class="btn" style="background: #4a90e2; color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.7rem; border-radius: 4px; cursor: pointer; transition: background 0.2s;">← Back to Live Session</button>
+                                </div>
                                 <div id="diag-label" style="font-size: 1.8rem; font-weight: 800; line-height: 1;">---</div>
                                 <div id="diag-concept" style="color: var(--text-secondary); margin-top: 0.3rem;">Concept: ---</div>
                             </div>
@@ -175,7 +191,7 @@ export async function renderErrorAnalysis(container) {
                         </div>
 
                         <!-- Gamification Recommendation -->
-                        <div class="card" style="background: linear-gradient(90deg, #1e2a3a, #2a3a4e); border: 1px solid var(--accent-blue); padding: 1.2rem;">
+                        <div id="diag-game-card" class="card" style="background: linear-gradient(90deg, #1e2a3a, #2a3a4e); border: 1px solid var(--accent-blue); padding: 1.2rem; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;" title="Click to play this game">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div style="display: flex; gap: 1rem; align-items: center;">
                                     <div style="font-size: 2.5rem;" id="diag-game-icon">🎮</div>
@@ -355,7 +371,7 @@ export async function renderErrorAnalysis(container) {
     document.getElementById("btn-pipeline").addEventListener("click", () => {
         if (!latestAnalysisResponse) return;
         const d = latestAnalysisResponse;
-        
+
         const isAdjusted = d.reason_group_adjusted;
         const isOverridden = d.override_applied;
 
@@ -410,9 +426,27 @@ export async function renderErrorAnalysis(container) {
     document.getElementById("close-pipeline").addEventListener("click", () => {
         document.getElementById("pipeline-modal").classList.add("hidden");
     });
-    
+
     document.getElementById("close-payload").addEventListener("click", () => {
         document.getElementById("payload-modal").classList.add("hidden");
+    });
+    
+    // Back to live view from history mode
+    document.getElementById("btn-back-live")?.addEventListener("click", () => {
+        // Deselect history items
+        document.getElementById("history-container")?.querySelectorAll("[data-selected]").forEach(prev => {
+            delete prev.dataset.selected;
+            prev.style.background = "rgba(255,255,255,0.03)";
+            prev.style.borderColor = "rgba(255,255,255,0.05)";
+        });
+        
+        if (liveAnalysisResponse) {
+            showTelemetryResult(liveAnalysisResponse, false);
+        } else {
+            // No live data yet, go back to welcome screen
+            document.getElementById("result-view").classList.add("hidden");
+            document.getElementById("welcome-view").classList.remove("hidden");
+        }
     });
 }
 
@@ -437,13 +471,13 @@ function updateInsightEngine(data) {
     const diagLabel = document.getElementById("diag-label");
     diagLabel.textContent = pred.label;
     diagLabel.style.color = color;
-    
+
     document.getElementById("diag-concept").textContent = `Concept: ${pred.concept}`;
-    
+
     document.getElementById("diag-broad-error").textContent = data.original_ml_label || data.broad_label || "N/A";
     document.getElementById("diag-final-label").textContent = data.final_label || data.prediction?.label || "N/A";
     document.getElementById("diag-reason-group").textContent = data.reason_group_final || data.reason_group || "N/A";
-    
+
     let badgesHtml = "";
     if (data.hybrid_correction_badge === "Validated as Correct") {
         badgesHtml += `<span style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3);">Validated as Correct</span>`;
@@ -454,7 +488,7 @@ function updateInsightEngine(data) {
         badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Reason Group Adjusted</span>`;
     }
     document.getElementById("diag-badges").innerHTML = badgesHtml;
-    
+
     const trace = data.model_trace;
     if (trace) {
         document.getElementById("trace-broad-model").textContent = trace.broad_model;
@@ -480,7 +514,7 @@ function updateInsightEngine(data) {
             snipCont.style.display = "none";
         }
     }
-    
+
     const confBadge = document.getElementById("diag-confidence");
     confBadge.textContent = `${pred.confidence_level} Confidence`;
     confBadge.style.background = pred.confidence_level === "High" ? "rgba(34, 197, 94, 0.1)" : "rgba(245, 158, 11, 0.1)";
@@ -495,9 +529,58 @@ function updateInsightEngine(data) {
     document.getElementById("diag-game-name").textContent = gamify.recommended_activity;
     document.getElementById("diag-game-meta").textContent = `${gamify.game_type} • ${gamify.difficulty} intensity`;
     document.getElementById("diag-badge").textContent = gamify.reward_badge;
-    
+
     const gameIcons = { "LOOP_ERROR": "🌀", "ARRAY_ERROR": "📦", "VARIABLE_ERROR": "💾", "METHOD_ERROR": "⚙️", "CORRECT": "🎉" };
     document.getElementById("diag-game-icon").textContent = gameIcons[pred.label] || "🎮";
+
+    // ── Wire game card click → navigate to matching game ─────────────
+    const errorToCategory = {
+        "LOOP_ERROR":     { category: "loops",     cardId: "category-loops",     launchId: "launch-loops-module-btn" },
+        "VARIABLE_ERROR": { category: "variables", cardId: "category-variables", launchId: "launch-int-module-btn" },
+        "ARRAY_ERROR":    { category: "arrays",    cardId: "category-arrays",    launchId: "launch-arrays-module-btn" },
+        "METHOD_ERROR":   { category: "methods",   cardId: "category-methods",   launchId: "launch-stringmethods-module-btn" },
+    };
+    const gameCard = document.getElementById("diag-game-card");
+    if (gameCard) {
+        // Remove any previously wired listener by replacing the element clone trick
+        const fresh = gameCard.cloneNode(true);
+        gameCard.parentNode.replaceChild(fresh, gameCard);
+
+        const target = errorToCategory[pred.label];
+        if (target) {
+            fresh.addEventListener("mouseenter", () => { fresh.style.borderColor = "#60a5fa"; fresh.style.boxShadow = "0 0 12px rgba(96,165,250,0.25)"; });
+            fresh.addEventListener("mouseleave", () => { fresh.style.borderColor = "var(--accent-blue)"; fresh.style.boxShadow = ""; });
+            fresh.addEventListener("click", () => {
+                // Step 1: Navigate to Games page
+                const gamesLink = document.querySelector('.nav-link[data-page="games"]');
+                gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+
+                const startedAt = Date.now();
+                const tryLaunch = () => {
+                    // Step 2: Click the category card to open the module list
+                    const categoryCard = document.getElementById(target.cardId);
+                    if (categoryCard) {
+                        categoryCard.click();
+                        // Step 3: Click the launch button once it renders
+                        const tryClickLaunch = () => {
+                            const btn = document.getElementById(target.launchId);
+                            if (btn) { btn.click(); return; }
+                            if (Date.now() - startedAt > 5000) return;
+                            setTimeout(tryClickLaunch, 80);
+                        };
+                        setTimeout(tryClickLaunch, 0);
+                        return;
+                    }
+                    if (Date.now() - startedAt > 4000) return;
+                    setTimeout(tryLaunch, 80);
+                };
+                setTimeout(tryLaunch, 0);
+            });
+        } else {
+            // CORRECT — no redirect, just a visual hint
+            fresh.style.cursor = "default";
+        }
+    }
 
     document.getElementById("diag-alignment").textContent = data.pretest_alignment.message;
 
@@ -527,11 +610,12 @@ function updateInsightEngine(data) {
         document.getElementById("xai-signals").innerHTML = (xai.xai_code_signals || []).map(s =>
             `<span style="font-size:0.65rem;padding:2px 7px;border-radius:99px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);">${s}</span>`
         ).join("");
-    }}
+    }
+}
 
 // Chart.js instance references — destroyed and recreated on each refresh
 let _lineChart = null;
-let _barChart  = null;
+let _barChart = null;
 
 async function refreshGlobalState(studentId) {
     try {
@@ -542,10 +626,10 @@ async function refreshGlobalState(studentId) {
             ErrorAPI.getLearningReport(studentId),
         ]);
 
-        const historyData   = historyRes.status === "fulfilled"   ? historyRes.value   : { total: 0, history: [] };
-        const summaryData   = summaryRes.status === "fulfilled"   ? summaryRes.value   : { total_analyses: 0, most_frequent_error: "None" };
+        const historyData = historyRes.status === "fulfilled" ? historyRes.value : { total: 0, history: [] };
+        const summaryData = summaryRes.status === "fulfilled" ? summaryRes.value : { total_analyses: 0, most_frequent_error: "None" };
         const analyticsData = analyticsRes.status === "fulfilled" ? analyticsRes.value : { has_data: false };
-        const reportData    = reportRes.status === "fulfilled"    ? reportRes.value    : { has_data: false };
+        const reportData = reportRes.status === "fulfilled" ? reportRes.value : { has_data: false };
 
         // ── Stats Bar ─────────────────────────────────────────────────
         const statTotal = document.getElementById("stat-total");
@@ -561,11 +645,10 @@ async function refreshGlobalState(studentId) {
             histCont.innerHTML = "";
             // Newest first
             const reversed = [...historyData.history].reverse();
-            reversed.forEach((item, idx) => {
+            reversed.forEach((item) => {
                 const el = document.createElement("div");
-                el.className = "history-item";
-                el.dataset.code = encodeURIComponent(item.code || "");
                 el.style.cssText = "padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s, border-color 0.2s;";
+                el.dataset.code = encodeURIComponent(item.code || "");
                 el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
                         <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
@@ -591,19 +674,25 @@ async function refreshGlobalState(studentId) {
                     el.style.background = "rgba(74, 144, 226, 0.12)";
                     el.style.borderColor = "rgba(74, 144, 226, 0.4)";
 
-                    const rawCode = decodeURIComponent(el.dataset.code || "");
-                    if (rawCode) {
-                        try {
-                            const res = await ErrorAPI.analyze({
-                                student_id: studentId,
-                                code: rawCode,
-                                pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-                            });
-                            if (res && res.prediction) {
-                                showTelemetryResult(res);
+                    // Use cached full_response if available, otherwise re-analyze
+                    if (item.full_response) {
+                        // Re-use the main flow to ensure all modals + states are updated properly
+                        showTelemetryResult(item.full_response, true);
+                    } else {
+                        const rawCode = decodeURIComponent(el.dataset.code || "");
+                        if (rawCode) {
+                            try {
+                                const res = await ErrorAPI.analyze({
+                                    student_id: studentId,
+                                    code: rawCode,
+                                    pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
+                                });
+                                if (res && res.prediction) {
+                                    showTelemetryResult(res, true);
+                                }
+                            } catch (e) {
+                                console.warn("Failed to load history item telemetry", e);
                             }
-                        } catch (e) {
-                            console.warn("Failed to load history item telemetry", e);
                         }
                     }
                 });
@@ -622,7 +711,7 @@ async function refreshGlobalState(studentId) {
                         if (res && res.prediction && !latestAnalysisResponse) {
                             showTelemetryResult(res);
                         }
-                    }).catch(() => {});
+                    }).catch(() => { });
                 }
             }
         }
@@ -641,12 +730,12 @@ async function refreshGlobalState(studentId) {
             document.getElementById("anl-improvement-arrow").textContent = impPct > 0 ? "↑" : (impPct < 0 ? "↓" : "→");
             document.getElementById("anl-improvement-arrow").style.color = impPct >= 0 ? "var(--accent-green)" : "#ef4444";
 
-            const labelShort = { LOOP_ERROR:"Loops", VARIABLE_ERROR:"Variables", ARRAY_ERROR:"Arrays", METHOD_ERROR:"Methods" };
+            const labelShort = { LOOP_ERROR: "Loops", VARIABLE_ERROR: "Variables", ARRAY_ERROR: "Arrays", METHOD_ERROR: "Methods" };
             document.getElementById("anl-worst").textContent = anl.most_problematic ? labelShort[anl.most_problematic] || anl.most_problematic : "None";
-            document.getElementById("anl-best").textContent  = anl.most_improved  ? (labelShort[anl.most_improved]  || anl.most_improved)  + " ↑" : "None yet";
+            document.getElementById("anl-best").textContent = anl.most_improved ? (labelShort[anl.most_improved] || anl.most_improved) + " ↑" : "None yet";
 
             // Improvement per-category cards
-            const catColors = { LOOP_ERROR:"#a78bfa", VARIABLE_ERROR:"#f59e0b", ARRAY_ERROR:"#34d399", METHOD_ERROR:"#f472b6" };
+            const catColors = { LOOP_ERROR: "#a78bfa", VARIABLE_ERROR: "#f59e0b", ARRAY_ERROR: "#34d399", METHOD_ERROR: "#f472b6" };
             document.getElementById("anl-improvement-cards").innerHTML = Object.entries(anl.improvement_scores).map(([cat, data]) => {
                 const col = catColors[cat] || "#4a90e2";
                 const arrow = data.direction === "improved" ? "↑" : (data.direction === "worse" ? "↓" : "→");
@@ -663,7 +752,7 @@ async function refreshGlobalState(studentId) {
             }).join("");
 
             // ── Line chart: total errors per week ──────────────────────
-            const weekLabels  = anl.weekly_totals.map(w => w.week);
+            const weekLabels = anl.weekly_totals.map(w => w.week);
             const errorCounts = anl.weekly_totals.map(w => w.total_errors);
             const correctCounts = anl.weekly_totals.map(w => w.correct);
 
@@ -674,7 +763,7 @@ async function refreshGlobalState(studentId) {
                 const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
                 errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
                 errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
-                
+
                 const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
                 correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
                 correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
@@ -709,7 +798,7 @@ async function refreshGlobalState(studentId) {
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         interaction: { mode: 'index', intersect: false },
-                        plugins: { 
+                        plugins: {
                             legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
                             tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
                         },
@@ -786,7 +875,7 @@ async function refreshGlobalState(studentId) {
             const avoidSection = r.avoid_patterns.length > 0 ? `
                 <div>
                     <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🚫 Avoid</div>
-                    ${r.avoid_patterns.slice(0,4).map(p => `
+                    ${r.avoid_patterns.slice(0, 4).map(p => `
                         <div style="font-size:0.7rem;color:#ef4444;padding:0.25rem 0.5rem;background:rgba(239,68,68,0.05);border-radius:4px;margin-bottom:0.25rem;border:1px solid rgba(239,68,68,0.12);">✗ ${p.text}</div>
                     `).join("")}
                 </div>` : "";
@@ -815,4 +904,7 @@ async function refreshGlobalState(studentId) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
         }
     }
+
+    // Initial data fetch
+    refreshGlobalState(studentId);
 }

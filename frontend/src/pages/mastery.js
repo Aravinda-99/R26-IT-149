@@ -597,33 +597,59 @@ async function loadMasteryStatus(studentId) {
 
 // ── Navigate to the gamified lesson for a concept ───────────────────
 function redirectToGamifiedLesson(concept) {
-    const conceptToSection = {
-        variables: "integer",
-        operators: "integer",
-        loops: "integer",
-        arrays: "integer",
-        methods: "string",
+    // Map each mastery concept → Games page category → launch button ID
+    const conceptToCategory = {
+        variables: "variables",
+        operators: "operators",
+        loops:     "loops",
+        arrays:    "arrays",
+        methods:   "methods",
     };
-    const section = conceptToSection[concept] || "integer";
-    sessionStorage.setItem("codequest_menu_focus", section);
+    const categoryToLaunchBtn = {
+        variables: "launch-int-module-btn",
+        operators: "launch-operators-module-btn",
+        loops:     "launch-loops-module-btn",
+        arrays:    "launch-arrays-module-btn",
+        methods:   "launch-stringmethods-module-btn",
+    };
+    const categoryToCategoryCardId = {
+        variables: "category-variables",
+        operators: "category-operators",
+        loops:     "category-loops",
+        arrays:    "category-arrays",
+        methods:   "category-methods",
+    };
 
+    const category  = conceptToCategory[concept]  || "loops";
+    const launchId  = categoryToLaunchBtn[category];
+    const cardId    = categoryToCategoryCardId[category];
+
+    // Step 1: Navigate to the Games page via the nav link
     const gamesLink = document.querySelector('.nav-link[data-page="games"]');
     gamesLink?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 
-    const launchIdBySection = {
-        integer: "launch-int-module-btn",
-        float: "launch-float-module-btn",
-        char: "launch-char-module-btn",
-        string: "launch-string-module-btn",
-    };
-    const launchId = launchIdBySection[section] || launchIdBySection.integer;
-
+    // Step 2: After the Games page renders (category picker), click the right
+    // category card so the module list (with the launch button) appears.
+    // Step 3: Then click the actual launch button.
     const startedAt = Date.now();
-    const tryClick = () => {
-        const btn = document.getElementById(launchId);
-        if (btn) { btn.click(); return; }
+    const tryLaunch = () => {
+        // Phase A — wait for the category card and click it
+        const categoryCard = document.getElementById(cardId);
+        if (categoryCard) {
+            categoryCard.click();
+            // Phase B — now wait for the launch button and click it
+            const tryClickLaunch = () => {
+                const btn = document.getElementById(launchId);
+                if (btn) { btn.click(); return; }
+                if (Date.now() - startedAt > 5000) return;
+                setTimeout(tryClickLaunch, 80);
+            };
+            setTimeout(tryClickLaunch, 0);
+            return;
+        }
         if (Date.now() - startedAt > 4000) return;
-        setTimeout(tryClick, 100);
+        setTimeout(tryLaunch, 80);
     };
-    setTimeout(tryClick, 0);
+    setTimeout(tryLaunch, 0);
 }
+
