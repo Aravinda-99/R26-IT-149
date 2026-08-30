@@ -11,7 +11,7 @@ export async function renderTeacherDashboard(container, onNavigate) {
     container.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 2rem;">
             
-            <!-- Page Title & Header -->
+            <!-- Page Title & Actions Header -->
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
                 <div>
                     <h1 style="font-size: 1.75rem; font-weight: 800; color: #111827; letter-spacing: -0.02em;">
@@ -80,43 +80,43 @@ export async function renderTeacherDashboard(container, onNavigate) {
                         </div>
 
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.15rem; border: 1px solid #E5E7EB; border-radius: 10px; background: #F9FAFB; transition: background var(--transition-fast);">
                                 <div style="display: flex; align-items: center; gap: 0.85rem;">
-                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
                                         <i class="fa-solid fa-clipboard-check"></i>
                                     </div>
                                     <div>
                                         <strong style="font-size: 0.9375rem; color: #111827;">Review Draft Questions</strong>
-                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0;">Validate 4-tier answer qualities and pedagogical explanations before approving into post-test pool.</p>
+                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0.15rem 0 0 0; line-height: 1.4;">Validate 4-tier answer qualities and pedagogical explanations before approving into post-test pool.</p>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary btn-sm" onclick="window.navigateTo('/teacher/questions/pending')">Review</button>
+                                <button class="btn btn-secondary btn-sm" id="action-review-btn" style="margin-left: 1rem; flex-shrink: 0;">Review</button>
                             </div>
 
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.15rem; border: 1px solid #E5E7EB; border-radius: 10px; background: #F9FAFB; transition: background var(--transition-fast);">
                                 <div style="display: flex; align-items: center; gap: 0.85rem;">
-                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #EFF6FF; color: #1E40AF; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
                                         <i class="fa-solid fa-plus-circle"></i>
                                     </div>
                                     <div>
                                         <strong style="font-size: 0.9375rem; color: #111827;">Draft New Concept MCQs</strong>
-                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0;">Generate targeted questions for Loops, Arrays, and Methods with balanced answer positions.</p>
+                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0.15rem 0 0 0; line-height: 1.4;">Generate targeted questions for Loops, Arrays, and Methods with balanced answer positions.</p>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary btn-sm" onclick="window.navigateTo('/teacher/questions/generate')">Draft</button>
+                                <button class="btn btn-secondary btn-sm" id="action-generate-btn" style="margin-left: 1rem; flex-shrink: 0;">Draft</button>
                             </div>
 
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; padding: 1.15rem; border: 1px solid #E5E7EB; border-radius: 10px; background: #F9FAFB; transition: background var(--transition-fast);">
                                 <div style="display: flex; align-items: center; gap: 0.85rem;">
-                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
                                         <i class="fa-solid fa-chart-column"></i>
                                     </div>
                                     <div>
                                         <strong style="font-size: 0.9375rem; color: #111827;">Analyze Post-Test Outcomes</strong>
-                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0;">Inspect concept mastery rates and question exposure distributions from ML evaluations.</p>
+                                        <p style="font-size: 0.8125rem; color: #6B7280; margin: 0.15rem 0 0 0; line-height: 1.4;">Inspect concept mastery rates and question exposure distributions from ML evaluations.</p>
                                     </div>
                                 </div>
-                                <button class="btn btn-secondary btn-sm" onclick="window.navigateTo('/teacher/analytics')">Analytics</button>
+                                <button class="btn btn-secondary btn-sm" id="action-analytics-btn" style="margin-left: 1rem; flex-shrink: 0;">Analytics</button>
                             </div>
                         </div>
                     </div>
@@ -162,6 +162,15 @@ export async function renderTeacherDashboard(container, onNavigate) {
     });
     document.getElementById("t-dash-review-btn")?.addEventListener("click", () => {
         if (onNavigate) onNavigate("/teacher/questions/pending");
+    });
+    document.getElementById("action-review-btn")?.addEventListener("click", () => {
+        if (onNavigate) onNavigate("/teacher/questions/pending");
+    });
+    document.getElementById("action-generate-btn")?.addEventListener("click", () => {
+        if (onNavigate) onNavigate("/teacher/questions/generate");
+    });
+    document.getElementById("action-analytics-btn")?.addEventListener("click", () => {
+        if (onNavigate) onNavigate("/teacher/analytics");
     });
 
     // Load actual overview counts from backend

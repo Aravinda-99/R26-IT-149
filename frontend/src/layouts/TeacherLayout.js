@@ -2,17 +2,28 @@
  * TeacherLayout Component — CodeQuest Teacher & Admin Portal
  * ==========================================================
  * Professional light SaaS layout with dedicated left sidebar navigation,
- * top breadcrumb bar, and clean management containers.
+ * top breadcrumb bar, mobile drawer support, and clean management containers.
  * Shows ONLY curriculum management and question approval workflows.
  */
 
 import { getCurrentUser, logout } from "../utils/auth.js";
 
+function getBreadcrumbTitle(route) {
+    const r = (route || "").toLowerCase();
+    if (r.includes("questions/generate") || r.includes("question-generation")) return "Draft Question Generation";
+    if (r.includes("questions/pending") || r.includes("pending-review")) return "Pending Draft Review";
+    if (r.includes("questions/approved") || r.includes("question-bank")) return "Approved Question Bank";
+    if (r.includes("questions/rejected")) return "Rejected Question Archive";
+    if (r.includes("analytics") || r.includes("post-test-analytics")) return "Post-Test ML Analytics";
+    if (r.includes("settings")) return "System Settings & Configuration";
+    return "Curriculum & Schema Mastery Overview";
+}
+
 export function renderTeacherLayout(targetElement, activeRoute, renderPageContent, onNavigate) {
     const user = getCurrentUser();
     const role = (user?.role || "Teacher").toUpperCase();
     const email = user?.email || "teacher@codequest.lk";
-    const displayName = user?.displayName || "Educator";
+    const displayName = user?.displayName || "Prof. Sarah Johnson";
 
     const navItems = [
         { path: "/teacher/dashboard", label: "Dashboard", icon: "fa-chart-pie" },
@@ -26,29 +37,32 @@ export function renderTeacherLayout(targetElement, activeRoute, renderPageConten
 
     targetElement.innerHTML = `
         <div class="teacher-layout">
+            <!-- Mobile Drawer Backdrop Overlay -->
+            <div id="teacher-mobile-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); z-index: 95;"></div>
+
             <!-- Left Sidebar -->
-            <aside class="teacher-sidebar">
+            <aside class="teacher-sidebar" id="teacher-sidebar">
                 <!-- Sidebar Header -->
-                <div style="padding: 1.5rem 1.25rem 1rem 1.25rem; border-bottom: 1px solid #E5E7EB; display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" id="teacher-brand-click">
-                    <div style="width: 36px; height: 36px; background: #1E40AF; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 2px 4px rgba(30,64,175,0.25);">
+                <div class="teacher-sidebar-brand" id="teacher-brand-click">
+                    <div class="teacher-brand-icon">
                         <i class="fa-solid fa-graduation-cap"></i>
                     </div>
                     <div>
-                        <div style="font-weight: 800; font-size: 1.1rem; color: #111827; letter-spacing: -0.02em;">CodeQuest</div>
-                        <div style="font-size: 0.6875rem; font-weight: 700; color: #1E40AF; text-transform: uppercase; letter-spacing: 0.05em;">Educator Portal</div>
+                        <div class="teacher-brand-title">CodeQuest</div>
+                        <div class="teacher-brand-subtitle">Educator Portal</div>
                     </div>
                 </div>
 
                 <!-- Sidebar Nav Menu -->
-                <nav style="flex: 1; padding: 1.25rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; overflow-y: auto;" id="teacher-nav-links">
-                    <div style="font-size: 0.6875rem; font-weight: 700; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.25rem 0.75rem 0.5rem 0.75rem;">
+                <nav class="teacher-nav-menu" id="teacher-nav-links">
+                    <div class="teacher-nav-section-title">
                         Management
                     </div>
                     ${navItems.map((item) => {
                         const isActive = activeRoute === item.path || (item.path !== "/teacher/dashboard" && activeRoute.startsWith(item.path));
                         return `
-                            <a href="${item.path}" class="teacher-nav-link ${isActive ? 'active' : ''}" data-route="${item.path}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem; font-size: 0.875rem; font-weight: 600; border-radius: 8px; color: ${isActive ? '#1E40AF' : '#4B5563'}; background: ${isActive ? '#EFF6FF' : 'transparent'}; border-left: 3px solid ${isActive ? '#1E40AF' : 'transparent'}; transition: all 150ms;">
-                                <i class="fa-solid ${item.icon}" style="width: 18px; text-align: center; color: ${isActive ? '#1E40AF' : '#6B7280'};"></i>
+                            <a href="${item.path}" class="teacher-nav-link ${isActive ? 'active' : ''}" data-route="${item.path}">
+                                <i class="fa-solid ${item.icon}"></i>
                                 <span>${item.label}</span>
                             </a>
                         `;
@@ -56,14 +70,17 @@ export function renderTeacherLayout(targetElement, activeRoute, renderPageConten
                 </nav>
 
                 <!-- Sidebar Footer User Card -->
-                <div style="padding: 1rem; border-top: 1px solid #E5E7EB; background: #F9FAFB;">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="min-width: 0; flex: 1;">
-                            <div style="font-size: 0.8125rem; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayName}</div>
-                            <div style="font-size: 0.7rem; color: #6B7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${email}</div>
+                <div class="teacher-sidebar-footer">
+                    <div class="teacher-user-info">
+                        <div class="teacher-user-avatar">
+                            ${displayName.charAt(0).toUpperCase()}
                         </div>
-                        <span class="badge badge-primary" style="font-size: 0.65rem; padding: 0.2rem 0.45rem;">${role}</span>
+                        <div class="teacher-user-details">
+                            <div class="teacher-user-name">${displayName}</div>
+                            <div class="teacher-user-email">${email}</div>
+                        </div>
                     </div>
+                    <span class="badge badge-primary" style="font-size: 0.65rem; padding: 0.2rem 0.45rem;">${role}</span>
                 </div>
             </aside>
 
@@ -71,19 +88,25 @@ export function renderTeacherLayout(targetElement, activeRoute, renderPageConten
             <div class="teacher-main-wrapper">
                 <!-- Topbar -->
                 <header class="teacher-topbar">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="font-size: 0.875rem; font-weight: 600; color: #6B7280;">
-                            Portal / <span style="color: #111827; font-weight: 700;">Curriculum & Schema Mastery Administration</span>
+                    <div class="teacher-topbar-left">
+                        <button id="teacher-mobile-menu-btn" class="btn btn-subtle btn-sm" style="display: none; padding: 0.4rem; font-size: 1.1rem; color: #475569;" aria-label="Toggle Sidebar Menu">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <div class="teacher-breadcrumbs">
+                            <span class="breadcrumb-root">Portal</span>
+                            <i class="fa-solid fa-chevron-right breadcrumb-separator"></i>
+                            <span class="breadcrumb-current">${getBreadcrumbTitle(activeRoute)}</span>
                         </div>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem; background: #ECFDF5; border: 1px solid #A7F3D0; padding: 0.35rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; color: #065F46;">
-                            <span style="width: 7px; height: 7px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
-                            ML Pipeline Active
+                    <div class="teacher-topbar-right">
+                        <div class="teacher-status-pill">
+                            <span class="status-pulse-dot"></span>
+                            <span>ML Pipeline Active</span>
                         </div>
                         <button class="btn btn-secondary btn-sm" id="teacher-logout-btn" style="gap: 0.4rem;">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <span>Logout</span>
                         </button>
                     </div>
                 </header>
@@ -94,13 +117,37 @@ export function renderTeacherLayout(targetElement, activeRoute, renderPageConten
         </div>
     `;
 
+    // Mobile menu toggle logic
+    const sidebar = document.getElementById("teacher-sidebar");
+    const backdrop = document.getElementById("teacher-mobile-backdrop");
+    const mobileBtn = document.getElementById("teacher-mobile-menu-btn");
+
+    function openMobileMenu() {
+        if (sidebar && backdrop) {
+            sidebar.classList.add("mobile-open");
+            backdrop.style.display = "block";
+        }
+    }
+
+    function closeMobileMenu() {
+        if (sidebar && backdrop) {
+            sidebar.classList.remove("mobile-open");
+            backdrop.style.display = "none";
+        }
+    }
+
+    mobileBtn?.addEventListener("click", openMobileMenu);
+    backdrop?.addEventListener("click", closeMobileMenu);
+
     document.getElementById("teacher-brand-click")?.addEventListener("click", () => {
+        closeMobileMenu();
         if (onNavigate) onNavigate("/teacher/dashboard");
     });
 
     targetElement.querySelectorAll(".teacher-nav-link").forEach((link) => {
         link.addEventListener("click", (e) => {
             e.preventDefault();
+            closeMobileMenu();
             const route = link.dataset.route;
             if (onNavigate && route) onNavigate(route);
         });
