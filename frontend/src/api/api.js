@@ -5,10 +5,21 @@
  */
 
 const API_BASE = "/api";
+const DEV_FALLBACK_BASE = "http://localhost:5000/api";
 
-let backendUnavailable = false;
-let lastFailureWarningTime = 0;
-const WARNING_COOLDOWN_MS = 10000; // 10s warning throttle
+function shouldTryDevFallback(response, endpoint) {
+    // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.
+    // In dev, retry directly against the Flask server.
+    try {
+        const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
+        if (!isDev) return false;
+        if (!response || response.status !== 404) return false;
+        if (!endpoint?.startsWith("/")) return false;
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 async function apiRequest(endpoint, method = "GET", body = null) {
     const options = {
@@ -17,19 +28,9 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     };
     if (body) options.body = JSON.stringify(body);
 
-    let response;
-    try {
-        response = await fetch(`${API_BASE}${endpoint}`, options);
-        // Reset backend availability flag on successful fetch
-        backendUnavailable = false;
-    } catch (netErr) {
-        backendUnavailable = true;
-        const now = Date.now();
-        if (now - lastFailureWarningTime > WARNING_COOLDOWN_MS) {
-            lastFailureWarningTime = now;
-            console.warn("[CodeQuest] Backend server is not available. Please start the backend.");
-        }
-        throw new Error("Backend server is not available. Please start the backend.");
+    let response = await fetch(`${API_BASE}${endpoint}`, options);
+    if (shouldTryDevFallback(response, endpoint)) {
+        response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
     }
 
     const text = await response.text();
@@ -39,17 +40,14 @@ async function apiRequest(endpoint, method = "GET", body = null) {
             data = JSON.parse(text);
         } catch {
             data = {
-                error: response.status === 404
-                    ? `Not found (${endpoint}) — is the API running?`
-                    : `API error ${response.status}`,
+                error:
+                    response.status === 404
+                        ? `Not found (${endpoint}) — is the API running and is the URL correct?`
+                        : `API error ${response.status}`,
             };
         }
     }
-
-    if (!response.ok) {
-        throw new Error(data.error || data.message || `API error ${response.status}`);
-    }
-
+    if (!response.ok) throw new Error(data.error || `API error ${response.status}`);
     return data;
 }
 
@@ -80,6 +78,13 @@ export const GamificationAPI = {
     getProfile: (userId) => apiRequest(`/gamification/profile/${userId}`),
 };
 
+// --- Game State Persistence (backend-mediated; replaces direct Firestore client writes) ---
+export const GameStateAPI = {
+    saveState: (data) => apiRequest("/gamification/state", "POST", data),
+    loadState: (userId) => apiRequest(`/gamification/state/${userId}`, "GET"),
+    deleteState: (userId) => apiRequest(`/gamification/state/${userId}`, "DELETE"),
+};
+
 // --- Component 4: Mastery Tracker & Schema Mastery ---
 export const MasteryAPI = {
     getStatus: (userId) => apiRequest(`/mastery/status/${userId}`),
@@ -95,25 +100,14 @@ export const SchemaMasteryAPI = {
     predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
     generateQuestions: (data) => apiRequest("/schema-mastery/questions/generate", "POST", data),
     getPendingQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/pending${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
-    getRejectedQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/rejected${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
-    deactivateQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/deactivate`, "POST", data),
-    reactivateQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reactivate`, "POST", data),
-    deleteQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}`, "DELETE", data),
-    getQuestionBank: (concept = "", activeOnly = false) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
     getPostTestQuestions: (params = {}) => {
-        let studentId = "STU001";
-        let concept = "Loops";
-        let errorType = "";
-        if (typeof params === "string") {
-            concept = params;
-        } else if (params && typeof params === "object") {
-            studentId = params.student_id || params.studentId || "STU001";
-            concept = params.concept || params.concept_name || "Loops";
-            errorType = params.error_type || params.errorType || "";
-        }
+        const studentId = params.student_id || params.studentId || "STU001";
+        const concept = params.concept || params.concept_name || "Loops";
+        const errorType = params.error_type || params.errorType || "";
         const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
@@ -136,8 +130,10 @@ export const AuthAPI = {
 export async function checkHealth() {
     try {
         const data = await apiRequest("/health");
+        console.log("[OK] API healthy:", data.status);
         return true;
     } catch {
+        console.warn("[WARN] API not reachable");
         return false;
     }
 }

@@ -3,6 +3,11 @@
  * ========================================================
  * Implements strict role-based layout mounting, clean white SaaS routing,
  * and handles transitions across Public, Student, and Teacher portals.
+ *
+ * Bootstrap model: index.html ships only a bare `<div id="app">` with a
+ * loading spinner. This file is solely responsible for dynamically
+ * building the entire page chrome (nav + content slot) into #app and
+ * replacing that spinner — nothing is expected to pre-exist in the HTML.
  */
 
 import "./style.css";

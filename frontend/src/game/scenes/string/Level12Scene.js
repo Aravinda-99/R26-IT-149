@@ -15,12 +15,14 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const ACCURACY_THRESHOLD = 85;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;
 const TARGET_CHALLENGES = 50;
 
 /* ───────── Advanced Challenge Pools ───────── */
@@ -99,6 +101,13 @@ function lerpColor(a, b, t) {
 export class Level12Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level12Scene" });
+  }
+
+  init() {
+    this.wrongAnswers = 0;
+    this.lives = MAX_LIVES;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
   }
 
   create() {
@@ -255,10 +264,14 @@ export class Level12Scene extends Phaser.Scene {
       color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(dp + 2);
 
-    this.livesText = this.add.text(W - 16, 62, "♥♥♥", {
-      fontFamily: "Arial", fontSize: "20px",
-      color: "#ff4444", fontStyle: "bold",
-    }).setOrigin(1, 0).setDepth(dp);
+    // ── Lives (hearts, top-right) ──
+    this.livesIcons = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const heart = this.add.text(W - 30 - i * 30, 72, "❤️", {
+        fontSize: "20px",
+      }).setOrigin(0.5).setDepth(dp);
+      this.livesIcons.push(heart);
+    }
 
     this.accText = this.add.text(W - 16, 86, "ACC: 100%", {
       fontFamily: "Courier New, monospace", fontSize: "10px", color: "#888888",
@@ -291,15 +304,25 @@ export class Level12Scene extends Phaser.Scene {
     }
     if (this.progText?.active) this.progText.setText(`${this.totalProcessed} / ${TARGET_CHALLENGES}`);
 
-    if (this.livesText?.active) {
-      let h = "";
-      for (let i = 0; i < MAX_LIVES; i++) h += i < this.lives ? "♥" : "♡";
-      this.livesText.setText(h);
-    }
-
     const total = this.correctAnswers + this.wrongAnswers;
     const acc = total > 0 ? Math.round((this.correctAnswers / total) * 100) : 100;
     if (this.accText?.active) this.accText.setText(`ACC: ${acc}%`);
+  }
+
+  _updateLives() {
+    for (let i = 0; i < MAX_LIVES; i++) {
+      if (this.livesIcons[i]) {
+        this.livesIcons[i].setText(i < this.lives ? "❤️" : "🖤");
+        if (i >= this.lives) {
+          this.tweens.add({
+            targets: this.livesIcons[i],
+            scaleX: 1.3, scaleY: 1.3,
+            yoyo: true,
+            duration: 150,
+          });
+        }
+      }
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -349,7 +372,7 @@ export class Level12Scene extends Phaser.Scene {
       color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 4,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 495, "⚠ 3 lives — final exam difficulty!", {
+    const warn = this.add.text(W / 2, 495, "⚠ 5 lives — final exam difficulty!", {
       fontFamily: "Arial", fontSize: "11px", color: "#ff6b6b",
     }).setOrigin(0.5).setDepth(202);
 
@@ -735,8 +758,10 @@ export class Level12Scene extends Phaser.Scene {
 
   _onWrong(message) {
     this.wrongAnswers++;
+    if (this.wrongAnswers === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.lives--;
+    this._updateLives();
 
     GameManager.resetCombo();
     GameManager.loseLife();
@@ -750,6 +775,26 @@ export class Level12Scene extends Phaser.Scene {
 
     if (this.lives <= 0) {
       this.time.delayedCall(600, () => this._gameOver());
+    }
+  }
+
+  /** ML struggle check — reports real per-run processed/timing stats (not rapid-fire: quiz format). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalProcessed;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAnswers;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level12Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 

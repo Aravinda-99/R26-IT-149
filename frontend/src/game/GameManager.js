@@ -103,10 +103,23 @@ class _GameManager {
     return 1;
   }
 
-  completeLevel(levelIndex, accuracy) {
+  completeLevel(sceneKeyOrIndex, accuracy) {
+    let levelIndex;
+    if (typeof sceneKeyOrIndex === "number") {
+      levelIndex = sceneKeyOrIndex;
+    } else if (typeof sceneKeyOrIndex === "string") {
+      const match = sceneKeyOrIndex.match(/\d+/);
+      if (!match) return;
+      levelIndex = parseInt(match[0], 10) - 1;
+    } else {
+      return;
+    }
+
+    if (levelIndex < 0 || levelIndex >= TOTAL_LEVELS) return;
+
     this.state.levelsCompleted[levelIndex] = true;
     this.state.levelAccuracy[levelIndex] = Math.max(
-      this.state.levelAccuracy[levelIndex],
+      this.state.levelAccuracy[levelIndex] || 0,
       accuracy
     );
     this._emit("levelComplete", { levelIndex, accuracy });

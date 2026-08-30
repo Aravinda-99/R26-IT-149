@@ -9,9 +9,11 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TOTAL_QUESTIONS = 6; // Updated to 6
 const SKIP_PENALTY = 50;
 const ACCURACY_THRESHOLD = 75;
@@ -111,6 +113,12 @@ export class Level9Scene extends Phaser.Scene {
     super({ key: "Level9Scene" });
   }
 
+  init() {
+    this.wrongSubs = 0;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
+  }
+
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -182,18 +190,6 @@ export class Level9Scene extends Phaser.Scene {
       g.fillRect(-W * 2, (H * i) / 50, W * 5, H / 50 + 1);
     }
 
-    this.add.text(W / 2, 22, "CODE ASSESSMENT", {
-      fontFamily: "Georgia, serif",
-      fontSize: "22px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-    }).setOrigin(0.5).setDepth(5);
-
-    this.add.text(W / 2, 44, "Char Programming Terminal", {
-      fontFamily: "Georgia, serif",
-      fontSize: "12px",
-      color: "#94a3b8",
-    }).setOrigin(0.5).setDepth(5);
   }
 
   _generateTextures() {
@@ -243,9 +239,9 @@ export class Level9Scene extends Phaser.Scene {
 
     const panel = this.add.graphics().setDepth(101);
     panel.fillStyle(0x0f172a, 0.98);
-    panel.fillRoundedRect(100, 100, 600, 400, 14);
+    panel.fillRoundedRect(W / 2 - 300, 100, 600, 400, 14);
     panel.lineStyle(2, 0xfbbf24);
-    panel.strokeRoundedRect(100, 100, 600, 400, 14);
+    panel.strokeRoundedRect(W / 2 - 300, 100, 600, 400, 14);
 
     const title = this.add.text(W / 2, 140, "💻 CHAR CODE ASSESSMENT", {
       fontFamily: "Arial Black, Arial",
@@ -295,7 +291,7 @@ export class Level9Scene extends Phaser.Scene {
   _startAssessment() {
     this.gameStarted = true;
     this.startTime = this.time.now;
-    GameManager.set("lives", 3);
+    GameManager.set("lives", 5);
     this.currentQuestion = 1;
     this._mountEditor();
     this._loadQuestion(1);
@@ -373,6 +369,7 @@ export class Level9Scene extends Phaser.Scene {
     for (const w of question.wrong || []) {
       if (w.test(code)) {
         this.wrongSubs++;
+        if (this.wrongSubs === 3) this.runBehavioralCheck();
         this._setFeedback(w.msg, false);
         return;
       }
@@ -403,8 +400,29 @@ export class Level9Scene extends Phaser.Scene {
       }
     } else {
       this.wrongSubs++;
+      if (this.wrongSubs === 3) this.runBehavioralCheck();
       this._setFeedback("✗ Not quite — check quotes, escapes, and semicolons. Try again!", false);
       this.cameras.main.shake(120, 0.008);
+    }
+  }
+
+  /** ML struggle check — reports real submission/timing stats (not rapid-fire: puzzle/coding task). */
+  async runBehavioralCheck() {
+    const attempts_count = this.correctSubs + this.wrongSubs;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongSubs;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level9Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
@@ -479,9 +497,9 @@ export class Level9Scene extends Phaser.Scene {
 
     const g = this.add.graphics().setDepth(301);
     g.fillStyle(0x0f172a, 0.98);
-    g.fillRoundedRect(100, 80, 600, 450, 14);
+    g.fillRoundedRect(W / 2 - 300, 80, 600, 450, 14);
     g.lineStyle(2, 0xfbbf24);
-    g.strokeRoundedRect(100, 80, 600, 450, 14);
+    g.strokeRoundedRect(W / 2 - 300, 80, 600, 450, 14);
 
     const title = passed ? "🏆 ASSESSMENT PASSED!" : "ASSESSMENT FAILED";
     this.add
