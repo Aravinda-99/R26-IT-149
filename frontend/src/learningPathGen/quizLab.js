@@ -1,5 +1,6 @@
 import { QUIZ_BANK } from "./data.js";
 import { ErrorAPI } from "../api/api.js";
+import { getCurrentUser } from "../utils/auth.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
 // Use the Vite proxy path (/api/...) so this always hits the correct
@@ -94,11 +95,13 @@ function buildFullCodeFromTemplate(question, optionIndex) {
 }
 
 function sendTelemetry(codeString) {
+    const user = getCurrentUser();
+    const studentId = user?.uid || user?.id || "STU001";
     // Fire-and-forget — never blocks quiz interaction on the network call.
     ErrorAPI.analyze({
-        student_id: "demo_student",
+        student_id: studentId,
         code: codeString,
-        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 } // Mock pre-test context
+        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
     }).catch(err => console.error("Telemetry error:", err));
 }
 
@@ -140,25 +143,25 @@ function looksLikeCode(str) {
 
 // ── Calculate engagement score from session data ───────────────────────
 function calculateEngagementScore(questionRecords) {
-    const completed    = questionRecords.filter(q => q.completed);
-    const total        = questionRecords.length;
+    const completed = questionRecords.filter(q => q.completed);
+    const total = questionRecords.length;
 
     if (completed.length === 0) return 0;
 
-    const completionRate    = completed.length / total;
-    const avgTime           = completed.reduce((s, q) => s + q.timeTaken, 0) / completed.length;
-    const avgAttempts       = completed.reduce((s, q) => s + q.attempts, 0) / completed.length;
+    const completionRate = completed.length / total;
+    const avgTime = completed.reduce((s, q) => s + q.timeTaken, 0) / completed.length;
+    const avgAttempts = completed.reduce((s, q) => s + q.attempts, 0) / completed.length;
 
     // Time efficiency: 30s is ideal, 600s is max
-    const timeEfficiency    = Math.max(0, 1 - (avgTime - 30) / 570);
+    const timeEfficiency = Math.max(0, 1 - (avgTime - 30) / 570);
 
     // Attempt efficiency: 1 attempt is perfect, 10 is worst
     const attemptEfficiency = Math.max(0, 1 - (avgAttempts - 1) / 9);
 
     // Weighted composite score
     const engagement = (
-        completionRate    * 0.5 +
-        timeEfficiency    * 0.3 +
+        completionRate * 0.5 +
+        timeEfficiency * 0.3 +
         attemptEfficiency * 0.2
     );
 
@@ -167,7 +170,7 @@ function calculateEngagementScore(questionRecords) {
 
 // ── Calculate all session metrics for ML model ─────────────────────────
 function calculateSessionMetrics(questionRecords, topicBreakdown) {
-    const completed  = questionRecords.filter(q => q.completed);
+    const completed = questionRecords.filter(q => q.completed);
 
     if (completed.length === 0) {
         return null;
@@ -177,7 +180,7 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
     const avgAttempts = completed.reduce((s, q) => s + q.attempts, 0) / completed.length;
 
     // avg_time_sec — average seconds per question (cap at 600)
-    const avgTimeSec  = Math.min(
+    const avgTimeSec = Math.min(
         completed.reduce((s, q) => s + q.timeTaken, 0) / completed.length,
         600
     );
@@ -201,7 +204,7 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
     let totalCorrect = 0;
     let totalQuestions = 0;
     Object.values(topicBreakdown).forEach(data => {
-        totalCorrect   += data.correct;
+        totalCorrect += data.correct;
         totalQuestions += data.total;
     });
     const accuracy = totalQuestions > 0
@@ -209,13 +212,13 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
         : 0;
 
     return {
-        avg_attempts:       parseFloat(avgAttempts.toFixed(2)),
-        avg_time_sec:       parseFloat(avgTimeSec.toFixed(2)),
-        engagement_score:   engagementScore,
-        difficulty:         difficultyEnc,
+        avg_attempts: parseFloat(avgAttempts.toFixed(2)),
+        avg_time_sec: parseFloat(avgTimeSec.toFixed(2)),
+        engagement_score: engagementScore,
+        difficulty: difficultyEnc,
         current_difficulty: currentDifficulty,
-        topic_scores:       topicScores,
-        accuracy:           accuracy
+        topic_scores: topicScores,
+        accuracy: accuracy
     };
 }
 
@@ -223,9 +226,9 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
 async function getMLRecommendation(sessionMetrics) {
     try {
         const response = await fetch(ML_API_URL, {
-            method:  "POST",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify(sessionMetrics)
+            body: JSON.stringify(sessionMetrics)
         });
 
         if (!response.ok) {
@@ -250,18 +253,18 @@ function getFallbackRecommendation(metrics) {
     const acc = metrics.accuracy !== undefined
         ? metrics.accuracy
         : Object.values(metrics.topic_scores).reduce((a, b) => a + b, 0)
-          / Object.values(metrics.topic_scores).length;
+        / Object.values(metrics.topic_scores).length;
 
     let action, nextDifficulty;
 
     if (acc >= 0.80 && metrics.avg_attempts <= 1.5 && metrics.engagement_score >= 0.97) {
-        action         = "promote";
+        action = "promote";
         nextDifficulty = difficultyLevels[Math.min(currIdx + 1, 2)];
     } else if (acc < 0.40 || metrics.avg_attempts >= 3.0 || metrics.engagement_score < 0.85) {
-        action         = "demote";
+        action = "demote";
         nextDifficulty = difficultyLevels[Math.max(currIdx - 1, 0)];
     } else {
-        action         = "maintain";
+        action = "maintain";
         nextDifficulty = metrics.current_difficulty;
     }
 
@@ -271,18 +274,18 @@ function getFallbackRecommendation(metrics) {
     return {
         action,
         next_difficulty: nextDifficulty,
-        next_topic:      weakest,
-        confidence:      75.0,
-        current:         metrics.current_difficulty
+        next_topic: weakest,
+        confidence: 75.0,
+        current: metrics.current_difficulty
     };
 }
 
 // ── Build ML recommendation card HTML ──────────────────────────────────
 function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const actionColors = {
-        promote:  { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
+        promote: { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
         maintain: { bg: "#FFFBEB", border: "#F59E0B", text: "#B45309", label: "■ MAINTAIN" },
-        demote:   { bg: "#FEF2F2", border: "#DC2626", text: "#DC2626", label: "▼ DEMOTE" }
+        demote: { bg: "#FEF2F2", border: "#DC2626", text: "#DC2626", label: "▼ DEMOTE" }
     };
 
     const action = mlResult.action || "maintain";
@@ -413,12 +416,12 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                 margin-top:1rem;
             ">
                 ${[
-                    ["Accuracy",     Math.round(sessionMetrics.accuracy * 100) + "%"],
-                    ["Avg Attempts", sessionMetrics.avg_attempts],
-                    ["Avg Time",     sessionMetrics.avg_time_sec + "s"],
-                    ["Engagement",   Math.round(sessionMetrics.engagement_score * 100) + "%"],
-                    ["Difficulty",   currentDifficulty]
-                ].map(([label, val]) => `
+            ["Accuracy", Math.round(sessionMetrics.accuracy * 100) + "%"],
+            ["Avg Attempts", sessionMetrics.avg_attempts],
+            ["Avg Time", sessionMetrics.avg_time_sec + "s"],
+            ["Engagement", Math.round(sessionMetrics.engagement_score * 100) + "%"],
+            ["Difficulty", currentDifficulty]
+        ].map(([label, val]) => `
                     <div style="
                         background:#F8FAFC;
                         border-radius:8px;
@@ -466,24 +469,24 @@ export function setupQuizUI(root = document) {
     // quiz at the same moment see different question sequences and
     // different option letters for the same underlying question.
     const state = {
-        quizBank:        buildShuffledQuizBank(),
-        current:         0,
+        quizBank: buildShuffledQuizBank(),
+        current: 0,
         selectedAnswers: [],
-        submitted:       false,
+        submitted: false,
 
         // per-question tracking
         questionStartTime: Date.now(),
-        currentAttempts:   1,
-        questionRecords:   [],
+        currentAttempts: 1,
+        questionRecords: [],
     };
     state.selectedAnswers = Array(state.quizBank.length).fill(null);
 
-    const quizBox    = (root === document) ? document.getElementById("quiz-box")          : root.querySelector(".quiz-box");
-    const counter    = (root === document) ? document.getElementById("quiz-counter")       : root.querySelector(".quiz-counter");
-    const miniScore  = (root === document) ? document.getElementById("quiz-score-mini")    : root.querySelector(".quiz-score-mini");
-    const progressBar= (root === document) ? document.getElementById("quiz-progress-bar")  : root.querySelector(".quiz-progress-bar");
-    const prevBtn    = (root === document) ? document.getElementById("prev-quiz-btn")      : root.querySelector(".prev-quiz-btn");
-    const nextBtn    = (root === document) ? document.getElementById("next-quiz-btn")      : root.querySelector(".next-quiz-btn");
+    const quizBox = (root === document) ? document.getElementById("quiz-box") : root.querySelector(".quiz-box");
+    const counter = (root === document) ? document.getElementById("quiz-counter") : root.querySelector(".quiz-counter");
+    const miniScore = (root === document) ? document.getElementById("quiz-score-mini") : root.querySelector(".quiz-score-mini");
+    const progressBar = (root === document) ? document.getElementById("quiz-progress-bar") : root.querySelector(".quiz-progress-bar");
+    const prevBtn = (root === document) ? document.getElementById("prev-quiz-btn") : root.querySelector(".prev-quiz-btn");
+    const nextBtn = (root === document) ? document.getElementById("next-quiz-btn") : root.querySelector(".next-quiz-btn");
 
     if (!quizBox || !counter || !miniScore || !progressBar || !prevBtn || !nextBtn) return;
 
@@ -509,18 +512,18 @@ export function setupQuizUI(root = document) {
 
     // Record question data when student moves to next question
     function recordQuestionData(questionIndex) {
-        const q          = state.quizBank[questionIndex];
-        const timeTaken  = (Date.now() - state.questionStartTime) / 1000;
-        const answered   = state.selectedAnswers[questionIndex] !== null;
-        const correct    = state.selectedAnswers[questionIndex] === q.correctIndex;
+        const q = state.quizBank[questionIndex];
+        const timeTaken = (Date.now() - state.questionStartTime) / 1000;
+        const answered = state.selectedAnswers[questionIndex] !== null;
+        const correct = state.selectedAnswers[questionIndex] === q.correctIndex;
 
         const alreadyRecorded = state.questionRecords.find(r => r.questionIndex === questionIndex);
         if (!alreadyRecorded) {
             state.questionRecords.push({
                 questionIndex,
-                topic:     q.topic,
+                topic: q.topic,
                 correct,
-                attempts:  state.currentAttempts,
+                attempts: state.currentAttempts,
                 timeTaken: Math.min(parseFloat(timeTaken.toFixed(2)), 600),
                 completed: answered
             });
@@ -528,8 +531,8 @@ export function setupQuizUI(root = document) {
     }
 
     function renderQuestion() {
-        const q         = state.quizBank[state.current];
-        const selected  = state.selectedAnswers[state.current];
+        const q = state.quizBank[state.current];
+        const selected = state.selectedAnswers[state.current];
         const hasTemplate = Boolean(q.codeTemplate);
 
         const { intro, code } = hasTemplate
@@ -542,11 +545,11 @@ export function setupQuizUI(root = document) {
 
         // Reset timer and attempts for new question
         state.questionStartTime = Date.now();
-        state.currentAttempts   = 1;
+        state.currentAttempts = 1;
 
-        counter.textContent       = `Question ${state.current + 1} of ${state.quizBank.length}`;
-        progressBar.style.width   = `${((state.current + 1) / state.quizBank.length) * 100}%`;
-        miniScore.textContent     = `Score: ${getScore()}`;
+        counter.textContent = `Question ${state.current + 1} of ${state.quizBank.length}`;
+        progressBar.style.width = `${((state.current + 1) / state.quizBank.length) * 100}%`;
+        miniScore.textContent = `Score: ${getScore()}`;
 
         quizBox.innerHTML = `
             <article class="lp-question-card">
@@ -559,24 +562,24 @@ export function setupQuizUI(root = document) {
                 ${templateDisplay ? `<pre class="lp-code-block"><code>${templateDisplay}</code></pre>` : ''}
                 <div class="lp-options">
                     ${q.options.map((opt, idx) => {
-                        const isSelected = selected === idx;
-                        const isCorrect  = q.correctIndex === idx;
-                        const isCode     = hasTemplate || looksLikeCode(opt);
-                        let cls = "lp-option";
-                        if (isCode) cls += " is-code";
-                        if (state.submitted) {
-                            if (isCorrect) cls += " correct";
-                            else if (isSelected && !isCorrect) cls += " wrong";
-                        } else if (isSelected) {
-                            cls += " selected";
-                        }
-                        return `
+            const isSelected = selected === idx;
+            const isCorrect = q.correctIndex === idx;
+            const isCode = hasTemplate || looksLikeCode(opt);
+            let cls = "lp-option";
+            if (isCode) cls += " is-code";
+            if (state.submitted) {
+                if (isCorrect) cls += " correct";
+                else if (isSelected && !isCorrect) cls += " wrong";
+            } else if (isSelected) {
+                cls += " selected";
+            }
+            return `
                             <button class="${cls}" data-opt-index="${idx}">
                                 <span class="lp-opt-label">${String.fromCharCode(65 + idx)}</span>
                                 <span ${isCode ? 'class="lp-opt-code"' : ''}>${opt}</span>
                             </button>
                         `;
-                    }).join("")}
+        }).join("")}
                 </div>
                 <div id="quiz-feedback" class="lp-feedback"></div>
             </article>
@@ -626,9 +629,9 @@ export function setupQuizUI(root = document) {
         }
 
         if (!state.submitted) {
-            state.submitted  = true;
-            const score      = getScore();
-            const percent    = Math.round((score / state.quizBank.length) * 100);
+            state.submitted = true;
+            const score = getScore();
+            const percent = Math.round((score / state.quizBank.length) * 100);
             const topicBreakdown = getTopicBreakdown();
 
             const sessionMetrics = calculateSessionMetrics(
@@ -644,8 +647,8 @@ export function setupQuizUI(root = document) {
                     <p class="lp-result-score">${score} / ${state.quizBank.length} (${percent}%)</p>
                     <p class="lp-muted-sm">
                         ${percent >= 80 ? "Excellent work! You are mastering the concepts." :
-                          percent >= 60 ? "Good progress. Review a few topics and try again." :
-                          "Keep going. Repetition builds confidence."}
+                    percent >= 60 ? "Good progress. Review a few topics and try again." :
+                        "Keep going. Repetition builds confidence."}
                     </p>
 
                     <div id="ml-loading" style="
@@ -674,11 +677,11 @@ export function setupQuizUI(root = document) {
                 </article>
             `;
 
-            miniScore.textContent     = `Score: ${score}`;
-            progressBar.style.width   = "100%";
-            counter.textContent       = `Completed: ${state.quizBank.length} questions`;
-            prevBtn.disabled          = true;
-            nextBtn.textContent       = "Review Again";
+            miniScore.textContent = `Score: ${score}`;
+            progressBar.style.width = "100%";
+            counter.textContent = `Completed: ${state.quizBank.length} questions`;
+            prevBtn.disabled = true;
+            nextBtn.textContent = "Review Again";
 
             let mlResult = null;
             const mlLoading = quizBox.querySelector("#ml-loading");
@@ -711,7 +714,7 @@ export function setupQuizUI(root = document) {
                 score,
                 percent,
                 topicBreakdown,
-                answeredCount:   state.selectedAnswers.filter(a => a !== null).length,
+                answeredCount: state.selectedAnswers.filter(a => a !== null).length,
                 sessionMetrics,
                 mlResult
             }));
@@ -720,11 +723,11 @@ export function setupQuizUI(root = document) {
             const retryBtn = quizBox.querySelector("#retry-quiz-btn");
             if (retryBtn) {
                 retryBtn.addEventListener("click", () => {
-                    state.quizBank         = buildShuffledQuizBank();
-                    state.current          = 0;
-                    state.selectedAnswers  = Array(state.quizBank.length).fill(null);
-                    state.submitted        = false;
-                    state.questionRecords  = [];
+                    state.quizBank = buildShuffledQuizBank();
+                    state.current = 0;
+                    state.selectedAnswers = Array(state.quizBank.length).fill(null);
+                    state.submitted = false;
+                    state.questionRecords = [];
                     renderQuestion();
                 });
             }
@@ -746,7 +749,7 @@ export function setupQuizUI(root = document) {
             return;
         }
 
-        state.current   = 0;
+        state.current = 0;
         state.submitted = false;
         renderQuestion();
     });
@@ -770,11 +773,11 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1300;";
 
     const savedResults = JSON.parse(sessionStorage.getItem("quiz-results") || "{}");
-    const mlResult     = savedResults.mlResult || null;
-    const metrics      = savedResults.sessionMetrics || null;
+    const mlResult = savedResults.mlResult || null;
+    const metrics = savedResults.sessionMetrics || null;
 
     const topicDetailsHTML = Object.entries(topicBreakdown).map(([topic, data]) => {
-        const accuracy    = Math.round((data.correct / data.total) * 100);
+        const accuracy = Math.round((data.correct / data.total) * 100);
         const statusColor = accuracy >= 80 ? "#16A34A" : accuracy >= 60 ? "#F59E0B" : "#DC2626";
         return `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center;padding:1rem;background:#F8FAFC;border-radius:0.6rem;margin-bottom:1rem;">

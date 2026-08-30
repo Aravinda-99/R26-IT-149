@@ -20,6 +20,7 @@ The response always includes:
 
 import os
 import re
+import time
 import joblib
 import datetime
 from firebase.firebase_service import db
@@ -33,6 +34,12 @@ class ErrorService:
     _model_2 = None
     _history = []  # In-memory history (fallback if Firestore is offline)
     _last_analysis = {} # Store full response of last analysis per user for Component 2 polling
+    _history_cache = {} # Cache by student_id: student_id -> {"timestamp": float, "data": list, "source": str}
+    _cache_ttl_seconds = 60 # TTL 60 seconds
+    _firestore_cooldown_until = 0 # Timestamp until which Firestore reads are skipped on 429
+    _firestore_cooldown_duration = 300 # 5 minutes (300 seconds) cooldown
+    _last_firestore_warn_time = 0 # Timestamp of last logged warning to avoid log spam
+
 
     @classmethod
     def _load_models(cls):
@@ -1349,27 +1356,78 @@ class ErrorService:
         }
 
     @classmethod
-    def _get_user_history(cls, user_id):
-        """Helper to get user history from Firestore (if online) or in-memory fallback."""
+    def _get_user_history_data(cls, user_id):
+        """
+        Retrieves user history with 60-second in-memory cache and 5-minute Firestore 429 quota cooldown.
+        Returns tuple: (user_history_list, source_str)
+        """
+        now = time.time()
+
+        # 1. Check in-memory cache first (60s TTL)
+        cached = cls._history_cache.get(user_id)
+        if cached and (now - cached.get("timestamp", 0) < cls._cache_ttl_seconds):
+            return cached.get("data", []), "cache"
+
+        # 2. Check if Firestore is in 5-minute quota cooldown
+        if now < cls._firestore_cooldown_until:
+            if cached:
+                return cached.get("data", []), "cache"
+            fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+            return fallback_data, "fallback"
+
+        # 3. Attempt Firestore query if client is available
         if db:
             try:
                 docs = db.collection("error_history").where("student_id", "==", user_id).stream()
                 user_history = [doc.to_dict() for doc in docs]
                 user_history.sort(key=lambda x: x.get("timestamp", ""))
-                return user_history
+
+                # Store in cache
+                cls._history_cache[user_id] = {
+                    "timestamp": now,
+                    "data": user_history,
+                    "source": "firestore"
+                }
+                return user_history, "firestore"
+
             except Exception as e:
-                print(f"[WARN] Error reading from Firestore error_history: {e}")
-        
-        return [h for h in cls._history if h["student_id"] == user_id]
+                err_str = str(e)
+                # Catch 429 quota exceeded and enter 5-minute cooldown
+                if "429" in err_str or "Quota exceeded" in err_str or "ResourceExhausted" in err_str:
+                    cls._firestore_cooldown_until = now + cls._firestore_cooldown_duration
+                    # Log warning only once per cooldown period
+                    if now - cls._last_firestore_warn_time > cls._firestore_cooldown_duration:
+                        cls._last_firestore_warn_time = now
+                        print("[WARN] Firestore quota exceeded for error_history. Using fallback for 5 minutes.")
+                else:
+                    print(f"[WARN] Error reading from Firestore error_history: {e}")
+
+                if cached:
+                    return cached.get("data", []), "cache"
+                fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+                return fallback_data, "fallback"
+
+        # 4. Fallback if db is None (offline)
+        fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+        return fallback_data, "fallback"
+
+    @classmethod
+    def _get_user_history(cls, user_id):
+        """Helper to get user history from cached/Firestore data."""
+        data, _ = cls._get_user_history_data(user_id)
+        return data
 
     @classmethod
     def get_history(cls, user_id):
-        """Returns error analysis history (last 10 items)."""
-        user_history = cls._get_user_history(user_id)
+        """Returns error analysis history (last 10 items) with safe fallback."""
+        user_history, source = cls._get_user_history_data(user_id)
         return {
-            "user_id": user_id,
+            "success": True,
+            "student_id": user_id,
+            "source": source,
             "total": len(user_history),
-            "history": user_history[-10:]
+            "history": user_history[-10:] if user_history else [],
+            "message": "No error history available yet" if not user_history else None
         }
 
     @classmethod
@@ -1378,7 +1436,7 @@ class ErrorService:
         if user_id in cls._last_analysis:
             return cls._last_analysis[user_id]
         
-        user_history = [h for h in cls._history if h.get("student_id") == user_id]
+        user_history = cls._get_user_history(user_id)
         if user_history:
             latest_entry = user_history[-1]
             code = latest_entry.get("code", "")
@@ -1395,15 +1453,23 @@ class ErrorService:
 
     @classmethod
     def get_summary(cls, user_id):
-        """Aggregates error patterns for the user."""
-        user_history = cls._get_user_history(user_id)
+        """Aggregates error patterns for the user with safe fallback."""
+        user_history, source = cls._get_user_history_data(user_id)
         if not user_history:
-            return {"user_id": user_id, "total_analyses": 0, "counts": {}}
+            return {
+                "success": True,
+                "user_id": user_id,
+                "source": source,
+                "total_analyses": 0,
+                "counts": {},
+                "most_frequent_error": "None",
+                "recommended_focus": "General"
+            }
 
         counts = {}
         for h in user_history:
-            lbl = h["label"]
-            if lbl != "CORRECT":
+            lbl = h.get("label")
+            if lbl and lbl != "CORRECT":
                 counts[lbl] = counts.get(lbl, 0) + 1
 
         most_freq = max(counts, key=counts.get) if counts else "None"
@@ -1421,7 +1487,9 @@ class ErrorService:
             rec_focus = concept_map.get(most_freq, "General")
         
         return {
+            "success": True,
             "user_id": user_id,
+            "source": source,
             "total_analyses": len(user_history),
             "counts": counts,
             "most_frequent_error": most_freq,
@@ -1435,19 +1503,15 @@ class ErrorService:
     @classmethod
     def get_analytics(cls, user_id):
         """
-        Computes error progression analytics for a learner.
-
-        Groups submission history by ISO week, calculates per-category error
-        counts, improvement percentages (first-half vs second-half comparison),
-        and identifies the most improved and most problematic concepts.
-
-        Returns a fully structured response ready for Chart.js consumption.
+        Computes error progression analytics for a learner with safe fallback.
         """
-        user_history = cls._get_user_history(user_id)
+        user_history, source = cls._get_user_history_data(user_id)
 
         if not user_history:
             return {
+                "success": True,
                 "user_id": user_id,
+                "source": source,
                 "has_data": False,
                 "total_submissions": 0,
                 "weeks": [],
@@ -1468,9 +1532,8 @@ class ErrorService:
         for entry in user_history:
             week_key = entry.get("week_bucket")
             if not week_key:
-                # Back-compute from timestamp for entries created before this feature
                 try:
-                    dt = datetime.datetime.fromisoformat(entry["timestamp"])
+                    dt = datetime.datetime.fromisoformat(entry.get("timestamp", ""))
                     week_key = dt.strftime("%Y-W%V")
                 except Exception:
                     week_key = "Unknown"
@@ -1479,7 +1542,7 @@ class ErrorService:
                 week_buckets[week_key] = {"total": 0, "errors": {}, "correct": 0}
 
             week_buckets[week_key]["total"] += 1
-            label = entry["label"]
+            label = entry.get("label", "CORRECT")
             if label == "CORRECT":
                 week_buckets[week_key]["correct"] += 1
             else:
@@ -1515,8 +1578,8 @@ class ErrorService:
 
         improvement_scores = {}
         for cat in all_error_cats:
-            first_count  = sum(1 for h in first_half  if h["label"] == cat)
-            second_count = sum(1 for h in second_half if h["label"] == cat)
+            first_count  = sum(1 for h in first_half  if h.get("label") == cat)
+            second_count = sum(1 for h in second_half if h.get("label") == cat)
 
             if first_count == 0 and second_count == 0:
                 improvement_scores[cat] = {"pct": 0,    "direction": "stable",   "first": 0, "second": 0}
@@ -1529,8 +1592,8 @@ class ErrorService:
                                            "first": first_count, "second": second_count}
 
         # ── Overall improvement ───────────────────────────────────────
-        total_first_errors  = sum(1 for h in first_half  if h["label"] != "CORRECT")
-        total_second_errors = sum(1 for h in second_half if h["label"] != "CORRECT")
+        total_first_errors  = sum(1 for h in first_half  if h.get("label") != "CORRECT")
+        total_second_errors = sum(1 for h in second_half if h.get("label") != "CORRECT")
         if total_first_errors == 0:
             overall_improvement_pct = 0
         else:
@@ -1549,16 +1612,18 @@ class ErrorService:
         # ── Most problematic (by total count) ─────────────────────────
         total_counts = {}
         for h in user_history:
-            if h["label"] != "CORRECT":
+            if h.get("label") != "CORRECT":
                 total_counts[h["label"]] = total_counts.get(h["label"], 0) + 1
         most_problematic = max(total_counts, key=total_counts.get) if total_counts else None
 
         # ── Error-free rate ───────────────────────────────────────────
-        correct_count    = sum(1 for h in user_history if h["label"] == "CORRECT")
-        error_free_rate  = round((correct_count / len(user_history)) * 100)
+        correct_count    = sum(1 for h in user_history if h.get("label") == "CORRECT")
+        error_free_rate  = round((correct_count / len(user_history)) * 100) if user_history else 0
 
         return {
+            "success":               True,
             "user_id":               user_id,
+            "source":                source,
             "has_data":              True,
             "total_submissions":     n,
             "weeks":                 sorted_weeks,
@@ -1579,22 +1644,15 @@ class ErrorService:
     @classmethod
     def generate_learning_report(cls, user_id):
         """
-        Generates a dynamic, personalized learning report for a learner.
-
-        Uses the full submission history to identify:
-          • Current strengths   — error categories absent in recent submissions
-          • Recurring mistakes  — categories appearing in ≥ 25% of all submissions
-          • Recently improved   — categories frequent in early history, rare now
-          • New mistakes        — categories appearing only in the last 3 submissions
-          • Recommended focus   — top-2 error categories in the last 5 submissions
-
-        The summary narrative is dynamically generated — not a fixed template.
+        Generates a dynamic, personalized learning report for a learner with safe fallback.
         """
-        user_history = cls._get_user_history(user_id)
+        user_history, source = cls._get_user_history_data(user_id)
 
         if not user_history:
             return {
+                "success": True,
                 "user_id": user_id,
+                "source": source,
                 "has_data": False,
                 "total_submissions": 0,
                 "summary": "No submission history found. Submit code to generate your learning report.",
@@ -1636,8 +1694,8 @@ class ErrorService:
         very_recent = user_history[-3:]             # last 3 submissions
         early      = user_history[:max(1, n - 5)]  # all except last 5
 
-        all_labels    = [h["label"] for h in user_history]
-        recent_labels = [h["label"] for h in recent]
+        all_labels    = [h.get("label", "CORRECT") for h in user_history]
+        recent_labels = [h.get("label", "CORRECT") for h in recent]
 
         # ── Strengths ─────────────────────────────────────────────────
         strengths = []
@@ -1662,7 +1720,7 @@ class ErrorService:
         recurring_mistakes = []
         for cat in all_error_cats:
             count = all_labels.count(cat)
-            rate  = count / len(user_history)
+            rate  = count / len(user_history) if user_history else 0
             if rate >= 0.25:
                 concept = concept_map[cat]
                 reasons = [h.get("reason_group", "") for h in user_history
@@ -1683,7 +1741,7 @@ class ErrorService:
         # ── Recently improved ─────────────────────────────────────────
         recently_improved = []
         if len(user_history) >= 4 and early:
-            early_labels = [h["label"] for h in early]
+            early_labels = [h.get("label", "CORRECT") for h in early]
             for cat in all_error_cats:
                 early_rate  = early_labels.count(cat)  / len(early_labels)  if early_labels  else 0
                 recent_rate = recent_labels.count(cat) / len(recent_labels) if recent_labels else 0
@@ -1703,15 +1761,16 @@ class ErrorService:
         # ── New mistakes ──────────────────────────────────────────────
         new_mistakes  = []
         older         = user_history[:-3] if len(user_history) > 3 else []
-        recent3_cats  = {h["label"] for h in very_recent if h["label"] != "CORRECT"}
-        older_cats    = {h["label"] for h in older}
+        recent3_cats  = {h.get("label") for h in very_recent if h.get("label") != "CORRECT"}
+        older_cats    = {h.get("label") for h in older}
         for cat in recent3_cats - older_cats:
-            concept = concept_map.get(cat, cat)
-            new_mistakes.append({
-                "concept": concept,
-                "message": f"A new {concept.lower()} error pattern appeared in your most recent submissions.",
-                "icon": "🆕",
-            })
+            if cat:
+                concept = concept_map.get(cat, cat)
+                new_mistakes.append({
+                    "concept": concept,
+                    "message": f"A new {concept.lower()} error pattern appeared in your most recent submissions.",
+                    "icon": "🆕",
+                })
 
         # ── Recommended focus ─────────────────────────────────────────
         reason_advice = {
@@ -1735,7 +1794,7 @@ class ErrorService:
 
         recent_error_counts = {}
         for h in recent:
-            if h["label"] != "CORRECT":
+            if h.get("label") != "CORRECT":
                 recent_error_counts[h["label"]] = recent_error_counts.get(h["label"], 0) + 1
 
         sorted_recent  = sorted(recent_error_counts.items(), key=lambda x: x[1], reverse=True)
@@ -1754,7 +1813,7 @@ class ErrorService:
                 avoid_patterns.append({"text": pattern, "concept": concept})
 
         # ── Summary narrative (dynamic) ───────────────────────────────
-        error_submissions = [h for h in user_history if h["label"] != "CORRECT"]
+        error_submissions = [h for h in user_history if h.get("label") != "CORRECT"]
 
         if not error_submissions:
             summary = (
@@ -1785,7 +1844,9 @@ class ErrorService:
             )
 
         return {
+            "success":           True,
             "user_id":           user_id,
+            "source":            source,
             "has_data":          True,
             "total_submissions": n,
             "summary":           summary,
@@ -1796,3 +1857,4 @@ class ErrorService:
             "recommended_focus": recommended_focus,
             "avoid_patterns":    avoid_patterns,
         }
+

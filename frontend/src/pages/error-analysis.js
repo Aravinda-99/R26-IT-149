@@ -6,6 +6,7 @@
  */
 
 import { ErrorAPI } from "../api/api.js";
+import { getCurrentUser } from "../utils/auth.js";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
@@ -19,14 +20,14 @@ function showTelemetryResult(res, isHistory = false) {
     if (!isHistory) {
         liveAnalysisResponse = res;
     }
-    
+
     const welcomeView = document.getElementById("welcome-view");
     if (welcomeView) welcomeView.classList.add("hidden");
     const invalidView = document.getElementById("invalid-view");
     if (invalidView) invalidView.classList.add("hidden");
     const resultView = document.getElementById("result-view");
     if (resultView) resultView.classList.remove("hidden");
-    
+
     const historyBanner = document.getElementById("history-banner");
     if (historyBanner) {
         if (isHistory) historyBanner.classList.remove("hidden");
@@ -37,7 +38,8 @@ function showTelemetryResult(res, isHistory = false) {
 }
 
 export async function renderErrorAnalysis(container) {
-    const studentId = "demo_student";
+    const user = getCurrentUser();
+    const studentId = user?.uid || user?.id || "demo_student";
 
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
@@ -365,8 +367,8 @@ export async function renderErrorAnalysis(container) {
         }
     }
 
+    // Load telemetry once on mount without continuous background polling
     pollLatestTelemetry();
-    setInterval(pollLatestTelemetry, 2000);
 
     document.getElementById("btn-pipeline").addEventListener("click", () => {
         if (!latestAnalysisResponse) return;
@@ -430,7 +432,7 @@ export async function renderErrorAnalysis(container) {
     document.getElementById("close-payload").addEventListener("click", () => {
         document.getElementById("payload-modal").classList.add("hidden");
     });
-    
+
     // Back to live view from history mode
     document.getElementById("btn-back-live")?.addEventListener("click", () => {
         // Deselect history items
@@ -439,7 +441,7 @@ export async function renderErrorAnalysis(container) {
             prev.style.background = "rgba(255,255,255,0.03)";
             prev.style.borderColor = "rgba(255,255,255,0.05)";
         });
-        
+
         if (liveAnalysisResponse) {
             showTelemetryResult(liveAnalysisResponse, false);
         } else {
@@ -535,10 +537,10 @@ function updateInsightEngine(data) {
 
     // ── Wire game card click → navigate to matching game ─────────────
     const errorToCategory = {
-        "LOOP_ERROR":     { category: "loops",     cardId: "category-loops",     launchId: "launch-loops-module-btn" },
+        "LOOP_ERROR": { category: "loops", cardId: "category-loops", launchId: "launch-loops-module-btn" },
         "VARIABLE_ERROR": { category: "variables", cardId: "category-variables", launchId: "launch-int-module-btn" },
-        "ARRAY_ERROR":    { category: "arrays",    cardId: "category-arrays",    launchId: "launch-arrays-module-btn" },
-        "METHOD_ERROR":   { category: "methods",   cardId: "category-methods",   launchId: "launch-stringmethods-module-btn" },
+        "ARRAY_ERROR": { category: "arrays", cardId: "category-arrays", launchId: "launch-arrays-module-btn" },
+        "METHOD_ERROR": { category: "methods", cardId: "category-methods", launchId: "launch-stringmethods-module-btn" },
     };
     const gameCard = document.getElementById("diag-game-card");
     if (gameCard) {
@@ -652,7 +654,7 @@ async function refreshGlobalState(studentId) {
                 el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
                         <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
-                        <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
                 `;

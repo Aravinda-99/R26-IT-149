@@ -244,28 +244,28 @@ function renderQuestionScreen(container, index) {
             <!-- Navigation Controls -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 ${index > 0
-                    ? `<button class="btn" id="prev-btn" style="background: rgba(255,255,255,0.08); padding: 0.6rem 1.4rem;">← Previous</button>`
-                    : `<div></div>`
-                }
+            ? `<button class="btn" id="prev-btn" style="background: rgba(255,255,255,0.08); padding: 0.6rem 1.4rem;">← Previous</button>`
+            : `<div></div>`
+        }
 
                 ${isLast
-                    ? `<button class="btn btn-primary" id="submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''} style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; padding: 0.7rem 2rem;">Submit Post-Test <i class="fa-solid fa-check"></i></button>`
-                    : `<button class="btn btn-primary" id="next-btn" ${!selectedAnswers[q.question_id] ? 'disabled' : ''} style="background: #6366f1; font-weight: 600; padding: 0.6rem 1.8rem;">Next →</button>`
-                }
+            ? `<button class="btn btn-primary" id="submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''} style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 700; padding: 0.7rem 2rem;">Submit Post-Test <i class="fa-solid fa-check"></i></button>`
+            : `<button class="btn btn-primary" id="next-btn" ${!selectedAnswers[q.question_id] ? 'disabled' : ''} style="background: #6366f1; font-weight: 600; padding: 0.6rem 1.8rem;">Next →</button>`
+        }
             </div>
 
             <!-- Question Dot Palette -->
             <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
                 ${questions.map((item, i) => {
-                    const isAnswered = Boolean(selectedAnswers[item.question_id]);
-                    const isCurrent = i === index;
-                    let bg = "rgba(255,255,255,0.1)";
-                    if (isAnswered) bg = "#10b981";
-                    if (isCurrent) bg = "#6366f1";
-                    return `
+            const isAnswered = Boolean(selectedAnswers[item.question_id]);
+            const isCurrent = i === index;
+            let bg = "rgba(255,255,255,0.1)";
+            if (isAnswered) bg = "#10b981";
+            if (isCurrent) bg = "#6366f1";
+            return `
                         <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;"></span>
                     `;
-                }).join("")}
+        }).join("")}
             </div>
         </div>
     `;
@@ -436,9 +436,9 @@ function renderResultScreen(container, res) {
                 <!-- Primary Action Button -->
                 <div>
                     ${isDone
-                        ? `<button class="btn btn-primary" id="res-done-btn" style="padding: 0.85rem 3rem; font-size: 1.1rem; font-weight: 700; background: #10b981; border-radius: 0.5rem;"><i class="fa-solid fa-check"></i> Continue to Next Activity</button>`
-                        : `<button class="btn btn-primary" id="res-learn-again-btn" style="padding: 0.85rem 3rem; font-size: 1.1rem; font-weight: 700; background: #6366f1; border-radius: 0.5rem;"><i class="fa-solid fa-rotate-left"></i> Repeat Gamified Lesson</button>`
-                    }
+            ? `<button class="btn btn-primary" id="res-done-btn" style="padding: 0.85rem 3rem; font-size: 1.1rem; font-weight: 700; background: #10b981; border-radius: 0.5rem;"><i class="fa-solid fa-check"></i> Continue to Next Activity</button>`
+            : `<button class="btn btn-primary" id="res-learn-again-btn" style="padding: 0.85rem 3rem; font-size: 1.1rem; font-weight: 700; background: #6366f1; border-radius: 0.5rem;"><i class="fa-solid fa-rotate-left"></i> Repeat Gamified Lesson</button>`
+        }
                 </div>
             </div>
 

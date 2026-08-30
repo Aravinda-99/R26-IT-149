@@ -5,21 +5,10 @@
  */
 
 const API_BASE = "/api";
-const DEV_FALLBACK_BASE = "http://localhost:5001/api";
 
-function shouldTryDevFallback(response, endpoint) {
-    // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.
-    // In dev, retry directly against the Flask server.
-    try {
-        const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
-        if (!isDev) return false;
-        if (!response || response.status !== 404) return false;
-        if (!endpoint?.startsWith("/")) return false;
-        return true;
-    } catch {
-        return false;
-    }
-}
+let backendUnavailable = false;
+let lastFailureWarningTime = 0;
+const WARNING_COOLDOWN_MS = 10000; // 10s warning throttle
 
 async function apiRequest(endpoint, method = "GET", body = null) {
     const options = {
@@ -28,9 +17,19 @@ async function apiRequest(endpoint, method = "GET", body = null) {
     };
     if (body) options.body = JSON.stringify(body);
 
-    let response = await fetch(`${API_BASE}${endpoint}`, options);
-    if (shouldTryDevFallback(response, endpoint)) {
-        response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+    let response;
+    try {
+        response = await fetch(`${API_BASE}${endpoint}`, options);
+        // Reset backend availability flag on successful fetch
+        backendUnavailable = false;
+    } catch (netErr) {
+        backendUnavailable = true;
+        const now = Date.now();
+        if (now - lastFailureWarningTime > WARNING_COOLDOWN_MS) {
+            lastFailureWarningTime = now;
+            console.warn("[CodeQuest] Backend server is not available. Please start the backend.");
+        }
+        throw new Error("Backend server is not available. Please start the backend.");
     }
 
     const text = await response.text();
@@ -40,14 +39,17 @@ async function apiRequest(endpoint, method = "GET", body = null) {
             data = JSON.parse(text);
         } catch {
             data = {
-                error:
-                    response.status === 404
-                        ? `Not found (${endpoint}) — is the API running and is the URL correct?`
-                        : `API error ${response.status}`,
+                error: response.status === 404
+                    ? `Not found (${endpoint}) — is the API running?`
+                    : `API error ${response.status}`,
             };
         }
     }
-    if (!response.ok) throw new Error(data.error || `API error ${response.status}`);
+
+    if (!response.ok) {
+        throw new Error(data.error || data.message || `API error ${response.status}`);
+    }
+
     return data;
 }
 
@@ -60,14 +62,14 @@ export const AdaptiveAPI = {
 
 // --- Component 2: Error Detector ---
 export const ErrorAPI = {
-    analyze:          (data)   => apiRequest("/errors/analyze", "POST", data),
-    getLatest:        (userId) => apiRequest(`/errors/latest/${userId}`),
-    getHistory:       (userId) => apiRequest(`/errors/history/${userId}`),
-    getSummary:       (userId) => apiRequest(`/errors/summary/${userId}`),
+    analyze: (data) => apiRequest("/errors/analyze", "POST", data),
+    getLatest: (userId) => apiRequest(`/errors/latest/${userId}`),
+    getHistory: (userId) => apiRequest(`/errors/history/${userId}`),
+    getSummary: (userId) => apiRequest(`/errors/summary/${userId}`),
     // Feature 1 — Error Progression Analytics
-    getAnalytics:     (userId) => apiRequest(`/errors/analytics/${userId}`),
+    getAnalytics: (userId) => apiRequest(`/errors/analytics/${userId}`),
     // Feature 3 — Personalized Learning Report
-    getLearningReport:(userId) => apiRequest(`/errors/learning-report/${userId}`),
+    getLearningReport: (userId) => apiRequest(`/errors/learning-report/${userId}`),
 };
 
 // --- Component 3: Gamification ---
@@ -123,10 +125,8 @@ export const AuthAPI = {
 export async function checkHealth() {
     try {
         const data = await apiRequest("/health");
-        console.log("[OK] API healthy:", data.status);
         return true;
     } catch {
-        console.warn("[WARN] API not reachable");
         return false;
     }
 }

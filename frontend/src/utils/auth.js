@@ -14,7 +14,7 @@ export function initAuthListener() {
     const auth = getAuth();
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
-        
+
         if (user) {
             await GameManager.syncWithFirebase();
         } else {
