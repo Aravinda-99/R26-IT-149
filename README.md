@@ -1,4 +1,4 @@
-# CodeQuest — Gamified Adaptive Learning Framework for Programming Education
+# CodeQuest - Gamified Adaptive Learning Framework for Programming Education
 
 A web-based platform that teaches programming fundamentals through adaptive learning paths, intelligent error detection, gamified reinforcement, and schema mastery tracking.
 
