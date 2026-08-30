@@ -131,7 +131,7 @@ export function renderLogin(container) {
             const userCred = await signInWithEmailAndPassword(auth, email, password);
             const user = userCred.user;
             const role = (email.includes("teacher") || email.includes("admin")) ? "teacher" : "student";
-            
+
             setCurrentUser({
                 uid: user.uid,
                 id: user.uid,

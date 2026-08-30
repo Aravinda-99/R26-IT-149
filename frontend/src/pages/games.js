@@ -58,31 +58,26 @@ function launchGame(section) {
 }
 
 /**
- * Open a module's game in a brand-new browser tab.
- * The app has no URL router, so we pass the module as a query param
- * (?launchModule=section) that main.js reads on load to auto-launch it.
+ * Open a module's game in a brand-new browser tab with dedicated game-player page.
  */
-function openModuleInNewTab(section) {
+export function openModuleInNewTab(section) {
     const url = new URL(window.location.href);
+    url.hash = `#/student/game-player?module=${encodeURIComponent(section)}`;
     url.search = "";
-    url.searchParams.set("launchModule", section);
-    window.open(url.toString(), "_blank", "noopener");
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
 }
 
 /**
  * Called by main.js on page load when the URL carries ?launchModule=section
- * (i.e. this tab was opened via openModuleInNewTab).
  */
 export function launchModuleFromQuery(section) {
-    launchGame(section);
+    openModuleInNewTab(section);
 }
 
 function wireModuleButtons(launchId, closeId, section) {
     document.getElementById(launchId)?.addEventListener("click", () => openModuleInNewTab(section));
-    document.getElementById(closeId)?.addEventListener("click", () => {
-        destroyGame();
-        hideGameContainer();
-    });
+    const closeBtn = document.getElementById(closeId);
+    if (closeBtn) closeBtn.style.display = "none";
 }
 
 /**
@@ -642,19 +637,14 @@ function showCategoryModules(container, category) {
 }
 
 export async function renderGames(container) {
-    const targetCategory = sessionStorage.getItem("codequest_target_category");
-    const targetModule = sessionStorage.getItem("codequest_target_module");
+    destroyGame();
+    hideGameContainer();
 
+    const targetCategory = sessionStorage.getItem("codequest_target_category");
     if (targetCategory) {
         sessionStorage.removeItem("codequest_target_category");
+        sessionStorage.removeItem("codequest_target_module");
         showCategoryModules(container, targetCategory);
-
-        if (targetModule) {
-            sessionStorage.removeItem("codequest_target_module");
-            setTimeout(() => {
-                launchGame(targetModule);
-            }, 120);
-        }
         return;
     }
 

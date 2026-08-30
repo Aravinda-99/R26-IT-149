@@ -33,7 +33,7 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-    --font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font: "Manrope", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 * {
@@ -6117,6 +6117,374 @@ textarea.input-field {
     font-size: 0.75rem;
     color: var(--text-secondary);
     font-family: monospace;
+}
+
+/* ==========================================================================
+   Student LMS Portal — Clean Top-Navbar & White Theme Layout
+   ========================================================================== */
+
+.student-lms-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #F8FAFC;
+}
+
+.student-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.student-topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+}
+
+/* Brand */
+.student-brand-box {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.student-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    color: inherit;
+}
+
+.student-logo-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    background: #2563EB;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.student-brand-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.student-logo-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+}
+
+.student-portal-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #EFF6FF;
+    color: #2563EB;
+    padding: 0.2rem 0.5rem;
+    border-radius: 5px;
+}
+
+/* Desktop Text-Only Navigation Links */
+.student-nav-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    flex: 1;
+    height: 72px;
+    margin: 0 1.25rem;
+}
+
+.student-nav-item {
+    height: 72px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0.95rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    position: relative;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+}
+
+.student-nav-item:hover {
+    color: #0F172A;
+    background: transparent;
+}
+
+.student-nav-item.active {
+    color: #2563EB;
+    font-weight: 600;
+    background: transparent;
+}
+
+.student-nav-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0.95rem;
+    right: 0.95rem;
+    height: 2.5px;
+    background: #2563EB;
+    border-radius: 2px 2px 0 0;
+}
+
+/* Right Controls Box */
+.student-controls-box {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-shrink: 0;
+}
+
+.student-track-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #64748B;
+}
+
+.student-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 9999px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.student-user-pill:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.student-avatar-badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2563EB;
+    color: #FFFFFF;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.student-display-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #0F172A;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.student-chevron-icon {
+    font-size: 0.68rem;
+    color: #94A3B8;
+    margin-left: 2px;
+}
+
+.student-profile-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 190px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    z-index: 150;
+    padding: 0.45rem 0;
+}
+
+.student-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.86rem;
+    color: #0F172A;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.15s ease;
+}
+
+.student-dropdown-item:hover {
+    background: #F8FAFC;
+    color: #2563EB;
+}
+
+.student-dropdown-divider {
+    height: 1px;
+    background: #F1F5F9;
+    margin: 0.35rem 0;
+}
+
+.student-dropdown-logout {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1.1rem;
+    font-size: 0.86rem;
+    color: #DC2626;
+    background: none;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.student-dropdown-logout:hover {
+    background: #FEF2F2;
+}
+
+.student-mobile-toggle {
+    display: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid #E2E8F0;
+    color: #0F172A;
+    font-size: 1.1rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Mobile Drawer */
+.student-mobile-drawer {
+    background: #FFFFFF;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.student-mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.student-mobile-nav-item {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.94rem;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+.student-mobile-nav-item:hover,
+.student-mobile-nav-item.active {
+    color: #2563EB;
+    background: #EFF6FF;
+    font-weight: 600;
+}
+
+.mobile-drawer-divider {
+    height: 1px;
+    background: #E2E8F0;
+    margin: 0.5rem 0;
+}
+
+.student-mobile-logout {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.94rem;
+    font-weight: 600;
+    color: #DC2626;
+    background: #FEF2F2;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+}
+
+/* Main Content Area */
+.student-page-content {
+    flex: 1;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 24px 64px 24px;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1100px) {
+    .student-nav-item {
+        padding: 0 0.65rem;
+        font-size: 0.88rem;
+    }
+    .student-track-chip {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .student-nav-menu {
+        display: none;
+    }
+    .student-track-chip {
+        display: none;
+    }
+    .student-user-pill {
+        display: none;
+    }
+    .student-mobile-toggle {
+        display: flex;
+    }
+    .student-page-content {
+        padding: 20px 16px 40px 16px;
+    }
+    .home-hero-card {
+        grid-template-columns: 1fr !important;
+        padding: 2rem 1.5rem !important;
+        gap: 2rem !important;
+    }
+    .hub-workspace-grid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 

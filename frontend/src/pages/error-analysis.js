@@ -368,7 +368,7 @@ export async function renderErrorAnalysis(container) {
                 showTelemetryResult(parsed);
             }
         }
-    } catch (e) {}
+    } catch (e) { }
 
     // Load initial stats and history
     refreshGlobalState(studentId);
@@ -566,9 +566,11 @@ function updateInsightEngine(data) {
     document.getElementById("diag-badge").textContent = `Reward: ${gamify.reward_badge || "Mastery Badge"}`;
 
     const launchTargetGame = () => {
-        sessionStorage.setItem("codequest_target_category", gameTarget.category);
-        sessionStorage.setItem("codequest_target_module", gameTarget.module);
-        window.location.hash = "#/student/games";
+        const section = gameTarget.module || "arrays";
+        const url = new URL(window.location.href);
+        url.hash = `#/student/game-player?module=${encodeURIComponent(section)}`;
+        url.search = "";
+        window.open(url.toString(), "_blank", "noopener,noreferrer");
     };
 
     // Wire top banner button
