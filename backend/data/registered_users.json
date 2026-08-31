@@ -37,12 +37,12 @@
       "Quiz Ace"
     ],
     "created_at": "2026-08-31T07:52:09.333484+00:00",
-    "updated_at": "2026-08-31T08:40:05.032856+00:00",
+    "updated_at": "2026-08-31T10:02:07.456447+00:00",
     "current_learning_state": "PRACTICING",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$Uj5ySqGRutJ0EmCT$b38f9ab267656faabd135de8900fbc30b0e183fc56a90a4561b5f10a3af945057d801c734de2dedc366cb315fc3026560c8d22d3edf68a2469eaf854628973ee"
+    "password_hash": "scrypt:32768:8:1$dS4bntA0Lp42gibM$36d55411fc105fb3d5c7fa682b93ba95735a7de6d37c2edbe2566e906c13595e8e973f50260d882ab9250fbbaf80e4a4a7756ba5eb2b36c8ee07fc57ed37a757"
   },
   "teacher_001": {
     "uid": "teacher_001",
@@ -58,12 +58,12 @@
     "games_played": 0,
     "badges": [],
     "created_at": "2026-08-31T07:52:09.446654+00:00",
-    "updated_at": "2026-08-31T08:40:06.225331+00:00",
+    "updated_at": "2026-08-31T10:02:09.893249+00:00",
     "current_learning_state": "NEW_USER",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$wpZSylOxLbxbkzAy$0edee8e8a505085eef19a89afd2a78ba4e1c115564ce5947767959d9b6da95611ed4e7a2d0baff53232b7e748c4d92053166794f9e4457ba1a46f6611b652308"
+    "password_hash": "scrypt:32768:8:1$qzdMaq5htTg5y9j0$5d4f6b50f7dc09393b6fc3fbe41d457d9f836f34602847e46fd412e0cddb3f4b0e922cea938192e665e648a8a8fa263763f5d48f418720ca5fa045fdf8619105"
   },
   "admin_001": {
     "uid": "admin_001",
@@ -79,12 +79,12 @@
     "games_played": 0,
     "badges": [],
     "created_at": "2026-08-31T07:52:09.583379+00:00",
-    "updated_at": "2026-08-31T08:40:06.467754+00:00",
+    "updated_at": "2026-08-31T10:02:10.374176+00:00",
     "current_learning_state": "NEW_USER",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$IQMIyJu4Xp5RE6mG$24cb1580eb1af95a9ba12cde798de380607675143667bca10df61ff34453d33f23cd2d9b7a6fad465c7d355029ca40d96d36696edc63c3bfed99d999906b415d"
+    "password_hash": "scrypt:32768:8:1$GGNIdKMadySxF7zQ$7010e5e499aca5cb9fd85c54be2d9ad0d47e6aac2a244d28010218af56cda03ff05af298c23fc3ec4319706fcfc5fd3e5b5d60eb6576204c57dd58ab9e02014c"
   },
   "user_1788162999814": {
     "uid": "user_1788162999814",
@@ -127,5 +127,26 @@
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
     "password_hash": "scrypt:32768:8:1$dpX9w2HTa5sZqT6R$49dc72641fc3798441c8169f32f7f0017048103d8a7081e2d522637ad7b95bde4e36329489706ba5d325a5e1a53d5bf738b00a4fd2b4eb9334e4eaf1a63a75aa"
+  },
+  "user_1788170363949": {
+    "uid": "user_1788170363949",
+    "user_id": "user_1788170363949",
+    "id": "user_1788170363949",
+    "student_id": "user_1788170363949",
+    "teacher_id": null,
+    "display_name": "madusanka",
+    "name": "madusanka",
+    "email": "madusanka@gmail.com",
+    "role": "student",
+    "total_xp": 0,
+    "games_played": 0,
+    "badges": [],
+    "created_at": "2026-08-31T09:59:24.052460+00:00",
+    "updated_at": "2026-08-31T10:02:38.215366+00:00",
+    "current_learning_state": "NEW_USER",
+    "latest_pre_test_session_id": null,
+    "latest_error_feedback_id": null,
+    "latest_post_test_session_id": null,
+    "password_hash": "scrypt:32768:8:1$D6rJatAZWhmd0di5$52c62c56c04eb47618046be1066b37464e08ecf7a66c5bb7156be22a37439aa72b1b339816fd82939af6f6a6de900be4d88ad00c5d06bdd06da06c079d399b63"
   }
 }
