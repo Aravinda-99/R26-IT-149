@@ -671,56 +671,75 @@ async function refreshGlobalState(studentId) {
                 return item._analysisPromise;
             };
 
-            sortedItems.forEach((item, index) => {
+            // A row is only shown once the detector has produced a usable
+            // prediction for it. Rows whose analysis is unavailable (invalid or
+            // missing code, failed request) are hidden from the UI entirely
+            // rather than displayed as an empty diagnosis.
+            const rowRenderers = [];
+
+            const emptyNotice = document.createElement("div");
+            emptyNotice.style.cssText = "text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;";
+            emptyNotice.textContent = "No error entries found.";
+
+            // The Suggested badge belongs to the first row that is actually
+            // visible, so it never disappears with a hidden row.
+            const refreshVisibility = () => {
+                let first = true;
+                let visibleCount = 0;
+                rowRenderers.forEach(({ el, render }) => {
+                    if (el.hidden) return;
+                    visibleCount += 1;
+                    const shouldBeSuggested = first;
+                    first = false;
+                    if (shouldBeSuggested) el.dataset.suggested = "true";
+                    else delete el.dataset.suggested;
+                    render();
+                });
+                emptyNotice.hidden = visibleCount > 0;
+            };
+
+            sortedItems.forEach((item) => {
                 const el = document.createElement("div");
-                const isSuggested = index === 0;
-                if (isSuggested) el.dataset.suggested = "true";
+                el.style.cssText = "padding: 0.6rem 0.8rem; border-radius: 6px; cursor: pointer; transition: background 0.2s, border-color 0.2s;";
 
-                const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
-                const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
-                const hoverBg = isSuggested ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
-
-                el.style.cssText = `padding: 0.6rem 0.8rem; background: ${baseBg}; border-radius: 6px; border: 1px solid ${baseBorder}; cursor: pointer; transition: background 0.2s, border-color 0.2s;`;
-                const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : '';
-
-                // Render the row from whatever the detector actually produced. A row
-                // with no usable analysis says so, instead of borrowing the
-                // question's topic and presenting it as a diagnosis.
                 const renderRow = () => {
+                    const isSuggested = el.dataset.suggested === "true";
                     const pred = item.full_response?.prediction;
-                    const displayLabel = pred?.label || item.label || null;
-                    const pendingText = item.analysis_status === "no_code" ? "CODE UNAVAILABLE"
-                        : item.analysis_status === "unanalyzed" ? "ANALYSIS UNAVAILABLE"
-                            : "ANALYSING...";
-                    const labelText = displayLabel || pendingText;
-                    const labelColor = displayLabel
-                        ? (isSuggested ? "var(--accent-orange)" : "#4a90e2")
-                        : "var(--text-secondary)";
+                    const displayLabel = pred?.label || item.label || "";
                     const conceptText = pred?.concept || item.concept || item.topic || "Core Java";
                     const provenance = item.topic && item.topic !== conceptText ? ` &middot; from your ${item.topic} question` : "";
-                    const subText = displayLabel ? `${conceptText}${provenance}` : (item.topic ? `from your ${item.topic} question` : "Core Java");
+
+                    if (!el.dataset.selected) {
+                        el.style.background = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                        el.style.border = `1px solid ${isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)"}`;
+                    }
+
+                    const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : "";
 
                     el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-weight: 700; font-size: 0.65rem; color: ${labelColor}; display: flex; align-items: center;">
+                        <span style="font-weight: 700; font-size: 0.65rem; color: ${isSuggested ? 'var(--accent-orange)' : '#4a90e2'}; display: flex; align-items: center;">
                             ${suggestedBadge}
-                            ${labelText}
+                            ${displayLabel}
                         </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-primary);">${subText}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-primary);">${conceptText}${provenance}</div>
                 `;
                 };
-                renderRow();
 
                 el.addEventListener("mouseover", () => {
-                    if (!el.dataset.selected) el.style.background = hoverBg;
+                    if (!el.dataset.selected) {
+                        el.style.background = el.dataset.suggested === "true" ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
+                    }
                 });
                 el.addEventListener("mouseout", () => {
-                    if (!el.dataset.selected) el.style.background = baseBg;
+                    if (!el.dataset.selected) {
+                        el.style.background = el.dataset.suggested === "true" ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                    }
                 });
 
-                el.addEventListener("click", async () => {
+                el.addEventListener("click", () => {
                     // Deselect all items
                     histCont.querySelectorAll("[data-selected]").forEach(prev => {
                         delete prev.dataset.selected;
@@ -733,25 +752,45 @@ async function refreshGlobalState(studentId) {
                     el.style.background = "rgba(74, 144, 226, 0.15)";
                     el.style.borderColor = "var(--accent-blue)";
 
-                    const token = ++selectionToken;
-                    const res = await resolveAnalysis(item);
-                    if (token !== selectionToken) return; // a newer row was clicked meanwhile
-                    renderRow();
-                    if (res && res.prediction) {
-                        showTelemetryResult(res, true);
+                    // The row is only visible because its analysis already resolved,
+                    // so this is a pure replay of the stored response.
+                    selectionToken += 1;
+                    if (item.full_response && item.full_response.prediction) {
+                        showTelemetryResult(item.full_response, true);
                     }
                 });
 
+                // Hidden until an analysis exists; dropped if none ever does.
+                el.hidden = true;
+                rowRenderers.push({ el, render: renderRow });
                 histCont.appendChild(el);
+
+                if (item.full_response && item.full_response.prediction) {
+                    el.hidden = false;
+                } else {
+                    resolveAnalysis(item).then(res => {
+                        if (res && res.prediction) el.hidden = false;
+                        refreshVisibility();
+                    }).catch(() => refreshVisibility());
+                }
             });
 
-            // Automatically populate telemetry with the suggested/top item if telemetry is currently empty
-            if (!latestAnalysisResponse && sortedItems.length > 0) {
-                resolveAnalysis(sortedItems[0]).then(res => {
-                    if (res && res.prediction && !latestAnalysisResponse) {
-                        showTelemetryResult(res);
+            histCont.appendChild(emptyNotice);
+            refreshVisibility();
+
+            // Automatically populate telemetry with the first item that yields a
+            // usable analysis, skipping any that cannot be analysed.
+            if (!latestAnalysisResponse) {
+                (async () => {
+                    for (const item of sortedItems) {
+                        if (latestAnalysisResponse) return;
+                        const res = await resolveAnalysis(item).catch(() => null);
+                        if (res && res.prediction && !latestAnalysisResponse) {
+                            showTelemetryResult(res);
+                            return;
+                        }
                     }
-                }).catch(() => { });
+                })();
             }
         }
 

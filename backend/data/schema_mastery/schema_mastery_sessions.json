@@ -147,13 +147,13 @@
     },
     "component_2": {
       "completed": true,
-      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
-      "error_pattern_score": 0.68,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.44,
       "error_pattern_score_source": "component2_confidence",
-      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-08-31T22:11:29.503853+00:00"
+      "completed_at": "2026-08-31T22:25:28.773143+00:00"
     },
     "component_3": {
       "completed": false,
@@ -172,9 +172,9 @@
     },
     "current_stage": "GAME_LESSON_READY",
     "created_at": "2026-08-31T20:14:02.794169+00:00",
-    "updated_at": "2026-08-31T22:11:29.503853+00:00",
-    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
-    "error_pattern_score": 0.68,
+    "updated_at": "2026-08-31T22:25:28.773143+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.44,
     "error_pattern_score_source": "component2_confidence"
   },
   "MdcC1SDeHwN4CVRiQjMEolrnU6h1": {
@@ -193,13 +193,13 @@
     },
     "component_2": {
       "completed": true,
-      "error_type": "CORRECT_NO_ERROR",
-      "error_pattern_score": 0.61,
+      "error_type": "METHOD_SIGNATURE_ISSUE",
+      "error_pattern_score": 0.66,
       "error_pattern_score_source": "component2_confidence",
-      "error_reason": "The learner correctly applies the required logic.",
+      "error_reason": "The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-08-31T22:20:25.929199+00:00"
+      "completed_at": "2026-08-31T22:26:13.129871+00:00"
     },
     "component_3": {
       "completed": false,
@@ -218,9 +218,9 @@
     },
     "current_stage": "GAME_LESSON_READY",
     "created_at": "2026-08-31T22:07:51.491823+00:00",
-    "updated_at": "2026-08-31T22:20:25.929199+00:00",
-    "error_type": "CORRECT_NO_ERROR",
-    "error_pattern_score": 0.61,
+    "updated_at": "2026-08-31T22:26:13.129871+00:00",
+    "error_type": "METHOD_SIGNATURE_ISSUE",
+    "error_pattern_score": 0.66,
     "error_pattern_score_source": "component2_confidence"
   }
 }
