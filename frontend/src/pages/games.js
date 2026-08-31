@@ -88,7 +88,7 @@ function wireModuleButtons(launchId, closeId, section) {
  */
 const METHOD_GROUPS = {
     stringmethods: {
-        title: "📝 String Methods Wing", color: "#f59e0b",
+        title: "String Methods Wing", color: "#f59e0b",
         groups: [
             { key: "stringmethods_length", title: "String.length()", desc: "The Scan Chamber → The Inspection Line → The Control Room", badge: "🔍 length() Mastery" },
             { key: "stringmethods_charat", title: "String.charAt()", desc: "The Retrieval Claw → The Claw Trials → The Workshop", badge: "🔧 charAt() Mastery" },
@@ -96,7 +96,7 @@ const METHOD_GROUPS = {
         ],
     },
     outputmethods: {
-        title: "📢 Output Methods Wing", color: "#fb7185",
+        title: "Output Methods Wing", color: "#fb7185",
         groups: [
             { key: "outputmethods_println", title: "println()", desc: "The Broadcast Tower → The Signal Room → The Studio", badge: "🎬 println() Mastery" },
             { key: "outputmethods_print", title: "print()", desc: "The Whisper Booth → The Live Feed → The Newsroom", badge: "📰 print() Mastery" },
@@ -104,7 +104,7 @@ const METHOD_GROUPS = {
         ],
     },
     arraylistmethods: {
-        title: "📚 ArrayList Methods Wing", color: "#a78bfa",
+        title: "ArrayList Methods Wing", color: "#a78bfa",
         groups: [
             { key: "arraylistmethods_add", title: "add()", desc: "The Archive → The Card Catalog → The Reading Room", badge: "🔑 add() Mastery" },
             { key: "arraylistmethods_get", title: "get()", desc: "The Consultation Desk → The Stacks → The Restoration Room", badge: "🔎 get() Mastery" },
@@ -112,7 +112,7 @@ const METHOD_GROUPS = {
         ],
     },
     mathclassmethods: {
-        title: "🔭 Math Class Methods Wing", color: "#60a5fa",
+        title: "Math Class Methods Wing", color: "#60a5fa",
         groups: [
             { key: "mathclassmethods_maxmin", title: "max() / min()", desc: "The Observatory → The Meridian Trials → The Calculation Chamber", badge: "🏆 max()/min() Mastery" },
             // Temporarily hidden — see task to hide the abs() method card from the UI.
@@ -277,7 +277,7 @@ function renderModuleView(container, category) {
             <!-- Integer Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: var(--accent-purple); margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: var(--accent-purple); font-size: 1.15rem; margin-bottom: 0.35rem;">🧠 Integer Mastery Module</h3>
+                    <h3 style="color: var(--accent-purple); font-size: 1.15rem; margin-bottom: 0.35rem;">Integer Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Number Line Adventure</b> → <b>Cyber Variable Arena</b> → <b>Integer Escape Facility</b>
                     </p>
@@ -291,7 +291,7 @@ function renderModuleView(container, category) {
             <!-- Float Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: var(--accent-green); margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: var(--accent-green); font-size: 1.15rem; margin-bottom: 0.35rem;">🌊 Float Mastery Module</h3>
+                    <h3 style="color: var(--accent-green); font-size: 1.15rem; margin-bottom: 0.35rem;">Float Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Decimal Ocean Dive</b> → <b>Rocket Launch Sequence</b> → <b>Mission Control Calculator</b>
                     </p>
@@ -305,7 +305,7 @@ function renderModuleView(container, category) {
             <!-- Char Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #c084fc; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #c084fc; font-size: 1.15rem; margin-bottom: 0.35rem;">🌌 Char Mastery Module</h3>
+                    <h3 style="color: #c084fc; font-size: 1.15rem; margin-bottom: 0.35rem;">Char Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Alphabet Nebula Explorer</b> → <b>Character Workshop</b> → <b>Char Quest — Typing Adventure</b>
                     </p>
@@ -319,7 +319,7 @@ function renderModuleView(container, category) {
             <!-- String Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: var(--accent-orange); margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: var(--accent-orange); font-size: 1.15rem; margin-bottom: 0.35rem;">🧵 String Mastery Module</h3>
+                    <h3 style="color: var(--accent-orange); font-size: 1.15rem; margin-bottom: 0.35rem;">String Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Message Garden Collector</b> → <b>String Lab Master</b> → <b>Advanced String Master</b>
                     </p>
@@ -335,7 +335,7 @@ function renderModuleView(container, category) {
             <!-- Operator Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #ff6b6b; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #ff6b6b; font-size: 1.15rem; margin-bottom: 0.35rem;">⚡ Operator Mastery Module</h3>
+                    <h3 style="color: #ff6b6b; font-size: 1.15rem; margin-bottom: 0.35rem;">Operator Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Math Magic Academy</b> → <b>Calculation Arena</b> → <b>Code Builder Pro</b>
                     </p>
@@ -351,7 +351,7 @@ function renderModuleView(container, category) {
             <!-- For Loop Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #14b8a6; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #14b8a6; font-size: 1.15rem; margin-bottom: 0.35rem;">🔄 For Loop Mastery Module</h3>
+                    <h3 style="color: #14b8a6; font-size: 1.15rem; margin-bottom: 0.35rem;">For Loop Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         2-Level Schema Theory Course — Accretion → Tuning:<br>
                         <b>Loop Train Express</b> (configure loops) &amp; <b>Iteration Arena</b> (rapid-fire combat challenges)
@@ -368,7 +368,7 @@ function renderModuleView(container, category) {
             <!-- While Loop Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #0891b2; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #0891b2; font-size: 1.15rem; margin-bottom: 0.35rem;">∞ While Loop Mastery Module</h3>
+                    <h3 style="color: #0891b2; font-size: 1.15rem; margin-bottom: 0.35rem;">While Loop Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Power Core Charger</b> → <b>Debug Dimension</b> → <b>Data Stream Processor</b>
                     </p>
@@ -384,7 +384,7 @@ function renderModuleView(container, category) {
             <!-- Array Mastery Module -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #06b6d4; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #06b6d4; font-size: 1.15rem; margin-bottom: 0.35rem;">📊 Array Mastery Module</h3>
+                    <h3 style="color: #06b6d4; font-size: 1.15rem; margin-bottom: 0.35rem;">Array Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Memory Vault</b> → <b>Index Interceptor</b> → <b>Array Forge</b>
                     </p>
@@ -400,70 +400,65 @@ function renderModuleView(container, category) {
             <!-- String Methods Wing -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #f59e0b; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #f59e0b; font-size: 1.15rem; margin-bottom: 0.35rem;">📝 String Methods Wing</h3>
+                    <h3 style="color: #f59e0b; font-size: 1.15rem; margin-bottom: 0.35rem;">String Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>length()</b> → <b>charAt()</b> → <b>toUpperCase()/toLowerCase()</b>
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-stringmethods-module-btn" style="background: #f59e0b;">Launch Module</button>
-                    <button class="btn" id="close-stringmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
             <!-- Scanner Methods Wing -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #38bdf8; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #38bdf8; font-size: 1.15rem; margin-bottom: 0.35rem;">📥 Scanner Methods Wing</h3>
+                    <h3 style="color: #38bdf8; font-size: 1.15rem; margin-bottom: 0.35rem;">Scanner Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>The Intake Dock</b> → <b>The Night Shift</b> → <b>The Front Desk</b>
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-scannermethods-module-btn" style="background: #38bdf8;">Launch Module</button>
-                    <button class="btn" id="close-scannermethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
             <!-- Output Methods Wing -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #fb7185; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #fb7185; font-size: 1.15rem; margin-bottom: 0.35rem;">📢 Output Methods Wing</h3>
+                    <h3 style="color: #fb7185; font-size: 1.15rem; margin-bottom: 0.35rem;">Output Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>println()</b> → <b>print()</b> → <b>printf()</b>
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-outputmethods-module-btn" style="background: #fb7185;">Launch Module</button>
-                    <button class="btn" id="close-outputmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
             <!-- ArrayList Methods Wing -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #a78bfa; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #a78bfa; font-size: 1.15rem; margin-bottom: 0.35rem;">📚 ArrayList Methods Wing</h3>
+                    <h3 style="color: #a78bfa; font-size: 1.15rem; margin-bottom: 0.35rem;">ArrayList Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>add()</b> → <b>get()</b> → <b>remove()</b>
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-arraylistmethods-module-btn" style="background: #a78bfa;">Launch Module</button>
-                    <button class="btn" id="close-arraylistmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
             <!-- Math Class Methods Wing -->
             <div class="card" style="display:flex; align-items:center; justify-content:space-between; gap: 1rem; border-color: #60a5fa; margin-bottom: 1rem;">
                 <div>
-                    <h3 style="color: #60a5fa; font-size: 1.15rem; margin-bottom: 0.35rem;">🔭 Math Class Methods Wing</h3>
+                    <h3 style="color: #60a5fa; font-size: 1.15rem; margin-bottom: 0.35rem;">Math Class Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         Schema Theory Course: <b>max()/min()</b> → <b>abs()</b> → <b>pow()</b>
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-mathclassmethods-module-btn" style="background: #60a5fa;">Launch Module</button>
-                    <button class="btn" id="close-mathclassmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
@@ -484,7 +479,6 @@ function renderModuleView(container, category) {
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-arraymethods-module-btn" style="background: #c8a05a;">Launch Module</button>
-                    <button class="btn" id="close-arraymethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
@@ -498,7 +492,6 @@ function renderModuleView(container, category) {
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-typeconversionmethods-module-btn" style="background: #b87333;">Launch Module</button>
-                    <button class="btn" id="close-typeconversionmethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
 
@@ -512,7 +505,6 @@ function renderModuleView(container, category) {
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-charactermethods-module-btn" style="background: #4fc3f7;">Launch Module</button>
-                    <button class="btn" id="close-charactermethods-module-btn" style="background: var(--border-color); color: var(--text-primary);">Close</button>
                 </div>
             </div>
             -->
@@ -544,13 +536,9 @@ function renderModuleView(container, category) {
         document.getElementById(`launch-${wingKey}-module-btn`)?.addEventListener("click", () => {
             renderMethodGroupSelection(container, wingKey);
         });
-        document.getElementById(`close-${wingKey}-module-btn`)?.addEventListener("click", () => {
-            destroyGame();
-            hideGameContainer();
-        });
     });
     // Scanner Methods Wing has only one group — launch it directly.
-    wireModuleButtons("launch-scannermethods-module-btn", "close-scannermethods-module-btn", "scannermethods");
+    document.getElementById("launch-scannermethods-module-btn")?.addEventListener("click", () => openModuleInNewTab("scannermethods"));
 
     // Wire back button
     document.getElementById("back-to-categories-btn")?.addEventListener("click", () => {
@@ -561,12 +549,12 @@ function renderModuleView(container, category) {
 
 function getCategoryTitle(category) {
     const titles = {
-        variables: "📦 Variables Category",
-        operators: "⚡ Operators Category",
-        loops: "🔄 Loops Category",
-        whileloops: "∞ While Loops Category",
-        arrays: "📊 Arrays Category",
-        methods: "🔧 Methods Category"
+        variables: "Variables Category",
+        operators: "Operators Category",
+        loops: "Loops Category",
+        whileloops: "While Loops Category",
+        arrays: "Arrays Category",
+        methods: "Methods Category"
     };
     return titles[category] || "Learning Games";
 }
