@@ -296,17 +296,6 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
     const action = mlResult.action || "maintain";
     const colors = actionColors[action] || actionColors.maintain;
 
-    const topicScores = sessionMetrics.topic_scores;
-    const weakestTopic = Object.entries(topicScores)
-        .sort((a, b) => a[1] - b[1])[0];
-
-    const nextTopicDisplay = mlResult.next_topic === 'all_mastered'
-        ? 'All topics mastered!'
-        : `${mlResult.next_topic || weakestTopic[0]}`;
-    const nextTopicAccuracy = mlResult.next_topic === 'all_mastered'
-        ? ''
-        : `(${Math.round((weakestTopic[1] || 0) * 100)}% accuracy)`;
-
     return `
         <div style="
             background: #FFFFFF;
@@ -391,34 +380,11 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                 </div>
             </div>
 
-            <!-- Next topic + reasoning -->
-            <div style="
-                background: #F8FAFC;
-                border-radius:8px;
-                padding:12px 14px;
-                border-left: 3px solid #2563EB;
-                font-size:0.85rem;
-                color:#475569;
-                line-height:1.6;
-            ">
-                <strong style="color:#2563EB;">📍 Next focus topic:</strong>
-                <strong style="color:#0F172A; text-transform:capitalize;">
-                    ${nextTopicDisplay}
-                </strong>
-                &nbsp;${nextTopicAccuracy}
-                <br>
-                Based on your ${Math.round(sessionMetrics.accuracy * 100)}% quiz score,
-                ${sessionMetrics.avg_attempts} avg attempts,
-                ${sessionMetrics.avg_time_sec}s avg response time,
-                and ${Math.round(sessionMetrics.engagement_score * 100)}% engagement score.
-            </div>
-
             <!-- Session analytics -->
             <div style="
                 display:grid;
                 grid-template-columns:1fr 1fr 1fr 1fr 1fr;
                 gap:8px;
-                margin-top:1rem;
             ">
                 ${[
             ["Accuracy", Math.round(sessionMetrics.accuracy * 100) + "%"],
@@ -442,22 +408,6 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                     </div>
                 `).join("")}
             </div>
-
-            <!-- Start next session button -->
-            <button id="start-next-session-btn" style="
-                width:100%;
-                padding:0.85rem;
-                margin-top:1.2rem;
-                background: linear-gradient(135deg, #2563EB, #0D9488);
-                color:#FFFFFF;
-                border:none;
-                border-radius:0.6rem;
-                font-weight:600;
-                font-size:0.95rem;
-                cursor:pointer;
-            ">
-                Start ${mlResult.next_difficulty || currentDifficulty} ${mlResult.next_topic === 'all_mastered' ? '' : (mlResult.next_topic || '')} session →
-            </button>
         </div>
     `;
 }
@@ -775,18 +725,11 @@ export function setupQuizUI(root = document) {
                 mlResult = await getMLRecommendation(sessionMetrics);
 
                 if (mlLoading && mlResult) {
+                    sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
                     mlLoading.outerHTML = buildMLRecommendationCard(
                         mlResult,
                         sessionMetrics
                     );
-
-                    const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
-                    if (nextSessionBtn) {
-                        nextSessionBtn.addEventListener("click", () => {
-                            sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
-                            window.navigateTo("error-analysis");
-                        });
-                    }
                 } else if (mlLoading) {
                     mlLoading.style.display = "none";
                 }
