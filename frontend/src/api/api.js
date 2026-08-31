@@ -64,6 +64,7 @@ export const ErrorAPI = {
     getLatest: (userId) => apiRequest(`/errors/latest/${userId}`),
     getHistory: (userId) => apiRequest(`/errors/history/${userId}`),
     getSummary: (userId) => apiRequest(`/errors/summary/${userId}`),
+    saveTopMisconception: (data) => apiRequest("/errors/top-misconception", "POST", data),
     // Feature 1 — Error Progression Analytics
     getAnalytics: (userId) => apiRequest(`/errors/analytics/${userId}`),
     // Feature 3 — Personalized Learning Report

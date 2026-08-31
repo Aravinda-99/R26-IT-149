@@ -286,6 +286,18 @@ def get_error_summary(user_id):
     return _cached_error_route("summary", user_id, load_summary, summary_fallback)
 
 
+@error_bp.route("/top-misconception", methods=["POST"])
+def save_top_misconception():
+    """Save student's top misconception directly to the database."""
+    data = request.get_json() or {}
+    student_id = data.get("student_id")
+    if not student_id:
+        return jsonify({"error": "student_id is required"}), 400
+    res = ErrorService.save_top_misconception(data)
+    _clear_cached_route_responses(student_id)
+    return jsonify(res), 200
+
+
 @error_bp.route("/analytics/<user_id>", methods=["GET"])
 def get_error_analytics(user_id):
     """

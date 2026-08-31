@@ -1086,7 +1086,7 @@ class ErrorService:
 
         history_entry = {
             "student_id": student_id,
-            "code": code if len(code) <= 100 else code[:100] + "...",
+            "code": code or "",
             "label": final_label,
             "original_ml_label": original_ml_label,
             "override_applied": override_applied,
@@ -1495,6 +1495,48 @@ class ErrorService:
             "most_frequent_error": most_freq,
             "recommended_focus": rec_focus
         }
+
+    @classmethod
+    def save_top_misconception(cls, payload):
+        """
+        Saves the student's top misconception directly to Firestore:
+        1. Appends record to 'student_misconceptions' collection.
+        2. Merges with 'student_behaviour' document.
+        """
+        student_id = payload.get("student_id") or "anonymous"
+        top_misconception = payload.get("top_misconception") or "UNKNOWN_ERROR"
+        concept = payload.get("concept") or "General"
+        total_errors = payload.get("total_errors", 0)
+        topic_breakdown = payload.get("topic_breakdown", {})
+        accuracy_pct = payload.get("accuracy_pct", 0)
+        
+        now = datetime.datetime.now().isoformat()
+        
+        record = {
+            "student_id": student_id,
+            "top_misconception": top_misconception,
+            "concept": concept,
+            "total_errors": total_errors,
+            "topic_breakdown": topic_breakdown,
+            "accuracy_pct": accuracy_pct,
+            "timestamp": now,
+            "source": payload.get("source", "error_pattern_detector")
+        }
+        
+        if db:
+            try:
+                db.collection("student_misconceptions").add(record)
+                db.collection("student_behaviour").document(student_id).set({
+                    "latest_top_misconception": top_misconception,
+                    "latest_top_concept": concept,
+                    "latest_error_count": total_errors,
+                    "updated_at": now
+                }, merge=True)
+                print(f"[OK] Saved top misconception '{top_misconception}' to Firestore for {student_id}")
+            except Exception as e:
+                print(f"[WARN] Failed to save top misconception to Firestore: {e}")
+                
+        return {"success": True, "record": record}
 
     # ======================================================================
     # Feature 1 — Error Progression Analytics
