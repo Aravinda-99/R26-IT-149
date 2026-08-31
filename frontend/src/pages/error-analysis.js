@@ -269,7 +269,7 @@ export async function renderErrorAnalysis(container) {
                 <!-- Charts Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
-                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Performance Breakdown</h4>
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;" id="anl-line-title">Accuracy by Concept</h4>
                         <div style="position: relative; height: 260px; width: 100%;">
                             <canvas id="anl-line-chart"></canvas>
                         </div>
@@ -523,12 +523,6 @@ async function refreshGlobalState(studentId) {
             ARRAY_ERROR: "#34d399",
             METHOD_ERROR: "#f472b6"
         };
-        const defaultSnippets = {
-            "Arrays": "int[] arr = new int[5];\nint x = arr[arr.length]; // Out of bounds error",
-            "Loops": "for (int i = 0; i <= 5; i++) {\n    // Off-by-one loop condition error\n}",
-            "Variables": "int count;\nSystem.out.println(count); // Uninitialized variable error",
-            "Methods": "static int calculate(int a) {\n    // Missing return statement error\n}"
-        };
 
         // ── Compute Stats: Total Errors & Top Misconception ───────────
         let sessionTotalErrors = summaryData.total_analyses || 0;
@@ -579,38 +573,57 @@ async function refreshGlobalState(studentId) {
             }).catch(err => console.warn("Failed to persist top misconception:", err));
         }
 
+        // Pre-test signal passed with every on-demand analysis. Derived from the
+        // student's real topic performance rather than a hardcoded constant.
+        const tb = quizResults?.topicBreakdown || {};
+        const pretestSignal = {
+            variables: tb.Variables?.correct ?? 3,
+            loops: tb.Loops?.correct ?? 3,
+            arrays: tb.Arrays?.correct ?? 3,
+            methods: tb.Methods?.correct ?? 3
+        };
+
         // ── Errors List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
         const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
 
-        // Build list of items: Prefer session wrongCodeQuestions, then topicBreakdown, then errorHistory
+        // Build list of items from this session's wrong answers, falling back to
+        // stored analysis history. A row's label always comes from the model
+        // response attached to it — never from the question's topic — so the
+        // list and the diagnostic panel read the same object and cannot disagree.
         let itemsToRender = [];
         if (quizResults && Array.isArray(quizResults.wrongCodeQuestions) && quizResults.wrongCodeQuestions.length > 0) {
-            itemsToRender = quizResults.wrongCodeQuestions.map((wq, idx) => ({
-                label: wq.label || labelMap[wq.topic] || "JAVA_ERROR",
-                concept: wq.topic || "Core Java",
-                code: wq.code || defaultSnippets[wq.topic] || "int[] arr = {1, 2, 3};",
-                timestamp: wq.timestamp || new Date(Date.now() - idx * 60000).toISOString(),
-                questionText: wq.questionText || ""
-            }));
-        } else if (quizResults && quizResults.topicBreakdown) {
-            // Synthesize items for topics with errors
-            Object.entries(quizResults.topicBreakdown).forEach(([topic, data], topicIdx) => {
-                const errCount = (data.total || 0) - (data.correct || 0);
-                for (let i = 0; i < errCount; i++) {
-                    itemsToRender.push({
-                        label: labelMap[topic] || `${topic.toUpperCase()}_ERROR`,
-                        concept: topic,
-                        code: defaultSnippets[topic] || "int x = 0;",
-                        timestamp: new Date(Date.now() - (topicIdx * 5 + i) * 60000).toISOString(),
-                        questionText: `${topic} question ${i + 1}`
-                    });
-                }
+            itemsToRender = quizResults.wrongCodeQuestions.map((wq, idx) => {
+                const pred = wq.full_response?.prediction;
+                return {
+                    label: pred?.label || wq.label || null,
+                    concept: pred?.concept || wq.concept || wq.topic || "Core Java",
+                    topic: wq.topic || "Core Java",
+                    code: wq.code || "",
+                    full_response: wq.full_response || null,
+                    analysis_status: wq.analysis_status || (wq.full_response ? "analyzed" : (wq.code ? "pending" : "no_code")),
+                    timestamp: wq.timestamp || new Date(Date.now() - idx * 60000).toISOString(),
+                    questionText: wq.questionText || ""
+                };
             });
         }
         
         if (itemsToRender.length === 0 && errorHistory.length > 0) {
             itemsToRender = [...errorHistory];
+        }
+
+        // Prefer the detector's own verdict for the headline stat: count the
+        // labels it actually produced. Falls back to the topic-derived value
+        // while analyses are still pending or unavailable.
+        const analysedLabelCounts = {};
+        itemsToRender.forEach(it => {
+            const lbl = it.full_response?.prediction?.label;
+            if (lbl && lbl !== "CORRECT") analysedLabelCounts[lbl] = (analysedLabelCounts[lbl] || 0) + 1;
+        });
+        const analysedTop = Object.entries(analysedLabelCounts).sort((a, b) => b[1] - a[1])[0];
+        if (analysedTop) {
+            sessionTopError = analysedTop[0];
+            if (statTopError) statTopError.textContent = sessionTopError;
         }
 
         if (itemsToRender.length === 0) {
@@ -624,38 +637,108 @@ async function refreshGlobalState(studentId) {
                 return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
             });
 
-            sortedItems.forEach((item, index) => {
+            // "Latest click wins": a slower in-flight analysis can never repaint
+            // the panel after a newer selection has been made.
+            let selectionToken = 0;
+
+            // Analyses an item on demand and caches the response on the item, so a
+            // row is analysed at most once and every later click is a pure replay.
+            const resolveAnalysis = (item) => {
+                if (item.full_response && item.full_response.prediction) return Promise.resolve(item.full_response);
+                if (!item.code) return Promise.resolve(null);
+                if (!item._analysisPromise) {
+                    item._analysisPromise = ErrorAPI.analyze({
+                        student_id: studentId,
+                        code: item.code,
+                        pretest_results: pretestSignal
+                    }).then(res => {
+                        if (res && res.prediction && res.prediction.label) {
+                            item.full_response = res;
+                            item.label = res.prediction.label;
+                            item.concept = res.prediction.concept || item.concept;
+                            item.analysis_status = res.prediction.label === "CORRECT" ? "analyzed_correct" : "analyzed";
+                            return res;
+                        }
+                        item.analysis_status = "unanalyzed";
+                        return null;
+                    }).catch(err => {
+                        console.warn("Failed to analyze selected error code:", err);
+                        item.analysis_status = "unanalyzed";
+                        item._analysisPromise = null;
+                        return null;
+                    });
+                }
+                return item._analysisPromise;
+            };
+
+            // A row is only shown once the detector has produced a usable
+            // prediction for it. Rows whose analysis is unavailable (invalid or
+            // missing code, failed request) are hidden from the UI entirely
+            // rather than displayed as an empty diagnosis.
+            const rowRenderers = [];
+
+            const emptyNotice = document.createElement("div");
+            emptyNotice.style.cssText = "text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;";
+            emptyNotice.textContent = "No error entries found.";
+
+            // The Suggested badge belongs to the first row that is actually
+            // visible, so it never disappears with a hidden row.
+            const refreshVisibility = () => {
+                let first = true;
+                let visibleCount = 0;
+                rowRenderers.forEach(({ el, render }) => {
+                    if (el.hidden) return;
+                    visibleCount += 1;
+                    const shouldBeSuggested = first;
+                    first = false;
+                    if (shouldBeSuggested) el.dataset.suggested = "true";
+                    else delete el.dataset.suggested;
+                    render();
+                });
+                emptyNotice.hidden = visibleCount > 0;
+            };
+
+            sortedItems.forEach((item) => {
                 const el = document.createElement("div");
-                const isSuggested = index === 0;
-                if (isSuggested) el.dataset.suggested = "true";
-                el.dataset.code = encodeURIComponent(item.code || "");
+                el.style.cssText = "padding: 0.6rem 0.8rem; border-radius: 6px; cursor: pointer; transition: background 0.2s, border-color 0.2s;";
 
-                const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
-                const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
-                const hoverBg = isSuggested ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
+                const renderRow = () => {
+                    const isSuggested = el.dataset.suggested === "true";
+                    const pred = item.full_response?.prediction;
+                    const displayLabel = pred?.label || item.label || "";
+                    const conceptText = pred?.concept || item.concept || item.topic || "Core Java";
 
-                el.style.cssText = `padding: 0.6rem 0.8rem; background: ${baseBg}; border-radius: 6px; border: 1px solid ${baseBorder}; cursor: pointer; transition: background 0.2s, border-color 0.2s;`;
-                const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : '';
+                    if (!el.dataset.selected) {
+                        el.style.background = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                        el.style.border = `1px solid ${isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)"}`;
+                    }
 
-                el.innerHTML = `
+                    const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : "";
+
+                    el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                         <span style="font-weight: 700; font-size: 0.65rem; color: ${isSuggested ? 'var(--accent-orange)' : '#4a90e2'}; display: flex; align-items: center;">
                             ${suggestedBadge}
-                            ${item.label}
+                            ${displayLabel}
                         </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-primary);">${conceptText}</div>
                 `;
+                };
 
                 el.addEventListener("mouseover", () => {
-                    if (!el.dataset.selected) el.style.background = hoverBg;
+                    if (!el.dataset.selected) {
+                        el.style.background = el.dataset.suggested === "true" ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
+                    }
                 });
                 el.addEventListener("mouseout", () => {
-                    if (!el.dataset.selected) el.style.background = baseBg;
+                    if (!el.dataset.selected) {
+                        el.style.background = el.dataset.suggested === "true" ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                    }
                 });
 
-                el.addEventListener("click", async () => {
+                el.addEventListener("click", () => {
                     // Deselect all items
                     histCont.querySelectorAll("[data-selected]").forEach(prev => {
                         delete prev.dataset.selected;
@@ -668,46 +751,45 @@ async function refreshGlobalState(studentId) {
                     el.style.background = "rgba(74, 144, 226, 0.15)";
                     el.style.borderColor = "var(--accent-blue)";
 
+                    // The row is only visible because its analysis already resolved,
+                    // so this is a pure replay of the stored response.
+                    selectionToken += 1;
                     if (item.full_response && item.full_response.prediction) {
                         showTelemetryResult(item.full_response, true);
-                    } else {
-                        const rawCode = decodeURIComponent(el.dataset.code || "");
-                        if (rawCode) {
-                            try {
-                                const res = await ErrorAPI.analyze({
-                                    student_id: studentId,
-                                    code: rawCode,
-                                    pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-                                });
-                                if (res && res.prediction) {
-                                    showTelemetryResult(res, true);
-                                }
-                            } catch (e) {
-                                console.warn("Failed to analyze selected error code:", e);
-                            }
-                        }
                     }
                 });
 
+                // Hidden until an analysis exists; dropped if none ever does.
+                el.hidden = true;
+                rowRenderers.push({ el, render: renderRow });
                 histCont.appendChild(el);
+
+                if (item.full_response && item.full_response.prediction) {
+                    el.hidden = false;
+                } else {
+                    resolveAnalysis(item).then(res => {
+                        if (res && res.prediction) el.hidden = false;
+                        refreshVisibility();
+                    }).catch(() => refreshVisibility());
+                }
             });
 
-            // Automatically populate telemetry with the suggested/top item if telemetry is currently empty
-            if (!latestAnalysisResponse && sortedItems.length > 0) {
-                const topItem = sortedItems[0];
-                if (topItem.full_response && topItem.full_response.prediction) {
-                    showTelemetryResult(topItem.full_response);
-                } else if (topItem.code) {
-                    ErrorAPI.analyze({
-                        student_id: studentId,
-                        code: topItem.code,
-                        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-                    }).then(res => {
+            histCont.appendChild(emptyNotice);
+            refreshVisibility();
+
+            // Automatically populate telemetry with the first item that yields a
+            // usable analysis, skipping any that cannot be analysed.
+            if (!latestAnalysisResponse) {
+                (async () => {
+                    for (const item of sortedItems) {
+                        if (latestAnalysisResponse) return;
+                        const res = await resolveAnalysis(item).catch(() => null);
                         if (res && res.prediction && !latestAnalysisResponse) {
                             showTelemetryResult(res);
+                            return;
                         }
-                    }).catch(() => { });
-                }
+                    }
+                })();
             }
         }
 
@@ -792,22 +874,16 @@ async function refreshGlobalState(studentId) {
                 }
             }
 
-            // ── Line Chart: Errors & Performance Over Time ────────────
+            // ── Concept Mastery Chart ─────────────────────────────────
+            // A trend line needs at least two time buckets; with a single
+            // session it degenerates into two floating dots. It also plotted raw
+            // error and correct counts on one axis, which hides the smaller
+            // series. So: an accuracy trend when there is real history, and a
+            // per-concept accuracy profile otherwise.
             const lineCtx = document.getElementById("anl-line-chart");
             if (lineCtx) {
-                let weekLabels = ["Diagnostic Pre-Test"];
-                let errorCounts = [sessionTotalErrors];
-                let correctCounts = [quizResults ? quizResults.score : Math.max(0, 25 - sessionTotalErrors)];
-
-                if (analyticsData.has_data && analyticsData.weekly_totals && analyticsData.weekly_totals.length > 0) {
-                    weekLabels = analyticsData.weekly_totals.map(w => w.week);
-                    errorCounts = analyticsData.weekly_totals.map(w => w.total_errors);
-                    correctCounts = analyticsData.weekly_totals.map(w => w.correct);
-                } else if (quizResults && quizResults.topicBreakdown) {
-                    weekLabels = Object.keys(quizResults.topicBreakdown);
-                    errorCounts = weekLabels.map(t => (quizResults.topicBreakdown[t].total || 0) - (quizResults.topicBreakdown[t].correct || 0));
-                    correctCounts = weekLabels.map(t => quizResults.topicBreakdown[t].correct || 0);
-                }
+                const weekly = (analyticsData.has_data && Array.isArray(analyticsData.weekly_totals)) ? analyticsData.weekly_totals : [];
+                const hasTrend = weekly.length >= 2;
 
                 // Always ensure previous chart instance on this canvas is destroyed before new render
                 const existingLine = Chart.getChart(lineCtx) || _lineChart;
@@ -816,57 +892,191 @@ async function refreshGlobalState(studentId) {
                     _lineChart = null;
                 }
 
-                const ctx = lineCtx.getContext('2d');
-                const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-                errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+                const chartTitle = document.getElementById("anl-line-title");
+                const gridColor = "rgba(100, 116, 139, 0.15)";
+                const tickColor = "#64748b";
+                const sharedTooltip = {
+                    backgroundColor: 'rgba(15, 23, 36, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#ccc',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 10
+                };
 
-                const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
-                correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+                if (hasTrend) {
+                    // One normalised series: accuracy over time. Comparable across
+                    // weeks regardless of how many questions each week held.
+                    if (chartTitle) chartTitle.textContent = "Accuracy Trend";
+                    const trendLabels = weekly.map(w => w.week);
+                    const trendAccuracy = weekly.map(w => {
+                        const correct = w.correct || 0;
+                        const total = correct + (w.total_errors || 0);
+                        return total > 0 ? Math.round((correct / total) * 100) : 0;
+                    });
 
-                _lineChart = new Chart(lineCtx, {
-                    type: "line",
-                    data: {
-                        labels: weekLabels,
-                        datasets: [
-                            {
-                                label: "Errors",
-                                data: errorCounts,
-                                borderColor: "#ef4444",
-                                backgroundColor: errorGradient,
-                                tension: 0.4,
-                                fill: true,
-                                pointBackgroundColor: "#ef4444",
-                                pointRadius: 4,
-                            },
-                            {
-                                label: "Correct",
-                                data: correctCounts,
+                    const ctx = lineCtx.getContext('2d');
+                    const accGradient = ctx.createLinearGradient(0, 0, 0, 220);
+                    accGradient.addColorStop(0, "rgba(52, 211, 153, 0.35)");
+                    accGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+
+                    _lineChart = new Chart(lineCtx, {
+                        type: "line",
+                        data: {
+                            labels: trendLabels,
+                            datasets: [{
+                                label: "Accuracy",
+                                data: trendAccuracy,
                                 borderColor: "#34d399",
-                                backgroundColor: correctGradient,
-                                tension: 0.4,
+                                backgroundColor: accGradient,
+                                tension: 0.35,
                                 fill: true,
                                 pointBackgroundColor: "#34d399",
                                 pointRadius: 4,
+                            }],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    ...sharedTooltip,
+                                    callbacks: {
+                                        label: (c) => {
+                                            const w = weekly[c.dataIndex] || {};
+                                            return ` ${c.parsed.y}% accuracy (${w.correct || 0} correct, ${w.total_errors || 0} errors)`;
+                                        }
+                                    }
+                                }
                             },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 400 },
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
-                            tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                            scales: {
+                                x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { display: false } },
+                                y: {
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { color: tickColor, font: { size: 10 }, stepSize: 20, callback: (v) => `${v}%` },
+                                    grid: { color: gridColor }
+                                },
+                            },
                         },
-                        scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                    });
+                } else {
+                    // Single session: comparing magnitude across a handful of named
+                    // concepts. A sorted horizontal bar reads left-to-right with no
+                    // decoding effort — unlike a radar, where low scores collapse
+                    // into the centre and long concept names crowd the corners.
+                    if (chartTitle) chartTitle.textContent = "Accuracy by Concept";
+                    const tbChart = quizResults?.topicBreakdown || {};
+                    let conceptNames = Object.keys(tbChart);
+                    if (conceptNames.length === 0) conceptNames = ["Variables", "Loops", "Arrays", "Methods"];
+
+                    const rows = conceptNames.map(t => {
+                        const d = tbChart[t] || {};
+                        const total = d.total || 0;
+                        const correct = d.correct || 0;
+                        const errs = total > 0 ? total - correct : (sessionCategoryErrors[t] || 0);
+                        const accuracy = total > 0 ? Math.round((correct / total) * 100) : (errs > 0 ? 0 : 100);
+                        return { concept: t, accuracy, correct, total, errs };
+                    }).sort((a, b) => a.accuracy - b.accuracy); // weakest first — that is the actionable end
+
+                    const surface = getComputedStyle(document.body).getPropertyValue("--bg-card").trim() || "#ffffff";
+
+                    // Direct value labels: the reader never has to measure a bar
+                    // against the axis, and identity is never carried by color alone.
+                    const valueLabels = {
+                        id: "conceptAccuracyLabels",
+                        afterDatasetsDraw(chart) {
+                            const { ctx: c } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            c.save();
+                            c.font = "600 11px Inter, system-ui, sans-serif";
+                            c.textBaseline = "middle";
+                            meta.data.forEach((bar, i) => {
+                                const row = rows[i];
+                                if (!row) return;
+                                const text = row.total > 0
+                                    ? `${row.accuracy}%  (${row.correct}/${row.total})`
+                                    : `${row.accuracy}%`;
+                                const inside = bar.x - bar.base > c.measureText(text).width + 16;
+                                c.fillStyle = inside ? "#ffffff" : "#475569";
+                                c.textAlign = inside ? "right" : "left";
+                                c.fillText(text, inside ? bar.x - 8 : bar.x + 8, bar.y);
+                            });
+                            c.restore();
+                        }
+                    };
+
+                    _lineChart = new Chart(lineCtx, {
+                        type: "bar",
+                        data: {
+                            labels: rows.map(r => r.concept),
+                            datasets: [
+                                {
+                                    label: "Accuracy",
+                                    data: rows.map(r => r.accuracy),
+                                    backgroundColor: "#4a90e2",
+                                    borderRadius: 4,
+                                    borderSkipped: false,
+                                    barThickness: 18,
+                                },
+                                {
+                                    // Recessive track to 100%, so a 0% concept is still
+                                    // a visible row rather than an empty gap.
+                                    label: "Remaining",
+                                    data: rows.map(r => 100 - r.accuracy),
+                                    backgroundColor: "rgba(100, 116, 139, 0.12)",
+                                    borderRadius: 4,
+                                    borderSkipped: false,
+                                    barThickness: 18,
+                                    borderColor: surface,
+                                    borderWidth: { left: 2 },
+                                }
+                            ],
                         },
-                    },
-                });
+                        options: {
+                            indexAxis: "y",
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            layout: { padding: { right: 12 } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    ...sharedTooltip,
+                                    filter: (c) => c.datasetIndex === 0,
+                                    callbacks: {
+                                        label: (c) => {
+                                            const row = rows[c.dataIndex] || {};
+                                            return row.total > 0
+                                                ? ` ${row.accuracy}% correct — ${row.correct} of ${row.total}, ${row.errs} error${row.errs !== 1 ? "s" : ""}`
+                                                : ` ${row.accuracy}% correct`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { color: tickColor, font: { size: 10 }, stepSize: 25, callback: (v) => `${v}%` },
+                                    grid: { color: gridColor, drawTicks: false },
+                                    border: { display: false },
+                                },
+                                y: {
+                                    stacked: true,
+                                    ticks: { color: "#475569", font: { size: 11, family: "Inter" } },
+                                    grid: { display: false },
+                                    border: { display: false },
+                                },
+                            },
+                        },
+                        plugins: [valueLabels],
+                    });
+                }
             }
 
             // ── Bar Chart: Errors by Category ─────────────────────────
@@ -913,8 +1123,8 @@ async function refreshGlobalState(studentId) {
                         animation: { duration: 400 },
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                            x: { ticks: { color: "#475569", font: { size: 11 } }, grid: { display: false } },
+                            y: { ticks: { color: "#64748b", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(100, 116, 139, 0.15)" }, beginAtZero: true },
                         },
                     },
                 });

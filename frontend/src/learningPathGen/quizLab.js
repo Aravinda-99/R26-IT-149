@@ -658,8 +658,12 @@ export function setupQuizUI(root = document) {
                     wrongCodeQuestions.push({
                         questionText: q.question,
                         topic: q.topic,
-                        label: topicLabelMap[q.topic] || `${(q.topic || "Core").toUpperCase()}_ERROR`,
+                        // Provenance only. The displayed label comes from the model
+                        // analysis attached below as `full_response`.
+                        topic_label: topicLabelMap[q.topic] || `${(q.topic || "Core").toUpperCase()}_ERROR`,
+                        label: null,
                         code: codeSnippet,
+                        analysis_status: codeSnippet ? "pending" : "no_code",
                         timestamp: new Date().toISOString()
                     });
                 }
@@ -675,8 +679,12 @@ export function setupQuizUI(root = document) {
                 wrongCodeQuestions,
                 completedAt: new Date().toISOString()
             };
-            sessionStorage.setItem("quiz-results", JSON.stringify(resultsPayload));
-            localStorage.setItem("latest_quiz_results", JSON.stringify(resultsPayload));
+            const persistResults = () => {
+                const serialized = JSON.stringify(resultsPayload);
+                sessionStorage.setItem("quiz-results", serialized);
+                localStorage.setItem("latest_quiz_results", serialized);
+            };
+            persistResults();
 
             // 3. Render Quiz Result card
             quizBox.innerHTML = `
@@ -796,14 +804,52 @@ export function setupQuizUI(root = document) {
                 }).catch(err => console.warn("Failed to persist Top Misconception to Error Detector database:", err));
             }
 
+            // 5.5 Analyse every wrong answer once, here, and store the full model
+            // response on the item. The Error Feedback screen replays these
+            // responses instead of re-analysing placeholder snippets, so the
+            // error list and the diagnostic panel can never disagree.
+            const analysablePretest = {
+                variables: topicBreakdown?.Variables?.correct ?? 0,
+                loops: topicBreakdown?.Loops?.correct ?? 0,
+                arrays: topicBreakdown?.Arrays?.correct ?? 0,
+                methods: topicBreakdown?.Methods?.correct ?? 0
+            };
+            const analysable = wrongCodeQuestions.filter(wq => wq.code);
+            if (analysable.length > 0) {
+                Promise.allSettled(analysable.map(wq => ErrorAPI.analyze({
+                    student_id: studentId || "anonymous",
+                    code: wq.code,
+                    pretest_results: analysablePretest
+                }))).then(settled => {
+                    settled.forEach((result, i) => {
+                        const wq = analysable[i];
+                        const res = result.status === "fulfilled" ? result.value : null;
+                        if (res && res.prediction && res.prediction.label) {
+                            wq.full_response = res;
+                            wq.label = res.prediction.label;
+                            wq.concept = res.prediction.concept || wq.topic;
+                            wq.analysis_status = res.prediction.label === "CORRECT" ? "analyzed_correct" : "analyzed";
+                            if (wq.analysis_status === "analyzed_correct") {
+                                // The student answered this wrong, yet the detector sees no
+                                // error in the resulting code. Surface it rather than hide it.
+                                console.warn("Error detector returned CORRECT for a wrong answer:", wq.topic, wq.questionText);
+                            }
+                        } else {
+                            wq.analysis_status = "unanalyzed";
+                            console.warn("Error analysis failed for wrong answer:", wq.topic, result.reason);
+                        }
+                    });
+                    persistResults();
+                }).catch(err => console.warn("Wrong-answer analysis batch failed:", err));
+            }
+
             // 6. Async ML Recommendation in background
             const mlLoading = quizBox.querySelector("#ml-loading");
             if (sessionMetrics) {
                 getMLRecommendation(sessionMetrics).then(mlResult => {
                     if (mlResult) {
                         resultsPayload.mlResult = mlResult;
-                        sessionStorage.setItem("quiz-results", JSON.stringify(resultsPayload));
-                        localStorage.setItem("latest_quiz_results", JSON.stringify(resultsPayload));
+                        persistResults();
                         if (mlLoading) {
                             mlLoading.outerHTML = buildMLRecommendationCard(mlResult, sessionMetrics);
                             const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
