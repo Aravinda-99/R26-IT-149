@@ -98,7 +98,7 @@ def get_current_session_user():
     if not user_id:
         return jsonify({"success": False, "error": "No active session"}), 401
 
-    profile = AuthService.get_user_profile(user_id)
+    profile = AuthService.get_or_create_runtime_profile(user_id)
     if not profile:
         return jsonify({"success": False, "error": "User profile not found"}), 404
 
@@ -111,7 +111,7 @@ def get_current_session_user():
 @auth_bp.route("/profile/<user_id>", methods=["GET"])
 def get_user_profile(user_id):
     """Fetch a user profile by ID."""
-    profile = AuthService.get_user_profile(user_id)
+    profile = AuthService.get_or_create_runtime_profile(user_id)
     if not profile:
         return jsonify({"error": "User not found"}), 404
     return jsonify(profile), 200

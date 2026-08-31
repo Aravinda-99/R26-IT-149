@@ -12,6 +12,22 @@ let currentUser = null;
 let authListeners = [];
 let authInitialized = false;
 
+function mergeBackendProfile(localUser, backendProfile) {
+    if (!backendProfile) return localUser;
+    if (backendProfile.auth_source === "runtime_fallback") {
+        return {
+            ...backendProfile,
+            ...localUser,
+            uid: localUser?.uid || backendProfile.uid,
+            id: localUser?.id || backendProfile.id || backendProfile.uid,
+            user_id: localUser?.user_id || backendProfile.user_id || backendProfile.uid,
+            student_id: localUser?.student_id || backendProfile.student_id || backendProfile.uid,
+            role: localUser?.role || backendProfile.role || "student",
+        };
+    }
+    return { ...localUser, ...backendProfile };
+}
+
 // Initialize cached user from local storage
 try {
     const saved = localStorage.getItem("codequest_user");

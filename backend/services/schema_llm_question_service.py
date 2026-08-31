@@ -621,9 +621,17 @@ class SchemaLLMQuestionService:
         model_name = Config.LLM_MODEL or os.getenv("LLM_MODEL", "gemini-flash-latest").strip()
         q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
         err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
+        mix_instruction = (
+            "When no single question_type is requested, use this mix for a 15-question set: "
+            "4 Basic Understanding, 4 Code Output Prediction, 3 Error Recognition, 2 Application, and 2 Transfer. "
+            "Do not make every question code-snippet based. Basic Understanding and Transfer questions should usually be conceptual with an empty code_snippet. "
+            "Use Java code snippets mainly for Code Output Prediction and Error Recognition, and only for Application when the scenario genuinely needs code."
+        )
 
         prompt = f"""You are an expert Java Computer Science educator.
 Generate {count} multiple-choice draft diagnostic questions on the concept '{concept}' at '{difficulty}' difficulty{q_type_str}{err_str}.
+
+{mix_instruction}
 
 Each question MUST strictly follow this exact 4-tier schema:
 - Exactly 4 options: option_a, option_b, option_c, option_d
@@ -748,9 +756,17 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
         err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
         model_name = Config.LLM_MODEL or "gpt-4o-mini"
+        mix_instruction = (
+            "When no single question_type is requested, use this mix for a 15-question set: "
+            "4 Basic Understanding, 4 Code Output Prediction, 3 Error Recognition, 2 Application, and 2 Transfer. "
+            "Do not make every question code-snippet based. Basic Understanding and Transfer questions should usually be conceptual with an empty code_snippet. "
+            "Use Java code snippets mainly for Code Output Prediction and Error Recognition, and only for Application when the scenario genuinely needs code."
+        )
 
         prompt = f"""You are an expert Java Computer Science educator.
 Generate {count} multiple-choice draft diagnostic questions on the concept '{concept}' at '{difficulty}' difficulty{q_type_str}{err_str}.
+
+{mix_instruction}
 
 Each question MUST strictly follow this exact 4-tier schema:
 - Exactly 4 options: option_a, option_b, option_c, option_d

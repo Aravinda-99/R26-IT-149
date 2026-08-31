@@ -4,15 +4,15 @@
  * Vite proxy sends /api/* requests to Flask at localhost:5000.
  */
 
-const API_BASE = "/api";
+const IS_DEV = typeof import.meta !== "undefined" && import.meta.env?.DEV;
 const DEV_FALLBACK_BASE = "http://localhost:5000/api";
+const API_BASE = IS_DEV ? DEV_FALLBACK_BASE : "/api";
 
 function shouldTryDevFallback(response, endpoint) {
     // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.
     // In dev, retry directly against the Flask server.
     try {
-        const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
-        if (!isDev) return false;
+        if (!IS_DEV) return false;
         if (!response || response.status !== 404) return false;
         if (!endpoint?.startsWith("/")) return false;
         return true;

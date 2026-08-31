@@ -211,7 +211,7 @@ class SchemaQuestionBankService:
             q_copy["source"] = source
 
         # 5. Concept, type, difficulty
-        q_copy["concept_name"] = str(q_copy.get("concept_name") or "Loops").strip()
+        q_copy["concept_name"] = str(q_copy.get("concept_name") or "").strip()
         q_copy["question_type"] = str(q_copy.get("question_type") or "Basic Understanding").strip()
         q_copy["difficulty"] = str(q_copy.get("difficulty") or "Medium").strip()
         q_copy["target_error_type"] = str(q_copy.get("target_error_type") or "NONE").strip()
@@ -823,13 +823,24 @@ class SchemaQuestionBankService:
         return_source: bool = False
     ):
         """
-        Retrieves questions from approved_question_bank.
-        Primary source: Firestore collection 'approved_question_bank'.
-        Fallback source: Local JSON approved_question_bank.json.
+        Retrieves teacher-approved questions from every saved source.
+        Firestore is preferred when available, but local approved records and
+        approved generated records are merged too so offline/synced questions
+        are still available for post-tests.
         """
-        approved_raw = []
-        source = "local_fallback"
-        firestore_loaded = False
+        approved_by_key = {}
+        sources_used = []
+
+        def add_question(raw_q, forced_source=None):
+            norm = cls._normalize_question_record(raw_q)
+            if not norm:
+                return
+            if forced_source:
+                norm["source"] = norm.get("source") or forced_source
+            norm["status"] = "APPROVED"
+            key = norm.get("question_id") or norm.get("id")
+            if key:
+                approved_by_key[key] = norm
 
         # 1. Primary: Firestore query
         if db:
@@ -838,22 +849,41 @@ class SchemaQuestionBankService:
                 for doc in fs_docs:
                     d = doc.to_dict()
                     d["id"] = doc.id
-                    norm = cls._normalize_question_record(d)
-                    norm["status"] = "APPROVED"
-                    approved_raw.append(norm)
-                firestore_loaded = True
-                source = "firestore"
+                    add_question(d, forced_source="firestore")
+                if fs_docs:
+                    sources_used.append("firestore")
             except Exception as e:
                 print(f"[WARN] Firestore get_approved_question_bank error (falling back): {e}")
 
-        # 2. Fallback: Local JSON only if Firestore is unavailable or failed
-        if not firestore_loaded:
-            all_app = _read_json(APP_QUESTIONS_FILE, default=[])
-            for q in all_app:
-                norm = cls._normalize_question_record(q)
-                norm["status"] = "APPROVED"
-                approved_raw.append(norm)
-            source = "local_fallback"
+        # 2. Always merge local approved_question_bank.json.
+        # Firestore and local storage can drift while developing/offline, so
+        # post-tests should see all teacher-approved saved questions.
+        all_app = _read_json(APP_QUESTIONS_FILE, default=[])
+        for q in all_app:
+            add_question(q, forced_source="local_fallback")
+        if all_app:
+            sources_used.append("local_fallback")
+
+        # 3. Also include generated questions that were approved but may not
+        # have been copied/synced into approved_question_bank yet.
+        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+        generated_approved_count = 0
+        for q in all_gen:
+            norm = cls._normalize_question_record(q)
+            if (
+                norm.get("status") == "APPROVED"
+                and not norm.get("deleted", False)
+                and (not active_only or norm.get("active", False) is True)
+            ):
+                key = norm.get("question_id") or norm.get("id")
+                if key and key not in approved_by_key:
+                    approved_by_key[key] = norm
+                    generated_approved_count += 1
+        if generated_approved_count:
+            sources_used.append("generated_approved")
+
+        approved_raw = list(approved_by_key.values())
+        source = "+".join(dict.fromkeys(sources_used)) if sources_used else "local_fallback"
 
         # Exclude mock/seed questions if mock questions are disabled
         if not Config.ALLOW_MOCK_QUESTIONS:

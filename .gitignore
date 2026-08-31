@@ -51,3 +51,11 @@ backend/data/registered_users.json
 backend/data/registered_users.local.backup.json
 backend/data/*.local.backup.json
 
+# Component 4 local runtime data
+# These files are written while using the app locally. Some may already be
+# tracked as seed/sample data, so also use `git update-index --skip-worktree`
+# locally when you do not want runtime changes to appear in commits.
+backend/data/schema_mastery/*.json
+backend/ml/component4_schema_mastery/question_bank/local_storage/*.json
+!backend/ml/component4_schema_mastery/question_bank/local_storage/seed_questions.json
+
