@@ -103,10 +103,23 @@ class _GameManager {
     return 1;
   }
 
-  completeLevel(levelIndex, accuracy) {
+  completeLevel(sceneKeyOrIndex, accuracy) {
+    let levelIndex;
+    if (typeof sceneKeyOrIndex === "number") {
+      levelIndex = sceneKeyOrIndex;
+    } else if (typeof sceneKeyOrIndex === "string") {
+      const match = sceneKeyOrIndex.match(/\d+/);
+      if (!match) return;
+      levelIndex = parseInt(match[0], 10) - 1;
+    } else {
+      return;
+    }
+
+    if (levelIndex < 0 || levelIndex >= TOTAL_LEVELS) return;
+
     this.state.levelsCompleted[levelIndex] = true;
     this.state.levelAccuracy[levelIndex] = Math.max(
-      this.state.levelAccuracy[levelIndex],
+      this.state.levelAccuracy[levelIndex] || 0,
       accuracy
     );
     this._emit("levelComplete", { levelIndex, accuracy });
@@ -167,6 +180,13 @@ class _GameManager {
     this.set("xp", saved.xp || 0);
     this.set("score", saved.score || 0);
     this.set("badges", saved.badges || []);
+    this.set("maxLives", saved.maxLives !== undefined ? saved.maxLives : DEFAULT_STATE.maxLives);
+    this.set("lives", saved.lives !== undefined ? saved.lives : DEFAULT_STATE.lives);
+    this.set("combo", saved.combo !== undefined ? saved.combo : DEFAULT_STATE.combo);
+    this.set(
+      "comboBreaksThisLevel",
+      saved.comboBreaksThisLevel !== undefined ? saved.comboBreaksThisLevel : DEFAULT_STATE.comboBreaksThisLevel
+    );
     if (saved.currentLevel !== undefined) this.set("currentLevel", saved.currentLevel);
   }
 

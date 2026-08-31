@@ -281,9 +281,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Number Line Adventure</b> → <b>Cyber Variable Arena</b> → <b>Integer Escape Facility</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🏆 Integer Explorer &nbsp; ⚔️ Math Warrior &nbsp; 🧠 Logic Master
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-int-module-btn" style="background: var(--accent-purple);">Launch Module</button>
@@ -297,9 +294,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: var(--accent-green); font-size: 1.15rem; margin-bottom: 0.35rem;">🌊 Float Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Decimal Ocean Dive</b> → <b>Rocket Launch Sequence</b> → <b>Mission Control Calculator</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🌊 Float Explorer &nbsp; 🔬 Precision Master &nbsp; 🧮 Calculation Wizard
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -315,9 +309,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Alphabet Nebula Explorer</b> → <b>Character Workshop</b> → <b>Char Quest — Typing Adventure</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🌌 Char Explorer &nbsp; 🔤 ASCII Master &nbsp; ⚔️ Char Champion
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-char-module-btn" style="background: #c084fc;">Launch Module</button>
@@ -331,9 +322,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: var(--accent-orange); font-size: 1.15rem; margin-bottom: 0.35rem;">🧵 String Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Message Garden Collector</b> → <b>String Lab Master</b> → <b>Advanced String Master</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🌸 Garden Keeper &nbsp; 🧪 String Master &nbsp; 🎓 String Genius
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -350,9 +338,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: #ff6b6b; font-size: 1.15rem; margin-bottom: 0.35rem;">⚡ Operator Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Math Magic Academy</b> → <b>Calculation Arena</b> → <b>Code Builder Pro</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🧙 Math Wizard &nbsp; ⚔️ Combat Calculator &nbsp; 👑 Code Master
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -371,9 +356,6 @@ function renderModuleView(container, category) {
                         2-Level Schema Theory Course — Accretion → Tuning:<br>
                         <b>Loop Train Express</b> (configure loops) &amp; <b>Iteration Arena</b> (rapid-fire combat challenges)
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🔄 Loop Engineer &amp; 🔁 Loop Detective
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-loops-module-btn" style="background: #14b8a6;">Launch Module</button>
@@ -389,9 +371,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: #0891b2; font-size: 1.15rem; margin-bottom: 0.35rem;">∞ While Loop Mastery Module</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Power Core Charger</b> → <b>Debug Dimension</b> → <b>Data Stream Processor</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: ⚙️ While Schema &nbsp; 🛠️ Loop Debugger &nbsp; 🌊 Stream Architect
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -409,9 +388,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>Memory Vault</b> → <b>Index Interceptor</b> → <b>Array Forge</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🗃️ Array Schema &nbsp; 🎯 Index Expert &nbsp; ⚒️ Array Smith
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-arrays-module-btn" style="background: #06b6d4;">Launch Module</button>
@@ -428,9 +404,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>length()</b> → <b>charAt()</b> → <b>toUpperCase()/toLowerCase()</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🔍 length() Mastery &nbsp; 🔧 charAt() Mastery &nbsp; ⚒️ Case Mastery
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-stringmethods-module-btn" style="background: #f59e0b;">Launch Module</button>
@@ -444,9 +417,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: #38bdf8; font-size: 1.15rem; margin-bottom: 0.35rem;">📥 Scanner Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3-Level Schema Theory Course: <b>The Intake Dock</b> → <b>The Night Shift</b> → <b>The Front Desk</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🏅 Scanner Mastery
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -462,9 +432,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>println()</b> → <b>print()</b> → <b>printf()</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🎬 println() Mastery &nbsp; 📰 print() Mastery &nbsp; 🖨️ printf() Mastery
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-outputmethods-module-btn" style="background: #fb7185;">Launch Module</button>
@@ -479,9 +446,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>add()</b> → <b>get()</b> → <b>remove()</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🔑 add() Mastery &nbsp; 🔎 get() Mastery &nbsp; 🗝️ remove() Mastery
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-arraylistmethods-module-btn" style="background: #a78bfa;">Launch Module</button>
@@ -495,9 +459,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: #60a5fa; font-size: 1.15rem; margin-bottom: 0.35rem;">🔭 Math Class Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         Schema Theory Course: <b>max()/min()</b> → <b>abs()</b> → <b>pow()</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🏆 max()/min() Mastery &nbsp; 🏛️ abs() Mastery &nbsp; 🏗️ pow() Mastery
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
@@ -520,9 +481,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         Schema Theory Course: <b>toString()</b> → <b>sort()</b> → <b>copyOf()</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🏺 toString() Schema &nbsp; 🗂️ sort() Mastery &nbsp; 🗝️ copyOf() Mastery
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-arraymethods-module-btn" style="background: #c8a05a;">Launch Module</button>
@@ -537,9 +495,6 @@ function renderModuleView(container, category) {
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>parseInt()</b> → <b>parseDouble()</b> → <b>valueOf()</b>
                     </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: ⚒️ parseInt() Mastery &nbsp; ⚖️ parseDouble() Mastery &nbsp; ⛓️ valueOf() Mastery
-                    </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                     <button class="btn btn-primary" id="launch-typeconversionmethods-module-btn" style="background: #b87333;">Launch Module</button>
@@ -553,9 +508,6 @@ function renderModuleView(container, category) {
                     <h3 style="color: #4fc3f7; font-size: 1.15rem; margin-bottom: 0.35rem;">🔎 Character Methods Wing</h3>
                     <p style="color: var(--text-secondary); font-size: 0.85rem;">
                         3×3-Level Schema Theory Course: <b>isDigit()</b> → <b>isLetter()</b> → <b>isUpperCase()</b>
-                    </p>
-                    <p style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.3rem;">
-                        Badges: 🔎 isDigit() Mastery &nbsp; 🔷 isLetter() Mastery &nbsp; 👑 isUpperCase() Mastery
                     </p>
                 </div>
                 <div style="display:flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">

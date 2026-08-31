@@ -24,12 +24,14 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const ACCURACY_THRESHOLD = 85;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;
 const TARGET_PROCESSED = 50;
 
 /* ───────── Char pools ───────── */
@@ -125,6 +127,13 @@ function getCategory(val) {
 export class Level8Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level8Scene" });
+  }
+
+  init() {
+    this.wrongAnswers = 0;
+    this.lives = MAX_LIVES;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
   }
 
   create() {
@@ -735,7 +744,7 @@ export class Level8Scene extends Phaser.Scene {
       color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 5,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 490, "⚠ 3 lives — wrong answers cost lives!", {
+    const warn = this.add.text(W / 2, 490, "⚠ 5 lives — wrong answers cost lives!", {
       fontFamily: "Arial", fontSize: "11px", color: "#e74c3c",
     }).setOrigin(0.5).setDepth(202);
 
@@ -1404,6 +1413,7 @@ export class Level8Scene extends Phaser.Scene {
 
   _onWrong(message) {
     this.wrongAnswers++;
+    if (this.wrongAnswers === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.consecutiveCorrect = 0;
     this.lives--;
@@ -1422,6 +1432,26 @@ export class Level8Scene extends Phaser.Scene {
 
     if (this.lives <= 0) {
       this.time.delayedCall(800, () => this._gameOver());
+    }
+  }
+
+  /** ML struggle check — reports real per-run processed/timing stats (rapid-fire rules apply). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalProcessed;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAnswers;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level8Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
