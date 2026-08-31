@@ -45,7 +45,6 @@ export function renderStudentLayout(container, activeRoute = "") {
                             </div>
                             <div class="student-brand-text">
                                 <span class="student-logo-title">CodeQuest</span>
-                                <span class="student-portal-tag">Java LMS</span>
                             </div>
                         </a>
                     </div>
@@ -68,10 +67,6 @@ export function renderStudentLayout(container, activeRoute = "") {
 
                     <!-- Right Controls / User Profile Dropdown -->
                     <div class="student-controls-box">
-                        <span class="student-track-chip" title="Active Learning Track">
-                            Java Foundations
-                        </span>
-
                         <div class="student-profile-menu-container" style="position: relative;">
                             <button id="student-profile-trigger" class="student-user-pill" aria-haspopup="true" aria-expanded="false" title="Account Menu">
                                 <div class="student-avatar-badge">${initial}</div>
@@ -138,12 +133,7 @@ export function renderStudentLayout(container, activeRoute = "") {
         profileTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
             profileDropdown.classList.toggle("hidden");
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!profileTrigger.contains(e.target) && !profileDropdown.contains(e.target)) {
-                profileDropdown.classList.add("hidden");
-            }
+            profileTrigger.setAttribute("aria-expanded", !profileDropdown.classList.contains("hidden"));
         });
     }
 
@@ -151,7 +141,8 @@ export function renderStudentLayout(container, activeRoute = "") {
     const toggleBtn = document.getElementById("student-mobile-toggle");
     const drawer = document.getElementById("student-mobile-drawer");
     if (toggleBtn && drawer) {
-        toggleBtn.addEventListener("click", () => {
+        toggleBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
             const isHidden = drawer.classList.contains("hidden");
             drawer.classList.toggle("hidden", !isHidden);
             const icon = toggleBtn.querySelector("i");
@@ -168,6 +159,19 @@ export function renderStudentLayout(container, activeRoute = "") {
             });
         });
     }
+
+    // Unified document click listener for outside clicks
+    document.addEventListener("click", (e) => {
+        if (profileTrigger && profileDropdown && !profileTrigger.contains(e.target) && !profileDropdown.contains(e.target)) {
+            profileDropdown.classList.add("hidden");
+            profileTrigger.setAttribute("aria-expanded", "false");
+        }
+        if (toggleBtn && drawer && !toggleBtn.contains(e.target) && !drawer.contains(e.target)) {
+            drawer.classList.add("hidden");
+            const icon = toggleBtn.querySelector("i");
+            if (icon) icon.className = "fa-solid fa-bars";
+        }
+    });
 
     // Logout handlers
     const handleLogout = async () => {

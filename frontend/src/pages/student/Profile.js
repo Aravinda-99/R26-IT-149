@@ -117,7 +117,7 @@ export function renderProfile(container) {
 
                     <div class="card" style="margin-top: 1.5rem;">
                         <h3><i class="fa-solid fa-chart-line" style="color:var(--secondary);"></i> Game Statistics</h3>
-                        <div class="profile-stats-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.75rem;">
+                        <div class="profile-stats-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; margin-top: 0.75rem;">
                             <div style="text-align:center; padding: 1rem 0.5rem; background: var(--bg-secondary, #F8FAFC); border-radius: 10px;">
                                 <div style="font-size:1.5rem; font-weight:800; color: var(--primary);">${totalXP.toLocaleString()}</div>
                                 <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Total XP</div>

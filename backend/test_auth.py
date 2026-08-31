@@ -124,7 +124,8 @@ class TestAuthWorkflow(unittest.TestCase):
 
     def test_06_student_registration(self):
         """Verify student registration creates student account with hashed password."""
-        test_email = "test_student_reg@codequest.lk"
+        import uuid
+        test_email = f"test_student_{uuid.uuid4().hex[:6]}@codequest.lk"
         res = self.client.post("/api/auth/register", json={
             "name": "Test Student",
             "email": test_email,

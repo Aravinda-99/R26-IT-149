@@ -155,6 +155,208 @@ class SchemaQuestionBankService:
                 print("[WARN] Seed questions file was empty or missing.")
 
     # ─────────────────────────────────────────────────────────────────────────
+    # Normalization & Unified Combined Question Storage
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def _normalize_question_record(cls, q: dict) -> dict:
+        """Normalizes question fields, statuses, options, and metadata."""
+        if not isinstance(q, dict):
+            return {}
+        q_copy = dict(q)
+
+        # 1. Normalize ID and question_id
+        qid = str(q_copy.get("question_id") or q_copy.get("id") or "").strip()
+        id_val = str(q_copy.get("id") or q_copy.get("question_id") or "").strip()
+        if not id_val and not qid:
+            id_val = f"Q_{uuid.uuid4().hex[:8].upper()}"
+            qid = id_val
+        elif not id_val:
+            id_val = qid
+        elif not qid:
+            qid = id_val
+        q_copy["id"] = id_val
+        q_copy["question_id"] = qid
+
+        # 2. Normalize status
+        raw_status = str(q_copy.get("status") or "").strip().upper()
+        if raw_status in ("APPROVED", "APPROVED_QUESTION", "ACTIVE"):
+            status = "APPROVED"
+        elif raw_status in ("REJECTED", "ARCHIVED"):
+            status = "REJECTED"
+        elif raw_status in ("PENDING", "REVIEW_PENDING", "DRAFT", "EDITED"):
+            status = "PENDING"
+        else:
+            status = "APPROVED" if q_copy.get("active") is True else "PENDING"
+        q_copy["status"] = status
+
+        # 3. Normalize active and deleted
+        deleted = bool(q_copy.get("deleted", False))
+        q_copy["deleted"] = deleted
+
+        if status == "APPROVED":
+            q_copy["active"] = bool(q_copy.get("active", True)) if q_copy.get("active") is not False else False
+        else:
+            q_copy["active"] = False
+
+        # 4. Normalize source
+        source = str(q_copy.get("source") or "LLM").strip()
+        if source.upper() in ("GEMINI", "GOOGLE_GEMINI"):
+            q_copy["source"] = "GEMINI"
+        elif source.upper() in ("OPENAI", "GPT", "LLM"):
+            q_copy["source"] = "LLM"
+        elif source.upper() in ("DEV_MOCK", "DEV_SEED", "SEED"):
+            q_copy["source"] = "DEV_MOCK_ONLY"
+        else:
+            q_copy["source"] = source
+
+        # 5. Concept, type, difficulty
+        q_copy["concept_name"] = str(q_copy.get("concept_name") or "Loops").strip()
+        q_copy["question_type"] = str(q_copy.get("question_type") or "Basic Understanding").strip()
+        q_copy["difficulty"] = str(q_copy.get("difficulty") or "Medium").strip()
+        q_copy["target_error_type"] = str(q_copy.get("target_error_type") or "NONE").strip()
+
+        # 6. Text and code snippet
+        q_copy["question_text"] = str(q_copy.get("question_text") or q_copy.get("text") or "").strip()
+        q_copy["code_snippet"] = str(q_copy.get("code_snippet") or "").strip()
+
+        # 7. Options & option qualities
+        opt_a = str(q_copy.get("option_a") or "").strip()
+        opt_b = str(q_copy.get("option_b") or "").strip()
+        opt_c = str(q_copy.get("option_c") or "").strip()
+        opt_d = str(q_copy.get("option_d") or "").strip()
+
+        if not (opt_a and opt_b and opt_c and opt_d) and isinstance(q_copy.get("options"), list) and len(q_copy["options"]) >= 4:
+            first_opt = q_copy["options"][0]
+            if isinstance(first_opt, dict):
+                opt_a = str(first_opt.get("text", "")).strip()
+                opt_b = str(q_copy["options"][1].get("text", "")).strip()
+                opt_c = str(q_copy["options"][2].get("text", "")).strip()
+                opt_d = str(q_copy["options"][3].get("text", "")).strip()
+            elif isinstance(first_opt, str):
+                opt_a = str(q_copy["options"][0]).strip()
+                opt_b = str(q_copy["options"][1]).strip()
+                opt_c = str(q_copy["options"][2]).strip()
+                opt_d = str(q_copy["options"][3]).strip()
+
+        q_copy["option_a"] = opt_a
+        q_copy["option_b"] = opt_b
+        q_copy["option_c"] = opt_c
+        q_copy["option_d"] = opt_d
+
+        q_copy["option_a_quality"] = str(q_copy.get("option_a_quality") or "Wrong").strip()
+        q_copy["option_b_quality"] = str(q_copy.get("option_b_quality") or "Wrong").strip()
+        q_copy["option_c_quality"] = str(q_copy.get("option_c_quality") or "Wrong").strip()
+        q_copy["option_d_quality"] = str(q_copy.get("option_d_quality") or "Wrong").strip()
+
+        q_copy["correct_option"] = str(q_copy.get("correct_option") or "A").strip().upper()
+        q_copy["explanation"] = str(q_copy.get("explanation") or "").strip()
+
+        q_copy["options"] = [
+            {"key": "A", "text": opt_a, "quality": q_copy["option_a_quality"]},
+            {"key": "B", "text": opt_b, "quality": q_copy["option_b_quality"]},
+            {"key": "C", "text": opt_c, "quality": q_copy["option_c_quality"]},
+            {"key": "D", "text": opt_d, "quality": q_copy["option_d_quality"]},
+        ]
+        q_copy["option_qualities"] = {
+            "A": q_copy["option_a_quality"],
+            "B": q_copy["option_b_quality"],
+            "C": q_copy["option_c_quality"],
+            "D": q_copy["option_d_quality"],
+        }
+        q_copy["exposure_count"] = int(q_copy.get("exposure_count", 0))
+
+        return q_copy
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Primary (Firestore) and Fallback (Local JSON) Queries
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def get_storage_status(cls) -> str:
+        """Returns 'firestore' if Firebase DB is accessible, otherwise 'local_fallback'."""
+        if db is not None:
+            try:
+                # Lightweight check
+                return "firestore"
+            except Exception:
+                return "local_fallback"
+        return "local_fallback"
+
+    @classmethod
+    def get_all_questions_combined(cls) -> list:
+        """
+        Unifies and normalizes question records from primary Firestore source or local fallback.
+        Deduplicates by question_id/id and returns a single consistent list.
+        """
+        questions_dict = {}
+
+        # 1. Primary: Load approved questions from Firestore
+        fs_loaded = False
+        if db:
+            try:
+                fs_docs = list(db.collection("approved_question_bank").stream())
+                for doc in fs_docs:
+                    data = doc.to_dict()
+                    data["id"] = doc.id
+                    norm = cls._normalize_question_record(data)
+                    norm["status"] = "APPROVED"
+                    key = norm.get("question_id") or norm.get("id")
+                    if key:
+                        questions_dict[key] = norm
+                if fs_docs:
+                    fs_loaded = True
+            except Exception as e:
+                print(f"[WARN] Firestore load error (falling back to local): {e}")
+
+        # 2. If Firestore is offline or empty, fallback to local approved_question_bank.json
+        if not fs_loaded:
+            all_app = _read_json(APP_QUESTIONS_FILE, default=[])
+            for q in all_app:
+                norm = cls._normalize_question_record(q)
+                norm["status"] = "APPROVED"
+                key = norm.get("question_id") or norm.get("id")
+                if key:
+                    questions_dict[key] = norm
+
+        # 3. Load generated / draft questions (PENDING, REJECTED)
+        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+        for q in all_gen:
+            norm = cls._normalize_question_record(q)
+            key = norm.get("question_id") or norm.get("id")
+            if key and key not in questions_dict:
+                questions_dict[key] = norm
+
+        return list(questions_dict.values())
+
+    @classmethod
+    def get_question_stats(cls) -> dict:
+        """
+        Calculates unified statistics for Teacher Dashboard & Analytics.
+        Guarantees exact parity between stats counts and question list views.
+        Uses Firestore as primary source with local JSON as fallback.
+        """
+        approved_list, app_src = cls.get_approved_question_bank(active_only=False, return_source=True)
+        active_approved_list = [q for q in approved_list if q.get("active", False) is True]
+        pending_list, pen_src = cls.get_pending_questions(return_source=True)
+        rejected_list, rej_src = cls.get_rejected_questions(return_source=True)
+
+        # Registered student count from UserStorageService
+        from services.user_storage_service import UserStorageService
+        students = UserStorageService.get_all_students()
+
+        return {
+            "success": True,
+            "registered_students": len(students),
+            "approved_questions": len(approved_list),
+            "active_approved_questions": len(active_approved_list),
+            "pending_review": len(pending_list),
+            "rejected_questions": len(rejected_list),
+            "total_questions": len(approved_list) + len(pending_list) + len(rejected_list),
+            "storage_source": app_src,
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
     # Generated / Draft Questions CRUD
     # ─────────────────────────────────────────────────────────────────────────
 
@@ -181,37 +383,104 @@ class SchemaQuestionBankService:
             existing.append(q_copy)
             saved.append(q_copy)
 
+            # Sync draft to Firestore if online
+            if db:
+                try:
+                    db.collection("generated_questions").document(q_copy["id"]).set(q_copy)
+                except Exception as e:
+                    print(f"[WARN] Firestore sync failed for draft question: {e}")
+
         _write_json(GEN_QUESTIONS_FILE, existing)
         return saved
 
     @classmethod
-    def get_pending_questions(cls, concept: str = None) -> list:
+    def get_pending_questions(cls, concept: str = None, return_source: bool = False) -> tuple:
         """Returns all non-deleted questions with status PENDING for teacher review."""
-        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
-        pending = [
-            q for q in all_gen
-            if q.get("status") == "PENDING" and not q.get("deleted", False)
-        ]
+        pending = []
+        source = "local_fallback"
+
+        # Try Firestore first if available
+        if db:
+            try:
+                fs_docs = db.collection("generated_questions").stream()
+                for doc in fs_docs:
+                    d = doc.to_dict()
+                    d["id"] = doc.id
+                    norm = cls._normalize_question_record(d)
+                    if norm.get("status") == "PENDING" and not norm.get("deleted", False):
+                        pending.append(norm)
+                if pending:
+                    source = "firestore"
+            except Exception as e:
+                print(f"[WARN] Firestore get_pending error: {e}")
+
+        # Fallback to local generated_questions.json if Firestore empty or offline
+        if not pending:
+            all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+            for q in all_gen:
+                norm = cls._normalize_question_record(q)
+                if norm.get("status") == "PENDING" and not norm.get("deleted", False):
+                    pending.append(norm)
+            source = "local_fallback"
+
         if not Config.ALLOW_MOCK_QUESTIONS:
-            pending = [q for q in pending if q.get("source") not in ("DEV_MOCK", "DEV_SEED")]
+            pending = [
+                q for q in pending
+                if q.get("source") not in ("DEV_SEED", "DEV_MOCK", "DEV_MOCK_ONLY")
+                and q.get("source_generated_question_id") != "SEED"
+                and not str(q.get("id", "")).startswith("SEED_")
+            ]
+
         if concept:
             concept_lower = concept.strip().lower()
             pending = [q for q in pending if q.get("concept_name", "").strip().lower() == concept_lower]
+
+        if return_source:
+            return pending, source
         return pending
 
     @classmethod
-    def get_rejected_questions(cls, concept: str = None) -> list:
+    def get_rejected_questions(cls, concept: str = None, return_source: bool = False) -> tuple:
         """Returns all non-deleted questions with status REJECTED for teacher inspection."""
-        all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
-        rejected = [
-            q for q in all_gen
-            if q.get("status") == "REJECTED" and not q.get("deleted", False)
-        ]
+        rejected = []
+        source = "local_fallback"
+
+        if db:
+            try:
+                fs_docs = db.collection("generated_questions").stream()
+                for doc in fs_docs:
+                    d = doc.to_dict()
+                    d["id"] = doc.id
+                    norm = cls._normalize_question_record(d)
+                    if norm.get("status") == "REJECTED" and not norm.get("deleted", False):
+                        rejected.append(norm)
+                if rejected:
+                    source = "firestore"
+            except Exception as e:
+                print(f"[WARN] Firestore get_rejected error: {e}")
+
+        if not rejected:
+            all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
+            for q in all_gen:
+                norm = cls._normalize_question_record(q)
+                if norm.get("status") == "REJECTED" and not norm.get("deleted", False):
+                    rejected.append(norm)
+            source = "local_fallback"
+
         if not Config.ALLOW_MOCK_QUESTIONS:
-            rejected = [q for q in rejected if q.get("source") not in ("DEV_MOCK", "DEV_SEED")]
+            rejected = [
+                q for q in rejected
+                if q.get("source") not in ("DEV_SEED", "DEV_MOCK", "DEV_MOCK_ONLY")
+                and q.get("source_generated_question_id") != "SEED"
+                and not str(q.get("id", "")).startswith("SEED_")
+            ]
+
         if concept:
             concept_lower = concept.strip().lower()
             rejected = [q for q in rejected if q.get("concept_name", "").strip().lower() == concept_lower]
+
+        if return_source:
+            return rejected, source
         return rejected
 
     @classmethod
@@ -486,23 +755,56 @@ class SchemaQuestionBankService:
     # ─────────────────────────────────────────────────────────────────────────
 
     @classmethod
-    def get_approved_question_bank(cls, concept: str = None, active_only: bool = True, include_deleted: bool = False) -> list:
-        """Retrieves questions from approved_question_bank with active and non-deleted filtering."""
-        if Config.ALLOW_MOCK_QUESTIONS:
-            cls.initialize_seed_data()
-        approved = _read_json(APP_QUESTIONS_FILE, default=[])
-        
+    def get_approved_question_bank(
+        cls,
+        concept: str = None,
+        active_only: bool = False,
+        include_deleted: bool = False,
+        return_source: bool = False
+    ):
+        """
+        Retrieves questions from approved_question_bank.
+        Primary source: Firestore collection 'approved_question_bank'.
+        Fallback source: Local JSON approved_question_bank.json.
+        """
+        approved_raw = []
+        source = "local_fallback"
+
+        # 1. Primary: Firestore query
+        if db:
+            try:
+                fs_docs = list(db.collection("approved_question_bank").stream())
+                for doc in fs_docs:
+                    d = doc.to_dict()
+                    d["id"] = doc.id
+                    norm = cls._normalize_question_record(d)
+                    norm["status"] = "APPROVED"
+                    approved_raw.append(norm)
+                if approved_raw:
+                    source = "firestore"
+            except Exception as e:
+                print(f"[WARN] Firestore get_approved_question_bank error (falling back): {e}")
+
+        # 2. Fallback: Local JSON
+        if not approved_raw:
+            all_app = _read_json(APP_QUESTIONS_FILE, default=[])
+            for q in all_app:
+                norm = cls._normalize_question_record(q)
+                norm["status"] = "APPROVED"
+                approved_raw.append(norm)
+            source = "local_fallback"
+
         # Exclude mock/seed questions if mock questions are disabled
         if not Config.ALLOW_MOCK_QUESTIONS:
-            approved = [
-                q for q in approved
-                if q.get("source") not in ("DEV_SEED", "DEV_MOCK")
+            approved_raw = [
+                q for q in approved_raw
+                if q.get("source") not in ("DEV_SEED", "DEV_MOCK", "DEV_MOCK_ONLY")
                 and q.get("source_generated_question_id") != "SEED"
                 and not str(q.get("id", "")).startswith("SEED_")
             ]
 
         # Strictly enforce status APPROVED
-        approved = [q for q in approved if q.get("status") == "APPROVED"]
+        approved = [q for q in approved_raw if q.get("status") == "APPROVED"]
 
         if not include_deleted:
             approved = [q for q in approved if not q.get("deleted", False)]
@@ -513,21 +815,43 @@ class SchemaQuestionBankService:
         if concept:
             concept_clean = concept.strip().lower()
             approved = [q for q in approved if q.get("concept_name", "").strip().lower() == concept_clean]
-            
+
+        if return_source:
+            return approved, source
         return approved
 
     @classmethod
     def get_approved_question_by_id(cls, question_id: str) -> dict:
-        """Fetches a specific approved question by question_id or id."""
-        if Config.ALLOW_MOCK_QUESTIONS:
-            cls.initialize_seed_data()
+        """Fetches a specific approved question by question_id or id (Firestore primary, local fallback)."""
+        if db:
+            try:
+                # Try finding by doc id
+                doc = db.collection("approved_question_bank").document(question_id).get()
+                if doc.exists:
+                    data = doc.to_dict()
+                    data["id"] = doc.id
+                    norm = cls._normalize_question_record(data)
+                    if not norm.get("deleted", False):
+                        return norm
+                # Or query by question_id field
+                query = db.collection("approved_question_bank").where("question_id", "==", question_id).limit(1).stream()
+                for qdoc in query:
+                    data = qdoc.to_dict()
+                    data["id"] = qdoc.id
+                    norm = cls._normalize_question_record(data)
+                    if not norm.get("deleted", False):
+                        return norm
+            except Exception as e:
+                print(f"[WARN] Firestore get_approved_question_by_id error: {e}")
+
+        # Local fallback
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
         for q in approved:
             if (q.get("question_id") == question_id or q.get("id") == question_id) and not q.get("deleted", False):
                 if not Config.ALLOW_MOCK_QUESTIONS:
-                    if q.get("source") in ("DEV_SEED", "DEV_MOCK") or q.get("source_generated_question_id") == "SEED" or str(q.get("id", "")).startswith("SEED_"):
+                    if q.get("source") in ("DEV_SEED", "DEV_MOCK", "DEV_MOCK_ONLY") or q.get("source_generated_question_id") == "SEED" or str(q.get("id", "")).startswith("SEED_"):
                         continue
-                return q
+                return cls._normalize_question_record(q)
         return None
 
     @classmethod

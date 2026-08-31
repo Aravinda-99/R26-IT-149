@@ -8,6 +8,8 @@
 
 import { mountGame, destroyGame } from "../game/main.js";
 import { GameManager } from "../game/GameManager.js";
+import { SchemaMasteryAPI } from "../api/api.js";
+import { getCurrentUser } from "../utils/auth.js";
 
 const MENU_FOCUS_KEY = "codequest_menu_focus";
 let selectedCategory = null; // Track current category view
@@ -61,6 +63,16 @@ function launchGame(section) {
  * Open a module's game in a brand-new browser tab with dedicated game-player page.
  */
 export function openModuleInNewTab(section) {
+    const user = getCurrentUser();
+    const studentId = user?.uid || user?.id;
+    if (studentId) {
+        SchemaMasteryAPI.saveComponent3({
+            student_id: studentId,
+            recommended_game_id: section,
+            recommended_game_name: section
+        }).catch(err => console.warn("Failed to mark Component 3 game session:", err));
+    }
+
     const url = new URL(window.location.href);
     url.hash = `#/student/game-player?module=${encodeURIComponent(section)}`;
     url.search = "";

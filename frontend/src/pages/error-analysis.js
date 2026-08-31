@@ -5,7 +5,7 @@
  * Enhanced with: XAI Explanations (F2), Analytics (F1), Learning Report (F3).
  */
 
-import { ErrorAPI } from "../api/api.js";
+import { ErrorAPI, SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
@@ -35,6 +35,22 @@ function showTelemetryResult(res, isHistory = false) {
     }
 
     updateInsightEngine(res);
+
+    // Persist to backend Learning Session for Component 4 Understanding Check
+    const user = getCurrentUser();
+    const studentId = user?.uid || user?.id;
+    if (studentId) {
+        const errType = res.reason_group || res.predicted_label || res.prediction || "UNKNOWN_ERROR";
+        const confRaw = res.confidence_score !== undefined ? res.confidence_score : (res.confidence !== undefined ? res.confidence : 80);
+        const confVal = (Number(confRaw) || 80) / 100.0;
+        const reasonText = res.explanation?.misconception || res.explanation?.reason || "";
+        SchemaMasteryAPI.saveComponent2({
+            student_id: studentId,
+            error_type: errType,
+            error_pattern_score: confVal,
+            error_reason: reasonText
+        }).catch(err => console.warn("Failed to persist Component 2 learning session:", err));
+    }
 }
 
 export async function renderErrorAnalysis(container) {
@@ -66,10 +82,10 @@ export async function renderErrorAnalysis(container) {
             </div>
 
             <!-- Main Workspace: 2 Columns -->
-            <div class="workspace-grid" style="display: grid; grid-template-columns: 1fr 350px; gap: 1.5rem; flex: 1; min-height: 600px;">
+            <div class="workspace-grid" style="flex: 1; min-height: 500px;">
                 
                 <!-- Column 1: Live Telemetry Engine (Results) -->
-                <div class="insight-col" id="insight-container">
+                <div class="insight-col" id="insight-container" style="min-width: 0;">
                     <div id="welcome-view" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0.5; text-align: center;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">📡</div>
                         <h2 style="color: var(--text-primary);">Awaiting Telemetry</h2>

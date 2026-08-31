@@ -183,6 +183,27 @@ def analyze_code():
         result = ErrorService.analyze(data)
         if student_id:
             _clear_cached_route_responses(student_id)
+            if result.get("success"):
+                try:
+                    from services.schema_session_service import SchemaSessionService, calculate_error_pattern_score
+                    score_info = calculate_error_pattern_score(result)
+                    result["error_pattern_score"] = score_info["error_pattern_score"]
+                    result["error_pattern_score_source"] = score_info["error_pattern_score_source"]
+                    
+                    err_type = result.get("reason_group") or result.get("predicted_label") or "UNKNOWN_ERROR"
+                    expl = result.get("explanation") or {}
+                    reason = expl.get("misconception") or expl.get("reason") or ""
+                    
+                    SchemaSessionService.save_component_2_data(student_id, {
+                        "error_type": err_type,
+                        "error_pattern_score": score_info["error_pattern_score"],
+                        "error_pattern_score_source": score_info["error_pattern_score_source"],
+                        "error_reason": reason,
+                        "dominant_error_count": score_info.get("dominant_error_count"),
+                        "total_error_count": score_info.get("total_error_count"),
+                    })
+                except Exception as se:
+                    print(f"[WARN] Failed to auto-save Component 2 session for {student_id}: {se}")
         return jsonify(result)
     except Exception as e:
         return jsonify({

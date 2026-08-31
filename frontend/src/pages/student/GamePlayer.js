@@ -8,6 +8,8 @@
 
 import { mountGame, destroyGame } from "../../game/main.js";
 import { GameManager } from "../../game/GameManager.js";
+import { SchemaMasteryAPI } from "../../api/api.js";
+import { getCurrentUser } from "../../utils/auth.js";
 
 const MODULE_TITLES = {
     integer: { name: "Variable Tracker Arena", category: "Variables & Types", level: "Integer Mastery" },
@@ -46,6 +48,17 @@ export async function renderGamePlayer(container) {
 
     const info = MODULE_TITLES[moduleKey] || { name: "Java Game Lesson", category: "Java Practice", level: "Mastery Level" };
 
+    // Record Component 3 game session for student learning progression
+    const user = getCurrentUser();
+    const studentId = user?.uid || user?.id;
+    if (studentId) {
+        SchemaMasteryAPI.saveComponent3({
+            student_id: studentId,
+            recommended_game_id: moduleKey,
+            recommended_game_name: info.name
+        }).catch(err => console.warn("Could not save Component 3 game session:", err));
+    }
+
     // Clean up any stale instances before mounting
     destroyGame();
 
@@ -72,6 +85,9 @@ export async function renderGamePlayer(container) {
                     <button id="btn-restart-game" class="btn btn-outline btn-sm" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
                         <i class="fa-solid fa-rotate-right"></i> Restart Level
                     </button>
+                    <a href="#/student/post-test/start" id="btn-to-understanding-check" class="btn btn-primary btn-sm" style="padding: 0.45rem 0.95rem; font-size: 0.8rem; font-weight: 700; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+                        <i class="fa-solid fa-circle-check"></i> Check Understanding
+                    </a>
                 </div>
             </div>
 
@@ -87,6 +103,11 @@ export async function renderGamePlayer(container) {
 
     // Exit Game button cleanup
     document.getElementById("btn-exit-game")?.addEventListener("click", () => {
+        destroyGame();
+    });
+
+    // Check understanding cleanup
+    document.getElementById("btn-to-understanding-check")?.addEventListener("click", () => {
         destroyGame();
     });
 

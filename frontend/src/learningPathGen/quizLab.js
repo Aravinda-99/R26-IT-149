@@ -1,5 +1,5 @@
 import { QUIZ_BANK } from "./data.js";
-import { ErrorAPI } from "../api/api.js";
+import { ErrorAPI, SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
@@ -755,6 +755,18 @@ export function setupQuizUI(root = document) {
                     completedAt: new Date().toISOString()
                 };
                 localStorage.setItem(`cq_progress_${studentId}`, JSON.stringify(progress));
+
+                // Save to persistent backend Learning Session for Component 4
+                SchemaMasteryAPI.saveComponent1({
+                    student_id: studentId,
+                    student_name: user?.displayName || user?.name || "Learner",
+                    student_email: user?.email || "",
+                    concept_name: weakConcept,
+                    weak_concept: weakConcept,
+                    pre_test_score: percent / 100.0,
+                    attempt_count: 1,
+                    time_taken_seconds: Math.round((sessionMetrics?.avg_time_sec || 5.0) * state.quizBank.length)
+                }).catch(err => console.warn("Failed to persist Component 1 learning session:", err));
             }
 
             let mlResult = null;

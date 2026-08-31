@@ -157,16 +157,16 @@ export async function renderTeacherDashboard(container) {
 
     // Fetch live counts & real registered students from DB
     try {
-        const [pendingRes, approvedRes, masteryRes, authUsersRes, postTestRes] = await Promise.allSettled([
-            SchemaMasteryAPI.getPendingQuestions(),
-            SchemaMasteryAPI.getQuestionBank("", true),
+        const [statsRes, masteryRes, authUsersRes, postTestRes] = await Promise.allSettled([
+            SchemaMasteryAPI.getQuestionStats(),
             MasteryAPI.getStudents(),
             fetch("/api/auth/users").then(r => r.json()).catch(() => ({ students: [] })),
             SchemaMasteryAPI.getPostTestResults(),
         ]);
 
-        const penCount = (pendingRes.status === "fulfilled" && pendingRes.value?.questions) ? pendingRes.value.questions.length : 0;
-        const appCount = (approvedRes.status === "fulfilled" && approvedRes.value?.questions) ? approvedRes.value.questions.length : 0;
+        const stats = (statsRes.status === "fulfilled" && statsRes.value) ? statsRes.value : {};
+        const penCount = stats.pending_review !== undefined ? stats.pending_review : 0;
+        const appCount = stats.approved_questions !== undefined ? stats.approved_questions : 0;
         
         const masteryStudents = (masteryRes.status === "fulfilled" && masteryRes.value) ? (Array.isArray(masteryRes.value) ? masteryRes.value : (masteryRes.value.students || [])) : [];
         const authStudents = (authUsersRes.status === "fulfilled" && authUsersRes.value?.students) ? authUsersRes.value.students : [];

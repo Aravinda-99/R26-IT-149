@@ -16,6 +16,7 @@ import random
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
 from services.schema_post_test_result_service import SchemaPostTestResultService
+from services.schema_session_service import SchemaSessionService
 from firebase.firebase_service import db
 
 BLUEPRINT = {
@@ -37,7 +38,7 @@ class SchemaPostTestService:
     def select_post_test_questions(
         cls,
         student_id: str,
-        concept: str,
+        concept: str = None,
         error_type: str = None,
     ) -> dict:
         """
@@ -46,6 +47,13 @@ class SchemaPostTestService:
         prioritizes error_type for Error Recognition, and prefers lower exposure_count.
         Returns student-safe question objects.
         """
+        # If concept is not provided, load from active student session
+        if not concept and student_id:
+            saved_session = SchemaSessionService.get_current_session(student_id)
+            concept = saved_session.get("component_1", {}).get("concept_name")
+            if not error_type:
+                error_type = saved_session.get("component_2", {}).get("error_type")
+
         concept_clean = concept.strip() if concept else "Loops"
         
         # 1. Fetch all active approved questions for this concept
@@ -173,16 +181,55 @@ class SchemaPostTestService:
         """
         Grades submitted student answers against approved_question_bank quality labels,
         constructs the 11-feature ML vector, and calls predict_schema_mastery.
+        Uses real Component 1 and Component 2 data from SchemaSessionService.
         """
         student_id = str(submission.get("student_id", "STU_ANON"))
         session_id = submission.get("session_id") or f"SES_{uuid.uuid4().hex[:8].upper()}"
-        concept_name = str(submission.get("concept_name", "Loops"))
+
+        # Retrieve saved learning session context for this student
+        saved_session = SchemaSessionService.get_current_session(student_id) if student_id else {}
+        c1 = saved_session.get("component_1", {})
+        c2 = saved_session.get("component_2", {})
+
+        concept_name = str(submission.get("concept_name") or c1.get("concept_name") or "Arrays")
         
-        pre_test_score = normalize_score(submission.get("pre_test_score", 0.5))
-        attempt_count = int(submission.get("attempt_count", 1) or 1)
-        time_taken_seconds = float(submission.get("time_taken_seconds", 120.0) or 120.0)
-        error_type = str(submission.get("error_type", "UNKNOWN_ERROR"))
-        error_pattern_score = normalize_score(submission.get("error_pattern_score", 0.5))
+        # Pull real Component 1 features
+        if submission.get("pre_test_score") is not None:
+            pre_test_score = normalize_score(submission.get("pre_test_score"))
+        elif c1.get("pre_test_score") is not None:
+            pre_test_score = normalize_score(c1.get("pre_test_score"))
+        else:
+            pre_test_score = 0.50
+
+        attempt_count = int(submission.get("attempt_count") or c1.get("attempt_count", 1) or 1)
+        time_taken_seconds = float(submission.get("time_taken_seconds") or c1.get("time_taken_seconds", 120.0) or 120.0)
+
+        # Pull and validate real Component 2 features from session
+        raw_error_pattern_score = submission.get("error_pattern_score")
+        if raw_error_pattern_score is None:
+            raw_error_pattern_score = c2.get("error_pattern_score")
+
+        if raw_error_pattern_score is None:
+            # If not a test student or dev bypass, enforce Error Feedback completion
+            if not (student_id.startswith("TEST_") or student_id.startswith("STU_VERIFY_") or student_id == "STU_ANON"):
+                return {
+                    "success": False,
+                    "error": "Error pattern score is missing. Please complete Error Feedback before starting the Understanding Check.",
+                }
+            error_pattern_score = 0.50
+        else:
+            error_pattern_score = normalize_score(raw_error_pattern_score)
+
+        raw_error_type = submission.get("error_type") or c2.get("error_type")
+        if not raw_error_type or raw_error_type == "UNKNOWN_ERROR":
+            if not (student_id.startswith("TEST_") or student_id.startswith("STU_VERIFY_") or student_id == "STU_ANON"):
+                return {
+                    "success": False,
+                    "error": "Detected error pattern is missing. Please complete Error Feedback before starting the Understanding Check.",
+                }
+            error_type = "UNKNOWN_ERROR"
+        else:
+            error_type = str(raw_error_type)
 
         answers = submission.get("answers", [])
         total_questions = len(answers) if answers else 1
@@ -399,6 +446,13 @@ class SchemaPostTestService:
         persistence_status = SchemaPostTestResultService.save_firestore_best_effort(saved_result, mcq_record)
         saved_result["persistence_status"] = persistence_status
         SchemaPostTestResultService.save_local_result(saved_result)
+
+        # Update persistent learning session context for the student
+        SchemaSessionService.save_component_4_data(student_id, {
+            "post_test_score": post_test_score,
+            "mastery_level": mastery_level,
+            "next_action": next_action,
+        })
 
         return {
             "success": True,

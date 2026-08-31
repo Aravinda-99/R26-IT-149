@@ -13,7 +13,7 @@
  */
 
 import { getCurrentUser } from "../../utils/auth.js";
-import { ErrorAPI } from "../../api/api.js";
+import { ErrorAPI, SchemaMasteryAPI } from "../../api/api.js";
 
 const MODULES = [
     { id: "variables", name: "Variables & Types", icon: "fa-box", desc: "Declarations, primitive types, and state scope", lessons: 4, level: "Beginner", color: "#3B82F6", moduleKey: "integer" },
@@ -31,8 +31,28 @@ export async function renderStudentDashboard(container) {
     // Load real local student progress or initialize empty state
     const studentProgress = getLocalProgress(studentId);
 
+    // Sync with persistent backend Learning Session
+    if (studentId) {
+        try {
+            const ctxRes = await SchemaMasteryAPI.getCurrentContext(studentId);
+            if (ctxRes && ctxRes.component_1?.completed) {
+                studentProgress.preTestCompleted = true;
+                studentProgress.targetConcept = ctxRes.component_1.concept_name || ctxRes.component_1.weak_concept;
+                if (ctxRes.component_4?.post_test_completed) {
+                    studentProgress.currentStep = 5;
+                } else if (ctxRes.component_3?.completed) {
+                    studentProgress.currentStep = 4;
+                } else if (ctxRes.component_2?.completed) {
+                    studentProgress.currentStep = 3;
+                } else {
+                    studentProgress.currentStep = 2;
+                }
+            }
+        } catch (e) { }
+    }
+
     container.innerHTML = `
-        <div class="learning-hub-page" style="display: flex; flex-direction: column; gap: 1.75rem; max-width: 1200px; margin: 0 auto;">
+        <div class="learning-hub-page" style="display: flex; flex-direction: column; gap: 1.75rem; width: 100%; max-width: 1200px; margin: 0 auto;">
             
             <!-- Page Header -->
             <div class="hub-header-row" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1.5rem 1.75rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
@@ -51,10 +71,10 @@ export async function renderStudentDashboard(container) {
             </div>
 
             <!-- Workspace Grid: 2 Columns -->
-            <div class="hub-workspace-grid" style="display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem;">
+            <div class="hub-workspace-grid">
                 
                 <!-- Left Primary Column -->
-                <div class="hub-primary-col" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div class="hub-primary-col" style="display: flex; flex-direction: column; gap: 1.5rem; min-width: 0;">
                     
                     <!-- 5-Step Learning Progression Stepper -->
                     <div class="card" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04); margin-bottom: 0;">
