@@ -48,7 +48,7 @@ export async function renderErrorAnalysis(container) {
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
             <!-- Top Stats Bar -->
-            <div class="stats-bar card glass-card" style="display: flex; justify-content: space-around; padding: 1rem; border-radius: 12px; background: rgba(30, 42, 58, 0.5);">
+            <div class="stats-bar card" style="display: flex; justify-content: space-around; padding: 1.2rem; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                 <div class="stat-item" style="text-align: center;">
                     <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Analyses Performed</div>
                     <div id="stat-total" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-blue);">0</div>
@@ -104,180 +104,125 @@ export async function renderErrorAnalysis(container) {
                         </div>
                     </div>
 
-                    <div id="result-view" class="hidden" style="display: flex; flex-direction: column; gap: 1.2rem;">
+                    <div id="result-view" class="hidden" style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <!-- Top Header -->
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 0.8rem; border-bottom: 2px solid var(--border-color);">
                             <div>
-                                <div id="history-banner" class="hidden" style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                                    <span style="font-size: 0.75rem; color: #4a90e2; background: rgba(74, 144, 226, 0.1); padding: 0.2rem 0.6rem; border-radius: 4px; font-weight: 600;">🕒 Viewing History Record</span>
-                                    <button id="btn-back-live" class="btn" style="background: #4a90e2; color: white; border: none; padding: 0.2rem 0.6rem; font-size: 0.7rem; border-radius: 4px; cursor: pointer; transition: background 0.2s;">← Back to Live Session</button>
-                                </div>
-                                <div id="diag-label" style="font-size: 1.8rem; font-weight: 800; line-height: 1;">---</div>
-                                <div id="diag-concept" style="color: var(--text-secondary); margin-top: 0.3rem;">Concept: ---</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div id="diag-confidence" class="badge" style="font-size: 0.75rem;">---</div>
-                                <div style="font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px;">ML CONFIDENCE</div>
+                                <div id="diag-label" style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2;">---</div>
+                                <div id="diag-concept" style="color: var(--text-secondary); margin-top: 0.2rem; font-weight: 500;">Concept: ---</div>
                             </div>
                         </div>
 
-                        <!-- Recommended Game CTA Banner -->
-                        <div class="ea-action-banner" style="display: flex; justify-content: space-between; align-items: center; background: var(--primary-soft); border: 1px solid rgba(37, 99, 235, 0.3); padding: 1rem 1.25rem; border-radius: var(--radius-sm); margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.75rem;">
-                            <div>
-                                <strong style="color: var(--primary); font-size: 0.95rem; display: block;">🎯 Diagnostic Assessment Complete</strong>
-                                <span style="color: var(--text-secondary); font-size: 0.82rem;">Directly practice the recommended gamified lessons to resolve this misconception.</span>
-                            </div>
-                            <button class="btn btn-primary" id="btn-top-start-game" style="font-weight: 700;">
-                                <i class="fa-solid fa-gamepad"></i> Start Recommended Game
-                            </button>
-                        </div>
-
-                        <!-- Main Feedback Cards -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
-                            <div class="card" style="background: rgba(167, 139, 250, 0.05); border-top: 3px solid var(--accent-purple);">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem;">
-                                    <span style="font-size: 1.2rem;">🧠</span>
-                                    <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-purple);">REASON DIAGNOSIS</h4>
-                                </div>
-                                <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--text-secondary);">
-                                    <strong>Original Broad Prediction:</strong> <span id="diag-broad-error">---</span><br>
-                                    <strong>Final Diagnosis:</strong> <span id="diag-final-label">---</span><br>
-                                    <strong>Final Reason Group:</strong> <span id="diag-reason-group">---</span>
-                                </div>
-                                <div id="diag-badges" style="display: flex; gap: 0.5rem; margin-bottom: 0.8rem; flex-wrap: wrap;"></div>
-                                <p id="diag-reason" style="font-size: 0.9rem; line-height: 1.5; color: var(--text-primary);"></p>
-                                <div style="margin-top: 1rem; font-size: 0.85rem; font-style: italic; color: var(--text-secondary);">
-                                    "Misconception: <span id="diag-miscon"></span>"
+                        <!-- Beginner-Friendly Insight & Repair Strategy (Top Priority) -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <!-- Pedagogical Insight -->
+                            <div class="card" style="background: var(--primary-soft); border-left: 4px solid var(--primary); padding: 1.5rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                                    <div>
+                                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--primary); font-weight: 700;">Beginner-Friendly Insight</h4>
+                                        <p id="diag-insight" style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.6; margin: 0;"></p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="card" style="background: rgba(52, 211, 153, 0.05); border-top: 3px solid var(--accent-green);">
-                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem;">
-                                    <span style="font-size: 1.2rem;">🔧</span>
-                                    <h4 style="margin: 0; font-size: 0.85rem; color: var(--accent-green);">REPAIR STRATEGY</h4>
-                                </div>
-                                <p id="diag-fix" style="font-size: 0.9rem; line-height: 1.5; color: var(--text-primary);"></p>
-                                <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(52, 211, 153, 0.1); border-radius: 4px; font-size: 0.8rem;">
-                                    <strong>Step:</strong> <span id="diag-next-step"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Transparency Buttons -->
-                        <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 0.5rem;">
-                            <button id="btn-pipeline" class="btn" style="background: rgba(74, 144, 226, 0.1); color: #4a90e2; border: 1px solid #4a90e2; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">View Analysis Pipeline</button>
-                            <button id="btn-payload" class="btn" style="background: rgba(167, 139, 250, 0.1); color: #a78bfa; border: 1px solid #a78bfa; padding: 0.4rem 0.8rem; font-size: 0.75rem; border-radius: 4px; cursor: pointer;">View API Payload</button>
-                        </div>
-
-                        <!-- ML Trace & Evidence Cards -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
-                            <div class="card" style="background: rgba(30, 42, 58, 0.5); border-left: 3px solid #4a90e2;">
-                                <h4 style="margin: 0 0 0.8rem 0; font-size: 0.85rem; color: #4a90e2;">ML DETECTION TRACE</h4>
-                                <div style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
-                                    <div><strong>Broad Model:</strong> <span id="trace-broad-model"></span></div>
-                                    <div><strong>Original Broad Prediction:</strong> <span id="trace-broad-pred"></span></div>
-                                    <div><strong>Final Broad Prediction:</strong> <span id="trace-broad-pred-final"></span></div>
-                                    <div style="margin-top:0.4rem;"><strong>Reason Model:</strong> <span id="trace-reason-model"></span></div>
-                                    <div><strong>Original Reason Prediction:</strong> <span id="trace-reason-pred"></span></div>
-                                    <div><strong>Final Reason Group:</strong> <span id="trace-reason-final"></span></div>
-                                    <div><strong>Reason Group Adjusted:</strong> <span id="trace-reason-adjusted"></span></div>
-                                    <div style="margin-top:0.4rem;"><strong>Feedback Source:</strong> <span id="trace-feedback-src"></span></div>
-                                    <div><strong>Rule Override Applied:</strong> <span id="trace-rule-override"></span></div>
-                                    <div><strong>Correctness Validated:</strong> <span id="trace-correctness-validated"></span></div>
-                                </div>
-                            </div>
-
-                            <div class="card" style="background: rgba(30, 42, 58, 0.5); border-left: 3px solid #f5a623;">
-                                <h4 style="margin: 0 0 0.8rem 0; font-size: 0.85rem; color: #f5a623;">SUPPORTING CODE EVIDENCE</h4>
-                                <div style="font-size: 0.8rem; color: var(--text-primary);">
-                                    <div id="evidence-note" style="margin-bottom: 0.5rem; font-style: italic; color: var(--text-secondary);"></div>
-                                    <div id="evidence-snippet-container" style="background: #0d1117; padding: 0.8rem; border-radius: 6px; font-family: monospace; font-size: 0.75rem; border: 1px solid var(--border-color); white-space: pre-wrap; word-break: break-all;"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Pedagogical Insight -->
-                        <div class="card glass-card" style="background: linear-gradient(135deg, #1a2332, #0f1724); border-left: 4px solid var(--accent-blue);">
-                            <div style="display: flex; align-items: flex-start; gap: 1rem;">
-                                <div style="font-size: 2rem;">💡</div>
-                                <div>
-                                    <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: var(--accent-blue);">Beginner-Friendly Insight</h4>
-                                    <p id="diag-insight" style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin: 0;"></p>
+                            <!-- Repair Strategy -->
+                            <div class="card" style="background: var(--success-soft); border-left: 4px solid var(--success); padding: 1.5rem;">
+                                <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                                    <div>
+                                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--success); font-weight: 700;">Repair Strategy</h4>
+                                        <p id="diag-fix" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin-bottom: 1rem;"></p>
+                                        <div style="padding: 0.8rem; background: rgba(255,255,255,0.7); border-radius: var(--radius-sm); font-size: 0.9rem; border: 1px solid rgba(22, 163, 74, 0.2);">
+                                            <strong style="color: var(--success);">Next Step:</strong> <span id="diag-next-step"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Recommended Game Activity Card -->
-                        <div id="diag-game-card" class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); padding: 1.4rem; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s ease;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <div id="diag-game-card" class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--radius); cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.boxShadow='var(--shadow-md)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.boxShadow='var(--shadow-sm)'; this.style.transform='none';">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
                                 <div>
-                                    <span class="badge badge-warning" style="margin-bottom: 0.4rem; display: inline-block;">
+                                    <span class="badge" style="background: var(--warning-soft); color: var(--warning); margin-bottom: 0.5rem; display: inline-block;">
                                         <i class="fa-solid fa-gamepad"></i> Recommended Game Activity
                                     </span>
-                                    <div id="diag-game-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin: 0.2rem 0;">---</div>
-                                    <div id="diag-game-meta" style="font-size: 0.8rem; color: var(--text-secondary);">---</div>
+                                    <div id="diag-game-name" style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary); margin: 0.2rem 0;">---</div>
+                                    <div id="diag-game-meta" style="font-size: 0.9rem; color: var(--text-secondary);">---</div>
                                 </div>
-                                <button class="btn btn-primary btn-lg" id="btn-start-game-inner" style="font-weight: 700;">
+                                <button class="btn btn-primary" id="btn-start-game-inner" style="font-size: 1rem; padding: 0.8rem 1.5rem;">
                                     <i class="fa-solid fa-play"></i> Start Game Lesson
                                 </button>
                             </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.8rem; margin-top: 0.8rem;">
-                                <span id="diag-badge" style="font-size: 0.75rem; padding: 0.25rem 0.55rem; background: var(--warning-soft); color: #92400E; border-radius: 4px; font-weight: 600;">Reward Badge: ---</span>
-                                <span style="font-size: 0.75rem; color: var(--text-muted);"><i class="fa-solid fa-arrow-right"></i> Launch directly in Game Engine</span>
-                            </div>
+                            <!-- Hidden elements for JS compatibility -->
+                            <span id="diag-badge" class="hidden"></span>
                         </div>
 
-                        <!-- Feature 2: XAI Explanation Card -->
-                        <div id="xai-card" class="card" style="background: linear-gradient(135deg, rgba(139,92,246,0.07), rgba(59,130,246,0.04)); border: 1px solid rgba(139,92,246,0.25); border-top: 3px solid #8b5cf6; padding: 1.2rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span style="font-size: 1.1rem;">🤖</span>
-                                    <h4 style="margin: 0; font-size: 0.85rem; color: #8b5cf6; letter-spacing: 0.5px;">EXPLAINABLE AI (XAI)</h4>
+                        <!-- Secondary Info: Reason Diagnosis & XAI -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem;">
+                            <!-- Reason Diagnosis -->
+                            <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Reason Diagnosis</h4>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <span style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase;">Confidence</span>
-                                    <span id="xai-confidence-badge" style="font-size: 0.85rem; font-weight: 800; color: #8b5cf6;">—</span>
+                                <div style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                    <strong>Original Broad Prediction:</strong> <span id="diag-broad-error">---</span><br>
+                                    <strong>Final Diagnosis:</strong> <span id="diag-final-label">---</span><br>
+                                    <strong>Final Reason Group:</strong> <span id="diag-reason-group">---</span>
+                                </div>
+                                <div id="diag-badges" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;"></div>
+                                <p id="diag-reason" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);"></p>
+                                <div style="margin-top: 1rem; font-size: 0.9rem; font-style: italic; color: var(--text-muted); padding-left: 1rem; border-left: 3px solid var(--border-color);">
+                                    "Misconception: <span id="diag-miscon"></span>"
                                 </div>
                             </div>
-                            <!-- Confidence progress bar -->
-                            <div style="margin-bottom: 0.9rem;">
-                                <div style="height: 6px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden;">
-                                    <div id="xai-confidence-bar" style="height: 100%; border-radius: 99px; background: linear-gradient(90deg,#8b5cf6,#6366f1); transition: width 0.6s ease; width: 0%;"></div>
+                            
+                            <!-- XAI Explanation Card -->
+                            <div id="xai-card" class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">AI Confidence</h4>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                                        <span id="xai-confidence-badge" style="font-size: 1rem; font-weight: 800; color: var(--primary);">—</span>
+                                    </div>
                                 </div>
+                                <div style="margin-bottom: 1.2rem;">
+                                    <div style="height: 8px; background: var(--bg-subtle); border-radius: 99px; overflow: hidden;">
+                                        <div id="xai-confidence-bar" style="height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.6s ease; width: 0%;"></div>
+                                    </div>
+                                </div>
+                                <div id="xai-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">—</div>
+                                <p id="xai-narrative" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;"></p>
+                                <div id="xai-bullets" style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem;"></div>
+                                <div id="xai-signals" style="display: flex; flex-wrap: wrap; gap: 0.4rem;"></div>
                             </div>
-                            <!-- XAI label + narrative -->
-                            <div id="xai-label" style="font-size: 0.8rem; font-weight: 700; color: #a78bfa; margin-bottom: 0.4rem;">—</div>
-                            <p id="xai-narrative" style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.55; margin-bottom: 0.8rem;"></p>
-                            <!-- Evidence bullets -->
-                            <div id="xai-bullets" style="display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 0.6rem;"></div>
-                            <!-- Code signals (chips) -->
-                            <div id="xai-signals" style="display: flex; flex-wrap: wrap; gap: 0.3rem;"></div>
                         </div>
 
                         <!-- Alignment Notification -->
-                        <div id="diag-alignment" style="padding: 0.8rem; border-radius: 8px; font-size: 0.8rem; background: rgba(74, 144, 226, 0.05); border: 1px dashed rgba(74, 144, 226, 0.3); color: var(--text-secondary); text-align: center;">
-                        </div>
+                        <div id="diag-alignment" style="padding: 1rem; border-radius: var(--radius-sm); font-size: 0.9rem; background: var(--bg-subtle); color: var(--text-secondary); text-align: center; display: none;"></div>
+
+
                     </div>
                 </div>
 
                 <!-- Column 3: The Record (History + Learning Report) -->
-                <div class="record-col" style="display: flex; flex-direction: column; gap: 1.2rem;">
-                    <div class="card glass-card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div class="record-col" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                    <div class="card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <!-- Tab Bar -->
-                        <div style="display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
-                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 0.5rem; background: rgba(74,144,226,0.1); border: none; border-bottom: 2px solid var(--accent-blue); color: var(--accent-blue); font-family: var(--font); font-size: 0.75rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">📋 History</button>
-                            <button id="tab-report-btn" onclick="" style="flex: 1; padding: 0.5rem; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.75rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;">📊 Learning Report</button>
+                        <div style="display: flex; gap: 0; border-bottom: 1px solid var(--border-color);">
+                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 1rem; background: var(--primary-soft); border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-family: var(--font); font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-clock-rotate-left" style="margin-right: 0.4rem;"></i>History</button>
+                            <button id="tab-report-btn" onclick="" style="flex: 1; padding: 1rem; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-chart-pie" style="margin-right: 0.4rem;"></i>Learning Report</button>
                         </div>
                         <!-- History Panel -->
-                        <div id="history-panel" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.8rem; padding-right: 5px;">
+                        <div id="history-panel" style="flex: 1; overflow-y: auto; padding: 1rem;">
                             <div id="history-container" style="display: flex; flex-direction: column; gap: 0.8rem;">
                                 <div class="spinner" style="margin: 2rem auto;"></div>
                             </div>
                         </div>
                         <!-- Learning Report Panel (Feature 3) -->
-                        <div id="report-panel" class="hidden" style="flex: 1; overflow-y: auto; padding-right: 5px;">
+                        <div id="report-panel" class="hidden" style="flex: 1; overflow-y: auto; padding: 1rem;">
                             <div id="report-container" style="display: flex; flex-direction: column; gap: 0.8rem;">
-                                <div style="text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">
+                                <div style="text-align: center; padding: 2rem; color: var(--text-secondary); font-size: 0.9rem;">
                                     Submit code to generate your Learning Report.
                                 </div>
                             </div>
@@ -288,75 +233,57 @@ export async function renderErrorAnalysis(container) {
             </div>
 
             <!-- Feature 1: Analytics Dashboard (shown after ≥2 submissions) -->
-            <div id="analytics-section" class="hidden" style="margin-top: 1.5rem;">
+            <div id="analytics-section" class="hidden" style="margin-top: 2rem;">
                 <!-- Section Header -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border-color);">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.3rem;">📈</span>
-                        <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700;">Error Progression Analytics</h3>
-                        <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 99px; background: rgba(74,144,226,0.15); color: var(--accent-blue); font-weight: 600;">Feature 1</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.8rem; border-bottom: 2px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">Error Progression Analytics</h3>
+                        <span class="badge" style="background: var(--primary-soft); color: var(--primary);">Feature 1</span>
                     </div>
-                    <span style="font-size: 0.7rem; color: var(--text-secondary); font-style: italic;">Updates after each submission</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Updates after each submission</span>
                 </div>
                 <!-- 4 Stat Cards -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.2rem;">
-                    <div class="card" style="padding: 1rem; border-top: 3px solid var(--accent-blue); text-align: center;">
-                        <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem;">Total Submissions</div>
-                        <div id="anl-total" style="font-size: 1.8rem; font-weight: 800; color: var(--accent-blue);">—</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--primary); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Total Submissions</div>
+                        <div id="anl-total" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
                     </div>
-                    <div class="card" style="padding: 1rem; border-top: 3px solid var(--accent-green); text-align: center;">
-                        <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem;">Improvement Score</div>
-                        <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.2rem;">
-                            <div id="anl-improvement" style="font-size: 1.8rem; font-weight: 800; color: var(--accent-green);">—</div>
-                            <span id="anl-improvement-arrow" style="font-size: 1.2rem;"></span>
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--success); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Improvement Score</div>
+                        <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.4rem;">
+                            <div id="anl-improvement" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
+                            <span id="anl-improvement-arrow" style="font-size: 1.4rem;"></span>
                         </div>
                     </div>
-                    <div class="card" style="padding: 1rem; border-top: 3px solid var(--accent-orange); text-align: center;">
-                        <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem;">Most Problematic</div>
-                        <div id="anl-worst" style="font-size: 0.95rem; font-weight: 700; color: var(--accent-orange);">—</div>
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--warning); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Most Problematic</div>
+                        <div id="anl-worst" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
                     </div>
-                    <div class="card" style="padding: 1rem; border-top: 3px solid #a78bfa; text-align: center;">
-                        <div style="font-size: 0.65rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem;">Most Improved</div>
-                        <div id="anl-best" style="font-size: 0.95rem; font-weight: 700; color: #a78bfa;">—</div>
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--secondary); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Most Improved</div>
+                        <div id="anl-best" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
                     </div>
                 </div>
                 <!-- Charts Row -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;">
-                    <div class="card" style="padding: 1.2rem;">
-                        <h4 style="margin: 0 0 1rem 0; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">📉 Total Errors Over Time</h4>
-                        <div style="position: relative; height: 200px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Total Errors Over Time</h4>
+                        <div style="position: relative; height: 250px;">
                             <canvas id="anl-line-chart"></canvas>
                         </div>
                     </div>
-                    <div class="card" style="padding: 1.2rem;">
-                        <h4 style="margin: 0 0 1rem 0; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">📊 Errors by Category</h4>
-                        <div style="position: relative; height: 200px;">
+                    <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Errors by Category</h4>
+                        <div style="position: relative; height: 250px;">
                             <canvas id="anl-bar-chart"></canvas>
                         </div>
                     </div>
                 </div>
                 <!-- Improvement Score Cards -->
-                <div id="anl-improvement-cards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8rem; margin-top: 1rem;"></div>
+                <div id="anl-improvement-cards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 1.5rem;"></div>
             </div>
 
-            <!-- Modals -->
-            <div id="pipeline-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;">
-                <div class="card glass-card" style="width: 600px; max-height: 80vh; background: #0d1117; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column;">
-                    <button id="close-pipeline" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">&times;</button>
-                    <h2 style="margin-top: 0; color: #4a90e2;">Backend Analysis Pipeline</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">Model 1 predicts WHAT type of error occurred. Model 2 predicts WHY category or reason group. Feedback templates translate the predicted reason group into beginner-friendly learning feedback.</p>
-                    <div id="pipeline-timeline" style="display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 10px;"></div>
-                </div>
-            </div>
 
-            <div id="payload-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center;">
-                <div class="card glass-card" style="width: 700px; max-height: 80vh; background: #0d1117; padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color); position: relative; display: flex; flex-direction: column;">
-                    <button id="close-payload" style="position: absolute; top: 15px; right: 20px; background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">&times;</button>
-                    <h2 style="margin-top: 0; color: #a78bfa;">Backend API Response</h2>
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">This payload shows the structured response returned by the backend after ML analysis.</p>
-                    <pre id="payload-content" style="flex: 1; overflow-y: auto; background: #000; padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.8rem; color: #a5d6ff; margin: 0; border: 1px solid #30363d;"></pre>
-                </div>
-            </div>
         </div>
     `;
 
@@ -396,46 +323,6 @@ export async function renderErrorAnalysis(container) {
     // Load telemetry once on mount without continuous background polling
     pollLatestTelemetry();
 
-    document.getElementById("btn-pipeline").addEventListener("click", () => {
-        if (!latestAnalysisResponse) return;
-        const d = latestAnalysisResponse;
-
-        const isAdjusted = d.reason_group_adjusted;
-        const isOverridden = d.override_applied;
-
-        const steps = [
-            { step: "1. Java Input Received", status: "Completed", statusColor: "#34d399", details: "Submitted Java code was received from the Code Lab." },
-            { step: "2. Input Validation", status: "Passed", statusColor: "#34d399", details: "Input was accepted for Java code analysis." },
-            { step: "3. Preprocessing", status: "Completed", statusColor: "#34d399", details: "Comments, imports, package statements, and extra whitespace are removed before ML prediction." },
-            { step: "4. TF-IDF Feature Extraction", status: "Completed", statusColor: "#34d399", details: "The cleaned Java code is converted into numerical TF-IDF features inside the saved ML pipeline." },
-            { step: "5. Broad Error Prediction", status: "Completed", statusColor: "#34d399", details: `Model 1 predicts the broad error category.<br/><strong>Predicted:</strong> ${d.model_trace?.original_broad_prediction || d.model_trace?.broad_prediction || d.broad_label || 'N/A'}` },
-            { step: "6. Reason Group Prediction", status: "Completed", statusColor: "#34d399", details: `Model 2 predicts the reason group.<br/><strong>Predicted:</strong> ${d.model_trace?.original_reason_prediction || d.model_trace?.reason_prediction || d.reason_group_original || d.reason_group || 'N/A'}` },
-            { step: "7. Reason Consistency Validation", status: isAdjusted ? "Adjusted" : "Passed", statusColor: isAdjusted ? "#f59e0b" : "#34d399", details: isAdjusted ? "Original reason group was adjusted to match the final broad label." : "Reason group is consistent with the broad label." },
-            { step: "8. Safety Validation", status: isOverridden ? "Applied" : "Skipped", statusColor: isOverridden ? "#f59e0b" : "#4a90e2", details: isOverridden ? (d.override_reason || "Rule-based correction applied") : "No rule-based correction was required." },
-            { step: "9. Feedback Generation", status: "Completed", statusColor: "#34d399", details: "Predicted reason group is converted into beginner-friendly explanation, misconception, and repair strategy." },
-            { step: "10. Gamification Recommendation", status: "Completed", statusColor: "#34d399", details: `Recommended activity: ${d.gamification_payload?.recommended_activity || 'N/A'}` },
-            { step: "11. Schema Mastery Update", status: "Completed", statusColor: "#34d399", details: `Schema status: ${d.schema_mastery_payload?.schema_status || 'N/A'}` }
-        ];
-
-        document.getElementById("pipeline-timeline").innerHTML = steps.map(s => `
-            <div style="border-left: 2px solid #30363d; padding-left: 1rem; position: relative; padding-bottom: 1rem;">
-                <div style="position: absolute; left: -6px; top: 0; width: 10px; height: 10px; border-radius: 50%; background: ${s.statusColor}; box-shadow: 0 0 5px ${s.statusColor};"></div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-                    <strong style="color: var(--text-primary); font-size: 0.9rem;">${s.step}</strong>
-                    <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: ${s.statusColor};">${s.status}</span>
-                </div>
-                <div style="font-size: 0.8rem; color: var(--text-secondary);">${s.details}</div>
-            </div>
-        `).join("");
-
-        document.getElementById("pipeline-modal").classList.remove("hidden");
-    });
-
-    document.getElementById("btn-payload").addEventListener("click", () => {
-        if (!latestAnalysisResponse) return;
-        document.getElementById("payload-content").textContent = JSON.stringify(latestAnalysisResponse, null, 2);
-        document.getElementById("payload-modal").classList.remove("hidden");
-    });
 
     // ---- Tab switching (History / Learning Report) ----
     document.getElementById("tab-history-btn").addEventListener("click", () => {
@@ -451,32 +338,8 @@ export async function renderErrorAnalysis(container) {
         document.getElementById("tab-history-btn").style.cssText += "background:none;border-bottom-color:transparent;color:var(--text-secondary);";
     });
 
-    document.getElementById("close-pipeline").addEventListener("click", () => {
-        document.getElementById("pipeline-modal").classList.add("hidden");
-    });
-
-    document.getElementById("close-payload").addEventListener("click", () => {
-        document.getElementById("payload-modal").classList.add("hidden");
-    });
-
-    // Back to live view from history mode
-    document.getElementById("btn-back-live")?.addEventListener("click", () => {
-        // Deselect history items
-        document.getElementById("history-container")?.querySelectorAll("[data-selected]").forEach(prev => {
-            delete prev.dataset.selected;
-            prev.style.background = "rgba(255,255,255,0.03)";
-            prev.style.borderColor = "rgba(255,255,255,0.05)";
-        });
-
-        if (liveAnalysisResponse) {
-            showTelemetryResult(liveAnalysisResponse, false);
-        } else {
-            // No live data yet, go back to welcome screen
-            document.getElementById("result-view").classList.add("hidden");
-            document.getElementById("welcome-view").classList.remove("hidden");
-        }
-    });
 }
+
 
 function updateInsightEngine(data) {
     const pred = data.prediction;
@@ -487,13 +350,13 @@ function updateInsightEngine(data) {
 
     // Colors
     const colors = {
-        "LOOP_ERROR": "#a78bfa",
-        "VARIABLE_ERROR": "#f59e0b",
-        "ARRAY_ERROR": "#34d399",
-        "METHOD_ERROR": "#f472b6",
-        "CORRECT": "#22c55e"
+        "LOOP_ERROR": "var(--primary)",
+        "VARIABLE_ERROR": "var(--warning)",
+        "ARRAY_ERROR": "var(--secondary)",
+        "METHOD_ERROR": "var(--danger)",
+        "CORRECT": "var(--success)"
     };
-    const color = colors[pred.label] || "var(--accent-blue)";
+    const color = colors[pred.label] || "var(--primary)";
 
     // Update UI
     const diagLabel = document.getElementById("diag-label");
@@ -517,31 +380,7 @@ function updateInsightEngine(data) {
     }
     document.getElementById("diag-badges").innerHTML = badgesHtml;
 
-    const trace = data.model_trace;
-    if (trace) {
-        document.getElementById("trace-broad-model").textContent = trace.broad_model;
-        document.getElementById("trace-broad-pred").textContent = trace.original_broad_prediction || trace.broad_prediction || "N/A";
-        document.getElementById("trace-broad-pred-final").textContent = trace.final_broad_prediction || "N/A";
-        document.getElementById("trace-reason-model").textContent = trace.reason_model;
-        document.getElementById("trace-reason-pred").textContent = trace.original_reason_prediction || trace.reason_prediction || "N/A";
-        document.getElementById("trace-reason-final").textContent = trace.final_reason_group || trace.reason_group_final || "N/A";
-        document.getElementById("trace-reason-adjusted").textContent = trace.reason_group_adjusted || "No";
-        document.getElementById("trace-feedback-src").textContent = trace.feedback_source;
-        document.getElementById("trace-rule-override").textContent = trace.rule_override_applied ? `Yes (${trace.rule_override_reason})` : "No";
-        document.getElementById("trace-correctness-validated").textContent = trace.correctness_validation_applied ? `Yes (${trace.correctness_validation_reason})` : "No";
-    }
 
-    const ev = data.evidence;
-    if (ev) {
-        document.getElementById("evidence-note").textContent = ev.evidence_note;
-        const snipCont = document.getElementById("evidence-snippet-container");
-        if (ev.evidence_found && ev.matched_snippet) {
-            snipCont.textContent = ev.matched_snippet;
-            snipCont.style.display = "block";
-        } else {
-            snipCont.style.display = "none";
-        }
-    }
 
     const confBadge = document.getElementById("diag-confidence");
     confBadge.textContent = `${pred.confidence_level} Confidence`;
@@ -576,9 +415,6 @@ function updateInsightEngine(data) {
         url.search = "";
         window.open(url.toString(), "_blank", "noopener,noreferrer");
     };
-
-    // Wire top banner button
-    document.getElementById("btn-top-start-game")?.addEventListener("click", launchTargetGame);
 
     // Wire game card inner button and card click
     document.getElementById("btn-start-game-inner")?.addEventListener("click", (e) => {
@@ -650,12 +486,14 @@ async function refreshGlobalState(studentId) {
 
         // ── History List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
-        if (historyData.total === 0) {
-            histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
+        const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
+        
+        if (errorHistory.length === 0) {
+            histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         } else {
             histCont.innerHTML = "";
             // Newest first
-            const reversed = [...historyData.history].reverse();
+            const reversed = [...errorHistory].reverse();
             reversed.forEach((item) => {
                 const el = document.createElement("div");
                 el.style.cssText = "padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s, border-color 0.2s;";
@@ -767,58 +605,66 @@ async function refreshGlobalState(studentId) {
             const errorCounts = anl.weekly_totals.map(w => w.total_errors);
             const correctCounts = anl.weekly_totals.map(w => w.correct);
 
-            if (_lineChart) { _lineChart.destroy(); _lineChart = null; }
             const lineCtx = document.getElementById("anl-line-chart");
             if (lineCtx) {
-                const ctx = lineCtx.getContext('2d');
-                const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-                errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+                if (_lineChart) {
+                    // Update in-place for smooth re-render (no destroy = no shake)
+                    _lineChart.data.labels = weekLabels;
+                    _lineChart.data.datasets[0].data = errorCounts;
+                    _lineChart.data.datasets[1].data = correctCounts;
+                    _lineChart.update('none'); // 'none' skips animation on data update
+                } else {
+                    const ctx = lineCtx.getContext('2d');
+                    const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                    errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
+                    errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
 
-                const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
-                correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+                    const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                    correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
+                    correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
 
-                _lineChart = new Chart(lineCtx, {
-                    type: "line",
-                    data: {
-                        labels: weekLabels,
-                        datasets: [
-                            {
-                                label: "Errors",
-                                data: errorCounts,
-                                borderColor: "#ef4444",
-                                backgroundColor: errorGradient,
-                                tension: 0.4,
-                                fill: true,
-                                pointBackgroundColor: "#ef4444",
-                                pointRadius: 4,
-                            },
-                            {
-                                label: "Correct",
-                                data: correctCounts,
-                                borderColor: "#34d399",
-                                backgroundColor: correctGradient,
-                                tension: 0.4,
-                                fill: true,
-                                pointBackgroundColor: "#34d399",
-                                pointRadius: 4,
-                            },
-                        ],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
-                            tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                    _lineChart = new Chart(lineCtx, {
+                        type: "line",
+                        data: {
+                            labels: weekLabels,
+                            datasets: [
+                                {
+                                    label: "Errors",
+                                    data: errorCounts,
+                                    borderColor: "#ef4444",
+                                    backgroundColor: errorGradient,
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointBackgroundColor: "#ef4444",
+                                    pointRadius: 4,
+                                },
+                                {
+                                    label: "Correct",
+                                    data: correctCounts,
+                                    borderColor: "#34d399",
+                                    backgroundColor: correctGradient,
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointBackgroundColor: "#34d399",
+                                    pointRadius: 4,
+                                },
+                            ],
                         },
-                        scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
+                                tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                            },
+                            scales: {
+                                x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
+                                y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                            },
                         },
-                    },
-                });
+                    });
+                }
             }
 
             // ── Bar chart: errors by category ──────────────────────────
@@ -826,31 +672,40 @@ async function refreshGlobalState(studentId) {
             const catValues = Object.values(anl.total_counts || {});
             const barColors = Object.keys(anl.total_counts || {}).map(k => catColors[k] || "#4a90e2");
 
-            if (_barChart) { _barChart.destroy(); _barChart = null; }
             const barCtx = document.getElementById("anl-bar-chart");
             if (barCtx) {
-                _barChart = new Chart(barCtx, {
-                    type: "bar",
-                    data: {
-                        labels: catLabels,
-                        datasets: [{
-                            label: "Total Errors",
-                            data: catValues,
-                            backgroundColor: barColors.map(c => c + "55"),
-                            borderColor: barColors,
-                            borderWidth: 2,
-                            borderRadius: 6,
-                        }],
-                    },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                if (_barChart) {
+                    // Update in-place for smooth re-render (no destroy = no shake)
+                    _barChart.data.labels = catLabels;
+                    _barChart.data.datasets[0].data = catValues;
+                    _barChart.data.datasets[0].backgroundColor = barColors.map(c => c + "55");
+                    _barChart.data.datasets[0].borderColor = barColors;
+                    _barChart.update('none');
+                } else {
+                    _barChart = new Chart(barCtx, {
+                        type: "bar",
+                        data: {
+                            labels: catLabels,
+                            datasets: [{
+                                label: "Total Errors",
+                                data: catValues,
+                                backgroundColor: barColors.map(c => c + "55"),
+                                borderColor: barColors,
+                                borderWidth: 2,
+                                borderRadius: 6,
+                            }],
                         },
-                    },
-                });
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
+                                y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                            },
+                        },
+                    });
+                }
             }
         }
 
@@ -915,7 +770,4 @@ async function refreshGlobalState(studentId) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
         }
     }
-
-    // Initial data fetch
-    refreshGlobalState(studentId);
 }
