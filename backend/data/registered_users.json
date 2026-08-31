@@ -37,12 +37,12 @@
       "Quiz Ace"
     ],
     "created_at": "2026-08-31T07:52:09.333484+00:00",
-    "updated_at": "2026-08-31T08:24:21.546454+00:00",
+    "updated_at": "2026-08-31T08:28:05.644548+00:00",
     "current_learning_state": "PRACTICING",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$J8TS4tuF2JwHLGNf$38f0ad9dbc9eac20985f4fd32c55b1814895578e8fb50f5c3028b972cc20f3df8050405036c89424dcf36489e3344503b76c1a71159d73c62d390eef6c48dae3"
+    "password_hash": "scrypt:32768:8:1$NgEDrpx1qtxtcOvK$1cc128918033e77d97dc6eacf56af45b625cfadd5fbb7071aeb3dc6de729b0a26919c14a2b290586690b315346e9468cc268fdb1c1aa06ce5eb5f5b666eb16e4"
   },
   "teacher_001": {
     "uid": "teacher_001",
@@ -58,12 +58,12 @@
     "games_played": 0,
     "badges": [],
     "created_at": "2026-08-31T07:52:09.446654+00:00",
-    "updated_at": "2026-08-31T08:24:24.086355+00:00",
+    "updated_at": "2026-08-31T08:28:08.366873+00:00",
     "current_learning_state": "NEW_USER",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$bNCbMaZJPKSCkgoA$890407438b4825d58e011d3ea78cdb3bfb24c69acb9eef02b0409f54db9d29a15050b3e5bc194ab04e6a53207845b431788a7be5327318e095c2edb1651d875b"
+    "password_hash": "scrypt:32768:8:1$xhfR5Y3g6sF8i8jf$d75c31c5d8d72b991853e803cbf8896fedf1f1eda07885604df16337c87a0537a7fb67f9985a6cce622e072a904b78e093eec389b5f121bc028440843e719ced"
   },
   "admin_001": {
     "uid": "admin_001",
@@ -79,12 +79,12 @@
     "games_played": 0,
     "badges": [],
     "created_at": "2026-08-31T07:52:09.583379+00:00",
-    "updated_at": "2026-08-31T08:24:24.515921+00:00",
+    "updated_at": "2026-08-31T08:28:08.799016+00:00",
     "current_learning_state": "NEW_USER",
     "latest_pre_test_session_id": null,
     "latest_error_feedback_id": null,
     "latest_post_test_session_id": null,
-    "password_hash": "scrypt:32768:8:1$LuLbkNlBUSM1CMIL$9626a03173d7fb9913bb87440d693f102b0d51c40869d0a8e91f8781a9975dca1d8216465a3672e1241ddb5e07fd9425edf89310a70e14847fc0207328138fb1"
+    "password_hash": "scrypt:32768:8:1$uDnAu4tHo4bF9bjv$c274a2d7cb2647daaf43cfb033d1961d2965480ca3db141410133cfd29c845fcaf9dd6481320c4a3fbe1749ea7efe362397bb513afad817d68bed4d8cac545b9"
   },
   "user_1788162999814": {
     "uid": "user_1788162999814",
