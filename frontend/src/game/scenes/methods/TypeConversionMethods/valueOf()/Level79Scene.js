@@ -2688,10 +2688,10 @@ export class Level79Scene extends Phaser.Scene {
     const wax = this.add.text(0, -6, "🕯️", { font: "bold 13px Arial" }).setOrigin(0.5);
     const chain = this.add.text(14, -6, "⛓️", { font: "bold 13px Arial" }).setOrigin(0.5);
     badge.add([bg, pressIcon, wax, chain]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2250 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 492, "valueOf() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 508, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2400 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     await this.delay(3200);

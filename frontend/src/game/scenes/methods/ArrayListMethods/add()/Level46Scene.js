@@ -1712,9 +1712,9 @@ export class Level46Scene extends Phaser.Scene {
     bg.lineStyle(1.5, C_BRASS, 1);
     for (let i = 0; i < 3; i++) bg.fillRect(-12 + i * 8, -10, 6, 20);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 1950 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 505, "add() SCHEMA ACQUIRED", { font: "bold 15px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 545, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 545, "NEXT: The Card Catalog →", 260, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

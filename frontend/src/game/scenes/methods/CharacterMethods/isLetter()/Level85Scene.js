@@ -2555,10 +2555,10 @@ export class Level85Scene extends Phaser.Scene {
     const pendulumIcon = this.add.text(0, -5, "⏱️", { font: "bold 13px Arial" }).setOrigin(0.5);
     const broochIcon = this.add.text(13, -5, "📌", { font: "bold 12px Arial" }).setOrigin(0.5);
     badge.add([bg, prismIcon, pendulumIcon, broochIcon]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2050 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 397, "isLetter() MASTERY", { font: "bold 15px Georgia", color: HEX_BLUE_LETTER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 412, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     const barY = 440;

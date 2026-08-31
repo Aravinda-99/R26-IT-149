@@ -16,6 +16,7 @@
 
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
+import { BadgeSystem } from "../../BadgeSystem.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
@@ -1319,6 +1320,13 @@ export class Level11Scene extends Phaser.Scene {
 
     const accuracy = this.totalAttempted > 0
       ? Math.round((this.totalCorrect / this.totalAttempted) * 100) : 0;
+
+    // Progression was previously never recorded here — the panel claimed the
+    // badge above but neither the level nor the badge was ever actually
+    // persisted to GameManager, so it never showed up in the trophy case and
+    // Level 11 could never be marked complete. Level 11 is index 10.
+    try { GameManager.completeLevel(10, accuracy); } catch (_) {}
+    try { BadgeSystem.unlock("assembly_master"); } catch (_) {}
 
     const stats = [
       { icon: "⭐", label: "Total Score", value: `${this.score}` },

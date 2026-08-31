@@ -1719,10 +1719,10 @@ export class Level27Scene extends Phaser.Scene {
       bg.lineBetween(20 + Math.cos(a) * 6, Math.sin(a) * 6, 20 + Math.cos(a) * 9, Math.sin(a) * 9);
     }
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 528, "length() MASTERY", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 546, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2300 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 555, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 555, "NEXT: charAt() →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {

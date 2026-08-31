@@ -1954,10 +1954,10 @@ export class Level39Scene extends Phaser.Scene {
     bg.lineBetween(14, 8, 0, -12);
     bg.strokeCircle(0, -12, 4);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 440, "println() MASTERY", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 458, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     const barY = 500;
     const barG = this.add.graphics().setDepth(91).setAlpha(0);

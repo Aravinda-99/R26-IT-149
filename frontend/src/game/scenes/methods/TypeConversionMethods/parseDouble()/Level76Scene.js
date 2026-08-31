@@ -2483,10 +2483,10 @@ export class Level76Scene extends Phaser.Scene {
     const buretteIcon = this.add.text(0, -6, "🧪", { font: "bold 14px Arial", color: HEX_GOLD }).setOrigin(0.5);
     const dualIcon = this.add.text(14, -6, "⚖️", { font: "bold 13px Arial", color: HEX_COPPER }).setOrigin(0.5);
     badge.add([bg, crucibleIcon, buretteIcon, dualIcon]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2450 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 512, "parseDouble() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 528, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2600 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     const barY = 568;

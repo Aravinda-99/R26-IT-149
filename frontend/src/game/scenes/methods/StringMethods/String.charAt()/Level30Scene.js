@@ -1923,11 +1923,11 @@ export class Level30Scene extends Phaser.Scene {
     bg.strokeCircle(15, 9, 3);
     bg.strokeCircle(27, -3, 3);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 505, "charAt() MASTERY", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 523, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const wingSub = this.add.text(640, 540, "STRING ACCESS WING COMPLETE — length() ✓ charAt() ✓", { font: "bold 13px Arial", color: HEX_PURPLE }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub, wingSub], alpha: 1, duration: 300, delay: 2300 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub, wingSub], alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 575, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 575, "NEXT METHOD →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {

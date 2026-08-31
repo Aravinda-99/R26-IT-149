@@ -2051,9 +2051,9 @@ export class Level58Scene extends Phaser.Scene {
     for (let i = 0; i < 8; i++) { const r = i % 2 === 0 ? 7 : 3; const a = (Math.PI / 4) * i - Math.PI / 2; pts.push(16 + Math.cos(a) * r, 4 + Math.sin(a) * r); }
     bg.fillPoints(pts, true);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 1950 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 505, "abs() SCHEMA ACQUIRED", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 545, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 545, "NEXT: The Survey Sprint →", 280, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

@@ -1816,10 +1816,10 @@ export class Level33Scene extends Phaser.Scene {
     bg.lineBetween(-6, 0, -2, 5);
     bg.lineBetween(-2, 5, 8, -6);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 465, "CASE METHODS MASTERY", { font: "bold 15px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 482, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     const ribbon = this.add.graphics().setDepth(91).setAlpha(0);
     ribbon.fillStyle(0x1a1a2e, 1);

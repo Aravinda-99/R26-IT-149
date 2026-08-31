@@ -2347,10 +2347,10 @@ export class Level51Scene extends Phaser.Scene {
     bg.strokeCircle(18, -2, 5);
     bg.lineBetween(18, 3, 18, 10);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2000 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 478, "get() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 494, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2150 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     const wingLbl = this.add.text(640, 512, "ARRAYLIST WING — 2 of 3 trilogies complete", { font: "bold 13px Georgia", color: "#8c7ae6" }).setOrigin(0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: wingLbl, alpha: 1, duration: 300, delay: 2300 });
