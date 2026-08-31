@@ -180,6 +180,13 @@ class _GameManager {
     this.set("xp", saved.xp || 0);
     this.set("score", saved.score || 0);
     this.set("badges", saved.badges || []);
+    this.set("maxLives", saved.maxLives !== undefined ? saved.maxLives : DEFAULT_STATE.maxLives);
+    this.set("lives", saved.lives !== undefined ? saved.lives : DEFAULT_STATE.lives);
+    this.set("combo", saved.combo !== undefined ? saved.combo : DEFAULT_STATE.combo);
+    this.set(
+      "comboBreaksThisLevel",
+      saved.comboBreaksThisLevel !== undefined ? saved.comboBreaksThisLevel : DEFAULT_STATE.comboBreaksThisLevel
+    );
     if (saved.currentLevel !== undefined) this.set("currentLevel", saved.currentLevel);
   }
 
