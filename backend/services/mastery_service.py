@@ -536,23 +536,20 @@ class MasteryService:
         }
         return MasteryService._apply_local_post_test_results(user_id, response)
 
-development
+
     # -----------------------------------------------------------------
     # GET ALL STUDENTS — Cached with 60s TTL
     # -----------------------------------------------------------------
     @staticmethod
     def get_all_students():
-mastery-main-integration
         """Fetch all real registered students from persistent storage and compute mastery for each."""
-        from services.user_storage_service import UserStorageService
-        registered_students = UserStorageService.get_all_students()
-
-        """Fetch all students from Firestore with 60-second TTL cache and compute mastery for each."""
         now = time.time()
         if _students_cache["data"] is not None and (now - _students_cache["timestamp"] < _STUDENTS_CACHE_TTL):
             return _students_cache["data"]
 
-development
+        from services.user_storage_service import UserStorageService
+        registered_students = UserStorageService.get_all_students()
+
         students = []
         seen_ids = set()
 
@@ -597,7 +594,6 @@ development
                     "created_at": u.get("created_at") or u.get("joinedAt", ""),
                 })
 
-mastery-main-integration
         for result in SchemaPostTestResultService.list_results():
             uid = str(result.get("student_id") or "").strip()
             if not uid or uid in seen_ids:
@@ -621,10 +617,8 @@ mastery-main-integration
                 "created_at": result.get("created_at", ""),
             })
 
-
         _students_cache["data"] = students
         _students_cache["timestamp"] = now
-development
         return students
 
     # -----------------------------------------------------------------

@@ -5,13 +5,15 @@
  * Features:
  *   - Title: "Educator Portal Login"
  *   - Fields: Faculty Email, Password
+ *   - Authenticates strictly against backend authentication service with educator role requirement
  *   - Redirects to Teacher Dashboard (#/teacher/dashboard) on valid faculty credentials
- *   - Blocks student accounts or redirects to Home
- *   - Clean, professional white theme with zero demo credentials visible
+ *   - Blocks student accounts with clear access message
+ *   - Clean, professional white theme with zero demo credentials or fake fallbacks
  */
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { setCurrentUser } from "../../utils/auth.js";
+import { AuthAPI } from "../../api/api.js";
 
 export function renderTeacherLogin(container) {
     container.innerHTML = `
@@ -31,7 +33,7 @@ export function renderTeacherLogin(container) {
                     <!-- Email -->
                     <div style="display: flex; flex-direction: column; gap: 0.4rem;">
                         <label for="teacher-email" style="font-size: 0.86rem; font-weight: 600; color: #0F172A;">Faculty Email Address</label>
-                        <input type="email" id="teacher-email" required placeholder="educator@codequest.edu" autocomplete="email" style="padding: 0.75rem 1rem; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 0.92rem; color: #0F172A; background: #FFFFFF; outline: none; transition: border-color 0.15s;" />
+                        <input type="email" id="teacher-email" required placeholder="educator@codequest.lk" autocomplete="email" style="padding: 0.75rem 1rem; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 0.92rem; color: #0F172A; background: #FFFFFF; outline: none; transition: border-color 0.15s;" />
                     </div>
 
                     <!-- Password with Toggle -->
@@ -95,56 +97,40 @@ export function renderTeacherLogin(container) {
         hideError();
 
         try {
-            const auth = getAuth();
-            const userCred = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCred.user;
-            const isTeacher = email.includes("teacher") || email.includes("admin") || (user.email && (user.email.includes("teacher") || user.email.includes("admin")));
+            // Authenticate strictly with backend API
+            const res = await AuthAPI.login({ email, password, required_role: "educator" });
+            if (!res || !res.success || !res.user) {
+                throw new Error(res?.error || "Invalid faculty credentials.");
+            }
 
-            if (!isTeacher) {
-                showError("Access restricted: This account does not possess educator/faculty privileges.");
+            const user = res.user;
+            if (user.role !== "teacher" && user.role !== "admin") {
+                showError("This account does not have educator access.");
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `<span>Sign In to Faculty Portal</span>`;
                 return;
             }
 
-            setCurrentUser({
-                uid: user.uid,
-                id: user.uid,
-                email: user.email,
-                name: user.displayName || email.split("@")[0],
-                displayName: user.displayName || email.split("@")[0],
-                role: "teacher",
-                joinedAt: new Date().toISOString()
-            });
+            // Optional client Firebase auth sync if available
+            try {
+                const auth = getAuth();
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (fbErr) {
+                // Backend authentication succeeded
+            }
 
+            setCurrentUser(user);
             window.location.hash = "#/teacher/dashboard";
 
         } catch (err) {
-            // Local fallback for faculty credentials
-            const isTeacher = email.includes("teacher") || email.includes("admin");
-            if (isTeacher && password.length >= 6) {
-                setCurrentUser({
-                    uid: "teacher_" + Date.now(),
-                    id: "teacher_" + Date.now(),
-                    email: email,
-                    name: email.split("@")[0],
-                    displayName: email.split("@")[0],
-                    role: "teacher",
-                    joinedAt: new Date().toISOString()
-                });
-
-                window.location.hash = "#/teacher/dashboard";
-                return;
+            let msg = "Invalid email or password.";
+            if (err.message && (err.message.includes("connect") || err.message.includes("Failed to fetch"))) {
+                msg = "Unable to connect to server. Please try again.";
+            } else if (err.message) {
+                msg = err.message;
             }
 
-            if (!isTeacher && password.length >= 6) {
-                showError("Access restricted: This account does not possess educator/faculty privileges.");
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `<span>Sign In to Faculty Portal</span>`;
-                return;
-            }
-
-            showError("Invalid faculty credentials. Please check your email and password.");
+            showError(msg);
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<span>Sign In to Faculty Portal</span>`;
         }

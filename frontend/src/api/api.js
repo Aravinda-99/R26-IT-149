@@ -105,7 +105,7 @@ export const SchemaMasteryAPI = {
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
     getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
     getPostTestQuestions: (params = {}) => {
-        const studentId = params.student_id || params.studentId || "STU001";
+        const studentId = params.student_id || params.studentId || "";
         const concept = params.concept || params.concept_name || "Loops";
         const errorType = params.error_type || params.errorType || "";
         const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
@@ -135,8 +135,10 @@ export const WellbeingAPI = {
 
 // --- Component 5: Auth ---
 export const AuthAPI = {
+    login: (credentials) => apiRequest("/auth/login", "POST", credentials),
     register: (data) => apiRequest("/auth/register", "POST", data),
     getProfile: (userId) => apiRequest(`/auth/profile/${userId}`),
+    getMe: (userId = "") => apiRequest(`/auth/me${userId ? `?uid=${encodeURIComponent(userId)}` : ""}`),
     verifyToken: (idToken) => apiRequest("/auth/verify-token", "POST", { id_token: idToken }),
 };
 

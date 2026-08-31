@@ -78,12 +78,14 @@ export async function handleNavigation() {
     let routePath = rawHash.replace(/^#/, "").trim();
 
     // Default route redirects
-    if (!routePath || routePath === "/" || routePath === "/home" || routePath === "/welcome") {
+    if (!routePath || routePath === "/" || routePath === "/home") {
         const user = getCurrentUser();
         if (user && (user.role === "teacher" || user.role === "admin")) {
             routePath = "/teacher/dashboard";
-        } else {
+        } else if (user) {
             routePath = "/student/home";
+        } else {
+            routePath = "/login";
         }
         window.location.hash = `#${routePath}`;
         return;

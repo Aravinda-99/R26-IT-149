@@ -3,10 +3,11 @@
  * =========================
  * Clean, modern split-layout login for learners.
  * Features:
- *   - Left: High-quality educational photo hero with translucent overlay & learning quote
- *   - Right: Clean white LMS form, email & password, toggle visibility, friendly alerts
- *   - Redirects directly to Home page (#/student/home) upon student login
- *   - Strictly NO demo credentials, demo chips, or teacher login links
+ *   - Left: Educational photo hero with brand badge
+ *   - Right: Clean LMS form, email & password, toggle visibility, friendly alerts
+ *   - Authenticates strictly against backend authentication service
+ *   - Redirects students directly to #/student/home, and educators to #/teacher/dashboard
+ *   - Strictly NO demo credentials, demo chips, or fake login fallbacks
  */
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
@@ -18,7 +19,7 @@ export function renderLogin(container) {
         <div class="auth-page-wrapper" style="min-height: 100vh; background: #F8FAFC; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem;">
             <div class="auth-card-split" style="width: 100%; max-width: 980px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 24px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05); display: grid; grid-template-columns: 1fr 1.15fr; overflow: hidden;">
                 
-                <!-- Left Photo Hero Pane (Clean Photo without Bulky Text Overlays) -->
+                <!-- Left Photo Hero Pane -->
                 <div class="auth-side-pane" style="position: relative; background: url('/assets/images/login-hero.jpg') center/cover no-repeat; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-start; min-height: 560px;">
                     <!-- Clean Brand Badge -->
                     <div style="display: inline-flex; align-items: center; gap: 0.55rem; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 0.45rem 0.85rem; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.15); width: fit-content;">
@@ -96,7 +97,7 @@ export function renderLogin(container) {
         const password = passwordInput.value;
 
         if (!email || !password) {
-            showError("Please enter your email and password.");
+            showError("Please enter both email and password.");
             return;
         }
 
@@ -105,105 +106,38 @@ export function renderLogin(container) {
         hideError();
 
         try {
-            const auth = getAuth();
-            const userCred = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCred.user;
-            const role = (email.includes("teacher") || email.includes("admin")) ? "teacher" : "student";
-            const displayName = user.displayName || email.split("@")[0];
+            // 1. Authenticate with backend API service
+            const res = await AuthAPI.login({ email, password });
+            if (!res || !res.success || !res.user) {
+                throw new Error(res?.error || "Invalid email or password.");
+            }
 
-            const profile = {
-                uid: user.uid,
-                id: user.uid,
-                email: user.email,
-                name: displayName,
-                displayName: displayName,
-                display_name: displayName,
-                role: role,
-                joinedAt: new Date().toISOString()
-            };
+            const user = res.user;
 
-            // Sync with backend persistent storage
+            // Optional client Firebase auth sync if available
             try {
-                await AuthAPI.register({
-                    uid: user.uid,
-                    email: user.email,
-                    display_name: displayName,
-                    name: displayName,
-                    role: role
-                });
-            } catch (e) {}
+                const auth = getAuth();
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (fbErr) {
+                // Backend authentication succeeded
+            }
 
-            // Store in local registry
-            try {
-                const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
-                if (role === "student" && !registry.some(r => r.email === email || r.uid === user.uid)) {
-                    registry.push(profile);
-                    localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
-                }
-            } catch (e) {}
+            // Save authenticated session
+            setCurrentUser(user);
 
-            setCurrentUser(profile);
-
-            // Redirect: Student to Home page; Teacher to teacher dashboard
-            if (role === "teacher") {
+            // Redirect: Educator to teacher dashboard; Student to student home
+            if (user.role === "teacher" || user.role === "admin") {
                 window.location.hash = "#/teacher/dashboard";
             } else {
                 window.location.hash = "#/student/home";
             }
 
         } catch (err) {
-            // Local fallback for offline/local accounts with valid length
-            if (password.length >= 6) {
-                const role = (email.includes("teacher") || email.includes("admin")) ? "teacher" : "student";
-                const fallbackUid = "user_" + Date.now();
-                const displayName = email.split("@")[0];
-
-                const profile = {
-                    uid: fallbackUid,
-                    id: fallbackUid,
-                    email: email,
-                    name: displayName,
-                    displayName: displayName,
-                    display_name: displayName,
-                    role: role,
-                    joinedAt: new Date().toISOString()
-                };
-
-                try {
-                    await AuthAPI.register({
-                        uid: fallbackUid,
-                        email: email,
-                        display_name: displayName,
-                        name: displayName,
-                        role: role
-                    });
-                } catch (e) {}
-
-                try {
-                    const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
-                    if (role === "student" && !registry.some(r => r.email === email)) {
-                        registry.push(profile);
-                        localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
-                    }
-                } catch (e) {}
-
-                setCurrentUser(profile);
-
-                if (role === "teacher") {
-                    window.location.hash = "#/teacher/dashboard";
-                } else {
-                    window.location.hash = "#/student/home";
-                }
-                return;
-            }
-
             let msg = "Invalid email or password.";
-            if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
-                msg = "Invalid email or password.";
-            } else if (err.code === "auth/too-many-requests") {
-                msg = "Too many attempts. Please wait a moment and try again.";
+            if (err.message && err.message.includes("connect") || err.message.includes("Failed to fetch")) {
+                msg = "Unable to connect to server. Please try again.";
             } else if (err.message) {
-                msg = "Unable to sign in. Please check your credentials and try again.";
+                msg = err.message;
             }
 
             showError(msg);

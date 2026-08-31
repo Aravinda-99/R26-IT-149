@@ -39,7 +39,11 @@ function showTelemetryResult(res, isHistory = false) {
 
 export async function renderErrorAnalysis(container) {
     const user = getCurrentUser();
-    const studentId = user?.uid || user?.id || "demo_student";
+    if (!user) {
+        window.location.hash = "#/login";
+        return;
+    }
+    const studentId = user.uid || user.id;
 
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">

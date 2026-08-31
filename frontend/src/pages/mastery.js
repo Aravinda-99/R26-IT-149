@@ -10,6 +10,7 @@
 
 import { MasteryAPI, SchemaMasteryAPI } from "../api/api.js";
 import { renderPostTest } from "./posttest.js";
+import { getCurrentUser } from "../utils/auth.js";
 
 // Short-lived client cache (60 seconds) to prevent redundant queries
 const CACHE_TTL_MS = 60 * 1000;
@@ -40,12 +41,6 @@ async function getCachedStatus(studentId) {
 
 let currentContainer = null;
 let loadedStudents = [];
-
-const fallbackStudents = [
-    { studentId: "STU001", studentName: "Student 01", name: "Student 01", conceptName: "Loops", offline: true },
-    { studentId: "STU002", studentName: "Student 02", name: "Student 02", conceptName: "Arrays", offline: true },
-    { studentId: "STU003", studentName: "Student 03", name: "Student 03", conceptName: "Methods", offline: true },
-];
 
 function normalizeStudent(s = {}) {
     const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
@@ -213,8 +208,8 @@ export async function renderMastery(container) {
 
 async function loadStudents() {
     const select = document.getElementById("student-select");
+    const grid = document.getElementById("mastery-grid");
     try {
- mastery-main-integration
         const [masteryRes, authRes, postTestRes] = await Promise.allSettled([
             MasteryAPI.getStudents(),
             fetch("/api/auth/users").then(r => r.json()).catch(() => ({ students: [] })),
@@ -293,7 +288,7 @@ async function loadStudents() {
             }
         });
 
-        const students = Array.from(studentMap.values()).map(normalizeStudent).filter(s => s && (s.studentId || s.email));
+        let students = Array.from(studentMap.values()).map(normalizeStudent).filter(s => s && (s.studentId || s.email));
         loadedStudents = students;
 
         if (students.length === 0) {
@@ -306,36 +301,30 @@ async function loadStudents() {
                 </div>
             `;
             return;
-
-        const data = await getCachedStudents();
-        let students = normalizeStudentsResponse(data);
-
-        if (students.length === 0) {
-            students = fallbackStudents.map(normalizeStudent);
-development
         }
-        loadedStudents = students;
 
-        // Student-friendly dropdown — no research scores in the label
-        select.innerHTML = `<option value="">Choose a student</option>` +
-            students.map(s => `
-                <option value="${s.studentId}"
-                        data-name="${s.studentName}">
-                    ${s.studentName} (${s.email ? s.email : s.studentId})
-                </option>
-            `).join("");
+        if (select) {
+            // Student-friendly dropdown — no research scores in the label
+            select.innerHTML = `<option value="">Choose a student</option>` +
+                students.map(s => `
+                    <option value="${s.studentId}"
+                            data-name="${s.studentName}">
+                        ${s.studentName} (${s.email ? s.email : s.studentId})
+                    </option>
+                `).join("");
 
-        select.addEventListener("change", () => {
-            const studentId = select.value;
-            if (studentId) {
-                loadMasteryStatus(studentId);
+            select.onchange = () => {
+                const studentId = select.value;
+                if (studentId) {
+                    loadMasteryStatus(studentId);
+                }
+            };
+
+            // Auto-select the first student
+            if (students.length > 0) {
+                select.value = students[0].studentId;
+                loadMasteryStatus(students[0].studentId);
             }
-        });
-
-        // Auto-select the first student
-        if (students.length > 0) {
-            select.value = students[0].studentId;
-            loadMasteryStatus(students[0].studentId);
         }
 
     } catch (err) {
@@ -358,15 +347,11 @@ async function loadMasteryStatus(studentId) {
     grid.innerHTML = `<div style="text-align: center; padding: 2rem;"><div class="spinner"></div></div>`;
 
     try {
-mastery-main-integration
-        let data = await MasteryAPI.getStatus(studentId);
-
         let data = await getCachedStatus(studentId);
 
-        if (!data.found) {
+        if (!data || !data.found) {
             data = getFallbackStatus(studentId);
         }
-development
         const selectedStudent = getSelectedStudent(studentId);
         const studentName = data.studentName || selectedStudent.studentName || selectedStudent.name || studentId;
 
@@ -430,10 +415,6 @@ development
         grid.innerHTML = Object.entries(concepts).map(([key, c]) => {
             const name = c.conceptName || conceptNames[key] || key;
 
-            // Map backend data to card state inputs
-            // activityScore = evidence from prior components (mastery_score / evidenceScore)
-            // mcqScore = mcqPostTestScore from backend
-            // checkCompleted = whether post-test was done
             const activityScore = clamp01(c.evidenceScore ?? c.mastery_score ?? c.preTestScore ?? c.pre_test_score ?? 0);
             const mcqScore = clamp01(c.mcqPostTestScore ?? c.postTestScore ?? c.post_test_score ?? 0);
             const checkCompleted = c.postTestCompleted || false;
@@ -685,4 +666,3 @@ function redirectToGamifiedLesson(concept) {
     };
     setTimeout(tryClick, 0);
 }
-

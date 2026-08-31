@@ -3,14 +3,14 @@
  * =================================
  * Clean, modern split-layout registration for learners.
  * Features:
- *   - Left: High-quality educational photo hero with translucent overlay & track highlights
- *   - Right: Clean white LMS form (Full Name, Email, Password, Confirm Password)
- *   - Strictly creates student accounts and redirects directly to Home (#/student/home)
- *   - Friendly error validation & loading feedback
+ *   - Left: Educational photo hero
+ *   - Right: Clean LMS form (Full Name, Email, Password, Confirm Password)
+ *   - Strictly creates verified student accounts via backend API
+ *   - Redirects directly to Student Home (#/student/home)
+ *   - Friendly error validation & loading feedback with zero fake fallbacks
  */
 
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { setCurrentUser } from "../../utils/auth.js";
 import { AuthAPI } from "../../api/api.js";
 
@@ -19,7 +19,7 @@ export function renderRegister(container) {
         <div class="auth-page-wrapper" style="min-height: 100vh; background: #F8FAFC; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem;">
             <div class="auth-card-split" style="width: 100%; max-width: 980px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 24px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05); display: grid; grid-template-columns: 1fr 1.15fr; overflow: hidden;">
                 
-                <!-- Left Photo Hero Pane (Clean Photo without Bulky Text Overlays) -->
+                <!-- Left Photo Hero Pane -->
                 <div class="auth-side-pane" style="position: relative; background: url('/assets/images/login-hero.jpg') center/cover no-repeat; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-start; min-height: 560px;">
                     <!-- Clean Brand Badge -->
                     <div style="display: inline-flex; align-items: center; gap: 0.55rem; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 0.45rem 0.85rem; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.15); width: fit-content;">
@@ -110,64 +110,25 @@ export function renderRegister(container) {
         submitBtn.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> <span>Creating Account...</span>`;
         hideError();
 
-        // Public registration is strictly student role
-        const role = "student";
-
         try {
-            const auth = getAuth();
-            const userCred = await createUserWithEmailAndPassword(auth, email, password);
-            const user = userCred.user;
-            await updateProfile(user, { displayName: name });
-
-            const studentProfile = {
-                uid: user.uid,
-                id: user.uid,
-                email: user.email,
-                name: name,
-                displayName: name,
-                display_name: name,
-                role: role,
-                joinedAt: new Date().toISOString(),
-                created_at: new Date().toISOString()
-            };
-
-            // 1. Write to Firestore client database
-            try {
-                const firestore = getFirestore();
-                await setDoc(doc(firestore, "user_profiles", user.uid), {
-                    uid: user.uid,
-                    user_id: user.uid,
-                    display_name: name,
-                    name: name,
-                    email: user.email,
-                    role: role,
-                    created_at: new Date().toISOString()
-                }, { merge: true });
-            } catch (fsErr) {
-                console.warn("[WARN] Client Firestore user write error:", fsErr);
+            // 1. Create student account in backend API
+            const res = await AuthAPI.register({ name, email, password });
+            if (!res || !res.success || !res.user) {
+                throw new Error(res?.error || "Registration failed.");
             }
 
-            // 2. Register with Backend API
-            try {
-                await AuthAPI.register({
-                    uid: user.uid,
-                    email: user.email,
-                    display_name: name,
-                    name: name,
-                    role: role
-                });
-            } catch (apiErr) {
-                console.warn("[WARN] Backend auth register API error:", apiErr);
-            }
+            const studentProfile = res.user;
 
-            // 3. Store in local registry to guarantee roster visibility
+            // Optional client Firebase auth registration if available
             try {
-                const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
-                if (!registry.some(r => r.email === email || r.uid === user.uid)) {
-                    registry.push(studentProfile);
-                    localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
+                const auth = getAuth();
+                const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                if (userCred?.user) {
+                    await updateProfile(userCred.user, { displayName: name });
                 }
-            } catch (e) {}
+            } catch (fbErr) {
+                // Backend registration is authoritative
+            }
 
             setCurrentUser(studentProfile);
 
@@ -175,52 +136,11 @@ export function renderRegister(container) {
             window.location.hash = "#/student/home";
 
         } catch (err) {
-            // Local fallback for offline mode or network errors
-            if (password.length >= 6) {
-                const fallbackUid = "user_" + Date.now();
-                const offlineProfile = {
-                    uid: fallbackUid,
-                    id: fallbackUid,
-                    email: email,
-                    name: name,
-                    displayName: name,
-                    display_name: name,
-                    role: role,
-                    joinedAt: new Date().toISOString(),
-                    created_at: new Date().toISOString()
-                };
-
-                try {
-                    await AuthAPI.register({
-                        uid: fallbackUid,
-                        email: email,
-                        display_name: name,
-                        name: name,
-                        role: role
-                    });
-                } catch (e) {}
-
-                try {
-                    const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
-                    if (!registry.some(r => r.email === email)) {
-                        registry.push(offlineProfile);
-                        localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
-                    }
-                } catch (e) {}
-
-                setCurrentUser(offlineProfile);
-
-                window.location.hash = "#/student/home";
-                return;
-            }
-
             let msg = "Unable to create account. Please try again.";
-            if (err.code === "auth/email-already-in-use") {
+            if (err.message && (err.message.includes("already exists") || err.message.includes("email-already-in-use"))) {
                 msg = "An account with this email already exists.";
-            } else if (err.code === "auth/invalid-email") {
-                msg = "Please enter a valid email address.";
-            } else if (err.code === "auth/weak-password") {
-                msg = "Password is too weak. Please use at least 6 characters.";
+            } else if (err.message) {
+                msg = err.message;
             }
 
             showError(msg);
