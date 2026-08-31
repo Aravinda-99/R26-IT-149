@@ -269,7 +269,7 @@ export async function renderErrorAnalysis(container) {
                 <!-- Charts Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
-                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Performance Breakdown</h4>
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;" id="anl-line-title">Accuracy by Concept</h4>
                         <div style="position: relative; height: 260px; width: 100%;">
                             <canvas id="anl-line-chart"></canvas>
                         </div>
@@ -707,7 +707,6 @@ async function refreshGlobalState(studentId) {
                     const pred = item.full_response?.prediction;
                     const displayLabel = pred?.label || item.label || "";
                     const conceptText = pred?.concept || item.concept || item.topic || "Core Java";
-                    const provenance = item.topic && item.topic !== conceptText ? ` &middot; from your ${item.topic} question` : "";
 
                     if (!el.dataset.selected) {
                         el.style.background = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
@@ -724,7 +723,7 @@ async function refreshGlobalState(studentId) {
                         </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-primary);">${conceptText}${provenance}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-primary);">${conceptText}</div>
                 `;
                 };
 
@@ -875,22 +874,16 @@ async function refreshGlobalState(studentId) {
                 }
             }
 
-            // ── Line Chart: Errors & Performance Over Time ────────────
+            // ── Concept Mastery Chart ─────────────────────────────────
+            // A trend line needs at least two time buckets; with a single
+            // session it degenerates into two floating dots. It also plotted raw
+            // error and correct counts on one axis, which hides the smaller
+            // series. So: an accuracy trend when there is real history, and a
+            // per-concept accuracy profile otherwise.
             const lineCtx = document.getElementById("anl-line-chart");
             if (lineCtx) {
-                let weekLabels = ["Diagnostic Pre-Test"];
-                let errorCounts = [sessionTotalErrors];
-                let correctCounts = [quizResults ? quizResults.score : Math.max(0, 25 - sessionTotalErrors)];
-
-                if (analyticsData.has_data && analyticsData.weekly_totals && analyticsData.weekly_totals.length > 0) {
-                    weekLabels = analyticsData.weekly_totals.map(w => w.week);
-                    errorCounts = analyticsData.weekly_totals.map(w => w.total_errors);
-                    correctCounts = analyticsData.weekly_totals.map(w => w.correct);
-                } else if (quizResults && quizResults.topicBreakdown) {
-                    weekLabels = Object.keys(quizResults.topicBreakdown);
-                    errorCounts = weekLabels.map(t => (quizResults.topicBreakdown[t].total || 0) - (quizResults.topicBreakdown[t].correct || 0));
-                    correctCounts = weekLabels.map(t => quizResults.topicBreakdown[t].correct || 0);
-                }
+                const weekly = (analyticsData.has_data && Array.isArray(analyticsData.weekly_totals)) ? analyticsData.weekly_totals : [];
+                const hasTrend = weekly.length >= 2;
 
                 // Always ensure previous chart instance on this canvas is destroyed before new render
                 const existingLine = Chart.getChart(lineCtx) || _lineChart;
@@ -899,57 +892,191 @@ async function refreshGlobalState(studentId) {
                     _lineChart = null;
                 }
 
-                const ctx = lineCtx.getContext('2d');
-                const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-                errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+                const chartTitle = document.getElementById("anl-line-title");
+                const gridColor = "rgba(100, 116, 139, 0.15)";
+                const tickColor = "#64748b";
+                const sharedTooltip = {
+                    backgroundColor: 'rgba(15, 23, 36, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#ccc',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1,
+                    padding: 10
+                };
 
-                const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
-                correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+                if (hasTrend) {
+                    // One normalised series: accuracy over time. Comparable across
+                    // weeks regardless of how many questions each week held.
+                    if (chartTitle) chartTitle.textContent = "Accuracy Trend";
+                    const trendLabels = weekly.map(w => w.week);
+                    const trendAccuracy = weekly.map(w => {
+                        const correct = w.correct || 0;
+                        const total = correct + (w.total_errors || 0);
+                        return total > 0 ? Math.round((correct / total) * 100) : 0;
+                    });
 
-                _lineChart = new Chart(lineCtx, {
-                    type: "line",
-                    data: {
-                        labels: weekLabels,
-                        datasets: [
-                            {
-                                label: "Errors",
-                                data: errorCounts,
-                                borderColor: "#ef4444",
-                                backgroundColor: errorGradient,
-                                tension: 0.4,
-                                fill: true,
-                                pointBackgroundColor: "#ef4444",
-                                pointRadius: 4,
-                            },
-                            {
-                                label: "Correct",
-                                data: correctCounts,
+                    const ctx = lineCtx.getContext('2d');
+                    const accGradient = ctx.createLinearGradient(0, 0, 0, 220);
+                    accGradient.addColorStop(0, "rgba(52, 211, 153, 0.35)");
+                    accGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+
+                    _lineChart = new Chart(lineCtx, {
+                        type: "line",
+                        data: {
+                            labels: trendLabels,
+                            datasets: [{
+                                label: "Accuracy",
+                                data: trendAccuracy,
                                 borderColor: "#34d399",
-                                backgroundColor: correctGradient,
-                                tension: 0.4,
+                                backgroundColor: accGradient,
+                                tension: 0.35,
                                 fill: true,
                                 pointBackgroundColor: "#34d399",
                                 pointRadius: 4,
+                            }],
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    ...sharedTooltip,
+                                    callbacks: {
+                                        label: (c) => {
+                                            const w = weekly[c.dataIndex] || {};
+                                            return ` ${c.parsed.y}% accuracy (${w.correct || 0} correct, ${w.total_errors || 0} errors)`;
+                                        }
+                                    }
+                                }
                             },
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: { duration: 400 },
-                        interaction: { mode: 'index', intersect: false },
-                        plugins: {
-                            legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
-                            tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                            scales: {
+                                x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { display: false } },
+                                y: {
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { color: tickColor, font: { size: 10 }, stepSize: 20, callback: (v) => `${v}%` },
+                                    grid: { color: gridColor }
+                                },
+                            },
                         },
-                        scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                    });
+                } else {
+                    // Single session: comparing magnitude across a handful of named
+                    // concepts. A sorted horizontal bar reads left-to-right with no
+                    // decoding effort — unlike a radar, where low scores collapse
+                    // into the centre and long concept names crowd the corners.
+                    if (chartTitle) chartTitle.textContent = "Accuracy by Concept";
+                    const tbChart = quizResults?.topicBreakdown || {};
+                    let conceptNames = Object.keys(tbChart);
+                    if (conceptNames.length === 0) conceptNames = ["Variables", "Loops", "Arrays", "Methods"];
+
+                    const rows = conceptNames.map(t => {
+                        const d = tbChart[t] || {};
+                        const total = d.total || 0;
+                        const correct = d.correct || 0;
+                        const errs = total > 0 ? total - correct : (sessionCategoryErrors[t] || 0);
+                        const accuracy = total > 0 ? Math.round((correct / total) * 100) : (errs > 0 ? 0 : 100);
+                        return { concept: t, accuracy, correct, total, errs };
+                    }).sort((a, b) => a.accuracy - b.accuracy); // weakest first — that is the actionable end
+
+                    const surface = getComputedStyle(document.body).getPropertyValue("--bg-card").trim() || "#ffffff";
+
+                    // Direct value labels: the reader never has to measure a bar
+                    // against the axis, and identity is never carried by color alone.
+                    const valueLabels = {
+                        id: "conceptAccuracyLabels",
+                        afterDatasetsDraw(chart) {
+                            const { ctx: c } = chart;
+                            const meta = chart.getDatasetMeta(0);
+                            c.save();
+                            c.font = "600 11px Inter, system-ui, sans-serif";
+                            c.textBaseline = "middle";
+                            meta.data.forEach((bar, i) => {
+                                const row = rows[i];
+                                if (!row) return;
+                                const text = row.total > 0
+                                    ? `${row.accuracy}%  (${row.correct}/${row.total})`
+                                    : `${row.accuracy}%`;
+                                const inside = bar.x - bar.base > c.measureText(text).width + 16;
+                                c.fillStyle = inside ? "#ffffff" : "#475569";
+                                c.textAlign = inside ? "right" : "left";
+                                c.fillText(text, inside ? bar.x - 8 : bar.x + 8, bar.y);
+                            });
+                            c.restore();
+                        }
+                    };
+
+                    _lineChart = new Chart(lineCtx, {
+                        type: "bar",
+                        data: {
+                            labels: rows.map(r => r.concept),
+                            datasets: [
+                                {
+                                    label: "Accuracy",
+                                    data: rows.map(r => r.accuracy),
+                                    backgroundColor: "#4a90e2",
+                                    borderRadius: 4,
+                                    borderSkipped: false,
+                                    barThickness: 18,
+                                },
+                                {
+                                    // Recessive track to 100%, so a 0% concept is still
+                                    // a visible row rather than an empty gap.
+                                    label: "Remaining",
+                                    data: rows.map(r => 100 - r.accuracy),
+                                    backgroundColor: "rgba(100, 116, 139, 0.12)",
+                                    borderRadius: 4,
+                                    borderSkipped: false,
+                                    barThickness: 18,
+                                    borderColor: surface,
+                                    borderWidth: { left: 2 },
+                                }
+                            ],
                         },
-                    },
-                });
+                        options: {
+                            indexAxis: "y",
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: { duration: 400 },
+                            layout: { padding: { right: 12 } },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    ...sharedTooltip,
+                                    filter: (c) => c.datasetIndex === 0,
+                                    callbacks: {
+                                        label: (c) => {
+                                            const row = rows[c.dataIndex] || {};
+                                            return row.total > 0
+                                                ? ` ${row.accuracy}% correct — ${row.correct} of ${row.total}, ${row.errs} error${row.errs !== 1 ? "s" : ""}`
+                                                : ` ${row.accuracy}% correct`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                    min: 0,
+                                    max: 100,
+                                    ticks: { color: tickColor, font: { size: 10 }, stepSize: 25, callback: (v) => `${v}%` },
+                                    grid: { color: gridColor, drawTicks: false },
+                                    border: { display: false },
+                                },
+                                y: {
+                                    stacked: true,
+                                    ticks: { color: "#475569", font: { size: 11, family: "Inter" } },
+                                    grid: { display: false },
+                                    border: { display: false },
+                                },
+                            },
+                        },
+                        plugins: [valueLabels],
+                    });
+                }
             }
 
             // ── Bar Chart: Errors by Category ─────────────────────────
@@ -996,8 +1123,8 @@ async function refreshGlobalState(studentId) {
                         animation: { duration: 400 },
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                            y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                            x: { ticks: { color: "#475569", font: { size: 11 } }, grid: { display: false } },
+                            y: { ticks: { color: "#64748b", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(100, 116, 139, 0.15)" }, beginAtZero: true },
                         },
                     },
                 });
