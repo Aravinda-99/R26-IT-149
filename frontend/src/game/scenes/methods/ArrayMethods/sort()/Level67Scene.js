@@ -2541,10 +2541,10 @@ export class Level67Scene extends Phaser.Scene {
     const icon2 = this.add.text(0, 0, "⚙", { font: "16px Arial", color: HEX_GOLD }).setOrigin(0.5);
     const icon3 = this.add.text(16, 0, "📋", { font: "14px Arial", color: HEX_GOLD }).setOrigin(0.5);
     badge.add([bg, icon1, icon2, icon3]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 492, "sort() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 508, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "11px Georgia", color: HEX_GRAY }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2250 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     // Arrays Wing progress
     const barX = 450, barY = 500, barW = 380, barH = 14;

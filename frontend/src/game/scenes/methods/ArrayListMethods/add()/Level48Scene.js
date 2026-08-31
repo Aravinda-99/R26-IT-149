@@ -2430,10 +2430,10 @@ export class Level48Scene extends Phaser.Scene {
     bg.lineBetween(14, 7, 18, 7);
     bg.lineBetween(14, 10, 19, 10);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2000 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 478, "add() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 494, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2150 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     // ArrayList Wing progress
     const wingLbl = this.add.text(640, 512, "ARRAYLIST WING — 1 of 3 trilogies complete", { font: "bold 13px Georgia", color: "#8c7ae6" }).setOrigin(0.5).setDepth(91).setAlpha(0);

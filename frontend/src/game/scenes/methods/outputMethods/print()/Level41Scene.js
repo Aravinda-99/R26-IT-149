@@ -1764,9 +1764,9 @@ export class Level41Scene extends Phaser.Scene {
     bg.strokeRoundedRect(-12, -9, 24, 14, 2);
     const nl = this.add.text(0, 1, "\\n", { font: "bold 10px Courier New", color: HEX_MAGENTA }).setOrigin(0.5);
     badge.add([bg, nl]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2000 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 458, "print() SCHEMA TUNED", { font: "bold 15px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2150 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 495, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 495, "NEXT: The Newsroom →", 260, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

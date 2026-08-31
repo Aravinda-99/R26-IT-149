@@ -2181,10 +2181,10 @@ export class Level45Scene extends Phaser.Scene {
     bg.strokeCircle(0, 0, 34);
     const icons = this.add.text(0, -2, "🖨", { font: "21px Arial" }).setOrigin(0.5);
     badge.add([bg, icons]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 462, "printf() MASTERY", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 480, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     await this.delay(2600);

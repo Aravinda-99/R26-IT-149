@@ -2818,10 +2818,10 @@ export class Level88Scene extends Phaser.Scene {
     const crystalIcon = this.add.text(0, -2, "🔷", { font: "bold 14px Arial" }).setOrigin(0.5);
     const crownIcon = this.add.text(14, -2, "👑", { font: "bold 14px Arial" }).setOrigin(0.5);
     badge.add([bg, caseIcon, crystalIcon, crownIcon]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2050 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 522, "isUpperCase() MASTERY", { font: "bold 15px Georgia", color: HEX_WHITE_BLUE }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 538, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     await this.delay(2900);

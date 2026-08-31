@@ -249,7 +249,7 @@ export class MenuScene extends Phaser.Scene {
       ];
 
       intLevels.forEach((lvl, i) => {
-        const y = 100 + i * 60;
+        const y = 100 + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -296,7 +296,7 @@ export class MenuScene extends Phaser.Scene {
 
       floatLevels.forEach((lvl, i) => {
         const floatBaseY = shouldShowInteger ? 220 : 100;
-        const y = floatBaseY + i * 60;
+        const y = floatBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -351,7 +351,7 @@ export class MenuScene extends Phaser.Scene {
         else if (!shouldShowInteger) charBaseY = 220;
         else if (!shouldShowFloat) charBaseY = 220;
 
-        const y = charBaseY + i * 60;
+        const y = charBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -401,7 +401,7 @@ export class MenuScene extends Phaser.Scene {
 
       stringLevels.forEach((lvl, i) => {
         const stringBaseY = stringHeaderY + 16;
-        const y = stringBaseY + i * 60;
+        const y = stringBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -451,7 +451,7 @@ export class MenuScene extends Phaser.Scene {
 
       operatorLevels.forEach((lvl, i) => {
         const opsBaseY = opsHeaderY + 16;
-        const y = opsBaseY + i * 60;
+        const y = opsBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -500,7 +500,7 @@ export class MenuScene extends Phaser.Scene {
 
       loopLevels.forEach((lvl, i) => {
         const loopsBaseY = loopsHeaderY + 16;
-        const y = loopsBaseY + i * 60;
+        const y = loopsBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -549,7 +549,7 @@ export class MenuScene extends Phaser.Scene {
 
       whileLevels.forEach((lvl, i) => {
         const whileBaseY = whileHeaderY + 16;
-        const y = whileBaseY + i * 60;
+        const y = whileBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -598,7 +598,7 @@ export class MenuScene extends Phaser.Scene {
 
       arrayLevels.forEach((lvl, i) => {
         const arraysBaseY = arraysHeaderY + 16;
-        const y = arraysBaseY + i * 60;
+        const y = arraysBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -630,14 +630,14 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         group.levels.forEach((lvl, i) => {
-          const y = headerY + 20 + i * 60;
+          const y = headerY + 20 + i * 70;
           const unlocked = GameManager.isLevelUnlocked(lvl.index);
           const completed = GameManager.get("levelsCompleted")[lvl.index];
           const badgeUnlocked = lvl.badge ? BadgeSystem.isUnlocked(lvl.badge.id) : false;
           this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, wing.color);
         });
 
-        methodsCursorY = headerY + 20 + group.levels.length * 60 + 20;
+        methodsCursorY = headerY + 20 + group.levels.length * 70 + 20;
       });
     });
 

@@ -2332,9 +2332,9 @@ export class Level87Scene extends Phaser.Scene {
     bg.fillStyle(C_WHITE_BLUE, 0.85);
     bg.fillPoints(diaPts, true);
     badge.add([bg]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2050 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 520, "isUpperCase() SCHEMA TUNED", { font: "bold 14px Georgia", color: HEX_WHITE_BLUE }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 560, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(770, 560, "NEXT: The Grand Classification →", 320, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

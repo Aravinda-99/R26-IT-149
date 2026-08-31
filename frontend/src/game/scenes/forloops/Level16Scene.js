@@ -3,6 +3,8 @@
  * Canvas: 800×600 (matches GameConfig)
  */
 import Phaser from "phaser";
+import { GameManager } from "../../GameManager.js";
+import { BadgeSystem } from "../../BadgeSystem.js";
 
 const W = 800, H = 600;
 const TRACK_Y1 = 383, TRACK_Y2 = 395;
@@ -958,6 +960,13 @@ export class Level16Scene extends Phaser.Scene {
     const livesBonus=this.lives*200;
     const total=this.score+livesBonus;
     console.log("Level 16 complete",{level:16,score:total,accuracy,avgTime:this.totalRoundTime/10,comboMax:this.highestCombo,stars,livesRemaining:this.lives,timestamp:Date.now()});
+
+    // Progression was previously never recorded at all here — the level
+    // could never be marked complete and its badge never unlocked. Level 16
+    // is index 15; "loop_engineer" is the catalog badge for it (Loop Train
+    // Express, For Loop Accretion).
+    try { GameManager.completeLevel(15, Math.round(accuracy * 100)); } catch (_) {}
+    try { BadgeSystem.unlock("loop_engineer"); } catch (_) {}
 
     // Final station
     const fs=this.add.container(720,ST_SY).setDepth(5);

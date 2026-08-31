@@ -3313,10 +3313,10 @@ export class Level63Scene extends Phaser.Scene {
     const weight = this.add.text(0, -6, "⚖", { font: "bold 14px Arial", color: HEX_CYAN }).setOrigin(0.5);
     const compass = this.add.text(14, -6, "◺", { font: "bold 14px Arial", color: HEX_BLUE_GRAY }).setOrigin(0.5);
     badge.add([bg, stages, weight, compass]);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2500 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 532, "pow() MASTERY", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 548, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2650 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
     this._ceremonyElements.push(badge, badgeLbl, badgeSub);
 
     await this.delay(3200);

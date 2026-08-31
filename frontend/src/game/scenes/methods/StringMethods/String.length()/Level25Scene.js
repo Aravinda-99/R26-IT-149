@@ -1743,11 +1743,15 @@ export class Level25Scene extends Phaser.Scene {
     bg.strokeCircle(-2, -8, 6);
     bg.lineBetween(2, -4, 8, 2);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    // Fade the badge in immediately alongside the panel (was delay: 2100/2200,
+    // which meant the badge was still invisible when the RETRY/NEXT buttons —
+    // fully interactive with no delay — could already be clicked, so players
+    // routinely navigated away before it ever appeared).
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 508, "length() SCHEMA ACQUIRED", {
       font: "bold 15px Arial", color: HEX_AMBER,
     }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 540, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 540, "NEXT: charAt() →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {
