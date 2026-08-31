@@ -56,6 +56,9 @@ export const AdaptiveAPI = {
     getNextActivity: (userId) => apiRequest(`/adaptive/next-activity/${userId}`),
     updateProgress: (data) => apiRequest("/adaptive/update-progress", "POST", data),
     getLearningPath: (userId) => apiRequest(`/adaptive/learning-path/${userId}`),
+    // Persist a completed quiz's headline metrics under the student
+    saveStudentProgress: (data) => apiRequest("/adaptive/student-progress", "POST", data),
+    getStudentProgress: (userId) => apiRequest(`/adaptive/student-progress/${userId}`),
 };
 
 // --- Component 2: Error Detector ---

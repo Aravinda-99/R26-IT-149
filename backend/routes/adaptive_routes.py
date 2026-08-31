@@ -6,8 +6,27 @@ Adaptive routes with ML-powered recommendation endpoint.
 
 from flask import Blueprint, request, jsonify
 from services.adaptive_service import AdaptiveService
+from services.student_progress_service import StudentProgressService
 
 adaptive_bp = Blueprint("adaptive", __name__)
+
+
+@adaptive_bp.route("/student-progress", methods=["POST"])
+def save_student_progress():
+    """
+    Persist a completed quiz's headline metrics under the student:
+    accuracy, avg_attempts, avg_time_sec, engagement_score,
+    current_level and next_level.
+    """
+    data = request.get_json() or {}
+    result = StudentProgressService.save_metrics(data)
+    return jsonify(result), (200 if result.get("success") else 500)
+
+
+@adaptive_bp.route("/student-progress/<student_id>", methods=["GET"])
+def get_student_progress(student_id):
+    """Return every saved quiz-session metric record for a student."""
+    return jsonify(StudentProgressService.get_history(student_id))
 
 
 @adaptive_bp.route("/next-activity/<user_id>", methods=["GET"])

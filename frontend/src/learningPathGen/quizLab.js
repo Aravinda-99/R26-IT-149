@@ -1,5 +1,5 @@
 import { QUIZ_BANK } from "./data.js";
-import { ErrorAPI } from "../api/api.js";
+import { ErrorAPI, AdaptiveAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 
 // ── ML API endpoint ────────────────────────────────────────────────────
@@ -780,6 +780,22 @@ export function setupQuizUI(root = document) {
                 }
             } else if (mlLoading) {
                 mlLoading.style.display = "none";
+            }
+
+            // Persist the headline metrics to the database under this student:
+            // Accuracy, Avg Attempts, Avg Time, Engagement, Next Level.
+            if (studentId && sessionMetrics) {
+                AdaptiveAPI.saveStudentProgress({
+                    student_id:       studentId,
+                    accuracy:         sessionMetrics.accuracy,
+                    avg_attempts:     sessionMetrics.avg_attempts,
+                    avg_time_sec:     sessionMetrics.avg_time_sec,
+                    engagement_score: sessionMetrics.engagement_score,
+                    current_level:    currentDifficulty,
+                    next_level:       mlResult?.next_difficulty || currentDifficulty,
+                })
+                    .then((r) => console.log("[quiz] student progress saved:", r))
+                    .catch((e) => console.error("[quiz] progress save failed:", e));
             }
 
             sessionStorage.setItem("quiz-results", JSON.stringify({
