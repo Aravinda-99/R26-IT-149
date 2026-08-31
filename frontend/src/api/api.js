@@ -112,6 +112,20 @@ export const SchemaMasteryAPI = {
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
+    getPostTestResults: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.entries(filters || {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") params.set(key, value);
+        });
+        const query = params.toString();
+        return apiRequest(`/schema-mastery/post-test/results${query ? `?${query}` : ""}`);
+    },
+    getLatestPostTestResult: (studentId) => apiRequest(`/schema-mastery/post-test/results/latest/${encodeURIComponent(studentId)}`),
+    getFlowContext: (studentId, sessionId = "") => {
+        const params = new URLSearchParams({ student_id: studentId });
+        if (sessionId) params.set("session_id", sessionId);
+        return apiRequest(`/schema-mastery/context?${params.toString()}`);
+    },
 };
 
 // --- Wellbeing / Struggle Detection ---

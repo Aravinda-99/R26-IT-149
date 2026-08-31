@@ -16,6 +16,7 @@ import os
 import uuid
 import random
 from datetime import datetime
+from config import Config
 from services.schema_question_bank_service import SchemaQuestionBankService
 
 VALID_CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
@@ -388,7 +389,7 @@ QUESTION_TEMPLATES = {
 
 
 class SchemaLLMQuestionService:
-    """Orchestrates LLM generation of draft questions for teacher review."""
+    """Orchestrates real LLM generation of draft questions for teacher review."""
 
     @classmethod
     def generate_draft_questions(
@@ -400,8 +401,8 @@ class SchemaLLMQuestionService:
         count: int = 5,
     ) -> list:
         """
-        Generates `count` draft questions for the given concept and filters.
-        Saves all generated questions to `generated_questions` with status PENDING.
+        Generates `count` draft questions for the given concept and filters using real LLM.
+        Saves all generated questions to `generated_questions` with status PENDING and active=False.
         """
         concept = concept_name.strip() if concept_name else "Loops"
         if concept not in VALID_CONCEPTS:
@@ -410,19 +411,33 @@ class SchemaLLMQuestionService:
 
         count = max(1, min(20, int(count or 5)))
 
-        # 1. Attempt real LLM generation if API configured
-        generated_raw = None
-        try:
-            generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count)
-        except Exception as e:
-            print(f"[INFO] Real LLM generation skipped/failed: {e}")
-            generated_raw = None
+        # Check LLM configuration
+        api_key = Config.OPENAI_API_KEY if Config.OPENAI_API_KEY is not None else os.getenv("OPENAI_API_KEY", "").strip()
+        use_llm = Config.USE_LLM_QUESTION_GENERATION
+        allow_mock = Config.ALLOW_MOCK_QUESTIONS
 
-        # 2. Fallback to rich template mock generator
+        if not use_llm or not api_key or api_key.startswith("your_openai"):
+            if not allow_mock:
+                raise ValueError("LLM question generation is not configured. Please set OPENAI_API_KEY.")
+            print("[WARN] LLM not configured. Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+            generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+        else:
+            # Attempt real LLM generation
+            try:
+                generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count, api_key=api_key)
+            except Exception as e:
+                print(f"[ERROR] Real LLM question generation failed: {e}")
+                if not allow_mock:
+                    raise RuntimeError(f"OpenAI question generation failed: {e}")
+                print("[WARN] Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+
         if not generated_raw:
+            if not allow_mock:
+                raise RuntimeError("LLM question generation produced no valid questions. Please try again.")
             generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
 
-        # 3. Save into generated_questions table as PENDING
+        # Save into generated_questions table with status PENDING and active=False
         saved = SchemaQuestionBankService.save_generated_questions(generated_raw)
         return saved
 
@@ -489,24 +504,24 @@ class SchemaLLMQuestionService:
         }
 
     @classmethod
-    def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count):
+    def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count, api_key=None):
         """
-        Generates draft questions using OpenAI API if OPENAI_API_KEY is available.
+        Generates draft questions using OpenAI API with the configured model.
         Validates JSON schema, 4-tier answer qualities, and enforces balanced A/B/C/D positions.
         """
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        api_key = api_key or Config.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key or api_key.startswith("your_openai"):
-            return None
+            raise ValueError("LLM question generation is not configured. Please set OPENAI_API_KEY.")
 
-        try:
-            from openai import OpenAI
-            import json
+        from openai import OpenAI
+        import json
 
-            client = OpenAI(api_key=api_key)
-            q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
-            err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
+        client = OpenAI(api_key=api_key)
+        q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
+        err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
+        model_name = Config.LLM_MODEL or "gpt-4o-mini"
 
-            prompt = f"""You are an expert Java Computer Science educator.
+        prompt = f"""You are an expert Java Computer Science educator.
 Generate {count} multiple-choice draft diagnostic questions on the concept '{concept}' at '{difficulty}' difficulty{q_type_str}{err_str}.
 
 Each question MUST strictly follow this exact 4-tier schema:
@@ -546,40 +561,42 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 }}
 """
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels and balanced option positions."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.7,
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {"role": "system", "content": "You are a CS Education AI that generates structured JSON post-test questions with 4-tier answer quality labels and balanced option positions."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7,
+        )
+
+        content = response.choices[0].message.content
+        parsed = json.loads(content)
+        raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+
+        validated = []
+        now = datetime.utcnow().isoformat() + "Z"
+        letters = ["A", "B", "C", "D"]
+        for idx, item in enumerate(raw_list):
+            target_letter = letters[idx % len(letters)]
+            val_q = cls._validate_and_format_question(
+                item, concept, difficulty, target_error_type, now,
+                source="LLM",
+                generated_by=f"OpenAI ({model_name})",
+                target_correct_letter=target_letter
             )
+            if val_q:
+                validated.append(val_q)
 
-            content = response.choices[0].message.content
-            parsed = json.loads(content)
-            raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+        if len(validated) > 0:
+            print(f"[OK] OpenAI generated {len(validated)} validated draft questions for {concept} using {model_name}")
+            return validated
 
-            validated = []
-            now = datetime.utcnow().isoformat() + "Z"
-            letters = ["A", "B", "C", "D"]
-            for idx, item in enumerate(raw_list):
-                target_letter = letters[idx % len(letters)]
-                val_q = cls._validate_and_format_question(item, concept, difficulty, target_error_type, now, source="OpenAI GPT-4o-mini", target_correct_letter=target_letter)
-                if val_q:
-                    validated.append(val_q)
-
-            if len(validated) > 0:
-                print(f"[OK] OpenAI generated {len(validated)} validated draft questions for {concept}")
-                return validated
-
-        except Exception as e:
-            print(f"[WARN] OpenAI generation failed: {e}. Falling back to mock template generator.")
-
-        return None
+        raise RuntimeError("OpenAI returned no valid structured questions matching the required 4-tier schema.")
 
     @classmethod
-    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM_Generator", target_correct_letter=None):
+    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM", generated_by="OpenAI (Teacher-Review Pipeline)", target_correct_letter=None):
         """Validates and enforces strict 4-tier quality labels and 4 options A/B/C/D with balanced positions."""
         if not isinstance(q, dict):
             return None
@@ -633,9 +650,11 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             "option_c_quality": balanced["option_c_quality"],
             "option_d_quality": balanced["option_d_quality"],
             "explanation": q.get("explanation") or f"The correct answer is Option {balanced['correct_option']}.",
-            "generated_by": f"{source} (Teacher-Review Pipeline)",
+            "source": source,
+            "generated_by": generated_by,
+            "created_by": "LLM_Generator",
             "status": "PENDING",
-            "active": True,
+            "active": False,
             "deleted": False,
             "created_at": timestamp,
             "updated_at": timestamp,
@@ -643,7 +662,10 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 
     @classmethod
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
-        """High-fidelity template generator producing varied questions with balanced A/B/C/D correct options."""
+        """High-fidelity template generator producing varied questions with balanced A/B/C/D correct options (dev mode only)."""
+        if not Config.ALLOW_MOCK_QUESTIONS:
+            raise ValueError("Mock question generation is disabled. Please configure OPENAI_API_KEY for real LLM generation.")
+
         templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES.get("Loops", []))
         
         # Filter by question_type if specified
@@ -693,9 +715,11 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "option_c_quality": balanced["option_c_quality"],
                 "option_d_quality": balanced["option_d_quality"],
                 "explanation": base.get("explanation") or f"The correct answer is Option {balanced['correct_option']}.",
-                "generated_by": "LLM_Generator (Teacher-Review Pipeline)",
+                "source": "DEV_MOCK",
+                "generated_by": "Template Mock Generator (DEV ONLY)",
+                "created_by": "Mock_Generator",
                 "status": "PENDING",
-                "active": True,
+                "active": False,
                 "deleted": False,
                 "created_at": now,
                 "updated_at": now,
@@ -703,3 +727,4 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             results.append(question_obj)
 
         return results
+

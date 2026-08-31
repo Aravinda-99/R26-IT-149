@@ -24,6 +24,7 @@ import { renderTeacherLayout } from "./layouts/TeacherLayout.js";
 import { renderWelcome } from "./pages/public/Welcome.js";
 import { renderLogin } from "./pages/auth/Login.js";
 import { renderRegister } from "./pages/auth/Signup.js";
+import { renderTeacherLogin } from "./pages/auth/TeacherLogin.js";
 
 // Student Workspace Pages
 import { renderStudentHome } from "./pages/student/Home.js";
@@ -145,8 +146,9 @@ export async function handleNavigation() {
 
     // Determine target layout category
     let targetLayout = "public";
-    if (routePath.startsWith("/student")) targetLayout = "student";
+    if (routePath === "/teacher/login") targetLayout = "public";
     else if (routePath.startsWith("/teacher")) targetLayout = "teacher";
+    else if (routePath.startsWith("/student")) targetLayout = "student";
 
     // ── PUBLIC & AUTH ROUTES ─────────────────────────────────────────────
     if (targetLayout === "public") {
@@ -155,6 +157,8 @@ export async function handleNavigation() {
             renderLogin(appEl);
         } else if (routePath === "/register" || routePath === "/signup") {
             renderRegister(appEl);
+        } else if (routePath === "/teacher/login") {
+            renderTeacherLogin(appEl);
         } else {
             renderWelcome(appEl);
         }

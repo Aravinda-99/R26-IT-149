@@ -483,17 +483,60 @@ export function setupQuizUI(root = document) {
         questionStartTime: Date.now(),
         currentAttempts: 1,
         questionRecords: [],
+
+        // questions the student has left at least once (used to flag
+        // skipped questions in the number tracker)
+        visited: {},
     };
     state.selectedAnswers = Array(state.quizBank.length).fill(null);
 
     const quizBox = (root === document) ? document.getElementById("quiz-box") : root.querySelector(".quiz-box");
     const counter = (root === document) ? document.getElementById("quiz-counter") : root.querySelector(".quiz-counter");
-    const miniScore = (root === document) ? document.getElementById("quiz-score-mini") : root.querySelector(".quiz-score-mini");
     const progressBar = (root === document) ? document.getElementById("quiz-progress-bar") : root.querySelector(".quiz-progress-bar");
     const prevBtn = (root === document) ? document.getElementById("prev-quiz-btn") : root.querySelector(".prev-quiz-btn");
     const nextBtn = (root === document) ? document.getElementById("next-quiz-btn") : root.querySelector(".next-quiz-btn");
+    const navList = (root === document) ? document.getElementById("quiz-nav-list") : root.querySelector(".quiz-nav-list");
 
-    if (!quizBox || !counter || !miniScore || !progressBar || !prevBtn || !nextBtn) return;
+    if (!quizBox || !counter || !progressBar || !prevBtn || !nextBtn) return;
+
+    // ── Quiz number tracker (left sidebar) ─────────────────────────────
+    // One numbered box per question. The current question's box is
+    // highlighted; boxes for answered questions get a subtle marker.
+    function buildQuizNav() {
+        if (!navList) return;
+        navList.innerHTML = "";
+        for (let i = 0; i < state.quizBank.length; i++) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "quiz-nav-item";
+            btn.textContent = String(i + 1);
+            btn.dataset.index = String(i);
+            btn.setAttribute("aria-label", `Go to question ${i + 1}`);
+            btn.addEventListener("click", () => {
+                if (state.submitted || i === state.current) return;
+                recordQuestionData(state.current);
+                state.visited[state.current] = true;
+                state.current = i;
+                renderQuestion();
+            });
+            navList.appendChild(btn);
+        }
+    }
+
+    function updateQuizNav() {
+        if (!navList) return;
+        navList.querySelectorAll(".quiz-nav-item").forEach((btn) => {
+            const idx = Number(btn.dataset.index);
+            const answered = state.selectedAnswers[idx] !== null;
+            // Skipped: student has left this question at least once (or the
+            // quiz is submitted) without picking an answer.
+            const skipped = !answered && idx !== state.current
+                && (state.visited[idx] || state.submitted);
+            btn.classList.toggle("is-current", idx === state.current);
+            btn.classList.toggle("is-answered", answered);
+            btn.classList.toggle("is-skipped", skipped);
+        });
+    }
 
     function getScore() {
         return state.selectedAnswers.reduce((acc, ans, i) => {
@@ -554,13 +597,11 @@ export function setupQuizUI(root = document) {
 
         counter.textContent = `Question ${state.current + 1} of ${state.quizBank.length}`;
         progressBar.style.width = `${((state.current + 1) / state.quizBank.length) * 100}%`;
-        miniScore.textContent = `Score: ${getScore()}`;
 
         quizBox.innerHTML = `
             <article class="lp-question-card">
                 <div class="lp-question-meta">
-                    <span class="lp-topic-tag">${q.topic}</span>
-                    <span class="lp-id-tag">Q${q.id}</span>
+                    <span class="lp-id-tag">Q${state.current + 1}</span>
                 </div>
                 <h4 class="lp-question">${intro}</h4>
                 ${code ? `<pre class="lp-code-block"><code>${codeLines.join('\n')}</code></pre>` : ''}
@@ -620,12 +661,15 @@ export function setupQuizUI(root = document) {
         } else {
             nextBtn.textContent = "Next";
         }
+
+        updateQuizNav();
     }
 
     nextBtn.addEventListener("click", async () => {
 
         // Record current question before moving
         recordQuestionData(state.current);
+        state.visited[state.current] = true;
 
         if (state.current < state.quizBank.length - 1) {
             state.current += 1;
@@ -679,11 +723,11 @@ export function setupQuizUI(root = document) {
                 </article>
             `;
 
-            miniScore.textContent = `Score: ${score}`;
             progressBar.style.width = "100%";
             counter.textContent = `Completed: ${state.quizBank.length} questions`;
             prevBtn.disabled = true;
             nextBtn.textContent = "Review Again";
+            updateQuizNav();
 
             // Save structured student progress
             const user = getCurrentUser();
@@ -756,6 +800,8 @@ export function setupQuizUI(root = document) {
                     state.selectedAnswers = Array(state.quizBank.length).fill(null);
                     state.submitted = false;
                     state.questionRecords = [];
+                    state.visited = {};
+                    buildQuizNav();
                     renderQuestion();
                 });
             }
@@ -777,11 +823,13 @@ export function setupQuizUI(root = document) {
 
     prevBtn.addEventListener("click", () => {
         if (state.current > 0) {
+            state.visited[state.current] = true;
             state.current -= 1;
             renderQuestion();
         }
     });
 
+    buildQuizNav();
     renderQuestion();
 }
 
@@ -883,7 +931,6 @@ export function openQuizOverlay() {
                 <div class="lp-quiz-progress-wrap">
                     <div class="lp-quiz-progress-head" style="display:flex;justify-content:space-between;margin-bottom:8px;">
                         <span class="quiz-counter">Question 1 of 25</span>
-                        <span class="quiz-score-mini">Score: 0</span>
                     </div>
                     <div class="lp-progress-track">
                         <div class="quiz-progress-bar lp-progress-bar" style="width:5%;"></div>
