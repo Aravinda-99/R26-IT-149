@@ -61,12 +61,15 @@ export async function renderErrorAnalysis(container) {
     }
     const studentId = user.uid || user.id;
 
+    _lineChart = null;
+    _barChart = null;
+
     container.innerHTML = `
-        <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
+        <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; min-height: 100%; padding-bottom: 3rem;">
             <!-- Top Stats Bar -->
             <div class="stats-bar card" style="display: flex; justify-content: space-around; padding: 1.2rem; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                 <div class="stat-item" style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Analyses Performed</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Total Errors</div>
                     <div id="stat-total" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-blue);">0</div>
                 </div>
                 <div style="width: 1px; background: var(--border-color);"></div>
@@ -141,15 +144,12 @@ export async function renderErrorAnalysis(container) {
                                 </div>
                             </div>
 
-                            <!-- Repair Strategy -->
+                            <!-- Fix Hint -->
                             <div class="card" style="background: var(--success-soft); border-left: 4px solid var(--success); padding: 1.5rem;">
                                 <div style="display: flex; align-items: flex-start; gap: 1rem;">
                                     <div>
-                                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--success); font-weight: 700;">Repair Strategy</h4>
-                                        <p id="diag-fix" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin-bottom: 1rem;"></p>
-                                        <div style="padding: 0.8rem; background: rgba(255,255,255,0.7); border-radius: var(--radius-sm); font-size: 0.9rem; border: 1px solid rgba(22, 163, 74, 0.2);">
-                                            <strong style="color: var(--success);">Next Step:</strong> <span id="diag-next-step"></span>
-                                        </div>
+                                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--success); font-weight: 700;">Fix Hint</h4>
+                                        <p id="diag-fix" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin: 0;"></p>
                                     </div>
                                 </div>
                             </div>
@@ -194,20 +194,7 @@ export async function renderErrorAnalysis(container) {
                             
                             <!-- XAI Explanation Card -->
                             <div id="xai-card" class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">AI Confidence</h4>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                        <span id="xai-confidence-badge" style="font-size: 1rem; font-weight: 800; color: var(--primary);">—</span>
-                                    </div>
-                                </div>
-                                <div style="margin-bottom: 1.2rem;">
-                                    <div style="height: 8px; background: var(--bg-subtle); border-radius: 99px; overflow: hidden;">
-                                        <div id="xai-confidence-bar" style="height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.6s ease; width: 0%;"></div>
-                                    </div>
-                                </div>
-                                <div id="xai-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">—</div>
+                                <div id="xai-label" style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">—</div>
                                 <p id="xai-narrative" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;"></p>
                                 <div id="xai-bullets" style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem;"></div>
                                 <div id="xai-signals" style="display: flex; flex-wrap: wrap; gap: 0.4rem;"></div>
@@ -226,7 +213,7 @@ export async function renderErrorAnalysis(container) {
                     <div class="card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <!-- Tab Bar -->
                         <div style="display: flex; gap: 0; border-bottom: 1px solid var(--border-color);">
-                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 1rem; background: var(--primary-soft); border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-family: var(--font); font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-clock-rotate-left" style="margin-right: 0.4rem;"></i>History</button>
+                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 1rem; background: var(--primary-soft); border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-family: var(--font); font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.4rem;"></i>Errors</button>
                             <button id="tab-report-btn" onclick="" style="flex: 1; padding: 1rem; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-chart-pie" style="margin-right: 0.4rem;"></i>Learning Report</button>
                         </div>
                         <!-- History Panel -->
@@ -248,15 +235,14 @@ export async function renderErrorAnalysis(container) {
                 </div>
             </div>
 
-            <!-- Feature 1: Analytics Dashboard (shown after ≥2 submissions) -->
-            <div id="analytics-section" class="hidden" style="margin-top: 2rem;">
+            <!-- Analytics Dashboard -->
+            <div id="analytics-section" style="margin-top: 2rem;">
                 <!-- Section Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.8rem; border-bottom: 2px solid var(--border-color);">
                     <div style="display: flex; align-items: center; gap: 0.8rem;">
                         <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">Error Progression Analytics</h3>
-                        <span class="badge" style="background: var(--primary-soft); color: var(--primary);">Feature 1</span>
                     </div>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Updates after each submission</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Performance trends and breakdown</span>
                 </div>
                 <!-- 4 Stat Cards -->
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
@@ -265,7 +251,7 @@ export async function renderErrorAnalysis(container) {
                         <div id="anl-total" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
                     </div>
                     <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--success); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Improvement Score</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Accuracy Rate</div>
                         <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.4rem;">
                             <div id="anl-improvement" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
                             <span id="anl-improvement-arrow" style="font-size: 1.4rem;"></span>
@@ -276,21 +262,21 @@ export async function renderErrorAnalysis(container) {
                         <div id="anl-worst" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
                     </div>
                     <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--secondary); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Most Improved</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Strongest Skill</div>
                         <div id="anl-best" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
                     </div>
                 </div>
                 <!-- Charts Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
-                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Total Errors Over Time</h4>
-                        <div style="position: relative; height: 250px;">
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Performance Breakdown</h4>
+                        <div style="position: relative; height: 260px; width: 100%;">
                             <canvas id="anl-line-chart"></canvas>
                         </div>
                     </div>
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Errors by Category</h4>
-                        <div style="position: relative; height: 250px;">
+                        <div style="position: relative; height: 260px; width: 100%;">
                             <canvas id="anl-bar-chart"></canvas>
                         </div>
                     </div>
@@ -376,38 +362,56 @@ function updateInsightEngine(data) {
 
     // Update UI
     const diagLabel = document.getElementById("diag-label");
-    diagLabel.textContent = pred.label;
-    diagLabel.style.color = color;
-
-    document.getElementById("diag-concept").textContent = `Concept: ${pred.concept}`;
-
-    document.getElementById("diag-broad-error").textContent = data.original_ml_label || data.broad_label || "N/A";
-    document.getElementById("diag-final-label").textContent = data.final_label || data.prediction?.label || "N/A";
-    document.getElementById("diag-reason-group").textContent = data.reason_group_final || data.reason_group || "N/A";
-
-    let badgesHtml = "";
-    if (data.hybrid_correction_badge === "Validated as Correct") {
-        badgesHtml += `<span style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3);">Validated as Correct</span>`;
-    } else if (data.override_applied) {
-        badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Corrected by Safety Validation</span>`;
+    if (diagLabel) {
+        diagLabel.textContent = pred?.label || "Analysis";
+        diagLabel.style.color = color;
     }
-    if (data.reason_group_adjusted) {
-        badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Reason Group Adjusted</span>`;
+
+    const diagConcept = document.getElementById("diag-concept");
+    if (diagConcept) diagConcept.textContent = `Concept: ${pred?.concept || "General"}`;
+
+    const diagBroad = document.getElementById("diag-broad-error");
+    if (diagBroad) diagBroad.textContent = data.original_ml_label || data.broad_label || "N/A";
+    const diagFinal = document.getElementById("diag-final-label");
+    if (diagFinal) diagFinal.textContent = data.final_label || data.prediction?.label || "N/A";
+    const diagReasonGroup = document.getElementById("diag-reason-group");
+    if (diagReasonGroup) diagReasonGroup.textContent = data.reason_group_final || data.reason_group || "N/A";
+
+    const diagBadges = document.getElementById("diag-badges");
+    if (diagBadges) {
+        let badgesHtml = "";
+        if (data.hybrid_correction_badge === "Validated as Correct") {
+            badgesHtml += `<span style="font-size: 0.65rem; background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3);">Validated as Correct</span>`;
+        } else if (data.override_applied) {
+            badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Corrected by Safety Validation</span>`;
+        }
+        if (data.reason_group_adjusted) {
+            badgesHtml += `<span style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);">Reason Group Adjusted</span>`;
+        }
+        diagBadges.innerHTML = badgesHtml;
     }
-    document.getElementById("diag-badges").innerHTML = badgesHtml;
-
-
 
     const confBadge = document.getElementById("diag-confidence");
-    confBadge.textContent = `${pred.confidence_level} Confidence`;
-    confBadge.style.background = pred.confidence_level === "High" ? "rgba(34, 197, 94, 0.1)" : "rgba(245, 158, 11, 0.1)";
-    confBadge.style.color = pred.confidence_level === "High" ? "#34d399" : "#f59e0b";
+    if (confBadge) {
+        confBadge.textContent = `${pred?.confidence_level || "Medium"} Confidence`;
+        confBadge.style.background = pred?.confidence_level === "High" ? "rgba(34, 197, 94, 0.1)" : "rgba(245, 158, 11, 0.1)";
+        confBadge.style.color = pred?.confidence_level === "High" ? "#34d399" : "#f59e0b";
+    }
 
-    document.getElementById("diag-reason").textContent = expl.reason;
-    document.getElementById("diag-miscon").textContent = expl.misconception;
-    document.getElementById("diag-fix").textContent = expl.suggested_fix;
-    document.getElementById("diag-next-step").textContent = adaptive.next_learning_step;
-    document.getElementById("diag-insight").textContent = expl.beginner_explanation;
+    const diagReason = document.getElementById("diag-reason");
+    if (diagReason) diagReason.textContent = expl?.reason || "";
+
+    const diagMiscon = document.getElementById("diag-miscon");
+    if (diagMiscon) diagMiscon.textContent = expl?.misconception || "";
+
+    const diagFix = document.getElementById("diag-fix");
+    if (diagFix) diagFix.textContent = expl?.suggested_fix || "";
+
+    const diagNextStep = document.getElementById("diag-next-step");
+    if (diagNextStep) diagNextStep.textContent = adaptive?.next_learning_step || "";
+
+    const diagInsight = document.getElementById("diag-insight");
+    if (diagInsight) diagInsight.textContent = expl?.beginner_explanation || "";
 
     const ERROR_TO_GAME = {
         "ARRAY_ERROR": { category: "arrays", module: "arrays", title: "Array Index Rescue Game (Array Mastery Module)" },
@@ -418,11 +422,16 @@ function updateInsightEngine(data) {
         "CORRECT": { category: "variables", module: "integer", title: "Java Foundation Arena" }
     };
 
-    const gameTarget = ERROR_TO_GAME[pred.label] || { category: "arrays", module: "arrays", title: gamify.recommended_activity || "Array Index Rescue Game" };
+    const gameTarget = ERROR_TO_GAME[pred?.label] || { category: "arrays", module: "arrays", title: gamify?.recommended_activity || "Array Index Rescue Game" };
 
-    document.getElementById("diag-game-name").textContent = gameTarget.title || gamify.recommended_activity;
-    document.getElementById("diag-game-meta").textContent = `${gamify.game_type || "Interactive Challenge"} • ${gamify.difficulty || "Adaptive"} intensity • Target: ${pred.concept || "Core Java"}`;
-    document.getElementById("diag-badge").textContent = `Reward: ${gamify.reward_badge || "Mastery Badge"}`;
+    const diagGameName = document.getElementById("diag-game-name");
+    if (diagGameName) diagGameName.textContent = gameTarget.title || gamify?.recommended_activity || "Recommended Challenge";
+
+    const diagGameMeta = document.getElementById("diag-game-meta");
+    if (diagGameMeta) diagGameMeta.textContent = `${gamify?.game_type || "Interactive Challenge"} • ${gamify?.difficulty || "Adaptive"} intensity • Target: ${pred?.concept || "Core Java"}`;
+
+    const diagBadge = document.getElementById("diag-badge");
+    if (diagBadge) diagBadge.textContent = `Reward: ${gamify?.reward_badge || "Mastery Badge"}`;
 
     const launchTargetGame = () => {
         const section = gameTarget.module || "arrays";
@@ -445,21 +454,16 @@ function updateInsightEngine(data) {
         fresh.addEventListener("click", launchTargetGame);
     }
 
-    document.getElementById("diag-alignment").textContent = data.pretest_alignment.message;
+    const diagAlign = document.getElementById("diag-alignment");
+    if (diagAlign) diagAlign.textContent = data.pretest_alignment?.message || "";
 
     // ── Feature 2: Populate XAI Explanation Card ──────────────────────────
     const xai = data.xai_explanation;
     if (xai) {
-        document.getElementById("xai-confidence-badge").textContent = `${xai.xai_confidence_pct}%`;
-        document.getElementById("xai-confidence-bar").style.width = `${xai.xai_confidence_pct}%`;
-        const barEl = document.getElementById("xai-confidence-bar");
-        // Color the bar: green if high, amber if medium, red if low
-        if (xai.xai_confidence_pct >= 75) barEl.style.background = "linear-gradient(90deg,#34d399,#22c55e)";
-        else if (xai.xai_confidence_pct >= 55) barEl.style.background = "linear-gradient(90deg,#f59e0b,#fbbf24)";
-        else barEl.style.background = "linear-gradient(90deg,#ef4444,#f87171)";
-
-        document.getElementById("xai-label").textContent = xai.xai_label;
-        document.getElementById("xai-narrative").textContent = xai.xai_narrative;
+        const xaiLabel = document.getElementById("xai-label");
+        if (xaiLabel) xaiLabel.textContent = xai.xai_label;
+        const xaiNarrative = document.getElementById("xai-narrative");
+        if (xaiNarrative) xaiNarrative.textContent = xai.xai_narrative;
 
         // Bullet points
         document.getElementById("xai-bullets").innerHTML = (xai.xai_bullet_points || []).map(b =>
@@ -494,54 +498,177 @@ async function refreshGlobalState(studentId) {
         const analyticsData = analyticsRes.status === "fulfilled" ? analyticsRes.value : { has_data: false };
         const reportData = reportRes.status === "fulfilled" ? reportRes.value : { has_data: false };
 
-        // ── Stats Bar ─────────────────────────────────────────────────
-        const statTotal = document.getElementById("stat-total");
-        if (statTotal) statTotal.textContent = summaryData.total_analyses || 0;
-        const statTopError = document.getElementById("stat-top-error");
-        if (statTopError) statTopError.textContent = summaryData.most_frequent_error || "None";
+        // ── Check Storage for Pre-Test Results ──────────────────────
+        let quizResults = null;
+        try {
+            const raw = sessionStorage.getItem("quiz-results") || localStorage.getItem("latest_quiz_results");
+            if (raw) quizResults = JSON.parse(raw);
+        } catch (e) { }
 
-        // ── History List ──────────────────────────────────────────────
+        const labelMap = {
+            "Variables": "VARIABLE_ERROR",
+            "Loops": "LOOP_ERROR",
+            "Arrays": "ARRAY_ERROR",
+            "Methods": "METHOD_ERROR"
+        };
+        const labelShort = {
+            LOOP_ERROR: "Loops",
+            VARIABLE_ERROR: "Variables",
+            ARRAY_ERROR: "Arrays",
+            METHOD_ERROR: "Methods"
+        };
+        const catColors = {
+            LOOP_ERROR: "#a78bfa",
+            VARIABLE_ERROR: "#f59e0b",
+            ARRAY_ERROR: "#34d399",
+            METHOD_ERROR: "#f472b6"
+        };
+        const defaultSnippets = {
+            "Arrays": "int[] arr = new int[5];\nint x = arr[arr.length]; // Out of bounds error",
+            "Loops": "for (int i = 0; i <= 5; i++) {\n    // Off-by-one loop condition error\n}",
+            "Variables": "int count;\nSystem.out.println(count); // Uninitialized variable error",
+            "Methods": "static int calculate(int a) {\n    // Missing return statement error\n}"
+        };
+
+        // ── Compute Stats: Total Errors & Top Misconception ───────────
+        let sessionTotalErrors = summaryData.total_analyses || 0;
+        let sessionTopError = summaryData.most_frequent_error || "None";
+        let sessionCategoryErrors = {
+            "Variables": 0,
+            "Loops": 0,
+            "Arrays": 0,
+            "Methods": 0
+        };
+
+        if (quizResults && quizResults.topicBreakdown) {
+            let maxErrors = -1;
+            let worstTopic = null;
+            let calculatedTotal = 0;
+
+            Object.entries(quizResults.topicBreakdown).forEach(([topic, data]) => {
+                const errs = Math.max(0, (data.total || 0) - (data.correct || 0));
+                sessionCategoryErrors[topic] = errs;
+                calculatedTotal += errs;
+                if (errs > maxErrors && errs > 0) {
+                    maxErrors = errs;
+                    worstTopic = topic;
+                }
+            });
+
+            sessionTotalErrors = calculatedTotal;
+            if (worstTopic) {
+                sessionTopError = labelMap[worstTopic] || `${worstTopic.toUpperCase()}_ERROR`;
+            }
+        }
+
+        const statTotal = document.getElementById("stat-total");
+        if (statTotal) statTotal.textContent = sessionTotalErrors;
+        const statTopError = document.getElementById("stat-top-error");
+        if (statTopError) statTopError.textContent = sessionTopError;
+
+        // Persist top misconception directly to Firestore
+        if (sessionTopError !== "None" && studentId) {
+            ErrorAPI.saveTopMisconception({
+                student_id: studentId,
+                top_misconception: sessionTopError,
+                concept: labelShort[sessionTopError] || sessionTopError,
+                total_errors: sessionTotalErrors,
+                topic_breakdown: quizResults?.topicBreakdown || sessionCategoryErrors,
+                accuracy_pct: quizResults ? quizResults.percent : 0,
+                source: "error_pattern_detector"
+            }).catch(err => console.warn("Failed to persist top misconception:", err));
+        }
+
+        // ── Errors List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
         const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
 
-        if (errorHistory.length === 0) {
+        // Build list of items: Prefer session wrongCodeQuestions, then topicBreakdown, then errorHistory
+        let itemsToRender = [];
+        if (quizResults && Array.isArray(quizResults.wrongCodeQuestions) && quizResults.wrongCodeQuestions.length > 0) {
+            itemsToRender = quizResults.wrongCodeQuestions.map((wq, idx) => ({
+                label: wq.label || labelMap[wq.topic] || "JAVA_ERROR",
+                concept: wq.topic || "Core Java",
+                code: wq.code || defaultSnippets[wq.topic] || "int[] arr = {1, 2, 3};",
+                timestamp: wq.timestamp || new Date(Date.now() - idx * 60000).toISOString(),
+                questionText: wq.questionText || ""
+            }));
+        } else if (quizResults && quizResults.topicBreakdown) {
+            // Synthesize items for topics with errors
+            Object.entries(quizResults.topicBreakdown).forEach(([topic, data], topicIdx) => {
+                const errCount = (data.total || 0) - (data.correct || 0);
+                for (let i = 0; i < errCount; i++) {
+                    itemsToRender.push({
+                        label: labelMap[topic] || `${topic.toUpperCase()}_ERROR`,
+                        concept: topic,
+                        code: defaultSnippets[topic] || "int x = 0;",
+                        timestamp: new Date(Date.now() - (topicIdx * 5 + i) * 60000).toISOString(),
+                        questionText: `${topic} question ${i + 1}`
+                    });
+                }
+            });
+        }
+        
+        if (itemsToRender.length === 0 && errorHistory.length > 0) {
+            itemsToRender = [...errorHistory];
+        }
+
+        if (itemsToRender.length === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         } else {
             histCont.innerHTML = "";
-            // Newest first
-            const reversed = [...errorHistory].reverse();
-            reversed.forEach((item) => {
+            // Sort: Prioritize sessionTopError, then newest first
+            const sortedItems = [...itemsToRender].sort((a, b) => {
+                if (a.label === sessionTopError && b.label !== sessionTopError) return -1;
+                if (b.label === sessionTopError && a.label !== sessionTopError) return 1;
+                return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
+            });
+
+            sortedItems.forEach((item, index) => {
                 const el = document.createElement("div");
-                el.style.cssText = "padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s, border-color 0.2s;";
+                const isSuggested = index === 0;
+                if (isSuggested) el.dataset.suggested = "true";
                 el.dataset.code = encodeURIComponent(item.code || "");
+
+                const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
+                const hoverBg = isSuggested ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
+
+                el.style.cssText = `padding: 0.6rem 0.8rem; background: ${baseBg}; border-radius: 6px; border: 1px solid ${baseBorder}; cursor: pointer; transition: background 0.2s, border-color 0.2s;`;
+                const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : '';
+
                 el.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                        <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.65rem; color: ${isSuggested ? 'var(--accent-orange)' : '#4a90e2'}; display: flex; align-items: center;">
+                            ${suggestedBadge}
+                            ${item.label}
+                        </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
                 `;
+
                 el.addEventListener("mouseover", () => {
-                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.06)";
+                    if (!el.dataset.selected) el.style.background = hoverBg;
                 });
                 el.addEventListener("mouseout", () => {
-                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.03)";
+                    if (!el.dataset.selected) el.style.background = baseBg;
                 });
+
                 el.addEventListener("click", async () => {
                     // Deselect all items
                     histCont.querySelectorAll("[data-selected]").forEach(prev => {
                         delete prev.dataset.selected;
-                        prev.style.background = "rgba(255,255,255,0.03)";
-                        prev.style.borderColor = "rgba(255,255,255,0.05)";
+                        const wasSuggested = prev.dataset.suggested === "true";
+                        prev.style.background = wasSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                        prev.style.borderColor = wasSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
                     });
                     // Highlight selected
                     el.dataset.selected = "1";
-                    el.style.background = "rgba(74, 144, 226, 0.12)";
-                    el.style.borderColor = "rgba(74, 144, 226, 0.4)";
+                    el.style.background = "rgba(74, 144, 226, 0.15)";
+                    el.style.borderColor = "var(--accent-blue)";
 
-                    // Use cached full_response if available, otherwise re-analyze
-                    if (item.full_response) {
-                        // Re-use the main flow to ensure all modals + states are updated properly
+                    if (item.full_response && item.full_response.prediction) {
                         showTelemetryResult(item.full_response, true);
                     } else {
                         const rawCode = decodeURIComponent(el.dataset.code || "");
@@ -556,21 +683,24 @@ async function refreshGlobalState(studentId) {
                                     showTelemetryResult(res, true);
                                 }
                             } catch (e) {
-                                console.warn("Failed to load history item telemetry", e);
+                                console.warn("Failed to analyze selected error code:", e);
                             }
                         }
                     }
                 });
+
                 histCont.appendChild(el);
             });
 
-            // Automatically populate telemetry with the latest item if telemetry is currently empty
-            if (!latestAnalysisResponse && historyData.history.length > 0) {
-                const latestEntry = historyData.history[historyData.history.length - 1];
-                if (latestEntry && latestEntry.code) {
+            // Automatically populate telemetry with the suggested/top item if telemetry is currently empty
+            if (!latestAnalysisResponse && sortedItems.length > 0) {
+                const topItem = sortedItems[0];
+                if (topItem.full_response && topItem.full_response.prediction) {
+                    showTelemetryResult(topItem.full_response);
+                } else if (topItem.code) {
                     ErrorAPI.analyze({
                         student_id: studentId,
-                        code: latestEntry.code,
+                        code: topItem.code,
                         pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
                     }).then(res => {
                         if (res && res.prediction && !latestAnalysisResponse) {
@@ -581,209 +711,315 @@ async function refreshGlobalState(studentId) {
             }
         }
 
+        // ── Feature 1: Analytics & Charts Dashboard (Always Enabled) ──
+        const analyticsSection = document.getElementById("analytics-section");
+        if (analyticsSection) {
+            analyticsSection.classList.remove("hidden");
 
-        // ── Feature 1: Analytics Dashboard ────────────────────────────
-        if (analyticsData.has_data && analyticsData.total_submissions >= 2) {
-            document.getElementById("analytics-section").classList.remove("hidden");
-            const anl = analyticsData;
+            let totalSub = analyticsData.has_data ? analyticsData.total_submissions : (sessionTotalErrors > 0 ? 1 : 0);
+            let impPct = analyticsData.has_data ? analyticsData.overall_improvement_pct : (quizResults ? quizResults.percent : 0);
+            let worstConcept = analyticsData.has_data ? (labelShort[analyticsData.most_problematic] || analyticsData.most_problematic) : (sessionTopError !== "None" ? (labelShort[sessionTopError] || sessionTopError) : "None");
+            
+            let bestConcept = "None";
+            if (quizResults && quizResults.topicBreakdown) {
+                let maxCorrect = -1;
+                Object.entries(quizResults.topicBreakdown).forEach(([t, d]) => {
+                    if (d.correct > maxCorrect) {
+                        maxCorrect = d.correct;
+                        bestConcept = t;
+                    }
+                });
+            } else if (analyticsData.has_data && analyticsData.most_improved) {
+                bestConcept = labelShort[analyticsData.most_improved] || analyticsData.most_improved;
+            }
 
             // Stat cards
-            document.getElementById("anl-total").textContent = anl.total_submissions;
-            const impPct = anl.overall_improvement_pct;
-            document.getElementById("anl-improvement").textContent = `${Math.abs(impPct)}%`;
-            document.getElementById("anl-improvement").style.color = impPct >= 0 ? "var(--accent-green)" : "#ef4444";
-            document.getElementById("anl-improvement-arrow").textContent = impPct > 0 ? "↑" : (impPct < 0 ? "↓" : "→");
-            document.getElementById("anl-improvement-arrow").style.color = impPct >= 0 ? "var(--accent-green)" : "#ef4444";
+            const anlTotalEl = document.getElementById("anl-total");
+            if (anlTotalEl) anlTotalEl.textContent = totalSub > 0 ? totalSub : 1;
 
-            const labelShort = { LOOP_ERROR: "Loops", VARIABLE_ERROR: "Variables", ARRAY_ERROR: "Arrays", METHOD_ERROR: "Methods" };
-            document.getElementById("anl-worst").textContent = anl.most_problematic ? labelShort[anl.most_problematic] || anl.most_problematic : "None";
-            document.getElementById("anl-best").textContent = anl.most_improved ? (labelShort[anl.most_improved] || anl.most_improved) + " ↑" : "None yet";
+            const anlImpEl = document.getElementById("anl-improvement");
+            if (anlImpEl) {
+                anlImpEl.textContent = `${Math.abs(impPct)}%`;
+                anlImpEl.style.color = impPct >= 50 ? "var(--accent-green)" : (impPct >= 30 ? "var(--accent-orange)" : "#ef4444");
+            }
+            const anlImpArrow = document.getElementById("anl-improvement-arrow");
+            if (anlImpArrow) {
+                anlImpArrow.textContent = impPct >= 50 ? "↑" : (impPct >= 30 ? "→" : "↓");
+                anlImpArrow.style.color = impPct >= 50 ? "var(--accent-green)" : (impPct >= 30 ? "var(--accent-orange)" : "#ef4444");
+            }
 
-            // Improvement per-category cards
-            const catColors = { LOOP_ERROR: "#a78bfa", VARIABLE_ERROR: "#f59e0b", ARRAY_ERROR: "#34d399", METHOD_ERROR: "#f472b6" };
-            document.getElementById("anl-improvement-cards").innerHTML = Object.entries(anl.improvement_scores).map(([cat, data]) => {
-                const col = catColors[cat] || "#4a90e2";
-                const arrow = data.direction === "improved" ? "↑" : (data.direction === "worse" ? "↓" : "→");
-                const arrowColor = data.direction === "improved" ? "#34d399" : (data.direction === "worse" ? "#ef4444" : "#8899aa");
-                return `
-                    <div class="card" style="padding:0.8rem; border-left: 3px solid ${col};">
-                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">${labelShort[cat]}</div>
-                        <div style="display:flex;align-items:baseline;gap:0.3rem;">
-                            <span style="font-size:1.4rem;font-weight:800;color:${col};">${Math.abs(data.pct)}%</span>
-                            <span style="font-size:1rem;color:${arrowColor};font-weight:700;">${arrow}</span>
-                        </div>
-                        <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.2rem;">${data.first} → ${data.second} errors</div>
-                    </div>`;
-            }).join("");
+            const anlWorstEl = document.getElementById("anl-worst");
+            if (anlWorstEl) anlWorstEl.textContent = worstConcept || "None";
 
-            // ── Line chart: total errors per week ──────────────────────
-            const weekLabels = anl.weekly_totals.map(w => w.week);
-            const errorCounts = anl.weekly_totals.map(w => w.total_errors);
-            const correctCounts = anl.weekly_totals.map(w => w.correct);
+            const anlBestEl = document.getElementById("anl-best");
+            if (anlBestEl) anlBestEl.textContent = bestConcept !== "None" ? `${bestConcept} ↑` : "None yet";
 
-            const lineCtx = document.getElementById("anl-line-chart");
-            if (lineCtx) {
-                if (_lineChart) {
-                    // Update in-place for smooth re-render (no destroy = no shake)
-                    _lineChart.data.labels = weekLabels;
-                    _lineChart.data.datasets[0].data = errorCounts;
-                    _lineChart.data.datasets[1].data = correctCounts;
-                    _lineChart.update('none'); // 'none' skips animation on data update
+            // ── Improvement / Breakdown Cards ────────────────────────
+            const cardsContainer = document.getElementById("anl-improvement-cards");
+            if (cardsContainer) {
+                if (analyticsData.has_data && analyticsData.improvement_scores) {
+                    cardsContainer.innerHTML = Object.entries(analyticsData.improvement_scores).map(([cat, data]) => {
+                        const col = catColors[cat] || "#4a90e2";
+                        const arrow = data.direction === "improved" ? "↑" : (data.direction === "worse" ? "↓" : "→");
+                        const arrowColor = data.direction === "improved" ? "#34d399" : (data.direction === "worse" ? "#ef4444" : "#8899aa");
+                        return `
+                            <div class="card" style="padding:0.8rem; border-left: 3px solid ${col}; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color);">
+                                <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">${labelShort[cat] || cat}</div>
+                                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                                    <span style="font-size:1.4rem;font-weight:800;color:${col};">${Math.abs(data.pct)}%</span>
+                                    <span style="font-size:1rem;color:${arrowColor};font-weight:700;">${arrow}</span>
+                                </div>
+                                <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.2rem;">${data.first} → ${data.second} errors</div>
+                            </div>`;
+                    }).join("");
                 } else {
-                    const ctx = lineCtx.getContext('2d');
-                    const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                    errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-                    errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
-
-                    const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                    correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
-                    correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
-
-                    _lineChart = new Chart(lineCtx, {
-                        type: "line",
-                        data: {
-                            labels: weekLabels,
-                            datasets: [
-                                {
-                                    label: "Errors",
-                                    data: errorCounts,
-                                    borderColor: "#ef4444",
-                                    backgroundColor: errorGradient,
-                                    tension: 0.4,
-                                    fill: true,
-                                    pointBackgroundColor: "#ef4444",
-                                    pointRadius: 4,
-                                },
-                                {
-                                    label: "Correct",
-                                    data: correctCounts,
-                                    borderColor: "#34d399",
-                                    backgroundColor: correctGradient,
-                                    tension: 0.4,
-                                    fill: true,
-                                    pointBackgroundColor: "#34d399",
-                                    pointRadius: 4,
-                                },
-                            ],
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            animation: { duration: 400 },
-                            interaction: { mode: 'index', intersect: false },
-                            plugins: {
-                                legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
-                                tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
-                            },
-                            scales: {
-                                x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                                y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
-                            },
-                        },
-                    });
+                    const categories = ["Variables", "Loops", "Arrays", "Methods"];
+                    cardsContainer.innerHTML = categories.map(cat => {
+                        const errCount = sessionCategoryErrors[cat] || 0;
+                        const catKey = labelMap[cat];
+                        const col = catColors[catKey] || "#4a90e2";
+                        const accuracy = quizResults?.topicBreakdown?.[cat] ? Math.round((quizResults.topicBreakdown[cat].correct / (quizResults.topicBreakdown[cat].total || 1)) * 100) : 0;
+                        return `
+                            <div class="card" style="padding:0.8rem; border-left: 3px solid ${col}; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-top: 1px solid var(--border-color);">
+                                <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">${cat}</div>
+                                <div style="display:flex;align-items:baseline;gap:0.3rem;">
+                                    <span style="font-size:1.4rem;font-weight:800;color:${col};">${accuracy}%</span>
+                                    <span style="font-size:0.75rem;color:var(--text-secondary);">accuracy</span>
+                                </div>
+                                <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.2rem;">${errCount} error${errCount !== 1 ? 's' : ''} detected</div>
+                            </div>`;
+                    }).join("");
                 }
             }
 
-            // ── Bar chart: errors by category ──────────────────────────
-            const catLabels = Object.keys(anl.total_counts || {}).map(k => labelShort[k] || k);
-            const catValues = Object.values(anl.total_counts || {});
-            const barColors = Object.keys(anl.total_counts || {}).map(k => catColors[k] || "#4a90e2");
+            // ── Line Chart: Errors & Performance Over Time ────────────
+            const lineCtx = document.getElementById("anl-line-chart");
+            if (lineCtx) {
+                let weekLabels = ["Diagnostic Pre-Test"];
+                let errorCounts = [sessionTotalErrors];
+                let correctCounts = [quizResults ? quizResults.score : Math.max(0, 25 - sessionTotalErrors)];
 
+                if (analyticsData.has_data && analyticsData.weekly_totals && analyticsData.weekly_totals.length > 0) {
+                    weekLabels = analyticsData.weekly_totals.map(w => w.week);
+                    errorCounts = analyticsData.weekly_totals.map(w => w.total_errors);
+                    correctCounts = analyticsData.weekly_totals.map(w => w.correct);
+                } else if (quizResults && quizResults.topicBreakdown) {
+                    weekLabels = Object.keys(quizResults.topicBreakdown);
+                    errorCounts = weekLabels.map(t => (quizResults.topicBreakdown[t].total || 0) - (quizResults.topicBreakdown[t].correct || 0));
+                    correctCounts = weekLabels.map(t => quizResults.topicBreakdown[t].correct || 0);
+                }
+
+                // Always ensure previous chart instance on this canvas is destroyed before new render
+                const existingLine = Chart.getChart(lineCtx) || _lineChart;
+                if (existingLine) {
+                    try { existingLine.destroy(); } catch (e) { }
+                    _lineChart = null;
+                }
+
+                const ctx = lineCtx.getContext('2d');
+                const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
+                errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+
+                const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
+                correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
+                correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
+
+                _lineChart = new Chart(lineCtx, {
+                    type: "line",
+                    data: {
+                        labels: weekLabels,
+                        datasets: [
+                            {
+                                label: "Errors",
+                                data: errorCounts,
+                                borderColor: "#ef4444",
+                                backgroundColor: errorGradient,
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: "#ef4444",
+                                pointRadius: 4,
+                            },
+                            {
+                                label: "Correct",
+                                data: correctCounts,
+                                borderColor: "#34d399",
+                                backgroundColor: correctGradient,
+                                tension: 0.4,
+                                fill: true,
+                                pointBackgroundColor: "#34d399",
+                                pointRadius: 4,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 400 },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
+                            tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
+                        },
+                        scales: {
+                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
+                            y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                        },
+                    },
+                });
+            }
+
+            // ── Bar Chart: Errors by Category ─────────────────────────
             const barCtx = document.getElementById("anl-bar-chart");
             if (barCtx) {
-                if (_barChart) {
-                    // Update in-place for smooth re-render (no destroy = no shake)
-                    _barChart.data.labels = catLabels;
-                    _barChart.data.datasets[0].data = catValues;
-                    _barChart.data.datasets[0].backgroundColor = barColors.map(c => c + "55");
-                    _barChart.data.datasets[0].borderColor = barColors;
-                    _barChart.update('none');
-                } else {
-                    _barChart = new Chart(barCtx, {
-                        type: "bar",
-                        data: {
-                            labels: catLabels,
-                            datasets: [{
-                                label: "Total Errors",
-                                data: catValues,
-                                backgroundColor: barColors.map(c => c + "55"),
-                                borderColor: barColors,
-                                borderWidth: 2,
-                                borderRadius: 6,
-                            }],
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            animation: { duration: 400 },
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                                y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
-                            },
-                        },
-                    });
+                let catLabels = ["Variables", "Loops", "Arrays", "Methods"];
+                let catValues = [
+                    sessionCategoryErrors["Variables"] || 0,
+                    sessionCategoryErrors["Loops"] || 0,
+                    sessionCategoryErrors["Arrays"] || 0,
+                    sessionCategoryErrors["Methods"] || 0
+                ];
+                let barColors = ["#f59e0b", "#a78bfa", "#34d399", "#f472b6"];
+
+                if (analyticsData.has_data && analyticsData.total_counts && Object.keys(analyticsData.total_counts).length > 0) {
+                    catLabels = Object.keys(analyticsData.total_counts).map(k => labelShort[k] || k);
+                    catValues = Object.values(analyticsData.total_counts);
+                    barColors = Object.keys(analyticsData.total_counts).map(k => catColors[k] || "#4a90e2");
                 }
+
+                // Always ensure previous chart instance on this canvas is destroyed before new render
+                const existingBar = Chart.getChart(barCtx) || _barChart;
+                if (existingBar) {
+                    try { existingBar.destroy(); } catch (e) { }
+                    _barChart = null;
+                }
+
+                _barChart = new Chart(barCtx, {
+                    type: "bar",
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            label: "Total Errors",
+                            data: catValues,
+                            backgroundColor: barColors.map(c => c + "55"),
+                            borderColor: barColors,
+                            borderWidth: 2,
+                            borderRadius: 6,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: { duration: 400 },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
+                            y: { ticks: { color: "#8899aa", font: { size: 9 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" }, beginAtZero: true },
+                        },
+                    },
+                });
             }
         }
 
         // ── Feature 3: Learning Report ────────────────────────────────
         const reportCont = document.getElementById("report-container");
-        if (reportData && reportData.has_data) {
-            const r = reportData;
-            const section = (title, items, emptyMsg) => {
-                if (!items || items.length === 0) return "";
-                return `
+        if (reportCont) {
+            if (reportData && reportData.has_data) {
+                const r = reportData;
+                const section = (title, items) => {
+                    if (!items || items.length === 0) return "";
+                    return `
+                        <div style="margin-bottom:0.6rem;">
+                            <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">${title}</div>
+                            ${items.map(item => `
+                                <div style="display:flex;align-items:flex-start;gap:0.4rem;padding:0.4rem 0.6rem;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);margin-bottom:0.3rem;">
+                                    <span style="flex-shrink:0;font-size:0.9rem;">${item.icon}</span>
+                                    <span style="font-size:0.75rem;color:var(--text-primary);line-height:1.4;">${item.message}</span>
+                                </div>
+                            `).join("")}
+                        </div>`;
+                };
+
+                const focusSection = (r.recommended_focus && r.recommended_focus.length > 0) ? `
                     <div style="margin-bottom:0.6rem;">
-                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">${title}</div>
-                        ${items.map(item => `
-                            <div style="display:flex;align-items:flex-start;gap:0.4rem;padding:0.4rem 0.6rem;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);margin-bottom:0.3rem;">
-                                <span style="flex-shrink:0;font-size:0.9rem;">${item.icon}</span>
-                                <span style="font-size:0.75rem;color:var(--text-primary);line-height:1.4;">${item.message}</span>
+                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🎯 Focus Next On</div>
+                        ${r.recommended_focus.map(f => `
+                            <div style="padding:0.5rem 0.6rem;border-radius:6px;background:rgba(74,144,226,0.05);border:1px solid rgba(74,144,226,0.15);margin-bottom:0.4rem;">
+                                <div style="font-size:0.75rem;font-weight:700;color:var(--accent-blue);margin-bottom:0.3rem;">${f.concept}</div>
+                                ${(f.topics || []).map(t => `<div style="font-size:0.7rem;color:var(--text-secondary);">• ${t}</div>`).join("")}
                             </div>
                         `).join("")}
-                    </div>`;
-            };
+                    </div>` : "";
 
-            const focusSection = r.recommended_focus.length > 0 ? `
-                <div style="margin-bottom:0.6rem;">
-                    <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🎯 Focus Next On</div>
-                    ${r.recommended_focus.map(f => `
-                        <div style="padding:0.5rem 0.6rem;border-radius:6px;background:rgba(74,144,226,0.05);border:1px solid rgba(74,144,226,0.15);margin-bottom:0.4rem;">
-                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent-blue);margin-bottom:0.3rem;">${f.concept}</div>
-                            ${f.topics.map(t => `<div style="font-size:0.7rem;color:var(--text-secondary);">• ${t}</div>`).join("")}
+                const avoidSection = (r.avoid_patterns && r.avoid_patterns.length > 0) ? `
+                    <div>
+                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🚫 Avoid</div>
+                        ${r.avoid_patterns.slice(0, 4).map(p => `
+                            <div style="font-size:0.7rem;color:#ef4444;padding:0.25rem 0.5rem;background:rgba(239,68,68,0.05);border-radius:4px;margin-bottom:0.25rem;border:1px solid rgba(239,68,68,0.12);">✗ ${p.text}</div>
+                        `).join("")}
+                    </div>` : "";
+
+                reportCont.innerHTML = `
+                    <div style="padding:0.8rem;border-radius:8px;background:linear-gradient(135deg,rgba(74,144,226,0.08),rgba(139,92,246,0.05));border:1px solid rgba(74,144,226,0.2);margin-bottom:0.8rem;">
+                        <div style="font-size:0.65rem;color:var(--accent-blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.3rem;font-weight:700;">📝 Summary</div>
+                        <p style="font-size:0.78rem;color:var(--text-primary);line-height:1.5;margin:0;">${r.summary || "Learning progression report."}</p>
+                    </div>
+                    ${section("💪 Strengths", r.strengths)}
+                    ${section("⚠️ Recurring Mistakes", r.recurring_mistakes)}
+                    ${section("📈 Recently Improved", r.recently_improved)}
+                    ${section("🆕 New Mistakes", r.new_mistakes)}
+                    ${focusSection}
+                    ${avoidSection}
+                `;
+            } else {
+                // Session-based dynamic learning report
+                const strengthsList = [];
+                const mistakeList = [];
+                if (quizResults && quizResults.topicBreakdown) {
+                    Object.entries(quizResults.topicBreakdown).forEach(([topic, d]) => {
+                        if (d.correct >= d.total && d.total > 0) {
+                            strengthsList.push({ icon: "⭐", message: `Mastered ${topic} concepts with 100% accuracy.` });
+                        } else if (d.correct > 0) {
+                            strengthsList.push({ icon: "✅", message: `Solid foundation in ${topic} (${d.correct}/${d.total} correct).` });
+                        }
+                        if (d.total - d.correct > 0) {
+                            mistakeList.push({ icon: "⚠️", message: `Encountered ${d.total - d.correct} error(s) in ${topic}.` });
+                        }
+                    });
+                }
+
+                reportCont.innerHTML = `
+                    <div style="padding:0.8rem;border-radius:8px;background:linear-gradient(135deg,rgba(74,144,226,0.08),rgba(139,92,246,0.05));border:1px solid rgba(74,144,226,0.2);margin-bottom:0.8rem;">
+                        <div style="font-size:0.65rem;color:var(--accent-blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.3rem;font-weight:700;">📝 Session Report</div>
+                        <p style="font-size:0.78rem;color:var(--text-primary);line-height:1.5;margin:0;">
+                            ${sessionTopError !== "None" ? `Pre-Test completed. Primary focus area identified as <strong>${labelShort[sessionTopError] || sessionTopError}</strong>.` : "Diagnostic pre-test completed successfully."}
+                        </p>
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">💪 Demonstrated Strengths</div>
+                        ${strengthsList.map(s => `
+                            <div style="display:flex;align-items:flex-start;gap:0.4rem;padding:0.4rem 0.6rem;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);margin-bottom:0.3rem;">
+                                <span style="flex-shrink:0;font-size:0.9rem;">${s.icon}</span>
+                                <span style="font-size:0.75rem;color:var(--text-primary);line-height:1.4;">${s.message}</span>
+                            </div>
+                        `).join("") || '<div style="font-size:0.75rem;color:var(--text-secondary);padding:0.4rem;">Continue practicing to build your streak.</div>'}
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🎯 Focus Area</div>
+                        <div style="padding:0.5rem 0.6rem;border-radius:6px;background:rgba(74,144,226,0.05);border:1px solid rgba(74,144,226,0.15);">
+                            <div style="font-size:0.75rem;font-weight:700;color:var(--accent-blue);margin-bottom:0.3rem;">${labelShort[sessionTopError] || sessionTopError}</div>
+                            <div style="font-size:0.7rem;color:var(--text-secondary);">• Recommended Game: ${document.getElementById("diag-game-name")?.textContent || "Target Lesson"}</div>
                         </div>
-                    `).join("")}
-                </div>` : "";
-
-            const avoidSection = r.avoid_patterns.length > 0 ? `
-                <div>
-                    <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.4rem;font-weight:700;">🚫 Avoid</div>
-                    ${r.avoid_patterns.slice(0, 4).map(p => `
-                        <div style="font-size:0.7rem;color:#ef4444;padding:0.25rem 0.5rem;background:rgba(239,68,68,0.05);border-radius:4px;margin-bottom:0.25rem;border:1px solid rgba(239,68,68,0.12);">✗ ${p.text}</div>
-                    `).join("")}
-                </div>` : "";
-
-            reportCont.innerHTML = `
-                <!-- Summary -->
-                <div style="padding:0.8rem;border-radius:8px;background:linear-gradient(135deg,rgba(74,144,226,0.08),rgba(139,92,246,0.05));border:1px solid rgba(74,144,226,0.2);margin-bottom:0.8rem;">
-                    <div style="font-size:0.65rem;color:var(--accent-blue);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:0.3rem;font-weight:700;">📝 Summary</div>
-                    <p style="font-size:0.78rem;color:var(--text-primary);line-height:1.5;margin:0;">${r.summary}</p>
-                </div>
-                ${section("💪 Strengths", r.strengths)}
-                ${section("⚠️ Recurring Mistakes", r.recurring_mistakes)}
-                ${section("📈 Recently Improved", r.recently_improved)}
-                ${section("🆕 New Mistakes", r.new_mistakes)}
-                ${focusSection}
-                ${avoidSection}
-            `;
-        } else {
-            reportCont.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.8rem;">Submit more code to generate your Learning Report.</div>`;
+                    </div>
+                `;
+            }
         }
 
     } catch (err) {
         console.warn("Global state sync failed", err);
         const histCont = document.getElementById("history-container");
         if (histCont && histCont.querySelector(".spinner")) {
-            histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No entries found in registry.</div>`;
+            histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         }
     }
 }

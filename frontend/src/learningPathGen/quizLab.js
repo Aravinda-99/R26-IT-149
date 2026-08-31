@@ -688,8 +688,47 @@ export function setupQuizUI(root = document) {
                 topicBreakdown
             );
 
-            console.log("Session metrics:", sessionMetrics);
+            // 1. Immediately extract all wrong questions and their code snippets
+            const wrongCodeQuestions = [];
+            state.quizBank.forEach((q, idx) => {
+                const ans = state.selectedAnswers[idx];
+                if (ans !== null && ans !== q.correctIndex) {
+                    let codeSnippet = "";
+                    if (q.codeTemplate) {
+                        codeSnippet = buildFullCodeFromTemplate(q, ans);
+                    } else if (q.options && typeof ans === "number") {
+                        codeSnippet = `// ${q.topic} Error\n` + q.options[ans];
+                    }
+                    const topicLabelMap = {
+                        "Variables": "VARIABLE_ERROR",
+                        "Loops": "LOOP_ERROR",
+                        "Arrays": "ARRAY_ERROR",
+                        "Methods": "METHOD_ERROR"
+                    };
+                    wrongCodeQuestions.push({
+                        questionText: q.question,
+                        topic: q.topic,
+                        label: topicLabelMap[q.topic] || `${(q.topic || "Core").toUpperCase()}_ERROR`,
+                        code: codeSnippet,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            });
 
+            // 2. Synchronously write results to both sessionStorage and localStorage
+            const resultsPayload = {
+                score,
+                percent,
+                topicBreakdown,
+                answeredCount: state.selectedAnswers.filter(a => a !== null).length,
+                sessionMetrics,
+                wrongCodeQuestions,
+                completedAt: new Date().toISOString()
+            };
+            sessionStorage.setItem("quiz-results", JSON.stringify(resultsPayload));
+            localStorage.setItem("latest_quiz_results", JSON.stringify(resultsPayload));
+
+            // 3. Render Quiz Result card
             quizBox.innerHTML = `
                 <article class="lp-result-card">
                     <h4>Your Quiz Result</h4>
@@ -729,7 +768,29 @@ export function setupQuizUI(root = document) {
             nextBtn.textContent = "Review Again";
             updateQuizNav();
 
-            // Save structured student progress
+            // 4. Wire buttons immediately
+            const retryBtn = quizBox.querySelector("#retry-quiz-btn");
+            if (retryBtn) {
+                retryBtn.addEventListener("click", () => {
+                    state.quizBank = buildShuffledQuizBank();
+                    state.current = 0;
+                    state.selectedAnswers = Array(state.quizBank.length).fill(null);
+                    state.submitted = false;
+                    state.questionRecords = [];
+                    state.visited = {};
+                    buildQuizNav();
+                    renderQuestion();
+                });
+            }
+
+            const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
+            if (viewDetailsBtn) {
+                viewDetailsBtn.addEventListener("click", () => {
+                    window.navigateTo("error-analysis");
+                });
+            }
+
+            // 5. Save student progress
             const user = getCurrentUser();
             const studentId = user?.uid || user?.id;
             if (studentId) {
@@ -756,7 +817,6 @@ export function setupQuizUI(root = document) {
                 };
                 localStorage.setItem(`cq_progress_${studentId}`, JSON.stringify(progress));
 
-                // Save to persistent backend Learning Session for Component 4
                 SchemaMasteryAPI.saveComponent1({
                     student_id: studentId,
                     student_name: user?.displayName || user?.name || "Learner",
@@ -767,62 +827,51 @@ export function setupQuizUI(root = document) {
                     attempt_count: 1,
                     time_taken_seconds: Math.round((sessionMetrics?.avg_time_sec || 5.0) * state.quizBank.length)
                 }).catch(err => console.warn("Failed to persist Component 1 learning session:", err));
+
+                const topicLabelMap = {
+                    "Variables": "VARIABLE_ERROR",
+                    "Loops": "LOOP_ERROR",
+                    "Arrays": "ARRAY_ERROR",
+                    "Methods": "METHOD_ERROR"
+                };
+                const topErrorKey = topicLabelMap[weakConcept] || (weakConcept ? `${weakConcept.toUpperCase()}_ERROR` : "VARIABLE_ERROR");
+                ErrorAPI.saveTopMisconception({
+                    student_id: studentId,
+                    top_misconception: topErrorKey,
+                    concept: weakConcept || "General",
+                    total_errors: state.quizBank.length - score,
+                    topic_breakdown: topicBreakdown,
+                    accuracy_pct: percent,
+                    source: "pre_test_submission"
+                }).catch(err => console.warn("Failed to persist Top Misconception to Error Detector database:", err));
             }
 
-            let mlResult = null;
+            // 6. Async ML Recommendation in background
             const mlLoading = quizBox.querySelector("#ml-loading");
             if (sessionMetrics) {
-                mlResult = await getMLRecommendation(sessionMetrics);
-
-                if (mlLoading && mlResult) {
-                    mlLoading.outerHTML = buildMLRecommendationCard(
-                        mlResult,
-                        sessionMetrics
-                    );
-
-                    const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
-                    if (nextSessionBtn) {
-                        nextSessionBtn.addEventListener("click", () => {
-                            sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
-                            window.navigateTo("error-analysis");
-                        });
+                getMLRecommendation(sessionMetrics).then(mlResult => {
+                    if (mlResult) {
+                        resultsPayload.mlResult = mlResult;
+                        sessionStorage.setItem("quiz-results", JSON.stringify(resultsPayload));
+                        localStorage.setItem("latest_quiz_results", JSON.stringify(resultsPayload));
+                        if (mlLoading) {
+                            mlLoading.outerHTML = buildMLRecommendationCard(mlResult, sessionMetrics);
+                            const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
+                            if (nextSessionBtn) {
+                                nextSessionBtn.addEventListener("click", () => {
+                                    sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
+                                    window.navigateTo("error-analysis");
+                                });
+                            }
+                        }
+                    } else if (mlLoading) {
+                        mlLoading.style.display = "none";
                     }
-                } else if (mlLoading) {
-                    mlLoading.style.display = "none";
-                }
+                }).catch(() => {
+                    if (mlLoading) mlLoading.style.display = "none";
+                });
             } else if (mlLoading) {
                 mlLoading.style.display = "none";
-            }
-
-            sessionStorage.setItem("quiz-results", JSON.stringify({
-                score,
-                percent,
-                topicBreakdown,
-                answeredCount: state.selectedAnswers.filter(a => a !== null).length,
-                sessionMetrics,
-                mlResult
-            }));
-
-            // ── Retry button — builds a NEW shuffle for the retry ─────────
-            const retryBtn = quizBox.querySelector("#retry-quiz-btn");
-            if (retryBtn) {
-                retryBtn.addEventListener("click", () => {
-                    state.quizBank = buildShuffledQuizBank();
-                    state.current = 0;
-                    state.selectedAnswers = Array(state.quizBank.length).fill(null);
-                    state.submitted = false;
-                    state.questionRecords = [];
-                    state.visited = {};
-                    buildQuizNav();
-                    renderQuestion();
-                });
-            }
-
-            const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
-            if (viewDetailsBtn) {
-                viewDetailsBtn.addEventListener("click", () => {
-                    window.navigateTo("error-analysis");
-                });
             }
 
             return;

@@ -130,5 +130,51 @@
     "current_stage": "PRE_TEST_PENDING",
     "created_at": "2026-08-31T17:06:09.345439+00:00",
     "updated_at": "2026-08-31T17:06:09.345439+00:00"
+  },
+  "fjd3iU5IH3SCZ5F10X1uwbZoKBG3": {
+    "session_id": "SESS_2E5A26F2",
+    "student_id": "fjd3iU5IH3SCZ5F10X1uwbZoKBG3",
+    "student_name": "jhon",
+    "student_email": "jhon@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.24,
+      "attempt_count": 1,
+      "time_taken_seconds": 14.0,
+      "completed_at": "2026-08-31T21:25:43.170547+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.44,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T21:25:44.730811+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-08-31T20:14:02.794169+00:00",
+    "updated_at": "2026-08-31T21:25:44.730811+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.44,
+    "error_pattern_score_source": "component2_confidence"
   }
 }
