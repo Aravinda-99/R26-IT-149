@@ -14,6 +14,7 @@ from services.schema_mastery_service import predict_schema_mastery
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_llm_question_service import SchemaLLMQuestionService
 from services.schema_post_test_service import SchemaPostTestService
+from services.schema_post_test_result_service import SchemaPostTestResultService
 
 schema_mastery_bp = Blueprint("schema_mastery", __name__)
 
@@ -48,8 +49,16 @@ def generate_questions():
             "count": len(drafts),
             "questions": drafts,
         }), 200
+    except (ValueError, RuntimeError) as e:
+        err_msg = str(e)
+        code = "LLM_NOT_CONFIGURED" if "OPENAI_API_KEY" in err_msg or "not configured" in err_msg else "LLM_GENERATION_FAILED"
+        return jsonify({
+            "success": False,
+            "error": err_msg,
+            "code": code,
+        }), 400
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e), "code": "INTERNAL_ERROR"}), 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -307,6 +316,117 @@ def submit_post_test():
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8b. Teacher-facing Post-Test Result Retrieval
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/post-test/results", methods=["GET"])
+def get_post_test_results():
+    """
+    Returns locally persisted Component 4 post-test result records.
+    Firestore is not required for teacher dashboard visibility.
+    """
+    filters = {
+        "student_id": request.args.get("student_id"),
+        "concept": request.args.get("concept"),
+        "mastery_level": request.args.get("mastery_level"),
+        "next_action": request.args.get("next_action"),
+    }
+    filters = {k: v for k, v in filters.items() if v}
+    results = SchemaPostTestResultService.list_results(filters)
+    return jsonify({
+        "success": True,
+        "source": "local",
+        "count": len(results),
+        "results": results,
+    }), 200
+
+
+@schema_mastery_bp.route("/post-test/results/latest/<student_id>", methods=["GET"])
+def get_latest_post_test_result(student_id):
+    """Returns the latest locally saved Component 4 result for one student."""
+    result = SchemaPostTestResultService.get_latest_for_student(student_id)
+    return jsonify({
+        "success": True,
+        "source": "local",
+        "count": 1 if result else 0,
+        "results": [result] if result else [],
+        "result": result,
+    }), 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8c. Component Data-Flow Verification Context
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/context", methods=["GET"])
+def get_schema_mastery_context():
+    """
+    Teacher/developer verification endpoint for the Component 1 -> 4 data flow.
+    It reads local post-test persistence first and reports found/missing signals.
+    """
+    student_id = request.args.get("student_id", "").strip()
+    session_id = request.args.get("session_id", "").strip() or None
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
+
+    result = SchemaPostTestResultService.get_latest_for_student(student_id, session_id=session_id)
+    missing_fields = []
+
+    def has_value(field):
+        return result is not None and result.get(field) not in (None, "")
+
+    for field in (
+        "concept_name",
+        "pre_test_score",
+        "attempt_count",
+        "time_taken_seconds",
+        "error_type",
+        "error_pattern_score",
+        "post_test_score",
+        "mastery_level",
+        "next_action",
+    ):
+        if not has_value(field):
+            missing_fields.append(field)
+
+    component_1_found = all(has_value(f) for f in ("concept_name", "pre_test_score", "attempt_count", "time_taken_seconds"))
+    component_2_found = all(has_value(f) for f in ("error_type", "error_pattern_score"))
+    component_4_found = result is not None
+
+    payload = {
+        "success": True,
+        "student_id": student_id,
+        "session_id": session_id or (result or {}).get("session_id"),
+        "source": "local",
+        "component_1": {
+            "found": component_1_found,
+            "concept_name": (result or {}).get("concept_name"),
+            "pre_test_score": (result or {}).get("pre_test_score"),
+            "attempt_count": (result or {}).get("attempt_count"),
+            "time_taken_seconds": (result or {}).get("time_taken_seconds"),
+        },
+        "component_2": {
+            "found": component_2_found,
+            "error_type": (result or {}).get("error_type"),
+            "error_pattern_score": (result or {}).get("error_pattern_score"),
+            "error_reason": (result or {}).get("error_reason", ""),
+        },
+        "component_3": {
+            "found": component_4_found,
+            "learning_completed": component_4_found,
+            "recommended_activity_id": (result or {}).get("recommended_activity_id", ""),
+        },
+        "component_4": {
+            "post_test_found": component_4_found,
+            "latest_post_test_score": (result or {}).get("post_test_score"),
+            "latest_mastery_level": (result or {}).get("mastery_level"),
+            "latest_next_action": (result or {}).get("next_action"),
+        },
+        "ready_for_post_test": component_1_found and component_2_found,
+        "missing_fields": missing_fields,
+    }
+    return jsonify(payload), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
