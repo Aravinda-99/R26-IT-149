@@ -781,6 +781,17 @@ export function setupQuizUI(root = document) {
             } else if (mlLoading) {
                 mlLoading.style.display = "none";
             }
+            const wrongCodeQuestions = [];
+            state.quizBank.forEach((q, idx) => {
+                const ans = state.selectedAnswers[idx];
+                if (ans !== null && ans !== q.correctIndex && q.codeTemplate) {
+                    wrongCodeQuestions.push({
+                        text: q.question,
+                        code: buildFullCodeFromTemplate(q, ans),
+                        topic: q.topic
+                    });
+                }
+            });
 
             sessionStorage.setItem("quiz-results", JSON.stringify({
                 score,
@@ -788,7 +799,8 @@ export function setupQuizUI(root = document) {
                 topicBreakdown,
                 answeredCount: state.selectedAnswers.filter(a => a !== null).length,
                 sessionMetrics,
-                mlResult
+                mlResult,
+                wrongCodeQuestions
             }));
 
             // ── Retry button — builds a NEW shuffle for the retry ─────────

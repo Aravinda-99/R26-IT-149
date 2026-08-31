@@ -717,19 +717,6 @@ class ErrorService:
         code = data.get("code", "")
         pretest = data.get("pretest_results", {})
 
-        # Reset history for every submission (only keep current session)
-        cls._history = [h for h in cls._history if h.get("student_id") != student_id]
-        if student_id in cls._history_cache:
-            del cls._history_cache[student_id]
-            
-        if db:
-            try:
-                docs = db.collection("error_history").where("student_id", "==", student_id).stream()
-                for doc in docs:
-                    doc.reference.delete()
-            except Exception as e:
-                print(f"[WARN] Failed to clear previous history for {student_id}: {e}")
-
         validation = cls.validate_java_submission(code)
 
         if not validation["valid"]:
@@ -1122,6 +1109,8 @@ class ErrorService:
                     "label": final_label,
                     "error_reason": details.get("reason", ""),
                     "misconception": details.get("misconception", ""),
+                    "code": code,
+                    "concept": details.get("concept", ""),
                     "timestamp": _now.isoformat()
                 }
                 db.collection("error_history").add(db_entry)

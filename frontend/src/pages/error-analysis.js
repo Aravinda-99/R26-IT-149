@@ -195,7 +195,7 @@ export async function renderErrorAnalysis(container) {
                     <div class="card" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); border: 1px solid var(--border-color);">
                         <!-- Tab Bar -->
                         <div style="display: flex; gap: 0; border-bottom: 1px solid var(--border-color);">
-                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 1rem; background: var(--primary-soft); border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-family: var(--font); font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-clock-rotate-left" style="margin-right: 0.4rem;"></i>History</button>
+                            <button id="tab-history-btn" onclick="" style="flex: 1; padding: 1rem; background: var(--primary-soft); border: none; border-bottom: 2px solid var(--primary); color: var(--primary); font-family: var(--font); font-size: 0.85rem; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 0.4rem;"></i>Errors</button>
                             <button id="tab-report-btn" onclick="" style="flex: 1; padding: 1rem; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;"><i class="fa-solid fa-chart-pie" style="margin-right: 0.4rem;"></i>Learning Report</button>
                         </div>
                         <!-- History Panel -->
@@ -441,30 +441,66 @@ async function refreshGlobalState(studentId) {
         const trueTotalErrors = Object.values(summaryData.counts || {}).reduce((a, b) => a + b, 0);
 
         // ── Stats Bar ─────────────────────────────────────────────────
-        const statTotal = document.getElementById("stat-total");
-        if (statTotal) statTotal.textContent = trueTotalErrors;
-        const statTopError = document.getElementById("stat-top-error");
-        if (statTopError) statTopError.textContent = summaryData.most_frequent_error || "None";
-
-        // ── History List ──────────────────────────────────────────────
-        const histCont = document.getElementById("history-container");
+        let sessionTotalErrors = trueTotalErrors;
+        let wrongQuestions = [];
+        const labelMap = { "Variables": "VARIABLE_ERROR", "Loops": "LOOP_ERROR", "Arrays": "ARRAY_ERROR", "Methods": "METHOD_ERROR" };
         
-        if (errorHistory.length === 0) {
+        try {
+            const quizResults = JSON.parse(sessionStorage.getItem("quiz-results"));
+            if (quizResults && quizResults.topicBreakdown) {
+                // Calculate total errors for session for the stat numbers
+                sessionTotalErrors = Object.values(quizResults.topicBreakdown).reduce((acc, data) => acc + (data.total - data.correct), 0);
+            }
+            if (quizResults && quizResults.wrongCodeQuestions) {
+                wrongQuestions = quizResults.wrongCodeQuestions.map(wq => {
+                    // Find matching error from backend
+                    const matchingErr = errorHistory.find(eh => eh.code === wq.code);
+                    return {
+                        label: matchingErr ? matchingErr.label : (labelMap[wq.topic] || wq.topic),
+                        concept: matchingErr ? matchingErr.concept : wq.topic,
+                        code: wq.code,
+                        timestamp: matchingErr ? matchingErr.timestamp : Date.now(),
+                        questionText: wq.text
+                    };
+                });
+            }
+        } catch(e) {}
+
+        // Compute sessionTopError strictly from the session's wrong questions to guarantee it perfectly matches the ML predictions shown in the Errors Panel
+        let sessionTopError = summaryData.most_frequent_error || "None";
+        const listToRender = wrongQuestions.length > 0 ? wrongQuestions : errorHistory;
+        
+        if (listToRender && listToRender.length > 0) {
+            const counts = {};
+            listToRender.forEach(item => {
+                counts[item.label] = (counts[item.label] || 0) + 1;
+            });
+            let maxCount = -1;
+            Object.entries(counts).forEach(([label, count]) => {
+                if (count > maxCount) {
+                    maxCount = count;
+                    sessionTopError = label;
+                }
+            });
+        }
+
+        const statTotal = document.getElementById("stat-total");
+        if (statTotal) statTotal.textContent = sessionTotalErrors; // Show session total here too!
+        const statTopError = document.getElementById("stat-top-error");
+        if (statTopError) statTopError.textContent = sessionTopError;
+
+        // ── Errors List ──────────────────────────────────────────────
+        const histCont = document.getElementById("history-container");
+
+        if (listToRender.length === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         } else {
             histCont.innerHTML = "";
-            // Count frequencies
-            const counts = {};
-            errorHistory.forEach(item => {
-                counts[item.label] = (counts[item.label] || 0) + 1;
-            });
-            
-            // Sort by frequency descending, then timestamp descending (newest first)
-            const sortedHistory = [...errorHistory].sort((a, b) => {
-                if (counts[a.label] !== counts[b.label]) {
-                    return counts[b.label] - counts[a.label];
-                }
-                return b.timestamp - a.timestamp;
+            // Sort by sessionTopError first, then timestamp descending (newest first)
+            const sortedHistory = [...listToRender].sort((a, b) => {
+                if (a.label === sessionTopError && b.label !== sessionTopError) return -1;
+                if (b.label === sessionTopError && a.label !== sessionTopError) return 1;
+                return new Date(b.timestamp) - new Date(a.timestamp);
             });
 
             sortedHistory.forEach((item, index) => {
@@ -472,7 +508,7 @@ async function refreshGlobalState(studentId) {
                 const isSuggested = index === 0;
                 if (isSuggested) el.dataset.suggested = "true";
                 el.dataset.code = encodeURIComponent(item.code || "");
-                
+
                 const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
                 const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
                 const hoverBg = isSuggested ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
@@ -534,16 +570,16 @@ async function refreshGlobalState(studentId) {
                 histCont.appendChild(el);
             });
 
-            // Automatically populate telemetry with the latest item if telemetry is currently empty
-            if (!latestAnalysisResponse && historyData.history.length > 0) {
-                const latestEntry = historyData.history[historyData.history.length - 1];
-                if (latestEntry && latestEntry.code) {
+            // Automatically populate telemetry with the Weakest Skill (most frequent error) unconditionally on page load
+            if (sortedHistory.length > 0) {
+                const weakestEntry = sortedHistory[0];
+                if (weakestEntry && weakestEntry.code) {
                     ErrorAPI.analyze({
                         student_id: studentId,
-                        code: latestEntry.code,
+                        code: weakestEntry.code,
                         pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
                     }).then(res => {
-                        if (res && res.prediction && !latestAnalysisResponse) {
+                        if (res && res.prediction) {
                             showTelemetryResult(res);
                         }
                     }).catch(() => { });
@@ -558,12 +594,20 @@ async function refreshGlobalState(studentId) {
             const anl = analyticsData;
 
             // Stat cards
-            document.getElementById("anl-total").textContent = trueTotalErrors;
+            let displayTotalErrors = trueTotalErrors;
+            try {
+                const quizResults = JSON.parse(sessionStorage.getItem("quiz-results"));
+                if (quizResults && quizResults.topicBreakdown) {
+                    displayTotalErrors = Object.values(quizResults.topicBreakdown).reduce((acc, data) => acc + (data.total - data.correct), 0);
+                }
+            } catch(e) {}
+            document.getElementById("anl-total").textContent = displayTotalErrors;
+
             const labelShort = { LOOP_ERROR: "Loops", VARIABLE_ERROR: "Variables", ARRAY_ERROR: "Arrays", METHOD_ERROR: "Methods" };
             const allCatsArr = ["ARRAY_ERROR", "LOOP_ERROR", "METHOD_ERROR", "VARIABLE_ERROR"];
             const catMasteries = allCatsArr.map(cat => Math.max(0, 100 - (summaryData.counts[cat] || 0) * 15));
             const overallMastery = Math.round(catMasteries.reduce((a, b) => a + b, 0) / 4);
-            
+
             const anlMasteryEl = document.getElementById("anl-mastery");
             if (anlMasteryEl) {
                 anlMasteryEl.textContent = `${overallMastery}%`;
@@ -643,7 +687,7 @@ async function refreshGlobalState(studentId) {
                                 legend: { display: false },
                                 tooltip: {
                                     callbacks: {
-                                        label: function(context) { return context.raw + "% Mastery"; }
+                                        label: function (context) { return context.raw + "% Mastery"; }
                                     }
                                 }
                             }
