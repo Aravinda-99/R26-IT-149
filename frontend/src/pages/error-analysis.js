@@ -523,12 +523,6 @@ async function refreshGlobalState(studentId) {
             ARRAY_ERROR: "#34d399",
             METHOD_ERROR: "#f472b6"
         };
-        const defaultSnippets = {
-            "Arrays": "int[] arr = new int[5];\nint x = arr[arr.length]; // Out of bounds error",
-            "Loops": "for (int i = 0; i <= 5; i++) {\n    // Off-by-one loop condition error\n}",
-            "Variables": "int count;\nSystem.out.println(count); // Uninitialized variable error",
-            "Methods": "static int calculate(int a) {\n    // Missing return statement error\n}"
-        };
 
         // ── Compute Stats: Total Errors & Top Misconception ───────────
         let sessionTotalErrors = summaryData.total_analyses || 0;
@@ -579,38 +573,57 @@ async function refreshGlobalState(studentId) {
             }).catch(err => console.warn("Failed to persist top misconception:", err));
         }
 
+        // Pre-test signal passed with every on-demand analysis. Derived from the
+        // student's real topic performance rather than a hardcoded constant.
+        const tb = quizResults?.topicBreakdown || {};
+        const pretestSignal = {
+            variables: tb.Variables?.correct ?? 3,
+            loops: tb.Loops?.correct ?? 3,
+            arrays: tb.Arrays?.correct ?? 3,
+            methods: tb.Methods?.correct ?? 3
+        };
+
         // ── Errors List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
         const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
 
-        // Build list of items: Prefer session wrongCodeQuestions, then topicBreakdown, then errorHistory
+        // Build list of items from this session's wrong answers, falling back to
+        // stored analysis history. A row's label always comes from the model
+        // response attached to it — never from the question's topic — so the
+        // list and the diagnostic panel read the same object and cannot disagree.
         let itemsToRender = [];
         if (quizResults && Array.isArray(quizResults.wrongCodeQuestions) && quizResults.wrongCodeQuestions.length > 0) {
-            itemsToRender = quizResults.wrongCodeQuestions.map((wq, idx) => ({
-                label: wq.label || labelMap[wq.topic] || "JAVA_ERROR",
-                concept: wq.topic || "Core Java",
-                code: wq.code || defaultSnippets[wq.topic] || "int[] arr = {1, 2, 3};",
-                timestamp: wq.timestamp || new Date(Date.now() - idx * 60000).toISOString(),
-                questionText: wq.questionText || ""
-            }));
-        } else if (quizResults && quizResults.topicBreakdown) {
-            // Synthesize items for topics with errors
-            Object.entries(quizResults.topicBreakdown).forEach(([topic, data], topicIdx) => {
-                const errCount = (data.total || 0) - (data.correct || 0);
-                for (let i = 0; i < errCount; i++) {
-                    itemsToRender.push({
-                        label: labelMap[topic] || `${topic.toUpperCase()}_ERROR`,
-                        concept: topic,
-                        code: defaultSnippets[topic] || "int x = 0;",
-                        timestamp: new Date(Date.now() - (topicIdx * 5 + i) * 60000).toISOString(),
-                        questionText: `${topic} question ${i + 1}`
-                    });
-                }
+            itemsToRender = quizResults.wrongCodeQuestions.map((wq, idx) => {
+                const pred = wq.full_response?.prediction;
+                return {
+                    label: pred?.label || wq.label || null,
+                    concept: pred?.concept || wq.concept || wq.topic || "Core Java",
+                    topic: wq.topic || "Core Java",
+                    code: wq.code || "",
+                    full_response: wq.full_response || null,
+                    analysis_status: wq.analysis_status || (wq.full_response ? "analyzed" : (wq.code ? "pending" : "no_code")),
+                    timestamp: wq.timestamp || new Date(Date.now() - idx * 60000).toISOString(),
+                    questionText: wq.questionText || ""
+                };
             });
         }
         
         if (itemsToRender.length === 0 && errorHistory.length > 0) {
             itemsToRender = [...errorHistory];
+        }
+
+        // Prefer the detector's own verdict for the headline stat: count the
+        // labels it actually produced. Falls back to the topic-derived value
+        // while analyses are still pending or unavailable.
+        const analysedLabelCounts = {};
+        itemsToRender.forEach(it => {
+            const lbl = it.full_response?.prediction?.label;
+            if (lbl && lbl !== "CORRECT") analysedLabelCounts[lbl] = (analysedLabelCounts[lbl] || 0) + 1;
+        });
+        const analysedTop = Object.entries(analysedLabelCounts).sort((a, b) => b[1] - a[1])[0];
+        if (analysedTop) {
+            sessionTopError = analysedTop[0];
+            if (statTopError) statTopError.textContent = sessionTopError;
         }
 
         if (itemsToRender.length === 0) {
@@ -624,11 +637,44 @@ async function refreshGlobalState(studentId) {
                 return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
             });
 
+            // "Latest click wins": a slower in-flight analysis can never repaint
+            // the panel after a newer selection has been made.
+            let selectionToken = 0;
+
+            // Analyses an item on demand and caches the response on the item, so a
+            // row is analysed at most once and every later click is a pure replay.
+            const resolveAnalysis = (item) => {
+                if (item.full_response && item.full_response.prediction) return Promise.resolve(item.full_response);
+                if (!item.code) return Promise.resolve(null);
+                if (!item._analysisPromise) {
+                    item._analysisPromise = ErrorAPI.analyze({
+                        student_id: studentId,
+                        code: item.code,
+                        pretest_results: pretestSignal
+                    }).then(res => {
+                        if (res && res.prediction && res.prediction.label) {
+                            item.full_response = res;
+                            item.label = res.prediction.label;
+                            item.concept = res.prediction.concept || item.concept;
+                            item.analysis_status = res.prediction.label === "CORRECT" ? "analyzed_correct" : "analyzed";
+                            return res;
+                        }
+                        item.analysis_status = "unanalyzed";
+                        return null;
+                    }).catch(err => {
+                        console.warn("Failed to analyze selected error code:", err);
+                        item.analysis_status = "unanalyzed";
+                        item._analysisPromise = null;
+                        return null;
+                    });
+                }
+                return item._analysisPromise;
+            };
+
             sortedItems.forEach((item, index) => {
                 const el = document.createElement("div");
                 const isSuggested = index === 0;
                 if (isSuggested) el.dataset.suggested = "true";
-                el.dataset.code = encodeURIComponent(item.code || "");
 
                 const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
                 const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
@@ -637,16 +683,35 @@ async function refreshGlobalState(studentId) {
                 el.style.cssText = `padding: 0.6rem 0.8rem; background: ${baseBg}; border-radius: 6px; border: 1px solid ${baseBorder}; cursor: pointer; transition: background 0.2s, border-color 0.2s;`;
                 const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : '';
 
-                el.innerHTML = `
+                // Render the row from whatever the detector actually produced. A row
+                // with no usable analysis says so, instead of borrowing the
+                // question's topic and presenting it as a diagnosis.
+                const renderRow = () => {
+                    const pred = item.full_response?.prediction;
+                    const displayLabel = pred?.label || item.label || null;
+                    const pendingText = item.analysis_status === "no_code" ? "CODE UNAVAILABLE"
+                        : item.analysis_status === "unanalyzed" ? "ANALYSIS UNAVAILABLE"
+                            : "ANALYSING...";
+                    const labelText = displayLabel || pendingText;
+                    const labelColor = displayLabel
+                        ? (isSuggested ? "var(--accent-orange)" : "#4a90e2")
+                        : "var(--text-secondary)";
+                    const conceptText = pred?.concept || item.concept || item.topic || "Core Java";
+                    const provenance = item.topic && item.topic !== conceptText ? ` &middot; from your ${item.topic} question` : "";
+                    const subText = displayLabel ? `${conceptText}${provenance}` : (item.topic ? `from your ${item.topic} question` : "Core Java");
+
+                    el.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <span style="font-weight: 700; font-size: 0.65rem; color: ${isSuggested ? 'var(--accent-orange)' : '#4a90e2'}; display: flex; align-items: center;">
+                        <span style="font-weight: 700; font-size: 0.65rem; color: ${labelColor}; display: flex; align-items: center;">
                             ${suggestedBadge}
-                            ${item.label}
+                            ${labelText}
                         </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-primary);">${subText}</div>
                 `;
+                };
+                renderRow();
 
                 el.addEventListener("mouseover", () => {
                     if (!el.dataset.selected) el.style.background = hoverBg;
@@ -668,24 +733,12 @@ async function refreshGlobalState(studentId) {
                     el.style.background = "rgba(74, 144, 226, 0.15)";
                     el.style.borderColor = "var(--accent-blue)";
 
-                    if (item.full_response && item.full_response.prediction) {
-                        showTelemetryResult(item.full_response, true);
-                    } else {
-                        const rawCode = decodeURIComponent(el.dataset.code || "");
-                        if (rawCode) {
-                            try {
-                                const res = await ErrorAPI.analyze({
-                                    student_id: studentId,
-                                    code: rawCode,
-                                    pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-                                });
-                                if (res && res.prediction) {
-                                    showTelemetryResult(res, true);
-                                }
-                            } catch (e) {
-                                console.warn("Failed to analyze selected error code:", e);
-                            }
-                        }
+                    const token = ++selectionToken;
+                    const res = await resolveAnalysis(item);
+                    if (token !== selectionToken) return; // a newer row was clicked meanwhile
+                    renderRow();
+                    if (res && res.prediction) {
+                        showTelemetryResult(res, true);
                     }
                 });
 
@@ -694,20 +747,11 @@ async function refreshGlobalState(studentId) {
 
             // Automatically populate telemetry with the suggested/top item if telemetry is currently empty
             if (!latestAnalysisResponse && sortedItems.length > 0) {
-                const topItem = sortedItems[0];
-                if (topItem.full_response && topItem.full_response.prediction) {
-                    showTelemetryResult(topItem.full_response);
-                } else if (topItem.code) {
-                    ErrorAPI.analyze({
-                        student_id: studentId,
-                        code: topItem.code,
-                        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-                    }).then(res => {
-                        if (res && res.prediction && !latestAnalysisResponse) {
-                            showTelemetryResult(res);
-                        }
-                    }).catch(() => { });
-                }
+                resolveAnalysis(sortedItems[0]).then(res => {
+                    if (res && res.prediction && !latestAnalysisResponse) {
+                        showTelemetryResult(res);
+                    }
+                }).catch(() => { });
             }
         }
 
