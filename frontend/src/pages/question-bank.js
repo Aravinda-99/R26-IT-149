@@ -70,6 +70,9 @@ export async function renderQuestionBank(container, opts = {}) {
                     </p>
                 </div>
                 <div style="display: flex; gap: 0.6rem; align-items: center;">
+                    <div id="storage-source-badge" style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.82rem; color: #1E40AF; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-database" style="color: #3B82F6;"></i> Firestore Primary
+                    </div>
                     <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.82rem; color: #166534; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
                         <i class="fa-solid fa-shield-check" style="color: #16A34A;"></i> Teacher Review Active
                     </div>
@@ -143,14 +146,30 @@ export async function renderQuestionBank(container, opts = {}) {
 
 async function refreshCounts() {
     try {
-        const [penRes, appRes, rejRes] = await Promise.all([
+        const [penRes, appRes, rejRes] = await Promise.allSettled([
             SchemaMasteryAPI.getPendingQuestions(),
             SchemaMasteryAPI.getQuestionBank("", false), // get all active + inactive
             SchemaMasteryAPI.getRejectedQuestions(),
         ]);
-        pendingQuestions = (penRes && penRes.questions) || [];
-        approvedQuestions = (appRes && appRes.questions) || [];
-        rejectedQuestions = (rejRes && rejRes.questions) || [];
+        pendingQuestions = (penRes.status === "fulfilled" && penRes.value && penRes.value.questions) ? penRes.value.questions : [];
+        approvedQuestions = (appRes.status === "fulfilled" && appRes.value && appRes.value.questions) ? appRes.value.questions : [];
+        rejectedQuestions = (rejRes.status === "fulfilled" && rejRes.value && rejRes.value.questions) ? rejRes.value.questions : [];
+
+        const storageSource = (appRes.status === "fulfilled" && appRes.value && appRes.value.storage_source) ? appRes.value.storage_source : "firestore";
+        const storageBadge = document.getElementById("storage-source-badge");
+        if (storageBadge) {
+            if (storageSource === "firestore") {
+                storageBadge.innerHTML = `<i class="fa-solid fa-database" style="color: #3B82F6;"></i> Firestore Primary`;
+                storageBadge.style.background = "#EFF6FF";
+                storageBadge.style.color = "#1E40AF";
+                storageBadge.style.borderColor = "#BFDBFE";
+            } else {
+                storageBadge.innerHTML = `<i class="fa-solid fa-hard-drive" style="color: #F59E0B;"></i> Local Fallback`;
+                storageBadge.style.background = "#FFFBEB";
+                storageBadge.style.color = "#92400E";
+                storageBadge.style.borderColor = "#FDE68A";
+            }
+        }
 
         const penBadge = document.getElementById("pending-badge");
         const appBadge = document.getElementById("approved-badge");
@@ -525,7 +544,7 @@ function renderGenerateTab(content) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions`;
             const errMsg = err?.message || String(err);
-            const isApiKeyMissing = errMsg.includes("OPENAI_API_KEY") || errMsg.includes("LLM_NOT_CONFIGURED") || errMsg.includes("not configured");
+            const isApiKeyMissing = errMsg.includes("GEMINI_API_KEY") || errMsg.includes("OPENAI_API_KEY") || errMsg.includes("LLM_NOT_CONFIGURED") || errMsg.includes("not configured");
 
             if (isApiKeyMissing) {
                 outputList.innerHTML = `
@@ -535,10 +554,10 @@ function renderGenerateTab(content) {
                             <div>
                                 <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: #B45309;">LLM Question Generation Not Configured</h4>
                                 <p style="font-size: 0.85rem; margin: 0 0 0.5rem 0; color: #78350F; line-height: 1.4;">
-                                    LLM question generation is not configured. Please set the backend <code>OPENAI_API_KEY</code> in <code>backend/.env</code>.
+                                    Question generation failed. Please check Gemini API configuration (<code>GEMINI_API_KEY</code> in <code>backend/.env</code>).
                                 </p>
                                 <p style="font-size: 0.78rem; margin: 0; color: #92400E;">
-                                    CodeQuest strictly enforces real LLM generation. Mock/template fallback questions are disabled in production teacher workflows.
+                                    CodeQuest strictly enforces real LLM generation. Mock questions are disabled in active teacher workflows.
                                 </p>
                             </div>
                         </div>
@@ -609,11 +628,21 @@ function renderQuestionCard(q, { showActions = true, isDraft = false, isApproved
         "Clearly Wrong": "background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;",
     };
 
+    const optA = q.option_a || (q.options && q.options[0]?.text) || (q.options && q.options[0]) || "";
+    const optB = q.option_b || (q.options && q.options[1]?.text) || (q.options && q.options[1]) || "";
+    const optC = q.option_c || (q.options && q.options[2]?.text) || (q.options && q.options[2]) || "";
+    const optD = q.option_d || (q.options && q.options[3]?.text) || (q.options && q.options[3]) || "";
+
+    const qA = q.option_a_quality || (q.options && q.options[0]?.quality) || (q.option_qualities && q.option_qualities.A) || "Wrong";
+    const qB = q.option_b_quality || (q.options && q.options[1]?.quality) || (q.option_qualities && q.option_qualities.B) || "Wrong";
+    const qC = q.option_c_quality || (q.options && q.options[2]?.quality) || (q.option_qualities && q.option_qualities.C) || "Wrong";
+    const qD = q.option_d_quality || (q.options && q.options[3]?.quality) || (q.option_qualities && q.option_qualities.D) || "Wrong";
+
     const options = [
-        { key: "A", text: q.option_a, quality: q.option_a_quality || "Wrong" },
-        { key: "B", text: q.option_b, quality: q.option_b_quality || "Wrong" },
-        { key: "C", text: q.option_c, quality: q.option_c_quality || "Wrong" },
-        { key: "D", text: q.option_d, quality: q.option_d_quality || "Wrong" },
+        { key: "A", text: optA, quality: qA },
+        { key: "B", text: optB, quality: qB },
+        { key: "C", text: optC, quality: qC },
+        { key: "D", text: optD, quality: qD },
     ];
 
     const isActive = q.active !== false;

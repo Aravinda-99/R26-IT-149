@@ -15,12 +15,44 @@ from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_llm_question_service import SchemaLLMQuestionService
 from services.schema_post_test_service import SchemaPostTestService
 from services.schema_post_test_result_service import SchemaPostTestResultService
+from services.schema_session_service import SchemaSessionService
 
 schema_mastery_bp = Blueprint("schema_mastery", __name__)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 1. LLM Draft Question Generation (Teacher/Admin)
+# 1. LLM Status & Health Check
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/llm/status", methods=["GET"])
+def get_llm_status():
+    """
+    Returns safe LLM provider and configuration status (never exposes secret keys).
+    """
+    try:
+        status_info = SchemaLLMQuestionService.get_llm_status()
+        return jsonify(status_info), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1a. Unified Question Bank & Cohort Statistics (Teacher/Admin)
+# ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/questions/stats", methods=["GET"])
+def get_question_stats():
+    """
+    Returns unified counts for registered students, approved questions,
+    pending review questions, and rejected archive questions.
+    """
+    try:
+        stats = SchemaQuestionBankService.get_question_stats()
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1b. LLM Draft Question Generation (Teacher/Admin)
 # ─────────────────────────────────────────────────────────────────────────────
 @schema_mastery_bp.route("/questions/generate", methods=["POST"])
 def generate_questions():
@@ -259,14 +291,16 @@ def get_approved_bank():
     active_only = request.args.get("active_only", "false").lower() == "true"
     include_deleted = request.args.get("include_deleted", "false").lower() == "true"
     try:
-        bank = SchemaQuestionBankService.get_approved_question_bank(
+        bank, storage_source = SchemaQuestionBankService.get_approved_question_bank(
             concept=concept,
             active_only=active_only,
-            include_deleted=include_deleted
+            include_deleted=include_deleted,
+            return_source=True
         )
         return jsonify({
             "success": True,
             "count": len(bank),
+            "storage_source": storage_source,
             "questions": bank,
         }), 200
     except Exception as e:
@@ -357,76 +391,116 @@ def get_latest_post_test_result(student_id):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 8c. Component Data-Flow Verification Context
+# 8c. Learning Session Context & Prerequisite Gating (Component 1 -> 4)
 # ─────────────────────────────────────────────────────────────────────────────
+@schema_mastery_bp.route("/context/current", methods=["GET"])
 @schema_mastery_bp.route("/context", methods=["GET"])
 def get_schema_mastery_context():
     """
-    Teacher/developer verification endpoint for the Component 1 -> 4 data flow.
-    It reads local post-test persistence first and reports found/missing signals.
+    Returns the student's active learning session context, prerequisite completeness,
+    and missing fields. Used to unlock/lock Understanding Check.
     """
-    student_id = request.args.get("student_id", "").strip()
-    session_id = request.args.get("session_id", "").strip() or None
+    student_id = request.args.get("student_id", "").strip() or request.args.get("studentId", "").strip()
     if not student_id:
         return jsonify({"success": False, "error": "student_id is required"}), 400
 
-    result = SchemaPostTestResultService.get_latest_for_student(student_id, session_id=session_id)
-    missing_fields = []
+    context_summary = SchemaSessionService.get_context_summary(student_id)
+    return jsonify(context_summary), 200
 
-    def has_value(field):
-        return result is not None and result.get(field) not in (None, "")
 
-    for field in (
-        "concept_name",
-        "pre_test_score",
-        "attempt_count",
-        "time_taken_seconds",
-        "error_type",
-        "error_pattern_score",
-        "post_test_score",
-        "mastery_level",
-        "next_action",
-    ):
-        if not has_value(field):
-            missing_fields.append(field)
+@schema_mastery_bp.route("/context/save", methods=["POST"])
+def save_schema_mastery_context():
+    """
+    Saves or updates multi-component learning session data for a student.
+    Accepts component_1, component_2, component_3, or general session payloads.
+    """
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id") or data.get("studentId")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required in request body"}), 400
 
-    component_1_found = all(has_value(f) for f in ("concept_name", "pre_test_score", "attempt_count", "time_taken_seconds"))
-    component_2_found = all(has_value(f) for f in ("error_type", "error_pattern_score"))
-    component_4_found = result is not None
+    # If component specific payload
+    if "component_1" in data or "weak_concept" in data or "pre_test_score" in data:
+        c1_payload = data.get("component_1") or data
+        SchemaSessionService.save_component_1_data(student_id, c1_payload)
 
-    payload = {
+    if "component_2" in data or "error_type" in data or "reason_group" in data:
+        c2_payload = data.get("component_2") or data
+        SchemaSessionService.save_component_2_data(student_id, c2_payload)
+
+    if "component_3" in data or "recommended_game_id" in data or "learning_completed" in data:
+        c3_payload = data.get("component_3") or data
+        SchemaSessionService.save_component_3_data(student_id, c3_payload)
+
+    updated_context = SchemaSessionService.get_context_summary(student_id)
+    return jsonify(updated_context), 200
+
+
+@schema_mastery_bp.route("/session/component1", methods=["POST"])
+def save_component_1_session():
+    """Endpoint called after Pre-Test completes."""
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id") or data.get("studentId")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
+
+    session = SchemaSessionService.save_component_1_data(student_id, data)
+    return jsonify({
         "success": True,
-        "student_id": student_id,
-        "session_id": session_id or (result or {}).get("session_id"),
-        "source": "local",
-        "component_1": {
-            "found": component_1_found,
-            "concept_name": (result or {}).get("concept_name"),
-            "pre_test_score": (result or {}).get("pre_test_score"),
-            "attempt_count": (result or {}).get("attempt_count"),
-            "time_taken_seconds": (result or {}).get("time_taken_seconds"),
-        },
-        "component_2": {
-            "found": component_2_found,
-            "error_type": (result or {}).get("error_type"),
-            "error_pattern_score": (result or {}).get("error_pattern_score"),
-            "error_reason": (result or {}).get("error_reason", ""),
-        },
-        "component_3": {
-            "found": component_4_found,
-            "learning_completed": component_4_found,
-            "recommended_activity_id": (result or {}).get("recommended_activity_id", ""),
-        },
-        "component_4": {
-            "post_test_found": component_4_found,
-            "latest_post_test_score": (result or {}).get("post_test_score"),
-            "latest_mastery_level": (result or {}).get("mastery_level"),
-            "latest_next_action": (result or {}).get("next_action"),
-        },
-        "ready_for_post_test": component_1_found and component_2_found,
-        "missing_fields": missing_fields,
-    }
-    return jsonify(payload), 200
+        "message": "Component 1 Pre-Test data saved to learning session",
+        "current_stage": session.get("current_stage"),
+        "session": session,
+    }), 200
+
+
+@schema_mastery_bp.route("/session/component2", methods=["POST"])
+def save_component_2_session():
+    """Endpoint called after Error Analysis completes/telemetry."""
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id") or data.get("studentId")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
+
+    session = SchemaSessionService.save_component_2_data(student_id, data)
+    return jsonify({
+        "success": True,
+        "message": "Component 2 Error Feedback data saved to learning session",
+        "current_stage": session.get("current_stage"),
+        "session": session,
+    }), 200
+
+
+@schema_mastery_bp.route("/session/component3", methods=["POST"])
+def save_component_3_session():
+    """Endpoint called after Recommended Game Lesson completes."""
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id") or data.get("studentId")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
+
+    session = SchemaSessionService.save_component_3_data(student_id, data)
+    return jsonify({
+        "success": True,
+        "message": "Component 3 Game Lesson marked complete. Understanding Check unlocked.",
+        "current_stage": session.get("current_stage"),
+        "session": session,
+    }), 200
+
+
+@schema_mastery_bp.route("/context/reset", methods=["POST"])
+def reset_schema_mastery_context():
+    """Resets the learning session for a fresh retry cycle."""
+    data = request.get_json(silent=True) or {}
+    student_id = data.get("student_id") or data.get("studentId") or request.args.get("student_id")
+    if not student_id:
+        return jsonify({"success": False, "error": "student_id is required"}), 400
+
+    session = SchemaSessionService.reset_session(student_id)
+    return jsonify({
+        "success": True,
+        "message": "Learning session reset successfully",
+        "session": session,
+    }), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────

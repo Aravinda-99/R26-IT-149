@@ -7,15 +7,21 @@ Generates concept-specific draft post-test questions with option quality labels:
   - Wrong (0.0 - weak understanding)
   - Clearly Wrong (0.0 - serious confusion)
 
-Saves drafts to `generated_questions` with status PENDING for teacher review.
-Includes an extensible structure for real LLM APIs (OpenAI / Gemini) with
-a high-fidelity mock generator fallback.
+Supports real LLM providers:
+  - Google Gemini API (default, via Gemini 3.6/3.5/Flash)
+  - OpenAI API (via GPT-4o / GPT-4o-mini)
+
+Saves all generated questions to `generated_questions` with status PENDING for teacher review.
+Rotates correct answer positions across A, B, C, D to prevent position bias.
+Mock questions are strictly disabled by default (ALLOW_MOCK_QUESTIONS=false).
 """
 
 import os
+import json
 import uuid
 import random
-from datetime import datetime
+import requests
+from datetime import datetime, timezone
 from config import Config
 from services.schema_question_bank_service import SchemaQuestionBankService
 
@@ -23,7 +29,7 @@ VALID_CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
 VALID_TYPES = ["Basic Understanding", "Code Output Prediction", "Error Recognition", "Application", "Transfer"]
 VALID_DIFFICULTIES = ["Easy", "Medium", "Hard"]
 
-# Template library for high-fidelity draft generation
+# Template library for development/mock mode only
 QUESTION_TEMPLATES = {
     "Variables": [
         {
@@ -392,6 +398,35 @@ class SchemaLLMQuestionService:
     """Orchestrates real LLM generation of draft questions for teacher review."""
 
     @classmethod
+    def get_llm_status(cls) -> dict:
+        """Returns safe status information about LLM configuration without exposing secret keys."""
+        provider = (Config.LLM_PROVIDER or os.getenv("LLM_PROVIDER", "gemini")).strip().lower()
+        use_llm = Config.USE_LLM_QUESTION_GENERATION
+        allow_mock = Config.ALLOW_MOCK_QUESTIONS
+
+        if provider == "gemini":
+            api_key = Config.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY", "").strip()
+            model = Config.LLM_MODEL or os.getenv("LLM_MODEL", "gemini-flash-latest").strip()
+            key_configured = bool(api_key and not api_key.startswith("your_gemini"))
+        elif provider == "openai":
+            api_key = Config.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "").strip()
+            model = Config.LLM_MODEL or os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
+            key_configured = bool(api_key and not api_key.startswith("your_openai"))
+        else:
+            api_key = ""
+            model = Config.LLM_MODEL or "unknown"
+            key_configured = False
+
+        return {
+            "success": True,
+            "llm_enabled": use_llm,
+            "provider": provider,
+            "model": model,
+            "api_key_configured": key_configured,
+            "mock_questions_allowed": allow_mock,
+        }
+
+    @classmethod
     def generate_draft_questions(
         cls,
         concept_name: str,
@@ -401,7 +436,7 @@ class SchemaLLMQuestionService:
         count: int = 5,
     ) -> list:
         """
-        Generates `count` draft questions for the given concept and filters using real LLM.
+        Generates `count` draft questions for the given concept using the active LLM provider.
         Saves all generated questions to `generated_questions` with status PENDING and active=False.
         """
         concept = concept_name.strip() if concept_name else "Loops"
@@ -411,26 +446,54 @@ class SchemaLLMQuestionService:
 
         count = max(1, min(20, int(count or 5)))
 
-        # Check LLM configuration
-        api_key = Config.OPENAI_API_KEY if Config.OPENAI_API_KEY is not None else os.getenv("OPENAI_API_KEY", "").strip()
+        provider = (Config.LLM_PROVIDER or os.getenv("LLM_PROVIDER", "gemini")).strip().lower()
         use_llm = Config.USE_LLM_QUESTION_GENERATION
         allow_mock = Config.ALLOW_MOCK_QUESTIONS
 
-        if not use_llm or not api_key or api_key.startswith("your_openai"):
+        if not use_llm:
             if not allow_mock:
-                raise ValueError("LLM question generation is not configured. Please set OPENAI_API_KEY.")
-            print("[WARN] LLM not configured. Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                raise ValueError("LLM question generation is disabled. Please set USE_LLM_QUESTION_GENERATION=true.")
+            print("[WARN] USE_LLM_QUESTION_GENERATION is false. Generating mock drafts (ALLOW_MOCK_QUESTIONS=true).")
             generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
-        else:
-            # Attempt real LLM generation
-            try:
-                generated_raw = cls._generate_with_real_llm(concept, question_type, difficulty, target_error_type, count, api_key=api_key)
-            except Exception as e:
-                print(f"[ERROR] Real LLM question generation failed: {e}")
+            saved = SchemaQuestionBankService.save_generated_questions(generated_raw)
+            return saved
+
+        # Provider routing
+        if provider == "gemini":
+            api_key = Config.GEMINI_API_KEY if hasattr(Config, "GEMINI_API_KEY") else os.getenv("GEMINI_API_KEY", "").strip()
+            if not api_key or api_key.startswith("your_gemini"):
                 if not allow_mock:
-                    raise RuntimeError(f"OpenAI question generation failed: {e}")
-                print("[WARN] Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                    raise ValueError("Gemini API key is not configured. Please set GEMINI_API_KEY in backend/.env.")
+                print("[WARN] GEMINI_API_KEY not configured. Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
                 generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+            else:
+                try:
+                    generated_raw = cls._generate_with_gemini(concept, question_type, difficulty, target_error_type, count, api_key=api_key)
+                except Exception as e:
+                    print(f"[ERROR] Real Gemini question generation failed: {e}")
+                    if not allow_mock:
+                        raise RuntimeError(f"Gemini question generation failed: {e}")
+                    print("[WARN] Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                    generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+
+        elif provider == "openai":
+            api_key = Config.OPENAI_API_KEY if hasattr(Config, "OPENAI_API_KEY") else os.getenv("OPENAI_API_KEY", "").strip()
+            if not api_key or api_key.startswith("your_openai"):
+                if not allow_mock:
+                    raise ValueError("OpenAI API key is not configured. Please set OPENAI_API_KEY in backend/.env.")
+                print("[WARN] OPENAI_API_KEY not configured. Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+            else:
+                try:
+                    generated_raw = cls._generate_with_openai(concept, question_type, difficulty, target_error_type, count, api_key=api_key)
+                except Exception as e:
+                    print(f"[ERROR] Real OpenAI question generation failed: {e}")
+                    if not allow_mock:
+                        raise RuntimeError(f"OpenAI question generation failed: {e}")
+                    print("[WARN] Falling back to mock generator because ALLOW_MOCK_QUESTIONS=true.")
+                    generated_raw = cls._generate_mock_questions(concept, question_type, difficulty, target_error_type, count)
+        else:
+            raise ValueError(f"Unsupported LLM_PROVIDER '{provider}'. Supported providers are 'gemini' and 'openai'.")
 
         if not generated_raw:
             if not allow_mock:
@@ -504,17 +567,133 @@ class SchemaLLMQuestionService:
         }
 
     @classmethod
-    def _generate_with_real_llm(cls, concept, question_type, difficulty, target_error_type, count, api_key=None):
+    def _generate_with_gemini(cls, concept, question_type, difficulty, target_error_type, count, api_key):
         """
-        Generates draft questions using OpenAI API with the configured model.
+        Generates draft questions using Google Gemini REST API.
         Validates JSON schema, 4-tier answer qualities, and enforces balanced A/B/C/D positions.
         """
-        api_key = api_key or Config.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY", "").strip()
-        if not api_key or api_key.startswith("your_openai"):
-            raise ValueError("LLM question generation is not configured. Please set OPENAI_API_KEY.")
+        model_name = Config.LLM_MODEL or os.getenv("LLM_MODEL", "gemini-flash-latest").strip()
+        q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
+        err_str = f" targeting error pattern '{target_error_type}'" if target_error_type and target_error_type != "UNKNOWN_ERROR" else ""
 
+        prompt = f"""You are an expert Java Computer Science educator.
+Generate {count} multiple-choice draft diagnostic questions on the concept '{concept}' at '{difficulty}' difficulty{q_type_str}{err_str}.
+
+Each question MUST strictly follow this exact 4-tier schema:
+- Exactly 4 options: option_a, option_b, option_c, option_d
+- Option quality labels:
+    - Exactly one "Correct" (worth 1.0)
+    - Exactly one "Nearly Correct" (worth 0.5 - represents a common misconception or off-by-one/partial reasoning)
+    - Exactly one "Wrong" (worth 0.0 - weak conceptual understanding)
+    - Exactly one "Clearly Wrong" (worth 0.0 - severe misconception or nonsense)
+- "correct_option" MUST be "A", "B", "C", or "D" corresponding to the option marked "Correct".
+- BALANCED ANSWER DISTRIBUTION: You MUST vary and distribute the "Correct" option across A, B, C, and D evenly throughout the {count} questions (e.g. Q1 -> A, Q2 -> B, Q3 -> C, Q4 -> D, etc.). Do NOT make option A always the correct answer!
+- Include Java code snippet if applicable (or empty string "")
+- Include concise pedagogical explanation
+- Include learning_outcome and target_error_type
+
+Return ONLY a JSON object with a single key "questions" containing a list of {count} question objects formatted as:
+{{
+  "questions": [
+    {{
+      "question_type": "Code Output Prediction",
+      "question_text": "...",
+      "code_snippet": "...",
+      "option_a": "...",
+      "option_a_quality": "Wrong",
+      "option_b": "...",
+      "option_b_quality": "Correct",
+      "option_c": "...",
+      "option_c_quality": "Nearly Correct",
+      "option_d": "...",
+      "option_d_quality": "Clearly Wrong",
+      "correct_option": "B",
+      "explanation": "...",
+      "learning_outcome": "...",
+      "target_error_type": "..."
+    }}
+  ]
+}}
+"""
+
+        candidate_models = [model_name, "gemini-flash-latest", "gemini-3.5-flash", "gemini-3.6-flash"]
+        # deduplicate
+        seen = set()
+        models_to_try = []
+        for m in candidate_models:
+            if m and m not in seen:
+                seen.add(m)
+                models_to_try.append(m)
+
+        raw_list = []
+        last_error = None
+        used_model = model_name
+
+        for candidate_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{candidate_model}:generateContent?key={api_key}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": prompt}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "temperature": 0.7,
+                }
+            }
+
+            try:
+                response = requests.post(url, json=payload, timeout=45)
+                if response.status_code == 200:
+                    res_json = response.json()
+                    candidates = res_json.get("candidates", [])
+                    if candidates:
+                        part_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                        parsed = json.loads(part_text)
+                        raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+                        used_model = candidate_model
+                        break
+                elif response.status_code == 404:
+                    # Model not available, try next candidate
+                    last_error = f"Model {candidate_model} returned 404: {response.text[:200]}"
+                    continue
+                else:
+                    last_error = f"Gemini API error ({response.status_code}): {response.text[:300]}"
+            except Exception as ex:
+                last_error = f"Gemini request exception: {ex}"
+
+        if not raw_list and last_error:
+            raise RuntimeError(last_error)
+
+        validated = []
+        now = datetime.now(timezone.utc).isoformat()
+        letters = ["A", "B", "C", "D"]
+        for idx, item in enumerate(raw_list):
+            target_letter = letters[idx % len(letters)]
+            val_q = cls._validate_and_format_question(
+                item, concept, difficulty, target_error_type, now,
+                source="GEMINI",
+                generated_by=f"Gemini ({used_model})",
+                target_correct_letter=target_letter
+            )
+            if val_q:
+                validated.append(val_q)
+
+        if len(validated) > 0:
+            print(f"[OK] Gemini generated {len(validated)} validated draft questions for {concept} using {used_model}")
+            return validated
+
+        raise RuntimeError("Gemini returned no valid structured questions matching the required 4-tier schema.")
+
+    @classmethod
+    def _generate_with_openai(cls, concept, question_type, difficulty, target_error_type, count, api_key):
+        """
+        Generates draft questions using OpenAI API with the configured model.
+        """
         from openai import OpenAI
-        import json
 
         client = OpenAI(api_key=api_key)
         q_type_str = f" of type '{question_type}'" if question_type else " covering diverse cognitive levels (Basic Understanding, Code Output Prediction, Error Recognition, Application, Transfer)"
@@ -541,7 +720,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
 {{
   "questions": [
     {{
-      "question_type": "Basic Understanding",
+      "question_type": "Code Output Prediction",
       "question_text": "...",
       "code_snippet": "...",
       "option_a": "...",
@@ -576,13 +755,13 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
 
         validated = []
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat()
         letters = ["A", "B", "C", "D"]
         for idx, item in enumerate(raw_list):
             target_letter = letters[idx % len(letters)]
             val_q = cls._validate_and_format_question(
                 item, concept, difficulty, target_error_type, now,
-                source="LLM",
+                source="OPENAI",
                 generated_by=f"OpenAI ({model_name})",
                 target_correct_letter=target_letter
             )
@@ -596,7 +775,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         raise RuntimeError("OpenAI returned no valid structured questions matching the required 4-tier schema.")
 
     @classmethod
-    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="LLM", generated_by="OpenAI (Teacher-Review Pipeline)", target_correct_letter=None):
+    def _validate_and_format_question(cls, q, concept, difficulty, target_error_type, timestamp, source="GEMINI", generated_by="Gemini (Teacher-Review Pipeline)", target_correct_letter=None):
         """Validates and enforces strict 4-tier quality labels and 4 options A/B/C/D with balanced positions."""
         if not isinstance(q, dict):
             return None
@@ -605,18 +784,33 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         if not text or not str(text).strip():
             return None
 
-        opt_a = str(q.get("option_a") or q.get("opt_a") or "").strip()
-        opt_b = str(q.get("option_b") or q.get("opt_b") or "").strip()
-        opt_c = str(q.get("option_c") or q.get("opt_c") or "").strip()
-        opt_d = str(q.get("option_d") or q.get("opt_d") or "").strip()
+        # Check options object or individual keys
+        options_dict = q.get("options")
+        if isinstance(options_dict, dict):
+            opt_a = str(options_dict.get("A", "")).strip()
+            opt_b = str(options_dict.get("B", "")).strip()
+            opt_c = str(options_dict.get("C", "")).strip()
+            opt_d = str(options_dict.get("D", "")).strip()
+        else:
+            opt_a = str(q.get("option_a") or q.get("opt_a") or "").strip()
+            opt_b = str(q.get("option_b") or q.get("opt_b") or "").strip()
+            opt_c = str(q.get("option_c") or q.get("opt_c") or "").strip()
+            opt_d = str(q.get("option_d") or q.get("opt_d") or "").strip()
 
         if not (opt_a and opt_b and opt_c and opt_d):
             return None
 
-        qual_a = q.get("option_a_quality") or q.get("q_a") or "Correct"
-        qual_b = q.get("option_b_quality") or q.get("q_b") or "Nearly Correct"
-        qual_c = q.get("option_c_quality") or q.get("q_c") or "Wrong"
-        qual_d = q.get("option_d_quality") or q.get("q_d") or "Clearly Wrong"
+        qual_dict = q.get("option_qualities")
+        if isinstance(qual_dict, dict):
+            qual_a = qual_dict.get("A", "Correct")
+            qual_b = qual_dict.get("B", "Nearly Correct")
+            qual_c = qual_dict.get("C", "Wrong")
+            qual_d = qual_dict.get("D", "Clearly Wrong")
+        else:
+            qual_a = q.get("option_a_quality") or q.get("q_a") or "Correct"
+            qual_b = q.get("option_b_quality") or q.get("q_b") or "Nearly Correct"
+            qual_c = q.get("option_c_quality") or q.get("q_c") or "Wrong"
+            qual_d = q.get("option_d_quality") or q.get("q_d") or "Clearly Wrong"
 
         raw_opts = [
             {"text": opt_a, "quality": qual_a},
@@ -640,6 +834,18 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             "equivalent_group_id": q.get("equivalent_group_id") or f"GRP_{concept[:3].upper()}_{random.randint(100, 999)}",
             "question_text": str(text).strip(),
             "code_snippet": q.get("code_snippet") or q.get("code", ""),
+            "options": {
+                "A": balanced["option_a"],
+                "B": balanced["option_b"],
+                "C": balanced["option_c"],
+                "D": balanced["option_d"],
+            },
+            "option_qualities": {
+                "A": balanced["option_a_quality"],
+                "B": balanced["option_b_quality"],
+                "C": balanced["option_c_quality"],
+                "D": balanced["option_d_quality"],
+            },
             "option_a": balanced["option_a"],
             "option_b": balanced["option_b"],
             "option_c": balanced["option_c"],
@@ -664,7 +870,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):
         """High-fidelity template generator producing varied questions with balanced A/B/C/D correct options (dev mode only)."""
         if not Config.ALLOW_MOCK_QUESTIONS:
-            raise ValueError("Mock question generation is disabled. Please configure OPENAI_API_KEY for real LLM generation.")
+            raise ValueError("Mock question generation is disabled. Please configure GEMINI_API_KEY for real LLM generation.")
 
         templates = QUESTION_TEMPLATES.get(concept, QUESTION_TEMPLATES.get("Loops", []))
         
@@ -675,7 +881,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 templates = filtered
 
         results = []
-        now = datetime.utcnow().isoformat() + "Z"
+        now = datetime.now(timezone.utc).isoformat()
         letters = ["A", "B", "C", "D"]
 
         for i in range(count):
@@ -705,6 +911,18 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "equivalent_group_id": f"{base.get('group', 'GRP_' + concept[:3].upper())}{variant_suffix}",
                 "question_text": base.get("text", f"Question about {concept}"),
                 "code_snippet": base.get("code", ""),
+                "options": {
+                    "A": balanced["option_a"],
+                    "B": balanced["option_b"],
+                    "C": balanced["option_c"],
+                    "D": balanced["option_d"],
+                },
+                "option_qualities": {
+                    "A": balanced["option_a_quality"],
+                    "B": balanced["option_b_quality"],
+                    "C": balanced["option_c_quality"],
+                    "D": balanced["option_d_quality"],
+                },
                 "option_a": balanced["option_a"],
                 "option_b": balanced["option_b"],
                 "option_c": balanced["option_c"],
@@ -715,7 +933,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
                 "option_c_quality": balanced["option_c_quality"],
                 "option_d_quality": balanced["option_d_quality"],
                 "explanation": base.get("explanation") or f"The correct answer is Option {balanced['correct_option']}.",
-                "source": "DEV_MOCK",
+                "source": "DEV_MOCK_ONLY",
                 "generated_by": "Template Mock Generator (DEV ONLY)",
                 "created_by": "Mock_Generator",
                 "status": "PENDING",
@@ -727,4 +945,3 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             results.append(question_obj)
 
         return results
-

@@ -1,0 +1,48 @@
+{
+  "STU_VERIFY_FLOW_999": {
+    "session_id": "SESS_2B9C9BFA",
+    "student_id": "STU_VERIFY_FLOW_999",
+    "student_name": "Test Learner 999",
+    "student_email": "test999@codequest.edu",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.4,
+      "attempt_count": 2,
+      "time_taken_seconds": 95.0,
+      "completed_at": "2026-08-31T15:47:26.489962+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.85,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Index out of bounds due to loop terminating at <= length instead of < length",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T15:47:26.503441+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "arrays",
+      "recommended_game_name": "Array Index Rescue Game",
+      "completed_at": "2026-08-31T15:47:26.517316+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.6,
+      "mastery_level": "Needs More Practice",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-08-31T15:48:06.674649+00:00"
+    },
+    "current_stage": "MASTERY_EVALUATED",
+    "created_at": "2026-08-31T15:47:26.476695+00:00",
+    "updated_at": "2026-08-31T15:48:06.674649+00:00",
+    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "error_pattern_score": 0.85,
+    "error_pattern_score_source": "component2_confidence"
+  }
+}

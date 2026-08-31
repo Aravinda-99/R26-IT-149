@@ -97,13 +97,18 @@ export const MasteryAPI = {
 };
 
 export const SchemaMasteryAPI = {
+    getLLMStatus: () => apiRequest("/schema-mastery/llm/status"),
+    getQuestionStats: () => apiRequest("/schema-mastery/questions/stats"),
     predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
     generateQuestions: (data) => apiRequest("/schema-mastery/questions/generate", "POST", data),
     getPendingQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/pending${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
+    getQuestionBank: (concept = "", activeOnly = false) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getRejectedQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/rejected${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
-    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    reactivateQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reactivate`, "POST", data),
+    deleteQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}`, "DELETE", data),
     getPostTestQuestions: (params = {}) => {
         const studentId = params.student_id || params.studentId || "";
         const concept = params.concept || params.concept_name || "Loops";
@@ -126,6 +131,14 @@ export const SchemaMasteryAPI = {
         if (sessionId) params.set("session_id", sessionId);
         return apiRequest(`/schema-mastery/context?${params.toString()}`);
     },
+    getCurrentContext: (studentId) => {
+        return apiRequest(`/schema-mastery/context/current?student_id=${encodeURIComponent(studentId)}`);
+    },
+    saveSessionContext: (data) => apiRequest("/schema-mastery/context/save", "POST", data),
+    saveComponent1: (data) => apiRequest("/schema-mastery/session/component1", "POST", data),
+    saveComponent2: (data) => apiRequest("/schema-mastery/session/component2", "POST", data),
+    saveComponent3: (data) => apiRequest("/schema-mastery/session/component3", "POST", data),
+    resetSessionContext: (studentId) => apiRequest("/schema-mastery/context/reset", "POST", { student_id: studentId }),
 };
 
 // --- Wellbeing / Struggle Detection ---

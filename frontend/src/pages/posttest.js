@@ -2,7 +2,8 @@
  * Post-Test Page — Component 4: Schema Mastery Validation (MCQ)
  * =============================================================
  * Concept-specific 15-question post-test check taken after gamified lessons.
- * Clean, modern white-theme educational UI hiding raw ML internals.
+ * Gated by prerequisites (Component 1 Pre-Test, Component 2 Error Feedback, Component 3 Game Practice).
+ * Consumes real multi-component telemetry for Random Forest ML mastery inference.
  */
 
 import { SchemaMasteryAPI } from "../api/api.js";
@@ -11,17 +12,18 @@ import { getCurrentUser } from "../utils/auth.js";
 // ── State ───────────────────────────────────────────────────────────
 let currentStudentId = null;
 let currentSessionId = null;
-let currentConcept = "Loops";
-let currentErrorType = "LOOP_CONDITION_ERROR";
+let currentConcept = null;
+let currentWeakConcept = null;
+let currentErrorType = null;
 let currentPreTestScore = 0.50;
 let currentAttemptCount = 1;
-let currentErrorPatternScore = 0.40;
-let currentOnBack = null;
+let currentTimeTakenSeconds = 120;
+let currentErrorPatternScore = 0.50;
+let currentErrorReason = "";
 
 let questions = [];
 let currentQuestionIndex = 0;
 let selectedAnswers = {};
-let testResult = null;
 let startTime = null;
 
 const conceptDisplayNames = {
@@ -38,7 +40,7 @@ const conceptDisplayNames = {
 };
 
 /**
- * Entry point: renders the Post-Test understanding check page.
+ * Entry point: renders the Post-Test understanding check page with strict prerequisite gating.
  */
 export async function renderPostTest(container, opts = {}) {
     const user = getCurrentUser();
@@ -55,32 +57,155 @@ export async function renderPostTest(container, opts = {}) {
     }
 
     currentStudentId = user.uid || user.id;
-    currentConcept = opts.concept || opts.concept_name || "Loops";
-    currentErrorType = opts.error_type || opts.errorType || "LOOP_CONDITION_ERROR";
-    currentPreTestScore = typeof opts.pre_test_score === "number" ? opts.pre_test_score : 0.50;
-    currentAttemptCount = opts.attempt_count || 1;
-    currentErrorPatternScore = typeof opts.error_pattern_score === "number" ? opts.error_pattern_score : 0.40;
-    currentOnBack = opts.onBack || null;
 
-    selectedAnswers = {};
-    testResult = null;
-    currentQuestionIndex = 0;
-    startTime = Date.now();
+    // Loading indicator while validating prerequisites
+    container.innerHTML = `
+        <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
+            <div class="spinner" style="margin-bottom: 1.5rem;"></div>
+            <h3 style="color: var(--text-primary); font-weight: 600;">Verifying Learning Progression...</h3>
+            <p style="margin-top: 0.5rem;">Checking your Pre-Test diagnostic and error feedback records...</p>
+        </div>
+    `;
 
-    renderStartScreen(container);
+    try {
+        const contextRes = await SchemaMasteryAPI.getCurrentContext(currentStudentId);
+        
+        const c1 = contextRes?.component_1 || {};
+        const c2 = contextRes?.component_2 || {};
+        const c3 = contextRes?.component_3 || {};
+
+        // ── 1. Check Prerequisite 1: Diagnostic Pre-Test ───────────────────────
+        if (!c1.completed || !c1.concept_name) {
+            renderLockedScreen(container, {
+                title: "Diagnostic Pre-Test Required",
+                message: "Complete the Pre-Test first to identify your weak Java concept.",
+                actionLabel: "Start Diagnostic Pre-Test",
+                actionHref: "#/student/pre-test",
+                icon: "fa-solid fa-clipboard-list",
+                stepNumber: 1
+            });
+            return;
+        }
+
+        // ── 2. Check Prerequisite 2: Error Feedback Review & Pattern Score ─────
+        if (!c2.completed || !c2.error_type || c2.error_pattern_score === undefined || c2.error_pattern_score === null) {
+            renderLockedScreen(container, {
+                title: "Error Feedback Review Required",
+                message: "Complete Error Feedback first to generate the diagnostic pattern score.",
+                actionLabel: "Go to Error Feedback",
+                actionHref: "#/student/error-analysis",
+                icon: "fa-solid fa-magnifying-glass-chart",
+                stepNumber: 2
+            });
+            return;
+        }
+
+        // ── 3. Check Prerequisite 3: Game Lesson Practice ──────────────────────
+        if (!c3.completed) {
+            renderLockedScreen(container, {
+                title: "Game Lesson Practice Required",
+                message: "Complete the recommended game lesson before the post-learning check.",
+                actionLabel: "Go to Game Lessons",
+                actionHref: "#/student/games",
+                icon: "fa-solid fa-gamepad",
+                stepNumber: 3
+            });
+            return;
+        }
+
+        // ── Prerequisites Satisfied: Load Real Context ─────────────────────────
+        currentSessionId = contextRes.session_id;
+        currentConcept = c1.concept_name || c1.weak_concept || "Arrays";
+        currentWeakConcept = c1.weak_concept || currentConcept;
+        currentPreTestScore = typeof c1.pre_test_score === "number" ? c1.pre_test_score : 0.50;
+        currentAttemptCount = c1.attempt_count || 1;
+        currentTimeTakenSeconds = c1.time_taken_seconds || 120;
+        currentErrorType = c2.error_type || "UNKNOWN_ERROR";
+        currentErrorPatternScore = typeof c2.error_pattern_score === "number" ? c2.error_pattern_score : 0.50;
+        currentErrorReason = c2.error_reason || "";
+
+        selectedAnswers = {};
+        currentQuestionIndex = 0;
+        startTime = Date.now();
+
+        renderStartScreen(container);
+
+    } catch (err) {
+        console.error("Failed to load learning session context:", err);
+        container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 4rem 2rem; max-width: 600px; margin: 2rem auto;">
+                <div style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"><i class="fa-solid fa-circle-exclamation"></i></div>
+                <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Unable to Load Learning Context</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${err.message || "Failed to contact backend learning session service."}</p>
+                <a href="#/student/dashboard" class="btn btn-primary"><i class="fa-solid fa-house"></i> Return to Learning Hub</a>
+            </div>
+        `;
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 1. Post-Test Start Screen
+// Gated Locked Screen
+// ─────────────────────────────────────────────────────────────────────────────
+function renderLockedScreen(container, { title, message, actionLabel, actionHref, icon, stepNumber }) {
+    container.innerHTML = `
+        <div class="posttest-page c4-check-page" style="padding: 2rem 1.5rem; max-width: 720px; margin: 0 auto;">
+            <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow-sm);">
+                
+                <div style="width: 72px; height: 72px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem; border: 2px solid #DBEAFE;">
+                    <i class="${icon}"></i>
+                </div>
+
+                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 0.75rem;">
+                    Step ${stepNumber} of 4 Pending
+                </div>
+
+                <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0;">
+                    ${title}
+                </h1>
+
+                <p style="font-size: 0.95rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 2rem auto; line-height: 1.6;">
+                    ${message}
+                </p>
+
+                <div style="background: var(--bg-subtle); border-radius: 12px; padding: 1.25rem; text-align: left; max-width: 480px; margin: 0 auto 2rem auto; border: 1px solid var(--border-color);">
+                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.6rem;">
+                        <i class="fa-solid fa-route" style="color: var(--primary); margin-right: 0.35rem;"></i> Understanding Check Requirements:
+                    </div>
+                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;">
+                        <li style="color: ${stepNumber === 1 ? '#D97706; font-weight: 600;' : '#16A34A;'}">1. Complete Diagnostic Pre-Test</li>
+                        <li style="color: ${stepNumber === 2 ? '#D97706; font-weight: 600;' : (stepNumber > 2 ? '#16A34A;' : '#94A3B8;')}">2. Review Diagnostic Error Feedback</li>
+                        <li style="color: ${stepNumber === 3 ? '#D97706; font-weight: 600;' : (stepNumber > 3 ? '#16A34A;' : '#94A3B8;')}">3. Practice in Recommended Game Lessons</li>
+                        <li style="color: #94A3B8;">4. Validate Understanding in Post-Test</li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                    <a href="${actionHref}" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
+                        <i class="${icon}"></i> ${actionLabel}
+                    </a>
+                    <a href="#/student/dashboard" class="btn btn-outline" style="padding: 0.8rem 1.5rem; font-size: 0.95rem; font-weight: 600; border-radius: 8px;">
+                        <i class="fa-solid fa-house"></i> View Hub
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Post-Test Start Screen (Consuming Real Learning Context)
 // ─────────────────────────────────────────────────────────────────────────────
 function renderStartScreen(container) {
     const conceptTitle = conceptDisplayNames[currentConcept] || currentConcept;
+    const preTestPct = Math.round(currentPreTestScore * 100);
+    const confidencePct = Math.round(currentErrorPatternScore * 100);
 
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 1.5rem 2rem; max-width: 860px; margin: 0 auto; color: var(--text-primary);">
+            
             <div class="c4-check-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-                <a href="#/student/dashboard" class="btn btn-outline" style="padding: 0.5rem 1rem;">
-                    ← Back to Dashboard
+                <a href="#/student/dashboard" class="btn btn-outline" style="padding: 0.5rem 1rem; border-radius: 8px;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Hub
                 </a>
                 <div>
                     <h1 style="font-size: 1.7rem; font-weight: 800; color: var(--text-primary); margin: 0;">
@@ -94,32 +219,69 @@ function renderStartScreen(container) {
 
             <!-- Learning Journey Context Card -->
             <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.8rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1.2rem; color: var(--primary); display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fa-solid fa-chart-line"></i> Learning Validation Overview
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+                        <i class="fa-solid fa-chart-line"></i> Learning Validation Overview
+                    </h3>
+                    <span class="badge" style="background: #DCFCE7; color: #16A34A; font-weight: 700; font-size: 0.75rem; padding: 0.25rem 0.65rem; border-radius: 9999px;">
+                        Prerequisites Satisfied
+                    </span>
+                </div>
+
+                <!-- Real Context Metrics Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Target Focus</span>
-                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Target Concept</span>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-top: 0.25rem;">
                             ${conceptTitle}
                         </div>
                     </div>
+
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600;">Questions</span>
-                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--primary); margin-top: 0.2rem;">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Identified Weak Area</span>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">
+                            ${currentWeakConcept}
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Detected Misconception</span>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #2563EB; margin-top: 0.25rem; word-break: break-word;">
+                            ${currentErrorType}
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Pre-Test Score</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 0.25rem;">
+                            ${preTestPct}%
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Error Pattern Strength</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #16A34A; margin-top: 0.25rem;">
+                            ${confidencePct}%
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Assessment Size</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: 0.25rem;">
                             15 Concept Questions
                         </div>
                     </div>
                 </div>
 
-                <div style="background: var(--primary-soft); border-left: 4px solid var(--primary); padding: 1rem; border-radius: 6px; font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">
-                    <strong>Instructions:</strong> Answer each question carefully. Your answers will validate whether you have overcome common Java misconceptions and are ready to advance to new topics.
+                <div style="background: var(--primary-soft); border-left: 4px solid var(--primary); padding: 1rem 1.2rem; border-radius: 6px; font-size: 0.9rem; color: var(--text-primary); line-height: 1.55;">
+                    <strong>Instruction:</strong> This post-learning check validates whether you have improved in the concept identified during your pre-test and error analysis. Answer each question carefully.
                 </div>
             </div>
 
-            <!-- Start Action Area -->
-            <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.8rem; text-align: center; box-shadow: var(--shadow-sm);">
-                <button class="btn btn-primary btn-lg" id="start-posttest-btn" style="padding: 0.85rem 2.5rem; font-size: 1.05rem; font-weight: 700;">
+            <!-- Start Action Card -->
+            <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; text-align: center; box-shadow: var(--shadow-sm);">
+                <button class="btn btn-primary btn-lg" id="start-posttest-btn" style="padding: 0.85rem 2.5rem; font-size: 1.05rem; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);">
                     <i class="fa-solid fa-play"></i> Start Understanding Check
                 </button>
             </div>
@@ -139,7 +301,7 @@ async function loadQuestionsAndStart(container) {
         <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
             <div class="spinner" style="margin-bottom: 1.5rem;"></div>
             <h3 style="color: var(--text-primary); font-weight: 600;">Loading Understanding Check Questions...</h3>
-            <p style="margin-top: 0.5rem;">Fetching verified concept questions for ${conceptDisplayNames[currentConcept] || currentConcept}</p>
+            <p style="margin-top: 0.5rem;">Fetching teacher-approved questions for ${conceptDisplayNames[currentConcept] || currentConcept}</p>
         </div>
     `;
 
@@ -149,108 +311,126 @@ async function loadQuestionsAndStart(container) {
             student_id: currentStudentId,
             error_type: currentErrorType,
         });
-        if (res && res.questions && res.questions.length > 0) {
-            questions = res.questions;
-            currentSessionId = res.session_id || null;
-        } else {
-            throw new Error("No approved questions found for this topic.");
+
+        if (!res.success || !res.questions || res.questions.length === 0) {
+            container.innerHTML = `
+                <div class="card" style="text-align: center; padding: 4rem 1.5rem; max-width: 600px; margin: 2rem auto;">
+                    <div style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"><i class="fa-solid fa-circle-exclamation"></i></div>
+                    <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">No Questions Available</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">${res.error || `No teacher-approved questions found for concept '${currentConcept}'.`}</p>
+                    <a href="#/student/dashboard" class="btn btn-outline"><i class="fa-solid fa-house"></i> Return to Hub</a>
+                </div>
+            `;
+            return;
         }
-        currentQuestionIndex = 0;
+
+        questions = res.questions;
         selectedAnswers = {};
+        currentQuestionIndex = 0;
+        currentSessionId = res.session_id || currentSessionId;
         startTime = Date.now();
+
         renderQuestionScreen(container, 0);
+
     } catch (err) {
         container.innerHTML = `
-            <div class="card" style="text-align: center; padding: 4rem 1rem; max-width: 600px; margin: 2rem auto;">
+            <div class="card" style="text-align: center; padding: 4rem 1.5rem; max-width: 600px; margin: 2rem auto;">
                 <p style="color: var(--danger); font-weight: 600; margin-bottom: 1rem;">Failed to load questions: ${err.message}</p>
-                <button class="btn btn-primary" id="retry-load-btn"><i class="fa-solid fa-rotate"></i> Retry</button>
+                <button class="btn btn-primary" id="retry-fetch-btn"><i class="fa-solid fa-rotate"></i> Retry</button>
             </div>
         `;
-        document.getElementById("retry-load-btn")?.addEventListener("click", () => loadQuestionsAndStart(container));
+        document.getElementById("retry-fetch-btn")?.addEventListener("click", () => loadQuestionsAndStart(container));
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Question Screen (White LMS Theme)
+// 3. Render Question Screen
 // ─────────────────────────────────────────────────────────────────────────────
 function renderQuestionScreen(container, index) {
+    if (index < 0 || index >= questions.length) return;
     currentQuestionIndex = index;
     const q = questions[index];
     const total = questions.length;
     const isLast = index === total - 1;
-    const isFirst = index === 0;
-
-    const optKeys = ["A", "B", "C", "D"];
+    const currentSelected = selectedAnswers[q.question_id] || null;
 
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 1.5rem 2rem; max-width: 860px; margin: 0 auto; color: var(--text-primary);">
-            <!-- Progress Bar -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
-                <span style="font-size: 0.9rem; font-weight: 700; color: var(--primary);">
-                    Question ${index + 1} of ${total}
-                </span>
-                <span style="font-size: 0.85rem; color: var(--text-secondary);">
-                    ${Math.round(((index + 1) / total) * 100)}% Completed
-                </span>
+            
+            <!-- Question Top Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+                        Question ${index + 1} of ${total}
+                    </span>
+                    <span class="badge" style="margin-left: 0.5rem; font-size: 0.72rem; background: var(--bg-subtle); color: var(--text-secondary);">
+                        ${q.question_type || "Conceptual"}
+                    </span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
+                    ${conceptDisplayNames[currentConcept] || currentConcept}
+                </div>
             </div>
-            <div style="width: 100%; height: 6px; background: var(--border-color); border-radius: 99px; margin-bottom: 1.5rem; overflow: hidden;">
-                <div style="width: ${((index + 1) / total) * 100}%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+
+            <!-- Progress Bar -->
+            <div style="height: 6px; background: var(--border-color); border-radius: 99px; margin-bottom: 1.5rem; overflow: hidden;">
+                <div style="height: 100%; width: ${((index + 1) / total) * 100}%; background: var(--primary); transition: width 0.3s ease;"></div>
             </div>
 
             <!-- Question Card -->
             <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-                <div style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: var(--text-primary); margin-bottom: 1.5rem;">
-                    ${escapeHtml(q.question_text || q.question || "")}
-                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 1.2rem; color: var(--text-primary); line-height: 1.5;">
+                    ${escapeHtml(q.question_text)}
+                </h3>
 
                 ${q.code_snippet ? `
-                    <div class="ea-code-box" style="background: var(--bg-subtle); color: var(--text-primary); border: 1px solid var(--border-color); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; margin-bottom: 1.5rem; white-space: pre-wrap;">
-                        ${escapeHtml(q.code_snippet)}
+                    <div style="background: #0f172a; color: #f8fafc; padding: 1.2rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; margin-bottom: 1.5rem; overflow-x: auto; line-height: 1.5;">
+                        <pre style="margin: 0; font-family: inherit;"><code>${escapeHtml(q.code_snippet)}</code></pre>
                     </div>
                 ` : ""}
 
-                <!-- MCQ Options -->
+                <!-- 4 Options (A, B, C, D) -->
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    ${optKeys.map((key) => {
-        const optText = (q.options && q.options[key]) || "";
-        if (!optText) return "";
-        const isSelected = selectedAnswers[q.question_id] === key;
-        return `
-                            <button class="opt-choice-btn" data-key="${key}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem 1.2rem; background: ${isSelected ? 'var(--primary-soft)' : '#FFFFFF'}; border: 2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.2s; color: var(--text-primary);">
-                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: ${isSelected ? 'var(--primary)' : 'var(--bg-subtle)'}; color: ${isSelected ? '#FFFFFF' : 'var(--text-secondary)'}; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
+                    ${Object.entries(q.options || {}).map(([key, text]) => {
+                        const isSelected = currentSelected === key;
+                        return `
+                            <button class="opt-choice-btn" data-key="${key}" style="text-align: left; padding: 1rem 1.2rem; border: 2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}; background: ${isSelected ? 'var(--primary-soft)' : '#FFFFFF'}; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">
+                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: ${isSelected ? 'var(--primary)' : 'var(--bg-subtle)'}; color: ${isSelected ? '#FFFFFF' : 'var(--text-secondary)'}; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
                                     ${key}
                                 </span>
-                                <span style="font-size: 0.95rem; font-weight: ${isSelected ? '600' : '400'};">${escapeHtml(optText)}</span>
+                                <span style="font-size: 0.95rem; color: var(--text-primary); line-height: 1.4;">
+                                    ${escapeHtml(text)}
+                                </span>
                             </button>
                         `;
-    }).join("")}
+                    }).join("")}
                 </div>
             </div>
 
-            <!-- Navigation Controls -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <button class="btn btn-outline" id="prev-btn" ${isFirst ? 'disabled' : ''} style="padding: 0.6rem 1.4rem;">
-                    ← Previous
+            <!-- Footer Action Controls -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <button class="btn btn-outline" id="prev-btn" ${index === 0 ? 'disabled style="opacity: 0.5;"' : ''}>
+                    <i class="fa-solid fa-arrow-left"></i> Previous
                 </button>
 
-                ${isLast
-            ? `<button class="btn btn-primary" id="submit-btn" ${Object.keys(selectedAnswers).length < total ? 'disabled' : ''} style="padding: 0.7rem 2rem; font-weight: 700;">Submit Check <i class="fa-solid fa-check"></i></button>`
-            : `<button class="btn btn-primary" id="next-btn" ${!selectedAnswers[q.question_id] ? 'disabled' : ''} style="padding: 0.6rem 1.8rem; font-weight: 600;">Next →</button>`
-        }
+                <div style="display: flex; gap: 0.5rem;">
+                    ${isLast
+                        ? `<button class="btn btn-primary" id="submit-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem; font-weight: 700;">Submit Understanding Check <i class="fa-solid fa-check"></i></button>`
+                        : `<button class="btn btn-primary" id="next-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem;">Next <i class="fa-solid fa-arrow-right"></i></button>`
+                    }
+                </div>
             </div>
 
-            <!-- Question Dot Palette -->
-            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-                ${questions.map((item, i) => {
-            const isAnswered = Boolean(selectedAnswers[item.question_id]);
-            const isCurrent = i === index;
-            let bg = "var(--border-color)";
-            if (isAnswered) bg = "var(--success)";
-            if (isCurrent) bg = "var(--primary)";
-            return `
-                        <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;"></span>
+            <!-- Question Jump Palette -->
+            <div style="display: flex; justify-content: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--border-color);">
+                ${questions.map((ques, i) => {
+                    const answered = Boolean(selectedAnswers[ques.question_id]);
+                    const isCurrent = i === index;
+                    const bg = isCurrent ? "var(--primary)" : (answered ? "var(--success)" : "var(--border-color)");
+                    return `
+                        <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;" title="Question ${i+1}"></span>
                     `;
-        }).join("")}
+                }).join("")}
             </div>
         </div>
     `;
@@ -276,7 +456,7 @@ function renderQuestionScreen(container, index) {
             const nextBtn = document.getElementById("next-btn");
             const submitBtn = document.getElementById("submit-btn");
             if (nextBtn) nextBtn.disabled = false;
-            if (submitBtn) submitBtn.disabled = Object.keys(selectedAnswers).length < questions.length;
+            if (submitBtn) submitBtn.disabled = false;
 
             const dot = container.querySelector(`.q-dot[data-idx="${index}"]`);
             if (dot) dot.style.background = "var(--primary)";
@@ -311,7 +491,7 @@ async function submitPostTest(container) {
         <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
             <div class="spinner" style="margin-bottom: 1.5rem;"></div>
             <h3 style="color: var(--text-primary); font-weight: 600;">Evaluating Understanding Check...</h3>
-            <p style="margin-top: 0.5rem;">Analyzing answer qualities and validating schema mastery...</p>
+            <p style="margin-top: 0.5rem;">Analyzing answer qualities and computing Random Forest Schema Mastery...</p>
         </div>
     `;
 
@@ -354,7 +534,7 @@ function renderResultScreen(container, res) {
     };
     const levelColor = levelColors[res.mastery_level] || (isDone ? "var(--success)" : "var(--danger)");
 
-    const friendlyAction = isDone ? "Continue" : "Review Again";
+    const friendlyAction = isDone ? "Advance to Next Topic" : "Reinforce with Game Lessons";
     const learningStatus = res.learning_status || (isDone ? "Progressing Well" : "Developing");
     const scorePct = Math.round((res.post_test_score || 0) * 100);
 
@@ -364,6 +544,7 @@ function renderResultScreen(container, res) {
 
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 1.5rem 2rem; max-width: 860px; margin: 0 auto; color: var(--text-primary);">
+            
             <!-- Result Main Card -->
             <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2.5rem; text-align: center; margin-bottom: 2rem; box-shadow: var(--shadow-sm);">
                 
@@ -387,7 +568,7 @@ function renderResultScreen(container, res) {
                     <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
                         Evaluation Outcome
                     </div>
-                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-top: 0.3rem;">
+                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.3rem;">
                         Recommended Step: <span style="color: ${levelColor}">${friendlyAction}</span>
                     </div>
                     <div style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.25rem;">
@@ -420,24 +601,24 @@ function renderResultScreen(container, res) {
                     </div>
                 </div>
 
-                <!-- Friendly Feedback Message -->
+                <!-- Feedback Message -->
                 <div style="background: var(--bg-subtle); border-left: 4px solid ${levelColor}; padding: 1.2rem; border-radius: 6px; text-align: left; margin-bottom: 2rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary);">
                     <p style="margin: 0; font-weight: 500;">${message}</p>
                 </div>
 
-                <!-- Primary Action Buttons -->
+                <!-- Action Buttons -->
                 <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     ${isDone
-            ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue</a>`
-            : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Review with Game Lesson</a>`
-        }
+                        ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue Learning</a>`
+                        : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Review with Game Lesson</a>`
+                    }
                     <a href="#/student/profile" class="btn btn-outline btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;">
-                        <i class="fa-solid fa-user"></i> ${isDone ? "Done / View Profile" : "Done"}
+                        <i class="fa-solid fa-user"></i> View Profile
                     </a>
                 </div>
             </div>
 
-            <!-- Expandable Answer Review Toggle -->
+            <!-- Expandable Review -->
             <div>
                 <button class="btn btn-outline" id="toggle-review-btn" style="width: 100%; text-align: left; padding: 1rem; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600;"><i class="fa-solid fa-list-check" style="margin-right: 0.5rem; color: var(--primary);"></i> Review Answers & Explanations</span>
@@ -465,7 +646,6 @@ function renderResultScreen(container, res) {
         </div>
     `;
 
-    // Toggle Review Details
     document.getElementById("toggle-review-btn")?.addEventListener("click", () => {
         const det = document.getElementById("review-details");
         const chev = document.getElementById("review-chevron");
