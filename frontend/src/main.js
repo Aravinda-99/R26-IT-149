@@ -76,6 +76,12 @@ window.navigateTo = function (page) {
 let currentRoute = "";
 let currentLayout = null; // 'public' | 'student' | 'teacher'
 
+function getAuthRenderKey() {
+    const user = getCurrentUser();
+    if (!user) return "anonymous";
+    return `${user.uid || user.id || "unknown"}:${user.role || "student"}`;
+}
+
 /**
  * Route Dispatcher
  */
@@ -269,8 +275,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Auth change listener — handles subsequent login/logout while the app is running.
+    // Ignore profile hydration events for the same user so active pages such
+    // as the post-test question screen are not repainted back to their start state.
+    let lastAuthRenderKey = getAuthRenderKey();
     onAuthChange(() => {
-        handleNavigation();
+        const nextAuthRenderKey = getAuthRenderKey();
+        if (nextAuthRenderKey !== lastAuthRenderKey) {
+            lastAuthRenderKey = nextAuthRenderKey;
+            handleNavigation();
+        }
     });
 
     handleNavigation();

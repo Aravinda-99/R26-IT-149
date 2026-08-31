@@ -34,6 +34,61 @@ class SchemaPostTestService:
 
     _SESSION_SHUFFLE_CACHE = {}
 
+    @staticmethod
+    def _normalize_text(value) -> str:
+        return str(value or "").strip()
+
+    @classmethod
+    def _error_tokens(cls, error_type: str) -> set:
+        raw = cls._normalize_text(error_type).upper()
+        tokens = {part for part in raw.replace("-", "_").replace(" ", "_").split("_") if part}
+        tokens -= {
+            "ERROR",
+            "ISSUE",
+            "BUG",
+            "MISTAKE",
+            "UNKNOWN",
+            "GENERAL",
+            "CONCEPT",
+            "REVIEW",
+            "FOCUS",
+        }
+
+        if {"ARRAY", "INDEX", "BOUNDARY"} & tokens:
+            tokens.update({"ARRAY", "INDEX", "BOUNDARY", "LENGTH"})
+        if {"LOOP", "ITERATION", "CONDITION"} & tokens:
+            tokens.update({"LOOP", "ITERATION", "CONDITION"})
+        if {"METHOD", "PARAMETER", "RETURN", "SIGNATURE", "ARGUMENT"} & tokens:
+            tokens.update({"METHOD", "PARAMETER", "RETURN", "SIGNATURE", "ARGUMENT"})
+        if {"VARIABLE", "SCOPE", "TYPE", "CAST", "INITIAL", "ASSIGNMENT"} & tokens:
+            tokens.update({"VARIABLE", "SCOPE", "TYPE", "CAST", "INITIAL", "ASSIGN"})
+        if {"OPERATOR", "EXPRESSION", "DIVISION", "MODULO", "INCREMENT", "TERNARY"} & tokens:
+            tokens.update({"OPERATOR", "EXPRESSION", "DIVISION", "MODULO", "INCREMENT", "TERNARY"})
+
+        return tokens
+
+    @classmethod
+    def _question_matches_error(cls, question: dict, error_type: str = None) -> bool:
+        if not error_type:
+            return False
+
+        requested = cls._normalize_text(error_type).upper()
+        target = cls._normalize_text(question.get("target_error_type")).upper()
+        if requested and target and target == requested:
+            return True
+
+        haystack = " ".join([
+            cls._normalize_text(question.get("target_error_type")),
+            cls._normalize_text(question.get("error_reason")),
+            cls._normalize_text(question.get("learning_outcome")),
+            cls._normalize_text(question.get("concept_name")),
+            cls._normalize_text(question.get("question_text")),
+            cls._normalize_text(question.get("code_snippet")),
+        ]).upper()
+
+        tokens = cls._error_tokens(error_type)
+        return any(token and token in haystack for token in tokens)
+
     @classmethod
     def select_post_test_questions(
         cls,
@@ -47,11 +102,15 @@ class SchemaPostTestService:
         prioritizes error_type for Error Recognition, and prefers lower exposure_count.
         Returns student-safe question objects.
         """
-        # If concept is not provided, load from active student session
-        if not concept and student_id:
+        # Load active student session context when available. The saved weak
+        # concept/error from Component 1/2 is the source of truth for post-test
+        # delivery, while URL values remain useful for direct/manual testing.
+        if student_id:
             saved_session = SchemaSessionService.get_current_session(student_id)
             component_1 = saved_session.get("component_1", {})
-            concept = component_1.get("weak_concept") or component_1.get("concept_name")
+            session_concept = component_1.get("weak_concept") or component_1.get("concept_name")
+            if session_concept:
+                concept = session_concept
             if not error_type:
                 error_type = saved_session.get("component_2", {}).get("error_type")
 
@@ -64,26 +123,62 @@ class SchemaPostTestService:
                 "total_questions": 0,
             }
         
-        # 1. Fetch all active approved questions for this concept
-        all_approved = SchemaQuestionBankService.get_approved_question_bank(concept=concept_clean, active_only=True)
+        # 1. Fetch all active approved questions saved in Firestore/local stores.
+        all_active, storage_source = SchemaQuestionBankService.get_approved_question_bank(
+            active_only=True,
+            return_source=True,
+        )
+        exact_concept_questions = [
+            q for q in all_active
+            if q.get("concept_name", "").strip().lower() == concept_clean.lower()
+        ]
+
+        all_approved = exact_concept_questions
+        selection_scope = "exact_concept"
+        fallback_reason = ""
         
-        # If no approved questions exist for this concept, return clear error (do not fallback to mock/unapproved)
+        # Prefer questions that match the weak error when the exact concept bank
+        # has no active approved questions. This keeps the student flow usable
+        # while still using teacher-approved saved questions only.
         if not all_approved:
-            return {
-                "success": False,
-                "error": f"No teacher-approved active questions available for concept '{concept_clean}'. Please ask your instructor to generate and approve questions in the Question Bank first.",
-                "questions": [],
-                "total_questions": 0,
-            }
+            error_matched = [
+                q for q in all_active
+                if cls._question_matches_error(q, error_type)
+            ]
+            if error_matched:
+                all_approved = error_matched
+                selection_scope = "weak_error_fallback"
+                fallback_reason = (
+                    f"No active approved questions found for concept '{concept_clean}', "
+                    "so saved approved questions matching the weak error were used."
+                )
+            elif all_active:
+                all_approved = all_active
+                selection_scope = "approved_bank_fallback"
+                fallback_reason = (
+                    f"No active approved questions found for concept '{concept_clean}' "
+                    "or its weak error, so saved active approved questions were used."
+                )
+            else:
+                return {
+                    "success": False,
+                    "error": "No active approved post-test questions are available in the question bank.",
+                    "questions": [],
+                    "total_questions": 0,
+                    "concept_name": concept_clean,
+                    "storage_source": storage_source,
+                }
 
         # 2. Retrieve student history to avoid repeats
         used_qids, used_groups = SchemaQuestionBankService.get_student_used_questions(student_id, concept_clean)
 
-        # Sort candidate pool: unused questions first, then by lowest exposure_count
+        # Sort candidate pool: unused questions first, then weak-error match,
+        # then lowest exposure_count.
         def sort_key(q):
             is_used = 1 if q.get("question_id") in used_qids or q.get("equivalent_group_id") in used_groups else 0
+            error_priority = 0 if cls._question_matches_error(q, error_type) else 1
             exposure = int(q.get("exposure_count", 0))
-            return (is_used, exposure)
+            return (is_used, error_priority, exposure)
 
         # Group candidates by question_type
         by_type = {}
@@ -101,12 +196,8 @@ class SchemaPostTestService:
         for q_type, target_count in BLUEPRINT.items():
             candidates = by_type.get(q_type, [])
             
-            # Special rule: for Error Recognition, prioritize matching error_type
-            if q_type == "Error Recognition" and error_type:
-                err_clean = str(error_type).strip().upper()
-                matching_err = [c for c in candidates if str(c.get("target_error_type", "")).upper() == err_clean]
-                other_err = [c for c in candidates if str(c.get("target_error_type", "")).upper() != err_clean]
-                candidates = matching_err + other_err
+            if error_type:
+                candidates = sorted(candidates, key=sort_key)
 
             picked_for_type = 0
             for c in candidates:
@@ -180,6 +271,10 @@ class SchemaPostTestService:
             "session_id": session_id,
             "student_id": student_id,
             "concept_name": concept_clean,
+            "requested_concept": concept_clean,
+            "selection_scope": selection_scope,
+            "fallback_reason": fallback_reason,
+            "storage_source": storage_source,
             "total_questions": len(student_safe_questions),
             "questions": student_safe_questions,
         }

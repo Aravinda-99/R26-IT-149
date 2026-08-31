@@ -41,7 +41,7 @@ const conceptDisplayNames = {
 };
 
 /**
- * Entry point: renders the Post-Test understanding check page with strict prerequisite gating.
+ * Entry point: renders the Post-Test understanding check page.
  */
 export async function renderPostTest(container, opts = {}) {
     const user = getCurrentUser();
@@ -69,45 +69,34 @@ export async function renderPostTest(container, opts = {}) {
     `;
 
     try {
-        const contextRes = await SchemaMasteryAPI.getCurrentContext(currentStudentId);
+        let contextRes = await SchemaMasteryAPI.getCurrentContext(currentStudentId);
+        contextRes = await ensurePostTestContext(contextRes, user);
 
-        const c1 = contextRes?.component_1 || {};
-        const c2 = contextRes?.component_2 || {};
+        const c1 = contextRes?.pre_test || contextRes?.component_1 || {};
+        const c2 = contextRes?.error_pattern || contextRes?.component_2 || {};
 
         const hasPreTestData =
             Boolean(c1.completed &&
-            (c1.concept_name || c1.weak_concept) &&
-            c1.pre_test_score !== undefined &&
-            c1.attempt_count !== undefined &&
-            c1.time_taken_seconds !== undefined);
+                (c1.concept_name || c1.weak_concept) &&
+                c1.pre_test_score !== undefined &&
+                c1.attempt_count !== undefined &&
+                c1.time_taken_seconds !== undefined);
 
         const hasErrorData =
             Boolean(c2.completed &&
-            c2.error_type &&
-            c2.error_pattern_score !== undefined &&
-            c2.error_pattern_score !== null);
+                c2.error_type &&
+                c2.error_pattern_score !== undefined &&
+                c2.error_pattern_score !== null);
 
-        // ── 1. Check Prerequisite 1: Diagnostic Pre-Test ───────────────────────
+        // If context still cannot be repaired, keep the page usable and show a clear post-test setup error
+        // instead of the old lock screen.
         if (!hasPreTestData) {
-            renderLockedScreen(container, {
-                title: "Diagnostic Pre-Test Required",
-                message: "Complete the Pre-Test first to identify your weak Java concept.",
-                actionLabel: "Start Diagnostic Pre-Test",
-                actionHref: "#/student/pre-test",
-                icon: "fa-solid fa-clipboard-list"
-            });
+            renderPostTestSetupIssue(container, "Could not find a saved learning concept for this student. Please refresh once after completing the Pre-Test, or start the check after the Question Bank has active questions.");
             return;
         }
 
-        // ── 2. Check Prerequisite 2: Error Feedback Review ─────────────────────
         if (!hasErrorData) {
-            renderLockedScreen(container, {
-                title: "Error Feedback Review Required",
-                message: "Review your diagnostic error feedback before starting the understanding check.",
-                actionLabel: "Go to Error Feedback",
-                actionHref: "#/student/error-analysis",
-                icon: "fa-solid fa-magnifying-glass-chart"
-            });
+            renderPostTestSetupIssue(container, "Could not recover error feedback for this student. Please refresh once, then start the understanding check again.");
             return;
         }
 
@@ -143,19 +132,193 @@ export async function renderPostTest(container, opts = {}) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Gated Locked Screen
+// Context Recovery
 // ─────────────────────────────────────────────────────────────────────────────
-function renderLockedScreen(container, { title, message, actionLabel, actionHref, icon }) {
+async function ensurePostTestContext(contextRes, user) {
+    const parts = getContextParts(contextRes);
+    if (hasPreTestContext(parts.c1) && hasErrorContext(parts.c2)) {
+        return contextRes;
+    }
+
+    const recovered = await recoverContextFromAvailableData(currentStudentId);
+    if (!recovered.concept_name) {
+        return contextRes;
+    }
+
+    try {
+        if (!hasPreTestContext(parts.c1)) {
+            await SchemaMasteryAPI.saveComponent1({
+                student_id: currentStudentId,
+                student_name: user?.displayName || user?.name || "Learner",
+                student_email: user?.email || "",
+                concept_name: recovered.concept_name,
+                weak_concept: recovered.concept_name,
+                pre_test_score: recovered.pre_test_score,
+                attempt_count: recovered.attempt_count,
+                time_taken_seconds: recovered.time_taken_seconds,
+            });
+        }
+
+        if (!hasErrorContext(parts.c2)) {
+            await SchemaMasteryAPI.saveComponent2({
+                student_id: currentStudentId,
+                concept_name: recovered.concept_name,
+                error_type: recovered.error_type,
+                error_reason: recovered.error_reason,
+                error_pattern_score: recovered.error_pattern_score,
+                recommended_learning_focus: recovered.recommended_learning_focus,
+            });
+        }
+
+        return await SchemaMasteryAPI.getCurrentContext(currentStudentId);
+    } catch (err) {
+        console.warn("Could not repair Component 4 post-test context:", err);
+        return contextRes;
+    }
+}
+
+function getContextParts(contextRes) {
+    return {
+        c1: contextRes?.pre_test || contextRes?.component_1 || {},
+        c2: contextRes?.error_pattern || contextRes?.component_2 || {},
+    };
+}
+
+function hasPreTestContext(c1) {
+    return Boolean(
+        c1?.completed &&
+        (c1.concept_name || c1.weak_concept) &&
+        c1.pre_test_score !== undefined &&
+        c1.pre_test_score !== null &&
+        c1.attempt_count !== undefined &&
+        c1.time_taken_seconds !== undefined
+    );
+}
+
+function hasErrorContext(c2) {
+    return Boolean(
+        c2?.completed &&
+        c2.error_type &&
+        c2.error_pattern_score !== undefined &&
+        c2.error_pattern_score !== null
+    );
+}
+
+async function recoverContextFromAvailableData(studentId) {
+    const progress = readProgressForStudent(studentId);
+    const quizResults = readSessionJson("quiz-results");
+    const latestError = readSessionJson("latest_error_analysis");
+    const weakFromQuiz = getWeakConceptFromBreakdown(quizResults?.topicBreakdown);
+    const bankConcept = progress?.targetConcept || weakFromQuiz || await getQuestionBankConcept();
+    const errorLabel =
+        latestError?.reason_group_final ||
+        latestError?.reason_group ||
+        latestError?.predicted_label ||
+        latestError?.final_label ||
+        latestError?.prediction?.label ||
+        "GENERAL_CONCEPT_REVIEW";
+    const rawConfidence =
+        latestError?.confidence_score ??
+        latestError?.final_confidence_pct ??
+        latestError?.recalibrated_confidence_pct ??
+        latestError?.xai_explanation?.xai_confidence_pct ??
+        latestError?.prediction?.confidence_score ??
+        latestError?.confidence;
+
+    return {
+        concept_name: bankConcept,
+        pre_test_score: normalizeScore(progress?.percent ?? quizResults?.percent ?? progress?.quizScore ?? 50),
+        attempt_count: Number(progress?.attempt_count || progress?.attempts || 1),
+        time_taken_seconds: Number(progress?.time_taken_seconds || progress?.durationSeconds || 120),
+        error_type: errorLabel,
+        error_reason: latestError?.explanation?.misconception || latestError?.explanation?.reason || "Recovered context for post-test continuation.",
+        error_pattern_score: rawConfidence !== undefined ? normalizeScore(rawConfidence) : 0.5,
+        recommended_learning_focus: latestError?.adaptive_payload?.next_learning_step || bankConcept || "Java concept practice",
+    };
+}
+
+function readProgressForStudent(studentId) {
+    const direct = readLocalJson(`cq_progress_${studentId}`);
+    if (direct?.targetConcept || direct?.preTestCompleted) return direct;
+
+    try {
+        for (let i = 0; i < localStorage.length; i += 1) {
+            const key = localStorage.key(i);
+            if (!key || !key.startsWith("cq_progress_")) continue;
+            const value = readLocalJson(key);
+            if (value?.targetConcept || value?.preTestCompleted) return value;
+        }
+    } catch (e) {}
+
+    return {};
+}
+
+function readLocalJson(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function readSessionJson(key) {
+    try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function getWeakConceptFromBreakdown(topicBreakdown = {}) {
+    let selected = null;
+    let lowestAccuracy = Infinity;
+    Object.entries(topicBreakdown || {}).forEach(([topic, data]) => {
+        const total = Number(data?.total || 0);
+        if (!topic || total <= 0) return;
+        const accuracy = Number(data?.correct || 0) / total;
+        if (accuracy < lowestAccuracy) {
+            lowestAccuracy = accuracy;
+            selected = topic;
+        }
+    });
+    return selected;
+}
+
+async function getQuestionBankConcept() {
+    try {
+        const res = await SchemaMasteryAPI.getQuestionBank("", true);
+        const counts = {};
+        (res?.questions || []).forEach((q) => {
+            const concept = q.concept_name;
+            if (!concept) return;
+            counts[concept] = (counts[concept] || 0) + 1;
+        });
+        return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function normalizeScore(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) return 0.5;
+    const score = num > 1 ? num / 100 : num;
+    return Math.max(0, Math.min(1, score));
+}
+
+function renderPostTestSetupIssue(container, message) {
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 2rem 1.5rem; max-width: 720px; margin: 0 auto;">
             <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow-sm);">
                 
                 <div style="width: 72px; height: 72px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem; border: 2px solid #DBEAFE;">
-                    <i class="${icon}"></i>
+                    <i class="fa-solid fa-clipboard-check"></i>
                 </div>
 
                 <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0;">
-                    ${title}
+                    Understanding Check Setup Needed
                 </h1>
 
                 <p style="font-size: 0.95rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 2rem auto; line-height: 1.6;">
@@ -163,16 +326,17 @@ function renderLockedScreen(container, { title, message, actionLabel, actionHref
                 </p>
 
                 <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
-                    <a href="${actionHref}" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
-                        <i class="${icon}"></i> ${actionLabel}
-                    </a>
-                    <a href="#/student/dashboard" class="btn btn-outline" style="padding: 0.8rem 1.5rem; font-size: 0.95rem; font-weight: 600; border-radius: 8px;">
-                        <i class="fa-solid fa-house"></i> View Hub
-                    </a>
+                    <button class="btn btn-primary" id="retry-context-repair-btn" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
+                        <i class="fa-solid fa-rotate"></i> Continue Check
+                    </button>
                 </div>
             </div>
         </div>
     `;
+
+    document.getElementById("retry-context-repair-btn")?.addEventListener("click", () => {
+        renderPostTest(container);
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -606,9 +770,9 @@ function renderResultScreen(container, res) {
                 <!-- Action Buttons -->
                 <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     ${isDone
-                        ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue Learning</a>`
-                        : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Reinforce with Game Lessons</a>`
-                    }
+            ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue Learning</a>`
+            : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Reinforce with Game Lessons</a>`
+        }
                     <a href="#/student/profile" class="btn btn-outline btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;">
                         <i class="fa-solid fa-user"></i> View Profile
                     </a>

@@ -128,3 +128,36 @@ class AuthService:
         if not user_id:
             return None
         return UserStorageService.get_user(str(user_id), raw=False)
+
+    @staticmethod
+    def get_or_create_runtime_profile(user_id: str) -> dict | None:
+        """
+        Return a usable student profile for Firebase/client sessions that have
+        not been synced to the backend user store yet. This prevents repeated
+        profile 404s from interrupting the local learning flow.
+        """
+        if not user_id:
+            return None
+
+        profile = AuthService.get_user_profile(user_id)
+        if profile:
+            if not profile.get("email") and profile.get("display_name") == "Learner":
+                profile["auth_source"] = "runtime_fallback"
+            return profile
+
+        fallback_profile = {
+            "uid": str(user_id),
+            "user_id": str(user_id),
+            "id": str(user_id),
+            "student_id": str(user_id),
+            "display_name": "Learner",
+            "name": "Learner",
+            "email": "",
+            "role": "student",
+            "current_learning_state": "ACTIVE",
+            "auth_source": "runtime_fallback",
+        }
+        saved = UserStorageService.save_user(fallback_profile)
+        sanitized = UserStorageService.sanitize_user(saved)
+        sanitized["auth_source"] = "runtime_fallback"
+        return sanitized

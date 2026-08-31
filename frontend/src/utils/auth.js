@@ -12,6 +12,22 @@ let currentUser = null;
 let authListeners = [];
 let authInitialized = false;
 
+function mergeBackendProfile(localUser, backendProfile) {
+    if (!backendProfile) return localUser;
+    if (backendProfile.auth_source === "runtime_fallback") {
+        return {
+            ...backendProfile,
+            ...localUser,
+            uid: localUser?.uid || backendProfile.uid,
+            id: localUser?.id || backendProfile.id || backendProfile.uid,
+            user_id: localUser?.user_id || backendProfile.user_id || backendProfile.uid,
+            student_id: localUser?.student_id || backendProfile.student_id || backendProfile.uid,
+            role: localUser?.role || backendProfile.role || "student",
+        };
+    }
+    return { ...localUser, ...backendProfile };
+}
+
 // Initialize cached user from local storage
 try {
     const saved = localStorage.getItem("codequest_user");
@@ -29,7 +45,7 @@ export function initAuthListener() {
         AuthAPI.getProfile(uid)
             .then((freshProfile) => {
                 if (freshProfile && (freshProfile.uid || freshProfile.id)) {
-                    currentUser = { ...currentUser, ...freshProfile };
+                    currentUser = mergeBackendProfile(currentUser, freshProfile);
                     localStorage.setItem("codequest_user", JSON.stringify(currentUser));
                 }
                 authInitialized = true;
@@ -51,7 +67,18 @@ export function initAuthListener() {
                 try {
                     const profile = await AuthAPI.getProfile(user.uid);
                     if (profile && profile.uid) {
-                        currentUser = profile;
+                        currentUser = profile.auth_source === "runtime_fallback"
+                            ? {
+                                ...profile,
+                                uid: user.uid,
+                                id: user.uid,
+                                email: user.email || profile.email || "",
+                                displayName: user.displayName || currentUser?.displayName || currentUser?.name || user.email?.split("@")[0] || "Learner",
+                                display_name: user.displayName || currentUser?.display_name || currentUser?.name || user.email?.split("@")[0] || "Learner",
+                                name: user.displayName || currentUser?.name || currentUser?.displayName || user.email?.split("@")[0] || "Learner",
+                                role: currentUser?.role || profile.role || "student",
+                            }
+                            : profile;
                     } else {
                         const role = (user.email && (user.email.includes("teacher") || user.email.includes("admin"))) ? "teacher" : "student";
                         currentUser = {
