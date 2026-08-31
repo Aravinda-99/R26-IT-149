@@ -66,9 +66,39 @@ LABEL_MAP   = {0: 'maintain', 1: 'promote', 2: 'demote'}
 DIFFICULTY  = ['beginner', 'intermediate', 'advanced']
 DIFF_ENCODE = {'beginner': 0, 'intermediate': 1, 'advanced': 2}
 
-# ── Safety Validation Layer thresholds (Bloom's Mastery Learning) ───
-LOW_ACCURACY_THRESHOLD  = 0.40   # below this → cannot promote
-HIGH_ACCURACY_THRESHOLD = 0.80   # at/above this → cannot demote
+# ── Safety Validation Layer thresholds ───────────────────────────────
+# Model 1 remains the PRIMARY decision-maker for promote/maintain/demote.
+# This layer only intervenes on predictions that are clearly contradictory
+# or extreme — it never re-derives the full Bloom's rule as a blanket
+# replacement for the model's judgment (that was tested and rejected: it
+# made the ML model's decision irrelevant, which defeats the purpose of
+# training it in the first place).
+#
+# Two EXTREME guards (unchanged from the original design):
+#   - accuracy < 40%  AND action == 'promote' → force 'demote'
+#     (never promote a student who failed outright)
+#   - accuracy >= 80% AND action == 'demote'  → force 'promote'
+#     (never demote a student who has clearly mastered the material)
+#
+# One NARROW, evidence-combined guard (added after testing found a real
+# gap): a Demote prediction is blocked ONLY when accuracy, attempts, AND
+# engagement all independently indicate solid performance at once — e.g.
+# accuracy=72%, attempts=1, engagement=87% all being favorable together
+# is too much combined evidence for 'demote' to be defensible, even
+# though accuracy alone (72%) sits below the 80% extreme-guard threshold.
+# A single borderline number does NOT trigger this — all three signals
+# must agree, keeping the correction rare and targeted rather than a
+# blanket rule. When triggered, the result is 'maintain' (not forced up
+# to 'promote') since the student hasn't necessarily met the full
+# promote bar — only disproven the case for demotion.
+PROMOTE_ACCURACY_MIN   = 0.80   # extreme guard: at/above this, cannot demote
+DEMOTE_ACCURACY_MAX    = 0.40   # extreme guard: below this, cannot promote
+
+# Narrow combined-evidence guard (all three must hold together)
+DEMOTE_BLOCK_ACCURACY_MIN   = 0.60   # clearly passing, not just "not failing"
+DEMOTE_BLOCK_ATTEMPTS_MAX   = 1.5    # efficient — matches original Promote bar
+DEMOTE_BLOCK_ENGAGEMENT_MIN = 0.85   # matches original Demote-safe threshold
+
 
 
 class AdaptiveService:
@@ -126,32 +156,73 @@ class AdaptiveService:
         return 0.5  # neutral fallback if no data available at all
 
     @staticmethod
-    def _apply_safety_validation(action: str, accuracy: float) -> tuple:
+    def _apply_safety_validation(action: str, accuracy: float,
+                                  attempts: float, engagement: float) -> tuple:
         """
-        Safety Validation Layer — see module docstring for full
-        rationale. Returns (final_action, was_overridden, reason).
+        Safety Validation Layer — Model 1 remains the PRIMARY decision-
+        maker. This function only overrides predictions that are clearly
+        contradictory or extreme; it does NOT re-derive the full Bloom's
+        rule as a blanket replacement for the model's judgment (that
+        approach was tested and rejected — it made Model 1's prediction
+        irrelevant in every case, defeating the purpose of training it).
 
-        This function ONLY overrides Model 1's prediction when the
-        prediction directly contradicts the student's actual accuracy
-        beyond the two Bloom's thresholds. It never overrides
-        predictions in the ambiguous middle range (40%-80%).
+        Returns (final_action, was_overridden, reason).
+
+        THREE GUARDS, IN ORDER:
+
+        1. Extreme-low guard: accuracy < 40% and action == 'promote'
+           → never promote a student who failed outright.
+
+        2. Extreme-high guard: accuracy >= 80% and action == 'demote'
+           → never demote a student who has clearly mastered the material.
+
+        3. Combined-evidence guard (narrow, added after testing found a
+           real gap): a 'demote' prediction is blocked ONLY when
+           accuracy, attempts, AND engagement ALL independently indicate
+           solid performance at once (accuracy >= 60%, attempts <= 1.5,
+           engagement >= 85%). Example: accuracy=72%, attempts=1,
+           engagement=87.4% — Model 1 predicted 'demote' at 97.9%
+           confidence here, which is indefensible given how much
+           favorable evidence exists together. A single borderline
+           number does NOT trigger this guard; all three must agree.
+           The result is bumped to 'maintain' — NOT forced up to
+           'promote' — since disproving demotion is not the same as
+           proving the student is ready to advance.
+
+        Everywhere else (including cases like accuracy=76% with a
+        'promote' prediction), Model 1's raw prediction is trusted and
+        returned unchanged — it is not "clearly contradictory," just a
+        judgment call in ambiguous territory that ML is meant to make.
         """
-        if accuracy < LOW_ACCURACY_THRESHOLD and action == 'promote':
+        # ── Guard 1: extreme-low accuracy blocks Promote ────────────────
+        if accuracy < DEMOTE_ACCURACY_MAX and action == 'promote':
             return 'demote', True, (
                 f"Model predicted 'promote' but accuracy ({accuracy*100:.0f}%) "
-                f"is below the {LOW_ACCURACY_THRESHOLD*100:.0f}% mastery floor — "
+                f"is below the {DEMOTE_ACCURACY_MAX*100:.0f}% floor — "
                 f"overridden to 'demote'."
             )
 
-        if accuracy >= HIGH_ACCURACY_THRESHOLD and action == 'demote':
+        # ── Guard 2: extreme-high accuracy blocks Demote ────────────────
+        if accuracy >= PROMOTE_ACCURACY_MIN and action == 'demote':
             return 'promote', True, (
                 f"Model predicted 'demote' but accuracy ({accuracy*100:.0f}%) "
-                f"meets the {HIGH_ACCURACY_THRESHOLD*100:.0f}% mastery threshold — "
+                f"meets the {PROMOTE_ACCURACY_MIN*100:.0f}% mastery threshold — "
                 f"overridden to 'promote'."
             )
 
-        # Prediction is consistent with accuracy — trust Model 1 as-is
-        return action, False, "Model 1 prediction accepted (within safe bounds)."
+        # ── Guard 3: combined evidence blocks an indefensible Demote ────
+        if (action == 'demote' and
+                accuracy   >= DEMOTE_BLOCK_ACCURACY_MIN and
+                attempts   <= DEMOTE_BLOCK_ATTEMPTS_MAX and
+                engagement >= DEMOTE_BLOCK_ENGAGEMENT_MIN):
+            return 'maintain', True, (
+                f"Model predicted 'demote' but accuracy ({accuracy*100:.0f}%), "
+                f"attempts ({attempts:.1f}), and engagement ({engagement*100:.0f}%) "
+                f"together show solid performance — overridden to 'maintain'."
+            )
+
+        # ── No guard triggered — trust Model 1's judgment ───────────────
+        return action, False, "Model 1 prediction accepted (no contradiction detected)."
 
     @staticmethod
     def predict_recommendation(session_data: dict) -> dict:
@@ -191,11 +262,17 @@ class AdaptiveService:
         confidence    = round(float(max(probabilities)) * 100, 1)
 
         # ── Safety Validation Layer ────────────────────────────────────
-        # Corrects predictions that contradict the student's actual
-        # accuracy, which Model 1 never sees. See module docstring.
+        # Re-applies the exact Bloom's rule that generated Model 1's
+        # training labels, using the same attempts/engagement values fed
+        # to the model (post time-floor engagement is unaffected by the
+        # floor since it's a separate feature). See _apply_safety_validation
+        # docstring for why a full rule check is needed, not just extremes.
         overall_accuracy = AdaptiveService._get_overall_accuracy(session_data)
+        raw_attempts      = float(session_data.get('avg_attempts', 1.0))
+        raw_engagement    = float(session_data.get('engagement_score', 0.9))
+
         action, was_overridden, validation_reason = AdaptiveService._apply_safety_validation(
-            raw_action, overall_accuracy
+            raw_action, overall_accuracy, raw_attempts, raw_engagement
         )
 
         # ── Calculate next difficulty (using FINAL action) ─────────────

@@ -10,6 +10,7 @@ Handles:
   - Stage 3: Dashboard-ready data, history, and progression decisions
 """
 
+import time
 from firebase.firebase_service import db
 try:
     from ml.component4_schema_mastery.legacy_rule_based.mastery_calculator import (
@@ -59,6 +60,13 @@ CONCEPT_NAMES = {
     "arrays": "Arrays & Lists",
     "methods": "Methods & Functions",
 }
+
+# In-memory TTL cache for students list (60 seconds)
+_students_cache = {
+    "data": None,
+    "timestamp": 0,
+}
+_STUDENTS_CACHE_TTL = 60  # seconds
 
 
 class MasteryService:
@@ -370,19 +378,23 @@ class MasteryService:
         return MasteryService._mcq_level_feedback(level)
 
     # -----------------------------------------------------------------
-    # GET STATUS — Stage 1 mastery calculation
+    # GET STATUS — Stage 1 mastery calculation (Read-Only)
     # -----------------------------------------------------------------
     @staticmethod
     def get_status(user_id):
         """
         Fetch student behaviour data from Firestore, run the mastery
-        calculator, save results, and return the full mastery status.
+        calculator, and return the full mastery status. Strictly read-only.
         """
         if not db:
             return MasteryService._apply_local_post_test_results(user_id, MasteryService._offline_status(user_id))
 
-        doc_ref = db.collection("student_behaviour").document(user_id)
-        doc = doc_ref.get()
+        try:
+            doc_ref = db.collection("student_behaviour").document(user_id)
+            doc = doc_ref.get()
+        except Exception as e:
+            print(f"[WARN] Error fetching student_behaviour for {user_id}: {e}")
+            return MasteryService._offline_status(user_id)
 
         if not doc.exists:
             return MasteryService._apply_local_post_test_results(user_id, MasteryService._offline_status(user_id))
@@ -390,18 +402,32 @@ class MasteryService:
         student_data = doc.to_dict()
         result = process_student(student_data)
 
-        # Component 4 sync:
+        # Component 4 sync (Batch fetch using db.get_all to avoid N+1 queries):
         # If the student has completed a post-test for a concept, prefer the latest
         # post-test "currentLevel" as the dashboard schema state for that concept.
-        # This does NOT change scoring or pass/fail logic — it only synchronizes
-        # what the dashboard shows.
         if db:
-            for concept_key, concept_view in result.get("concepts", {}).items():
-                mcq_doc_id = f"{user_id}_{concept_key}"
-                mcq_doc = db.collection("mcq_posttest_results").document(mcq_doc_id).get()
+            concepts_dict = result.get("concepts", {})
+            concept_keys = list(concepts_dict.keys())
+            doc_refs = [
+                db.collection("mcq_posttest_results").document(f"{user_id}_{k}")
+                for k in concept_keys
+            ]
+            try:
+                mcq_docs = db.get_all(doc_refs)
+            except Exception as e:
+                print(f"[WARN] Error batch fetching mcq_posttest_results: {e}")
+                mcq_docs = []
+
+            for mcq_doc in mcq_docs:
                 if not mcq_doc.exists:
                     continue
                 mcq = mcq_doc.to_dict() or {}
+                doc_id = mcq_doc.id
+                concept_key = doc_id.split(f"{user_id}_", 1)[-1] if f"{user_id}_" in doc_id else doc_id
+                concept_view = concepts_dict.get(concept_key)
+                if not concept_view:
+                    continue
+
                 mapped_state = MasteryService._map_current_level_to_schema_state(
                     mcq.get("currentLevel")
                 )
@@ -423,14 +449,44 @@ class MasteryService:
                     concept_view["evidenceScore"] = mcq.get("evidenceScore")
                     
             # Ensure evidenceScore is present and needs_posttest is set
-            for concept_key, concept_view in result.get("concepts", {}).items():
+            for concept_key, concept_view in concepts_dict.items():
                 if "evidenceScore" not in concept_view:
                     concept_view["evidenceScore"] = concept_view.get("mastery_score", 0.0)
                 if "postTestCompleted" not in concept_view:
                     concept_view["postTestCompleted"] = False
 
+        return {
+            "user_id": user_id,
+            "found": True,
+            "studentName": result["studentName"],
+            "overall_mastery": result["overall_mastery"],
+            "overall_state": result["overall_state"],
+            "overall_color": result["overall_color"],
+            "total_concepts": result["total_concepts"],
+            "concepts": result["concepts"],
+        }
+
+    # -----------------------------------------------------------------
+    # UPDATE MASTERY STATUS — Explicit write operation
+    # -----------------------------------------------------------------
+    @staticmethod
+    def update_mastery_status(user_id, result=None):
+        """
+        Persist computed schema mastery documents and history entry to Firestore.
+        Separated from get_status to guarantee GET requests have zero side-effect writes.
+        """
+        if not db:
+            return
+
+        if result is None:
+            doc_ref = db.collection("student_behaviour").document(user_id)
+            doc = doc_ref.get()
+            if not doc.exists:
+                return
+            result = process_student(doc.to_dict())
+
         now = timestamp_now()
-        for concept_name, concept_result in result["concepts"].items():
+        for concept_name, concept_result in result.get("concepts", {}).items():
             mastery_doc = {
                 "user_id": user_id,
                 "concept": concept_name,
@@ -439,10 +495,10 @@ class MasteryService:
                 "schema_state": concept_result["schema_state"],
                 "color": concept_result["color"],
                 "needs_posttest": concept_result["needs_posttest"],
-                "correctness_score": concept_result["breakdown"]["correctness_score"],
-                "attempt_score": concept_result["breakdown"]["attempt_score"],
-                "quiz_score": concept_result["breakdown"]["quiz_score"],
-                "error_pattern_score": concept_result["breakdown"]["error_pattern_score"],
+                "correctness_score": concept_result.get("breakdown", {}).get("correctness_score", 0.0),
+                "attempt_score": concept_result.get("breakdown", {}).get("attempt_score", 0.0),
+                "quiz_score": concept_result.get("breakdown", {}).get("quiz_score", 0.0),
+                "error_pattern_score": concept_result.get("breakdown", {}).get("error_pattern_score", 0.0),
                 "diagnostic_validated": False,
                 "final_state": "",
                 "progression_decision": "",
@@ -454,18 +510,19 @@ class MasteryService:
 
         history_entry = {
             "user_id": user_id,
-            "overall_mastery": result["overall_mastery"],
-            "overall_state": result["overall_state"],
+            "overall_mastery": result.get("overall_mastery", 0.0),
+            "overall_state": result.get("overall_state", "Developing"),
             "concepts": {
                 name: {
                     "mastery_score": data["mastery_score"],
                     "schema_state": data["schema_state"],
                 }
-                for name, data in result["concepts"].items()
+                for name, data in result.get("concepts", {}).items()
             },
             "timestamp": now,
         }
         db.collection("mastery_history").add(history_entry)
+
 
         response = {
             "user_id": user_id,
@@ -479,14 +536,23 @@ class MasteryService:
         }
         return MasteryService._apply_local_post_test_results(user_id, response)
 
+development
     # -----------------------------------------------------------------
-    # GET ALL STUDENTS
+    # GET ALL STUDENTS — Cached with 60s TTL
     # -----------------------------------------------------------------
     @staticmethod
     def get_all_students():
+mastery-main-integration
         """Fetch all real registered students from persistent storage and compute mastery for each."""
         from services.user_storage_service import UserStorageService
         registered_students = UserStorageService.get_all_students()
+
+        """Fetch all students from Firestore with 60-second TTL cache and compute mastery for each."""
+        now = time.time()
+        if _students_cache["data"] is not None and (now - _students_cache["timestamp"] < _STUDENTS_CACHE_TTL):
+            return _students_cache["data"]
+
+development
         students = []
         seen_ids = set()
 
@@ -531,6 +597,7 @@ class MasteryService:
                     "created_at": u.get("created_at") or u.get("joinedAt", ""),
                 })
 
+mastery-main-integration
         for result in SchemaPostTestResultService.list_results():
             uid = str(result.get("student_id") or "").strip()
             if not uid or uid in seen_ids:
@@ -554,6 +621,10 @@ class MasteryService:
                 "created_at": result.get("created_at", ""),
             })
 
+
+        _students_cache["data"] = students
+        _students_cache["timestamp"] = now
+development
         return students
 
     # -----------------------------------------------------------------

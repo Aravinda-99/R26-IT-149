@@ -15,10 +15,12 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TARGET_COLLECT = 30;
 const ACCURACY_THRESHOLD = 85;
 const MAX_FLOWERS = 8;
@@ -132,6 +134,12 @@ function getInvalidTip(value, type) {
 export class Level10Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level10Scene" });
+  }
+
+  init() {
+    this.wrongAttempts = 0;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
   }
 
   create() {
@@ -797,6 +805,7 @@ export class Level10Scene extends Phaser.Scene {
   _onWrongCollect(cx, cy, value, displayText, invalidType) {
     this.totalAttempts++;
     this.wrongAttempts++;
+    if (this.wrongAttempts === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.score = Math.max(0, this.score - 10);
 
@@ -822,6 +831,26 @@ export class Level10Scene extends Phaser.Scene {
 
     if (this.oxygen <= 0) {
       this._gameOver();
+    }
+  }
+
+  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalAttempts;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level10Scene: /api/wellbeing/predict-struggle unreachable", e);
     }
   }
 
@@ -1169,6 +1198,11 @@ export class Level10Scene extends Phaser.Scene {
    *  UPDATE LOOP
    * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
+    if (GameManager.interventionInFlight) {
+      if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+      return;
+    }
+
     if (!this.gameStarted || this.isComplete) return;
 
     const dt = delta / 1000;

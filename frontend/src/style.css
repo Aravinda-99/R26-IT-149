@@ -397,10 +397,139 @@ textarea.input-field {
 
 .lp-quiz-progress-head {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    align-items: center;
     font-size: 0.85rem;
     margin-bottom: 0.5rem;
     color: #475569;
+}
+
+/* center the "Question X of Y" counter within the question card */
+.lp-quiz-progress-head #quiz-counter,
+.lp-quiz-progress-head .quiz-counter {
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #0F172A;
+}
+
+/* ── Quiz Lab layout: number tracker + main card ─────────────────── */
+.quiz-lab-layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.quiz-lab-layout .quiz-lab-main {
+    flex: 1;
+    min-width: 0;
+    order: 1;
+}
+
+.quiz-nav-tracker {
+    flex: 0 0 auto;
+    width: 150px;
+    order: 2;
+    position: sticky;
+    top: 90px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.9rem;
+    padding: 0.9rem;
+}
+
+/* Wide screens: take the tracker out of flow and pin it to the viewport
+   so the quiz number boxes stay put while the page scrolls. The quiz
+   card then expands to the full content width on its own. */
+@media (min-width: 1400px) {
+    .quiz-nav-tracker {
+        position: fixed;
+        top: 90px;
+        right: max(16px, calc((100vw - 1200px) / 2 - 150px - 24px));
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+    }
+}
+
+.quiz-nav-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748B;
+    margin-bottom: 0.7rem;
+}
+
+.quiz-nav-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+}
+
+.quiz-nav-item {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.5rem;
+    background: #F8FAFC;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.quiz-nav-item:hover {
+    border-color: #2563EB;
+    color: #2563EB;
+}
+
+.quiz-nav-item.is-answered {
+    background: #DBEAFE;
+    border-color: #BFDBFE;
+    color: #1D4ED8;
+}
+
+/* Visited without picking an answer (skipped) */
+.quiz-nav-item.is-skipped {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    color: #DC2626;
+}
+
+.quiz-nav-item.is-skipped:hover {
+    border-color: #DC2626;
+    color: #DC2626;
+}
+
+.quiz-nav-item.is-current {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #FFFFFF;
+    transform: scale(1.06);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+@media (max-width: 900px) {
+    .quiz-lab-layout {
+        flex-direction: column;
+        margin-right: 0;
+    }
+    .quiz-nav-tracker {
+        width: 100%;
+        position: static;
+    }
+    .quiz-nav-list {
+        grid-template-columns: repeat(10, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .quiz-nav-list {
+        grid-template-columns: repeat(6, 1fr);
+    }
 }
 
 .lp-progress-track {

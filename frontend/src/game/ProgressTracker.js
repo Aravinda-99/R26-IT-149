@@ -1,41 +1,20 @@
 /**
- * ProgressTracker — Firebase / localStorage Persistence
- * ======================================================
- * Saves and loads game progress. Uses Firestore when authenticated,
- * falls back to localStorage otherwise.
+ * ProgressTracker — Backend-mediated Persistence
+ * ================================================
+ * Saves and loads game progress via the Flask backend's
+ * /api/gamification/state routes (backed by the Firebase Admin SDK).
+ * No direct Firebase client SDK usage — the backend owns Firestore access.
  */
-
-import { db, auth } from "../config/firebase.js";
-
-let _firestore = null;
-let _setDoc = null;
-let _getDoc = null;
-let _doc = null;
-
-// Lazy-load Firestore methods to avoid blocking if Firebase isn't ready
-async function ensureFirestore() {
-  if (_setDoc) return true;
-  try {
-    const mod = await import("firebase/firestore");
-    _setDoc = mod.setDoc;
-    _getDoc = mod.getDoc;
-    _doc = mod.doc;
-    _firestore = db;
-    return !!_firestore;
-  } catch {
-    return false;
-  }
-}
+import { GameStateAPI } from "../api/api.js";
+import { getCurrentUser } from "../utils/auth.js";
 
 function getCurrentUserId() {
   try {
-    return auth?.currentUser?.uid || null;
+    return getCurrentUser()?.uid || null;
   } catch {
     return null;
   }
 }
-
-const STORAGE_KEY = "codequest_game_progress";
 
 export const ProgressTracker = {
 
@@ -43,47 +22,28 @@ export const ProgressTracker = {
    * Save the full game state.
    */
   async saveProgress(state) {
-
-    // Try Firestore
     const uid = getCurrentUserId();
     if (!uid) return;
-
     try {
-      const ready = await ensureFirestore();
-      if (!ready) return;
-      await _setDoc(_doc(_firestore, "players", uid), {
-        ...state,
-        savedAt: new Date().toISOString(),
-      }, { merge: true });
-    } catch (err) {
-      console.warn("[ProgressTracker] Firestore save failed:", err.message);
+      await GameStateAPI.saveState({ uid, state, savedAt: new Date().toISOString() });
+    } catch (e) {
+      console.error("[ProgressTracker] Failed to save progress to backend:", e);
     }
   },
 
   /**
-   * Load progress — prefers Firestore, falls back to localStorage.
+   * Load progress from the backend.
    */
   async loadProgress() {
     const uid = getCurrentUserId();
-
-    // Try Firestore first
-    if (uid) {
-      try {
-        const ready = await ensureFirestore();
-        if (ready) {
-          const snap = await _getDoc(_doc(_firestore, "players", uid));
-          if (snap.exists()) {
-            return snap.data();
-          } else {
-            return "NEW_USER";
-          }
-        }
-      } catch (err) {
-        console.warn("[ProgressTracker] Firestore load failed:", err.message);
-      }
+    if (!uid) return null;
+    try {
+      const data = await GameStateAPI.loadState(uid);
+      return data ? data.state : "NEW_USER";
+    } catch (e) {
+      console.error("[ProgressTracker] Failed to load progress from backend:", e);
+      return null;
     }
-
-    return null;
   },
 
   /**
@@ -97,18 +57,15 @@ export const ProgressTracker = {
   },
 
   /**
-   * Clear all saved progress.
+   * Clear all saved progress (used by the Menu's "Reset" button).
    */
   async clearProgress() {
-
     const uid = getCurrentUserId();
     if (!uid) return;
-
     try {
-      const ready = await ensureFirestore();
-      if (!ready) return;
-      const { deleteDoc } = await import("firebase/firestore");
-      await deleteDoc(_doc(_firestore, "players", uid));
-    } catch { /* ignore */ }
+      await GameStateAPI.deleteState(uid);
+    } catch (e) {
+      console.error("[ProgressTracker] Failed to clear progress on backend:", e);
+    }
   },
 };

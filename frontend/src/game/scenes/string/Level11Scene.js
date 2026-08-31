@@ -15,6 +15,9 @@
  */
 
 import Phaser from "phaser";
+import { GameManager } from "../../GameManager.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  COLORS & CONSTANTS
@@ -47,8 +50,9 @@ const C = {
   confetti_purple: 0xB7AFEE, confetti_green: 0x7FCFA3, confetti_pink: 0xF5B9CC
 };
 
-const W = 800, H = 600;
+const W = 1280, H = 720;
 const BOX_W = 46, BOX_H = 56;
+const MAX_LIVES = 5;
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  OPERATIONS DATA — Each has tutorial + rounds
@@ -210,6 +214,13 @@ export class Level11Scene extends Phaser.Scene {
     super({ key: "Level11Scene" });
   }
 
+  init() {
+    this.wrongAttempts = 0; // Use a dedicated property for ML tracking
+    this.lives = MAX_LIVES;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
+  }
+
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -229,9 +240,9 @@ export class Level11Scene extends Phaser.Scene {
     this.totalCorrect = 0;
     this.totalAttempted = 0;
     this.elements = [];
-    this.lives = 3;
     this.combo = 0;
     this._timerTween = null;
+    this.startTime = this.time.now;
 
     this._createBackground();
     this._createParticleTextures();
@@ -500,6 +511,34 @@ export class Level11Scene extends Phaser.Scene {
       if (idx === 3) this.hudRefs.streak = txt;
       this._addEl(icon, txt);
     });
+
+    // ── Lives (hearts, top-right) ──
+    this.livesIcons = [];
+    for (let i = 0; i < MAX_LIVES; i++) {
+      const heart = this.add.text(W - 30 - i * 28, 85, "❤️", {
+        fontSize: "18px",
+      }).setOrigin(0.5).setDepth(52);
+      this.livesIcons.push(heart);
+      this._addEl(heart);
+    }
+    this._updateLives();
+  }
+
+  _updateLives() {
+    if (!this.livesIcons) return;
+    for (let i = 0; i < MAX_LIVES; i++) {
+      if (this.livesIcons[i]) {
+        this.livesIcons[i].setText(i < this.lives ? "❤️" : "🖤");
+        if (i >= this.lives) {
+          this.tweens.add({
+            targets: this.livesIcons[i],
+            scaleX: 1.3, scaleY: 1.3,
+            yoyo: true,
+            duration: 150,
+          });
+        }
+      }
+    }
   }
 
   _updateHUD() {
@@ -527,7 +566,29 @@ export class Level11Scene extends Phaser.Scene {
     this.combo = 0;
     this.totalAttempted++;
     this.lives = Math.max(0, this.lives - 1);
+    this._updateLives();
+    this.wrongAttempts++;
+    if (this.wrongAttempts === 3) this.runBehavioralCheck();
     this._updateHUD();
+  }
+
+  /** ML struggle check — reports real per-round attempt/timing stats (not rapid-fire: guided puzzle level). */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalAttempted;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level11Scene: /api/wellbeing/predict-struggle unreachable", e);
+    }
   }
 
   _spawnScorePopup(x, y, pts, color = COLORS.success_green) {
