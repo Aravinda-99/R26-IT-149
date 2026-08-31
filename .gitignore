@@ -46,3 +46,6 @@ analytics-ml/fer_env/
 analytics-ml/dataset/
 analytics-ml/dataset_ferplus/
 analytics-ml/dataset_merged/
+# Local runtime auth/user data - do not commit real users or password hashes
+backend/data/registered_users.json
+backend/data/registered_users.local.backup.json
