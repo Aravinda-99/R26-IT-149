@@ -52,6 +52,36 @@ export function renderProfile(container) {
     const totalScore = Number.isFinite(state.score) ? state.score : 0;
     const unlockedBadgeIds = Array.isArray(state.badges) ? state.badges : [];
 
+    // ── Completed Modules — a module is 3 consecutive levels; "complete"
+    // means all 3 of its levelsCompleted entries are true. Using generic
+    // "Module N" labels rather than guessing at curriculum category names:
+    // the in-game UI (games.js) and the badge catalog (BadgeSystem.js) don't
+    // agree on module sizing past the first few (e.g. games.js describes the
+    // For Loop wing as 2 levels, while BadgeSystem.js's per-level badges
+    // imply 3), so a generic numbering avoids asserting a mapping that isn't
+    // actually verified for the full 88-level range.
+    const MODULE_SIZE = 3;
+    const totalModules = Math.floor(levelsCompletedArr.length / MODULE_SIZE);
+    const completedModules = [];
+    for (let m = 0; m < totalModules; m++) {
+        const start = m * MODULE_SIZE;
+        const isComplete = levelsCompletedArr[start] === true
+            && levelsCompletedArr[start + 1] === true
+            && levelsCompletedArr[start + 2] === true;
+        if (isComplete) {
+            completedModules.push({ name: `Module ${m + 1}`, levels: `Levels ${start + 1}–${start + 3}` });
+        }
+    }
+
+    const completedModulesHTML = completedModules.length > 0
+        ? completedModules.map(m => `
+            <div style="display:flex; align-items:center; gap:0.4rem; padding: 0.45rem 0.8rem; border-radius: 10px; border: 1px solid var(--primary); background: var(--primary-soft, rgba(37,99,235,0.08));" title="${m.levels}">
+                <i class="fa-solid fa-circle-check" style="color: var(--primary); font-size: 0.85rem;"></i>
+                <span style="font-size:0.82rem; font-weight:700; color: var(--primary);">${m.name}</span>
+            </div>
+        `).join("")
+        : `<p class="text-muted" style="padding: 0.5rem 0; color: var(--text-secondary);">Complete 3 levels in a category to unlock your first module!</p>`;
+
     const badgesHTML = unlockedBadgeIds.length > 0
         ? unlockedBadgeIds.map(badgeId => {
             const badge = BadgeSystem.getBadge(badgeId);
@@ -131,6 +161,16 @@ export function renderProfile(container) {
                                 <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Levels Completed</div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <h3><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> Completed Modules</h3>
+                        <div class="completed-modules-list" style="display:flex; flex-wrap:wrap; gap: 0.5rem; margin-top: 0.75rem;">
+                            ${completedModulesHTML}
+                        </div>
+                        <a href="#/student/post-test/start" class="btn btn-primary btn-block" style="margin-top: 1.25rem; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-clipboard-check"></i> Go to Understanding Check
+                        </a>
                     </div>
 
                     <div class="card" style="margin-top: 1.5rem;">

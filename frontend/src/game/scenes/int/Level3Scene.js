@@ -94,6 +94,16 @@ export class Level3Scene extends Phaser.Scene {
     this.wrongAttempts = 0;
     this.lives = MAX_LIVES;
     this.levelStartTime = this.time.now;
+    // Tracks the currently-open terminal's Phaser DOM Element GameObject (the
+    // <input> wrapper), so submit handlers always read from the live, active
+    // node rather than risking a stale document.getElementById() hit against
+    // a leftover element from a previous terminal open/close cycle.
+    this.currentTerminalDom = null;
+    // Tracks the currently-open terminal's background/border/text elements
+    // (the local `els` array each _terminalN() builds), so _closeTerminal()
+    // can tear the whole overlay down from anywhere — including right before
+    // the ML struggle check may trigger the Bit intervention menu.
+    this.overlayEls = null;
 
     /* ── Textures ── */
     this._genTex();
@@ -542,6 +552,9 @@ export class Level3Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════ */
   _openTerminalOverlay(index) {
     if (this.overlayActive || this.gatesOpen[index]) return;
+    // Defensive: make sure no stale overlay/DOM input survives from a
+    // previous terminal session before opening a new one.
+    this._closeTerminal();
     this.overlayActive = true;
     this.robot.body.setVelocity(0, 0);
 
@@ -552,9 +565,32 @@ export class Level3Scene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Fully tears down whichever terminal overlay is currently open — every
+   * Phaser background/border/text element it created (this.overlayEls) AND
+   * its DOM <input> (this.currentTerminalDom) — and resets overlayActive.
+   * This is the single source of truth for "close the terminal": used by
+   * every terminal's Cancel button, the correct-answer path (_gateOpen),
+   * the game-over path, AND — critically — forced at the very top of
+   * runBehavioralCheck(), so the Bit intervention menu never has to render
+   * on top of a still-open terminal.
+   */
+  _closeTerminal() {
+    if (this.overlayEls) {
+      this.overlayEls.forEach(e => { if (e) e.destroy(); });
+      this.overlayEls = null;
+    }
+    if (this.currentTerminalDom) {
+      this.currentTerminalDom.destroy();
+      this.currentTerminalDom = null;
+    }
+    this.overlayActive = false;
+  }
+
   /* ── Terminal 1: Direct Assignment ── */
   _terminal1() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -589,12 +625,12 @@ export class Level3Scene extends Phaser.Scene {
 
     // DOM input field
     const inputEl = this.add.dom(W / 2, 280).createFromHTML(
-      `<input type="text" id="t1-input" placeholder="a = ?" 
+      `<input type="text" id="t1-input" placeholder="a = ?"
        style="width:220px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
     ).setDepth(d + 3);
-    els.push(inputEl);
+    this.currentTerminalDom = inputEl;
 
     // Error text
     const errTxt = this.add.text(W / 2, 320, "", {
@@ -619,15 +655,14 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
 
     btnBg.setInteractive({ useHandCursor: true });
     btnBg.on("pointerover", () => btnBg.setFillStyle(0x0891b2));
     btnBg.on("pointerout", () => btnBg.setFillStyle(0x0e7490));
     btnBg.on("pointerup", () => {
-      const inputField = document.getElementById("t1-input");
+      const inputField = this.currentTerminalDom?.getChildByID("t1-input");
       if (!inputField) return;
       const val = inputField.value.trim();
 
@@ -640,19 +675,18 @@ export class Level3Scene extends Phaser.Scene {
         this._updateLives();
         if (this.wrongAttempts === 3) this.runBehavioralCheck();
         if (this.lives <= 0) {
-           els.forEach(e => e.destroy());
+           this._closeTerminal();
            this.time.delayedCall(500, () => this._gameOver());
         }
         return;
       }
 
-      els.forEach(e => e.destroy());
       this._gateOpen(0, "int a = 7; // 7 + 10 = 17 ✓");
     });
 
     // Focus the input after a tiny delay
     this.time.delayedCall(100, () => {
-      const inp = document.getElementById("t1-input");
+      const inp = this.currentTerminalDom?.getChildByID("t1-input");
       if (inp) inp.focus();
     });
   }
@@ -660,6 +694,7 @@ export class Level3Scene extends Phaser.Scene {
   /* ── Terminal 2: Arithmetic Application ── */
   _terminal2() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -694,12 +729,12 @@ export class Level3Scene extends Phaser.Scene {
 
     // DOM input
     const inputEl = this.add.dom(W / 2, 290).createFromHTML(
-      `<input type="text" id="t2-input" placeholder="y = ?" 
+      `<input type="text" id="t2-input" placeholder="y = ?"
        style="width:180px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
     ).setDepth(d + 3);
-    els.push(inputEl);
+    this.currentTerminalDom = inputEl;
 
     // Error text
     const errTxt = this.add.text(W / 2, 330, "", {
@@ -726,15 +761,14 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
 
     btnBg.setInteractive({ useHandCursor: true });
     btnBg.on("pointerover", () => btnBg.setFillStyle(0x0891b2));
     btnBg.on("pointerout", () => btnBg.setFillStyle(0x0e7490));
     btnBg.on("pointerup", () => {
-      const inp = document.getElementById("t2-input");
+      const inp = this.currentTerminalDom?.getChildByID("t2-input");
       if (!inp) return;
       const val = inp.value.trim();
 
@@ -746,18 +780,17 @@ export class Level3Scene extends Phaser.Scene {
         this._updateLives();
         if (this.wrongAttempts === 3) this.runBehavioralCheck();
         if (this.lives <= 0) {
-           els.forEach(e => e.destroy());
+           this._closeTerminal();
            this.time.delayedCall(500, () => this._gameOver());
         }
         return;
       }
 
-      els.forEach(e => e.destroy());
       this._gateOpen(1, "int y = 8; // 4 * 8 = 32 ✓");
     });
 
     this.time.delayedCall(100, () => {
-      const inp = document.getElementById("t2-input");
+      const inp = this.currentTerminalDom?.getChildByID("t2-input");
       if (inp) inp.focus();
     });
   }
@@ -765,6 +798,7 @@ export class Level3Scene extends Phaser.Scene {
   /* ── Terminal 3: Validation & Constraint ── */
   _terminal3() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -838,7 +872,6 @@ export class Level3Scene extends Phaser.Scene {
       });
       bg.on("pointerup", () => {
         if (opt.value === "15") {
-          els.forEach(e => e.destroy());
           this._gateOpen(2, "int bonus = 15; // 85 + 15 = 100 ✓");
         } else {
           errTxt.setText(`❌ ${opt.hint}`);
@@ -848,7 +881,7 @@ export class Level3Scene extends Phaser.Scene {
           this._updateLives();
           if (this.wrongAttempts === 3) this.runBehavioralCheck();
           if (this.lives <= 0) {
-             els.forEach(e => e.destroy());
+             this._closeTerminal();
              this.time.delayedCall(500, () => this._gameOver());
           }
         }
@@ -866,8 +899,7 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
   }
 
@@ -875,7 +907,10 @@ export class Level3Scene extends Phaser.Scene {
    *  GATE OPEN
    * ═══════════════════════════════════════════════ */
   _gateOpen(index, codeStr) {
-    this.overlayActive = false;
+    // Correct-answer path — whichever terminal called this owns the
+    // currently-open overlay (background/border/text + DOM input, if any);
+    // tear it all down here so nothing lingers for the next interaction.
+    this._closeTerminal();
     this.gatesOpen[index] = true;
 
     // Score
@@ -896,8 +931,10 @@ export class Level3Scene extends Phaser.Scene {
     }
 
     // Label
-    this.gateLabels[index].setText(`🔓 GATE ${index + 1}`);
-    this.gateLabels[index].setColor("#4ade80");
+    if (this.gateLabels[index]) {
+      this.gateLabels[index].setText(`🔓 GATE ${index + 1}`);
+      this.gateLabels[index].setColor("#4ade80");
+    }
 
     // Remove physics collider for that gate
     if (this.gateColliders[index]) {
@@ -914,8 +951,10 @@ export class Level3Scene extends Phaser.Scene {
     }
 
     // HUD status
-    this.gateStatusTexts[index].setText(`Gate ${index + 1}: 🔓`);
-    this.gateStatusTexts[index].setColor("#4ade80");
+    if (this.gateStatusTexts[index]) {
+      this.gateStatusTexts[index].setText(`Gate ${index + 1}: 🔓`);
+      this.gateStatusTexts[index].setColor("#4ade80");
+    }
 
     // Particles
     this.successPart.emitParticleAt(GATES[index].x, GATES[index].y + 40, 25);
@@ -953,7 +992,7 @@ export class Level3Scene extends Phaser.Scene {
 
   _gameOver() {
     this.isComplete = true;
-    this.overlayActive = false;
+    this._closeTerminal();
     if (this.robot && this.robot.body) this.robot.body.setVelocity(0, 0);
 
     this.cameras.main.shake(500, 0.025);
@@ -986,6 +1025,13 @@ export class Level3Scene extends Phaser.Scene {
 
   /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
   async runBehavioralCheck() {
+    // Force-close any open terminal overlay BEFORE the ML check even starts
+    // (synchronous — runs immediately, before the first `await` below), so
+    // the Bit intervention menu — which may appear once checkBehavioral()
+    // resolves, asynchronously, elsewhere — never has to render on top of a
+    // still-open terminal.
+    this._closeTerminal();
+
     const attempts_count = this.wrongAttempts;
     const time_taken_seconds = (this.time.now - this.levelStartTime) / 1000;
     const misconception_repeat_count = this.wrongAttempts;
