@@ -12,6 +12,7 @@ Manages:
 """
 
 import uuid
+import random
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
 from services.schema_post_test_result_service import SchemaPostTestResultService
@@ -29,6 +30,8 @@ TOTAL_POSTTEST_QUESTIONS = 15
 
 class SchemaPostTestService:
     """Handles post-test generation, student answer grading, and ML mastery evaluation."""
+
+    _SESSION_SHUFFLE_CACHE = {}
 
     @classmethod
     def select_post_test_questions(
@@ -48,9 +51,14 @@ class SchemaPostTestService:
         # 1. Fetch all active approved questions for this concept
         all_approved = SchemaQuestionBankService.get_approved_question_bank(concept=concept_clean, active_only=True)
         
-        # Fallback to all approved if concept has few questions
+        # If no approved questions exist for this concept, return clear error (do not fallback to mock/unapproved)
         if not all_approved:
-            all_approved = SchemaQuestionBankService.get_approved_question_bank(active_only=True)
+            return {
+                "success": False,
+                "error": f"No teacher-approved active questions available for concept '{concept_clean}'. Please ask your instructor to generate and approve questions in the Question Bank first.",
+                "questions": [],
+                "total_questions": 0,
+            }
 
         # 2. Retrieve student history to avoid repeats
         used_qids, used_groups = SchemaQuestionBankService.get_student_used_questions(student_id, concept_clean)
@@ -127,7 +135,6 @@ class SchemaPostTestService:
             
             # Shuffle the 4 options for this student session
             shuffled_items = list(canonical_items)
-            import random
             random.shuffle(shuffled_items)
 
             disp_opts = {}
@@ -160,8 +167,6 @@ class SchemaPostTestService:
             "total_questions": len(student_safe_questions),
             "questions": student_safe_questions,
         }
-
-    _SESSION_SHUFFLE_CACHE = {}
 
     @classmethod
     def grade_and_predict(cls, submission: dict) -> dict:

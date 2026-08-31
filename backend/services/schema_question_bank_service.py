@@ -14,6 +14,7 @@ import uuid
 import threading
 from datetime import datetime
 
+from config import Config
 from firebase.firebase_service import db
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -120,7 +121,10 @@ class SchemaQuestionBankService:
 
     @classmethod
     def initialize_seed_data(cls):
-        """Ensures the approved question bank has initial seed questions if empty with balanced option positions."""
+        """Ensures the approved question bank has initial seed questions if empty with balanced option positions (DEV ONLY)."""
+        if not Config.ALLOW_MOCK_QUESTIONS:
+            return
+
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
         if not approved:
             seed_data = _read_json(SEED_FILE, default=[])
@@ -142,10 +146,11 @@ class SchemaQuestionBankService:
                     s_copy.update(bal)
                     s_copy["active"] = True
                     s_copy["deleted"] = False
+                    s_copy["source"] = "DEV_SEED"
                     rebalanced_seeds.append(s_copy)
 
                 _write_json(APP_QUESTIONS_FILE, rebalanced_seeds)
-                print(f"[OK] Seeded {len(rebalanced_seeds)} balanced questions into approved_question_bank.json")
+                print(f"[OK] Seeded {len(rebalanced_seeds)} balanced questions into approved_question_bank.json (DEV MODE)")
             else:
                 print("[WARN] Seed questions file was empty or missing.")
 
@@ -155,7 +160,7 @@ class SchemaQuestionBankService:
 
     @classmethod
     def save_generated_questions(cls, questions: list) -> list:
-        """Saves a batch of generated draft questions with status PENDING."""
+        """Saves a batch of generated draft questions with status PENDING and active=False."""
         existing = _read_json(GEN_QUESTIONS_FILE, default=[])
         now = _now_iso()
         saved = []
@@ -168,8 +173,9 @@ class SchemaQuestionBankService:
                 prefix = (q_copy.get("concept_name") or "GEN")[:4].upper()
                 q_copy["question_id"] = f"{prefix}_Q{uuid.uuid4().hex[:4].upper()}"
             q_copy["status"] = q_copy.get("status") or "PENDING"
-            q_copy["active"] = q_copy.get("active", True)
+            q_copy["active"] = False
             q_copy["deleted"] = False
+            q_copy["source"] = q_copy.get("source") or "LLM"
             q_copy["created_at"] = q_copy.get("created_at") or now
             q_copy["updated_at"] = now
             existing.append(q_copy)
@@ -182,7 +188,12 @@ class SchemaQuestionBankService:
     def get_pending_questions(cls, concept: str = None) -> list:
         """Returns all non-deleted questions with status PENDING for teacher review."""
         all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
-        pending = [q for q in all_gen if q.get("status") == "PENDING" and not q.get("deleted", False)]
+        pending = [
+            q for q in all_gen
+            if q.get("status") == "PENDING" and not q.get("deleted", False)
+        ]
+        if not Config.ALLOW_MOCK_QUESTIONS:
+            pending = [q for q in pending if q.get("source") not in ("DEV_MOCK", "DEV_SEED")]
         if concept:
             concept_lower = concept.strip().lower()
             pending = [q for q in pending if q.get("concept_name", "").strip().lower() == concept_lower]
@@ -192,7 +203,12 @@ class SchemaQuestionBankService:
     def get_rejected_questions(cls, concept: str = None) -> list:
         """Returns all non-deleted questions with status REJECTED for teacher inspection."""
         all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
-        rejected = [q for q in all_gen if q.get("status") == "REJECTED" and not q.get("deleted", False)]
+        rejected = [
+            q for q in all_gen
+            if q.get("status") == "REJECTED" and not q.get("deleted", False)
+        ]
+        if not Config.ALLOW_MOCK_QUESTIONS:
+            rejected = [q for q in rejected if q.get("source") not in ("DEV_MOCK", "DEV_SEED")]
         if concept:
             concept_lower = concept.strip().lower()
             rejected = [q for q in rejected if q.get("concept_name", "").strip().lower() == concept_lower]
@@ -278,10 +294,11 @@ class SchemaQuestionBankService:
         """
         Approves a draft question:
           1. Validates 4-tier schema.
-          2. Sets generated_question status to APPROVED.
+          2. Sets generated_question status to APPROVED and active=True.
           3. Copies it into approved_question_bank with active=True, deleted=False, exposure_count=0.
         """
-        cls.initialize_seed_data()
+        if Config.ALLOW_MOCK_QUESTIONS:
+            cls.initialize_seed_data()
         all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
         target_q = None
 
@@ -375,7 +392,6 @@ class SchemaQuestionBankService:
     @classmethod
     def deactivate_question(cls, question_id: str, updated_by: str = "Teacher") -> dict:
         """Deactivates an approved question so it will not be sampled for student post-tests."""
-        cls.initialize_seed_data()
         now = _now_iso()
         all_app = _read_json(APP_QUESTIONS_FILE, default=[])
         target_q = None
@@ -402,7 +418,6 @@ class SchemaQuestionBankService:
     @classmethod
     def reactivate_question(cls, question_id: str, updated_by: str = "Teacher") -> dict:
         """Reactivates an approved question so it can be sampled for student post-tests."""
-        cls.initialize_seed_data()
         now = _now_iso()
         all_app = _read_json(APP_QUESTIONS_FILE, default=[])
         target_q = None
@@ -473,14 +488,27 @@ class SchemaQuestionBankService:
     @classmethod
     def get_approved_question_bank(cls, concept: str = None, active_only: bool = True, include_deleted: bool = False) -> list:
         """Retrieves questions from approved_question_bank with active and non-deleted filtering."""
-        cls.initialize_seed_data()
+        if Config.ALLOW_MOCK_QUESTIONS:
+            cls.initialize_seed_data()
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
         
+        # Exclude mock/seed questions if mock questions are disabled
+        if not Config.ALLOW_MOCK_QUESTIONS:
+            approved = [
+                q for q in approved
+                if q.get("source") not in ("DEV_SEED", "DEV_MOCK")
+                and q.get("source_generated_question_id") != "SEED"
+                and not str(q.get("id", "")).startswith("SEED_")
+            ]
+
+        # Strictly enforce status APPROVED
+        approved = [q for q in approved if q.get("status") == "APPROVED"]
+
         if not include_deleted:
             approved = [q for q in approved if not q.get("deleted", False)]
             
         if active_only:
-            approved = [q for q in approved if q.get("active", True) is True]
+            approved = [q for q in approved if q.get("active", False) is True]
             
         if concept:
             concept_clean = concept.strip().lower()
@@ -491,17 +519,20 @@ class SchemaQuestionBankService:
     @classmethod
     def get_approved_question_by_id(cls, question_id: str) -> dict:
         """Fetches a specific approved question by question_id or id."""
-        cls.initialize_seed_data()
+        if Config.ALLOW_MOCK_QUESTIONS:
+            cls.initialize_seed_data()
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
         for q in approved:
             if (q.get("question_id") == question_id or q.get("id") == question_id) and not q.get("deleted", False):
+                if not Config.ALLOW_MOCK_QUESTIONS:
+                    if q.get("source") in ("DEV_SEED", "DEV_MOCK") or q.get("source_generated_question_id") == "SEED" or str(q.get("id", "")).startswith("SEED_"):
+                        continue
                 return q
         return None
 
     @classmethod
     def increment_exposure_counts(cls, question_ids: list):
         """Increments exposure_count for the specified question IDs."""
-        cls.initialize_seed_data()
         approved = _read_json(APP_QUESTIONS_FILE, default=[])
         changed = False
 
@@ -575,5 +606,6 @@ class SchemaQuestionBankService:
         return s_copy
 
 
-# Initialize seed data upon module load
-SchemaQuestionBankService.initialize_seed_data()
+# Initialize seed data upon module load ONLY if mock questions are explicitly permitted
+if Config.ALLOW_MOCK_QUESTIONS:
+    SchemaQuestionBankService.initialize_seed_data()

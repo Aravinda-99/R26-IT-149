@@ -17,3 +17,10 @@ class Config:
         "FIREBASE_CREDENTIALS_PATH", "firebase/serviceAccountKey.json"
     )
     CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*")
+
+    # --- Component 4: LLM Configuration ---
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+    USE_LLM_QUESTION_GENERATION = os.getenv("USE_LLM_QUESTION_GENERATION", "true").lower() in ("true", "1")
+    ALLOW_MOCK_QUESTIONS = os.getenv("ALLOW_MOCK_QUESTIONS", "false").lower() in ("true", "1")
+    LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini").strip()
+

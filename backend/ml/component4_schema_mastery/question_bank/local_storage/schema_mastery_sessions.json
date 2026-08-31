@@ -178,5 +178,25 @@
     "next_action": "LEARN_AGAIN",
     "model_used": "schema_mastery_pipeline",
     "created_at": "2026-08-30T19:45:14.437006Z"
+  },
+  {
+    "session_id": "SES_F38FEC06",
+    "student_id": "STU_VERIFY_001",
+    "concept_name": "Loops",
+    "pre_test_score": 0.45,
+    "attempt_count": 1,
+    "time_taken_seconds": 150.0,
+    "error_type": "LOOP_CONDITION_ERROR",
+    "error_pattern_score": 0.4,
+    "post_test_correct_count": 3,
+    "post_test_nearly_correct_count": 2,
+    "post_test_wrong_count": 5,
+    "post_test_clearly_wrong_count": 5,
+    "post_test_score": 0.2667,
+    "mastery_probability": 0.0478,
+    "mastery_level": "Learn Again",
+    "next_action": "LEARN_AGAIN",
+    "model_used": "schema_mastery_pipeline",
+    "created_at": "2026-08-31T06:28:39.551360Z"
   }
 ]

@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "result_id": "PTR_STU_VERIFY_001_SES_F38FEC06",
+    "student_id": "STU_VERIFY_001",
+    "student_name": "STU_VERIFY_001",
+    "student_email": "",
+    "session_id": "SES_F38FEC06",
+    "concept_name": "Loops",
+    "error_type": "LOOP_CONDITION_ERROR",
+    "pre_test_score": 0.45,
+    "attempt_count": 1,
+    "time_taken_seconds": 150.0,
+    "error_pattern_score": 0.4,
+    "post_test_correct_count": 3,
+    "post_test_nearly_correct_count": 2,
+    "post_test_wrong_count": 5,
+    "post_test_clearly_wrong_count": 5,
+    "post_test_score": 0.2667,
+    "score_percentage": 26.7,
+    "mastery_probability": 0.0478,
+    "mastery_level": "Learn Again",
+    "learning_status": "Needs Support",
+    "next_action": "LEARN_AGAIN",
+    "student_next_action_label": "Review Again",
+    "model_used": "schema_mastery_pipeline",
+    "created_at": "2026-08-31T06:28:40.362900+00:00",
+    "updated_at": "2026-08-31T06:28:40.368806+00:00",
+    "source": "post_test_submit",
+    "persistence_status": "local_saved_firestore_pending"
+  }
+]

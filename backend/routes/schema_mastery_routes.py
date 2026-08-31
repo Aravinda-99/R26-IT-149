@@ -49,8 +49,16 @@ def generate_questions():
             "count": len(drafts),
             "questions": drafts,
         }), 200
+    except (ValueError, RuntimeError) as e:
+        err_msg = str(e)
+        code = "LLM_NOT_CONFIGURED" if "OPENAI_API_KEY" in err_msg or "not configured" in err_msg else "LLM_GENERATION_FAILED"
+        return jsonify({
+            "success": False,
+            "error": err_msg,
+            "code": code,
+        }), 400
     except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"success": False, "error": str(e), "code": "INTERNAL_ERROR"}), 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
