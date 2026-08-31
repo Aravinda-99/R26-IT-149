@@ -7,8 +7,7 @@
 
 import { ErrorAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
-import { Chart, registerables } from "chart.js";
-Chart.register(...registerables);
+import Chart from "chart.js/auto";
 
 
 let latestAnalysisResponse = null;
@@ -45,13 +44,19 @@ export async function renderErrorAnalysis(container) {
     }
     const studentId = user.uid || user.id;
 
+    if (_radarChart) {
+        _radarChart.destroy();
+        _radarChart = null;
+    }
+    if (_barChart) { _barChart.destroy(); _barChart = null; }
+
     container.innerHTML = `
         <div class="dashboard-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem; height: 100%;">
             <!-- Top Stats Bar -->
             <div class="stats-bar card" style="display: flex; justify-content: space-around; padding: 1.2rem; border-radius: var(--radius); background: var(--bg-card); border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
                 <div class="stat-item" style="text-align: center;">
-                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Analyses Performed</div>
-                    <div id="stat-total" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-blue);">0</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Total Errors</div>
+                    <div id="stat-total" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-red);">0</div>
                 </div>
                 <div style="width: 1px; background: var(--border-color);"></div>
                 <div class="stat-item" style="text-align: center;">
@@ -131,8 +136,8 @@ export async function renderErrorAnalysis(container) {
                                     <div>
                                         <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: var(--success); font-weight: 700;">Repair Strategy</h4>
                                         <p id="diag-fix" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary); margin-bottom: 1rem;"></p>
-                                        <div style="padding: 0.8rem; background: rgba(255,255,255,0.7); border-radius: var(--radius-sm); font-size: 0.9rem; border: 1px solid rgba(22, 163, 74, 0.2);">
-                                            <strong style="color: var(--success);">Next Step:</strong> <span id="diag-next-step"></span>
+                                        <div style="display: none;">
+                                            <span id="diag-next-step"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -158,43 +163,23 @@ export async function renderErrorAnalysis(container) {
                         </div>
 
                         <!-- Secondary Info: Reason Diagnosis & XAI -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 0.5rem;">
-                            <!-- Reason Diagnosis -->
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 0.5rem;">
+                            <!-- Error Diagnosis -->
                             <div class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem;">
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
-                                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Reason Diagnosis</h4>
+                                    <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">What Went Wrong?</h4>
                                 </div>
-                                <div style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
-                                    <strong>Original Broad Prediction:</strong> <span id="diag-broad-error">---</span><br>
-                                    <strong>Final Diagnosis:</strong> <span id="diag-final-label">---</span><br>
-                                    <strong>Final Reason Group:</strong> <span id="diag-reason-group">---</span>
+                                <div style="display: none;">
+                                    <span id="diag-broad-error"></span>
+                                    <span id="diag-final-label"></span>
+                                    <span id="diag-reason-group"></span>
+                                    <div id="diag-badges"></div>
+                                    <span id="diag-confidence"></span>
                                 </div>
-                                <div id="diag-badges" style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;"></div>
                                 <p id="diag-reason" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);"></p>
                                 <div style="margin-top: 1rem; font-size: 0.9rem; font-style: italic; color: var(--text-muted); padding-left: 1rem; border-left: 3px solid var(--border-color);">
                                     "Misconception: <span id="diag-miscon"></span>"
                                 </div>
-                            </div>
-                            
-                            <!-- XAI Explanation Card -->
-                            <div id="xai-card" class="card" style="background: var(--bg-card); border: 1px solid var(--border-color); padding: 1.5rem;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">AI Confidence</h4>
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                        <span id="xai-confidence-badge" style="font-size: 1rem; font-weight: 800; color: var(--primary);">—</span>
-                                    </div>
-                                </div>
-                                <div style="margin-bottom: 1.2rem;">
-                                    <div style="height: 8px; background: var(--bg-subtle); border-radius: 99px; overflow: hidden;">
-                                        <div id="xai-confidence-bar" style="height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.6s ease; width: 0%;"></div>
-                                    </div>
-                                </div>
-                                <div id="xai-label" style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">—</div>
-                                <p id="xai-narrative" style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;"></p>
-                                <div id="xai-bullets" style="display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.8rem;"></div>
-                                <div id="xai-signals" style="display: flex; flex-wrap: wrap; gap: 0.4rem;"></div>
                             </div>
                         </div>
 
@@ -237,39 +222,38 @@ export async function renderErrorAnalysis(container) {
                 <!-- Section Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.8rem; border-bottom: 2px solid var(--border-color);">
                     <div style="display: flex; align-items: center; gap: 0.8rem;">
-                        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">Error Progression Analytics</h3>
-                        <span class="badge" style="background: var(--primary-soft); color: var(--primary);">Feature 1</span>
+                        <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">Diagnostic Pre-Test Results</h3>
+                        <span class="badge" style="background: var(--primary-soft); color: var(--primary);">Skill Profile</span>
                     </div>
-                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Updates after each submission</span>
+                    <span style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">Live single-session analysis</span>
                 </div>
                 <!-- 4 Stat Cards -->
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin-bottom: 1.5rem;">
-                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--primary); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Total Submissions</div>
-                        <div id="anl-total" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--accent-red); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Total Errors</div>
+                        <div id="anl-total" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">—</div>
                     </div>
                     <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--success); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Improvement Score</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Overall Mastery</div>
                         <div style="display: flex; align-items: baseline; justify-content: center; gap: 0.4rem;">
-                            <div id="anl-improvement" style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary);">—</div>
-                            <span id="anl-improvement-arrow" style="font-size: 1.4rem;"></span>
+                            <div id="anl-mastery" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">—</div>
                         </div>
                     </div>
                     <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--warning); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Most Problematic</div>
-                        <div id="anl-worst" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Weakest Skill</div>
+                        <div id="anl-worst" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">—</div>
                     </div>
-                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--secondary); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
-                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Most Improved</div>
-                        <div id="anl-best" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">—</div>
+                    <div class="card" style="padding: 1.5rem; border-top: 4px solid var(--success); text-align: center; background: var(--bg-card); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); border-left: 1px solid var(--border-color);">
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; font-weight: 600;">Strongest Skill</div>
+                        <div id="anl-best" style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary);">—</div>
                     </div>
                 </div>
                 <!-- Charts Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
-                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Total Errors Over Time</h4>
+                        <h4 style="margin: 0 0 1.2rem 0; font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Skill Mastery Profile</h4>
                         <div style="position: relative; height: 250px;">
-                            <canvas id="anl-line-chart"></canvas>
+                            <canvas id="anl-radar-chart"></canvas>
                         </div>
                     </div>
                     <div class="card" style="padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border-color);">
@@ -432,36 +416,11 @@ function updateInsightEngine(data) {
     document.getElementById("diag-alignment").textContent = data.pretest_alignment.message;
 
     // ── Feature 2: Populate XAI Explanation Card ──────────────────────────
-    const xai = data.xai_explanation;
-    if (xai) {
-        document.getElementById("xai-confidence-badge").textContent = `${xai.xai_confidence_pct}%`;
-        document.getElementById("xai-confidence-bar").style.width = `${xai.xai_confidence_pct}%`;
-        const barEl = document.getElementById("xai-confidence-bar");
-        // Color the bar: green if high, amber if medium, red if low
-        if (xai.xai_confidence_pct >= 75) barEl.style.background = "linear-gradient(90deg,#34d399,#22c55e)";
-        else if (xai.xai_confidence_pct >= 55) barEl.style.background = "linear-gradient(90deg,#f59e0b,#fbbf24)";
-        else barEl.style.background = "linear-gradient(90deg,#ef4444,#f87171)";
-
-        document.getElementById("xai-label").textContent = xai.xai_label;
-        document.getElementById("xai-narrative").textContent = xai.xai_narrative;
-
-        // Bullet points
-        document.getElementById("xai-bullets").innerHTML = (xai.xai_bullet_points || []).map(b =>
-            `<div style="display:flex;align-items:flex-start;gap:0.4rem;font-size:0.78rem;color:var(--text-primary);line-height:1.45;">
-                <span style="flex-shrink:0;">${b.icon}</span>
-                <span>${b.text}</span>
-            </div>`
-        ).join("");
-
-        // Code signal chips
-        document.getElementById("xai-signals").innerHTML = (xai.xai_code_signals || []).map(s =>
-            `<span style="font-size:0.65rem;padding:2px 7px;border-radius:99px;background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.25);">${s}</span>`
-        ).join("");
-    }
+    // XAI Explanation Card removed per design update.
 }
 
 // Chart.js instance references — destroyed and recreated on each refresh
-let _lineChart = null;
+let _radarChart = null;
 let _barChart = null;
 
 async function refreshGlobalState(studentId) {
@@ -478,45 +437,72 @@ async function refreshGlobalState(studentId) {
         const analyticsData = analyticsRes.status === "fulfilled" ? analyticsRes.value : { has_data: false };
         const reportData = reportRes.status === "fulfilled" ? reportRes.value : { has_data: false };
 
+        const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
+        const trueTotalErrors = Object.values(summaryData.counts || {}).reduce((a, b) => a + b, 0);
+
         // ── Stats Bar ─────────────────────────────────────────────────
         const statTotal = document.getElementById("stat-total");
-        if (statTotal) statTotal.textContent = summaryData.total_analyses || 0;
+        if (statTotal) statTotal.textContent = trueTotalErrors;
         const statTopError = document.getElementById("stat-top-error");
         if (statTopError) statTopError.textContent = summaryData.most_frequent_error || "None";
 
         // ── History List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
-        const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
         
         if (errorHistory.length === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         } else {
             histCont.innerHTML = "";
-            // Newest first
-            const reversed = [...errorHistory].reverse();
-            reversed.forEach((item) => {
+            // Count frequencies
+            const counts = {};
+            errorHistory.forEach(item => {
+                counts[item.label] = (counts[item.label] || 0) + 1;
+            });
+            
+            // Sort by frequency descending, then timestamp descending (newest first)
+            const sortedHistory = [...errorHistory].sort((a, b) => {
+                if (counts[a.label] !== counts[b.label]) {
+                    return counts[b.label] - counts[a.label];
+                }
+                return b.timestamp - a.timestamp;
+            });
+
+            sortedHistory.forEach((item, index) => {
                 const el = document.createElement("div");
-                el.style.cssText = "padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s, border-color 0.2s;";
+                const isSuggested = index === 0;
+                if (isSuggested) el.dataset.suggested = "true";
                 el.dataset.code = encodeURIComponent(item.code || "");
+                
+                const baseBg = isSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                const baseBorder = isSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
+                const hoverBg = isSuggested ? "rgba(245, 158, 11, 0.15)" : "rgba(255,255,255,0.06)";
+
+                el.style.cssText = `padding: 0.6rem 0.8rem; background: ${baseBg}; border-radius: 6px; border: 1px solid ${baseBorder}; cursor: pointer; transition: background 0.2s, border-color 0.2s;`;
+                const suggestedBadge = isSuggested ? `<span style="background: var(--accent-orange); color: white; padding: 2px 6px; border-radius: 4px; margin-right: 8px; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px;">Suggested</span>` : '';
+
                 el.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                        <span style="font-weight: 700; font-size: 0.65rem; color: #4a90e2;">${item.label}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 700; font-size: 0.65rem; color: ${isSuggested ? 'var(--accent-orange)' : '#4a90e2'}; display: flex; align-items: center;">
+                            ${suggestedBadge}
+                            ${item.label}
+                        </span>
                         <span style="font-size: 0.6rem; color: var(--text-secondary);">${new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-primary);">${item.concept}</div>
                 `;
                 el.addEventListener("mouseover", () => {
-                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.06)";
+                    if (!el.dataset.selected) el.style.background = hoverBg;
                 });
                 el.addEventListener("mouseout", () => {
-                    if (!el.dataset.selected) el.style.background = "rgba(255,255,255,0.03)";
+                    if (!el.dataset.selected) el.style.background = baseBg;
                 });
                 el.addEventListener("click", async () => {
                     // Deselect all items
                     histCont.querySelectorAll("[data-selected]").forEach(prev => {
                         delete prev.dataset.selected;
-                        prev.style.background = "rgba(255,255,255,0.03)";
-                        prev.style.borderColor = "rgba(255,255,255,0.05)";
+                        const wasSuggested = prev.dataset.suggested === "true";
+                        prev.style.background = wasSuggested ? "rgba(245, 158, 11, 0.1)" : "rgba(255,255,255,0.03)";
+                        prev.style.borderColor = wasSuggested ? "rgba(245, 158, 11, 0.3)" : "rgba(255,255,255,0.05)";
                     });
                     // Highlight selected
                     el.dataset.selected = "1";
@@ -572,97 +558,96 @@ async function refreshGlobalState(studentId) {
             const anl = analyticsData;
 
             // Stat cards
-            document.getElementById("anl-total").textContent = anl.total_submissions;
-            const impPct = anl.overall_improvement_pct;
-            document.getElementById("anl-improvement").textContent = `${Math.abs(impPct)}%`;
-            document.getElementById("anl-improvement").style.color = impPct >= 0 ? "var(--accent-green)" : "#ef4444";
-            document.getElementById("anl-improvement-arrow").textContent = impPct > 0 ? "↑" : (impPct < 0 ? "↓" : "→");
-            document.getElementById("anl-improvement-arrow").style.color = impPct >= 0 ? "var(--accent-green)" : "#ef4444";
-
+            document.getElementById("anl-total").textContent = trueTotalErrors;
             const labelShort = { LOOP_ERROR: "Loops", VARIABLE_ERROR: "Variables", ARRAY_ERROR: "Arrays", METHOD_ERROR: "Methods" };
-            document.getElementById("anl-worst").textContent = anl.most_problematic ? labelShort[anl.most_problematic] || anl.most_problematic : "None";
-            document.getElementById("anl-best").textContent = anl.most_improved ? (labelShort[anl.most_improved] || anl.most_improved) + " ↑" : "None yet";
+            const allCatsArr = ["ARRAY_ERROR", "LOOP_ERROR", "METHOD_ERROR", "VARIABLE_ERROR"];
+            const catMasteries = allCatsArr.map(cat => Math.max(0, 100 - (summaryData.counts[cat] || 0) * 15));
+            const overallMastery = Math.round(catMasteries.reduce((a, b) => a + b, 0) / 4);
+            
+            const anlMasteryEl = document.getElementById("anl-mastery");
+            if (anlMasteryEl) {
+                anlMasteryEl.textContent = `${overallMastery}%`;
+                anlMasteryEl.style.color = overallMastery >= 75 ? "var(--success)" : (overallMastery >= 50 ? "var(--warning)" : "var(--accent-red)");
+            }
 
-            // Improvement per-category cards
+            let bestCat = allCatsArr[0];
+            let bestScore = -1;
+            for (let i = 0; i < allCatsArr.length; i++) {
+                if (catMasteries[i] > bestScore) {
+                    bestScore = catMasteries[i];
+                    bestCat = allCatsArr[i];
+                }
+            }
+            document.getElementById("anl-best").innerHTML = bestScore === 100 ? `${labelShort[bestCat]} <i class="fa-solid fa-award" style="color: var(--warning); font-size: 1.2rem; margin-left: 0.4rem;"></i>` : labelShort[bestCat];
+            document.getElementById("anl-worst").textContent = anl.most_problematic ? labelShort[anl.most_problematic] || anl.most_problematic : "None";
+
+            // Skill Mastery Cards (Bottom Row)
             const catColors = { LOOP_ERROR: "#a78bfa", VARIABLE_ERROR: "#f59e0b", ARRAY_ERROR: "#34d399", METHOD_ERROR: "#f472b6" };
-            document.getElementById("anl-improvement-cards").innerHTML = Object.entries(anl.improvement_scores).map(([cat, data]) => {
+            const allCats = ["ARRAY_ERROR", "LOOP_ERROR", "METHOD_ERROR", "VARIABLE_ERROR"];
+            document.getElementById("anl-improvement-cards").innerHTML = allCats.map(cat => {
                 const col = catColors[cat] || "#4a90e2";
-                const arrow = data.direction === "improved" ? "↑" : (data.direction === "worse" ? "↓" : "→");
-                const arrowColor = data.direction === "improved" ? "#34d399" : (data.direction === "worse" ? "#ef4444" : "#8899aa");
+                const errorCount = summaryData.counts[cat] || 0;
+                const mastery = Math.max(0, 100 - errorCount * 15);
                 return `
-                    <div class="card" style="padding:0.8rem; border-left: 3px solid ${col};">
-                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;">${labelShort[cat]}</div>
-                        <div style="display:flex;align-items:baseline;gap:0.3rem;">
-                            <span style="font-size:1.4rem;font-weight:800;color:${col};">${Math.abs(data.pct)}%</span>
-                            <span style="font-size:1rem;color:${arrowColor};font-weight:700;">${arrow}</span>
+                    <div class="card" style="padding:0.8rem; border-left: 3px solid ${col}; background: var(--bg-card); border-right: 1px solid var(--border-color); border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color);">
+                        <div style="font-size:0.65rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.3rem;font-weight:700;">${labelShort[cat]}</div>
+                        <div style="display:flex;align-items:baseline;gap:0.4rem;margin-bottom:0.2rem;">
+                            <span style="font-size:1.5rem;font-weight:800;color:${col};">${mastery}%</span>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;">Mastery</span>
                         </div>
-                        <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:0.2rem;">${data.first} → ${data.second} errors</div>
+                        <div style="font-size:0.75rem;color:var(--text-primary);font-weight:600; background:var(--bg-body); display:inline-block; padding:0.2rem 0.5rem; border-radius:4px; border:1px solid var(--border-color);">${errorCount} Error${errorCount === 1 ? '' : 's'}</div>
                     </div>`;
             }).join("");
 
-            // ── Line chart: total errors per week ──────────────────────
-            const weekLabels = anl.weekly_totals.map(w => w.week);
-            const errorCounts = anl.weekly_totals.map(w => w.total_errors);
-            const correctCounts = anl.weekly_totals.map(w => w.correct);
+            // ── Radar chart: Skill Mastery Profile ──────────────────────
+            const radarCtx = document.getElementById("anl-radar-chart");
+            if (radarCtx) {
+                const masteryScores = [
+                    Math.max(0, 100 - (summaryData.counts["ARRAY_ERROR"] || 0) * 15),
+                    Math.max(0, 100 - (summaryData.counts["LOOP_ERROR"] || 0) * 15),
+                    Math.max(0, 100 - (summaryData.counts["METHOD_ERROR"] || 0) * 15),
+                    Math.max(0, 100 - (summaryData.counts["VARIABLE_ERROR"] || 0) * 15),
+                ];
 
-            const lineCtx = document.getElementById("anl-line-chart");
-            if (lineCtx) {
-                if (_lineChart) {
-                    // Update in-place for smooth re-render (no destroy = no shake)
-                    _lineChart.data.labels = weekLabels;
-                    _lineChart.data.datasets[0].data = errorCounts;
-                    _lineChart.data.datasets[1].data = correctCounts;
-                    _lineChart.update('none'); // 'none' skips animation on data update
+                if (_radarChart) {
+                    _radarChart.data.datasets[0].data = masteryScores;
+                    _radarChart.update('none');
                 } else {
-                    const ctx = lineCtx.getContext('2d');
-                    const errorGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                    errorGradient.addColorStop(0, "rgba(239, 68, 68, 0.4)");
-                    errorGradient.addColorStop(1, "rgba(239, 68, 68, 0.0)");
-
-                    const correctGradient = ctx.createLinearGradient(0, 0, 0, 200);
-                    correctGradient.addColorStop(0, "rgba(52, 211, 153, 0.4)");
-                    correctGradient.addColorStop(1, "rgba(52, 211, 153, 0.0)");
-
-                    _lineChart = new Chart(lineCtx, {
-                        type: "line",
+                    _radarChart = new Chart(radarCtx, {
+                        type: "radar",
                         data: {
-                            labels: weekLabels,
-                            datasets: [
-                                {
-                                    label: "Errors",
-                                    data: errorCounts,
-                                    borderColor: "#ef4444",
-                                    backgroundColor: errorGradient,
-                                    tension: 0.4,
-                                    fill: true,
-                                    pointBackgroundColor: "#ef4444",
-                                    pointRadius: 4,
-                                },
-                                {
-                                    label: "Correct",
-                                    data: correctCounts,
-                                    borderColor: "#34d399",
-                                    backgroundColor: correctGradient,
-                                    tension: 0.4,
-                                    fill: true,
-                                    pointBackgroundColor: "#34d399",
-                                    pointRadius: 4,
-                                },
-                            ],
+                            labels: ["Arrays", "Loops", "Methods", "Variables"],
+                            datasets: [{
+                                label: "Mastery %",
+                                data: masteryScores,
+                                backgroundColor: "rgba(52, 211, 153, 0.4)",
+                                borderColor: "#34d399",
+                                pointBackgroundColor: "#34d399",
+                                pointBorderColor: "#fff",
+                                pointHoverBackgroundColor: "#fff",
+                                pointHoverBorderColor: "#34d399",
+                                borderWidth: 2
+                            }]
                         },
                         options: {
                             responsive: true, maintainAspectRatio: false,
-                            animation: { duration: 400 },
-                            interaction: { mode: 'index', intersect: false },
-                            plugins: {
-                                legend: { labels: { color: "#8899aa", font: { size: 11, family: 'Inter' } } },
-                                tooltip: { backgroundColor: 'rgba(15, 23, 36, 0.9)', titleColor: '#fff', bodyColor: '#ccc', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, padding: 10 }
-                            },
                             scales: {
-                                x: { ticks: { color: "#8899aa", font: { size: 10 } }, grid: { display: false } },
-                                y: { ticks: { color: "#8899aa", font: { size: 10 }, stepSize: 1 }, grid: { color: "rgba(255,255,255,0.06)" }, beginAtZero: true },
+                                r: {
+                                    angleLines: { color: "var(--border-color)" },
+                                    grid: { color: "var(--border-color)" },
+                                    pointLabels: { font: { family: 'Inter', size: 12, weight: 600 }, color: "var(--text-secondary)" },
+                                    ticks: { display: false, min: 0, max: 100, stepSize: 25 }
+                                }
                             },
-                        },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) { return context.raw + "% Mastery"; }
+                                    }
+                                }
+                            }
+                        }
                     });
                 }
             }

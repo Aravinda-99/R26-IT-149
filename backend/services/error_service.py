@@ -1093,9 +1093,11 @@ class ErrorService:
             "concept": details["concept"],
             "timestamp": _now.isoformat(),
             "activity": details["gamification"]["recommended_activity"],
-            "week_bucket": _week_bucket,          # Feature 1 — analytics bucketing
-            "reason_group": reason_group,          # Feature 3 — learning report detail
-            "full_response": response,             # Full payload for history item click-through
+            "week_bucket": _week_bucket,
+            "reason_group": reason_group,
+            "error_reason": details.get("reason", ""),
+            "misconception": details.get("misconception", ""),
+            "full_response": response,
         }
 
         cls._history.append(history_entry)
