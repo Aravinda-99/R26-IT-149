@@ -524,7 +524,39 @@ function renderGenerateTab(content) {
         } catch (err) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions`;
-            outputList.innerHTML = `<div style="color: #EF4444; background: #FEF2F2; padding: 1rem; border-radius: 0.5rem;">Error: ${err.message}</div>`;
+            const errMsg = err?.message || String(err);
+            const isApiKeyMissing = errMsg.includes("OPENAI_API_KEY") || errMsg.includes("LLM_NOT_CONFIGURED") || errMsg.includes("not configured");
+
+            if (isApiKeyMissing) {
+                outputList.innerHTML = `
+                    <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 0.6rem; padding: 1rem 1.25rem; color: #92400E;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.25rem; color: #D97706; margin-top: 0.15rem;"></i>
+                            <div>
+                                <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: #B45309;">LLM Question Generation Not Configured</h4>
+                                <p style="font-size: 0.85rem; margin: 0 0 0.5rem 0; color: #78350F; line-height: 1.4;">
+                                    LLM question generation is not configured. Please set the backend <code>OPENAI_API_KEY</code> in <code>backend/.env</code>.
+                                </p>
+                                <p style="font-size: 0.78rem; margin: 0; color: #92400E;">
+                                    CodeQuest strictly enforces real LLM generation. Mock/template fallback questions are disabled in production teacher workflows.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                outputList.innerHTML = `
+                    <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 0.6rem; padding: 1rem 1.25rem; color: #991B1B;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <i class="fa-solid fa-circle-exclamation" style="font-size: 1.25rem; color: #DC2626; margin-top: 0.15rem;"></i>
+                            <div>
+                                <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: #991B1B;">Question Generation Failed</h4>
+                                <p style="font-size: 0.85rem; margin: 0; color: #B91C1C; line-height: 1.4;">${errMsg}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
         }
     });
 }

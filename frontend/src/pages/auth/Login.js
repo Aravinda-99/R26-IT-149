@@ -1,91 +1,70 @@
 /**
- * Login Page
- * ==========
- * Modern, clean LMS split-screen authentication with high-quality photo hero.
- * Uses real credentials / auth session with CodeQuest branding.
+ * Public Student Login Page
+ * =========================
+ * Clean, modern split-layout login for learners.
+ * Features:
+ *   - Left: High-quality educational photo hero with translucent overlay & learning quote
+ *   - Right: Clean white LMS form, email & password, toggle visibility, friendly alerts
+ *   - Redirects directly to Home page (#/student/home) upon student login
+ *   - Strictly NO demo credentials, demo chips, or teacher login links
  */
 
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { setCurrentUser } from "../../utils/auth.js";
+import { AuthAPI } from "../../api/api.js";
 
 export function renderLogin(container) {
     container.innerHTML = `
-        <div class="auth-split-layout">
-            <!-- Left Hero Section (Educational Photo Banner) -->
-            <div class="auth-hero-pane" style="background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.85) 100%), url('/assets/images/login-hero.jpg') center/cover no-repeat;">
-                <div class="auth-hero-brand">
-                    <div class="auth-brand-logo">
-                        <i class="fa-solid fa-graduation-cap"></i>
-                    </div>
-                    <span class="auth-brand-text">CodeQuest</span>
-                </div>
-
-                <div class="auth-hero-quote-box">
-                    <p class="auth-hero-quote">
-                        “Mastering Java programming isn't about memorizing syntax — it's about learning from compiler misconceptions and constructing resilient mental models.”
-                    </p>
-                    <div class="auth-hero-author">
-                        <strong>CodeQuest Learning Hub</strong>
-                        <span>Schema-Theory Adaptive Programming System</span>
+        <div class="auth-page-wrapper" style="min-height: 100vh; background: #F8FAFC; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem;">
+            <div class="auth-card-split" style="width: 100%; max-width: 980px; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 24px; box-shadow: 0 12px 36px rgba(15, 23, 42, 0.05); display: grid; grid-template-columns: 1fr 1.15fr; overflow: hidden;">
+                
+                <!-- Left Photo Hero Pane (Clean Photo without Bulky Text Overlays) -->
+                <div class="auth-side-pane" style="position: relative; background: url('/assets/images/login-hero.jpg') center/cover no-repeat; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-start; min-height: 560px;">
+                    <!-- Clean Brand Badge -->
+                    <div style="display: inline-flex; align-items: center; gap: 0.55rem; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 0.45rem 0.85rem; border-radius: 9999px; border: 1px solid rgba(255, 255, 255, 0.15); width: fit-content;">
+                        <div style="width: 24px; height: 24px; border-radius: 6px; background: #2563EB; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <span style="font-size: 0.92rem; font-weight: 800; color: #FFFFFF; letter-spacing: -0.2px;">CodeQuest</span>
                     </div>
                 </div>
-            </div>
 
-            <!-- Right Form Section (Clean White LMS Form) -->
-            <div class="auth-form-pane">
-                <div class="auth-form-container">
-                    <div class="auth-form-header">
-                        <h1 class="auth-title">Welcome back to CodeQuest</h1>
-                        <p class="auth-subtitle">
-                            Sign in to resume your adaptive Java learning track and practice drills.
-                        </p>
+                <!-- Right Form Pane -->
+                <div class="auth-main-pane" style="padding: 3.5rem 3rem; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="margin-bottom: 2rem;">
+                        <h1 style="font-size: 1.7rem; font-weight: 800; color: #0F172A; margin: 0 0 0.4rem 0; letter-spacing: -0.3px;">Welcome back</h1>
+                        <p style="font-size: 0.9rem; color: #64748B; margin: 0;">Continue your Java learning journey.</p>
                     </div>
 
-                    <form id="login-form" class="auth-form-body" onsubmit="return false;">
-                        <div class="form-group">
-                            <label class="form-label" for="login-email">Email Address</label>
-                            <input type="email" id="login-email" class="form-input" placeholder="student@codequest.edu" required autocomplete="email" />
+                    <form id="student-login-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 1.25rem;">
+                        <!-- Email Input -->
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            <label for="login-email" style="font-size: 0.86rem; font-weight: 600; color: #0F172A;">Email Address</label>
+                            <input type="email" id="login-email" required placeholder="name@example.com" autocomplete="email" style="padding: 0.75rem 1rem; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 0.92rem; color: #0F172A; background: #FFFFFF; outline: none; transition: border-color 0.15s;" />
                         </div>
 
-                        <div class="form-group">
-                            <div class="form-label-row">
-                                <label class="form-label" for="login-password">Password</label>
+                        <!-- Password Input with Toggle -->
+                        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                            <label for="login-password" style="font-size: 0.86rem; font-weight: 600; color: #0F172A;">Password</label>
+                            <div style="position: relative; display: flex; align-items: center;">
+                                <input type="password" id="login-password" required placeholder="Enter your password" autocomplete="current-password" style="width: 100%; padding: 0.75rem 2.75rem 0.75rem 1rem; border: 1px solid #CBD5E1; border-radius: 10px; font-size: 0.92rem; color: #0F172A; background: #FFFFFF; outline: none; transition: border-color 0.15s;" />
+                                <button type="button" id="btn-toggle-password" style="position: absolute; right: 0.75rem; background: none; border: none; color: #94A3B8; cursor: pointer; padding: 0.25rem; font-size: 0.9rem;">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
                             </div>
-                            <input type="password" id="login-password" class="form-input" placeholder="Enter your password" required autocomplete="current-password" />
                         </div>
 
-                        <div class="form-row-remember">
-                            <label class="toggle-checkbox-label">
-                                <input type="checkbox" id="login-remember" checked />
-                                <span class="toggle-text">Remember sign in details</span>
-                            </label>
-                        </div>
+                        <!-- Error Message Box -->
+                        <div id="login-error-msg" class="hidden" style="background: #FEF2F2; border: 1px solid #FCA5A5; color: #DC2626; padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.84rem; font-weight: 500;"></div>
 
-                        <div id="login-error" class="auth-alert-error hidden"></div>
-
-                        <button type="submit" class="btn btn-primary btn-block btn-lg" id="login-submit-btn">
-                            Log in
+                        <!-- Submit Button -->
+                        <button type="submit" id="btn-login-submit" style="padding: 0.8rem; font-size: 0.95rem; font-weight: 700; border-radius: 10px; background: #2563EB; color: #FFFFFF; border: none; cursor: pointer; transition: background 0.15s; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
+                            <span>Sign In</span>
                         </button>
 
-                        <div class="auth-switch-link">
-                            Don't have an account? <a href="#/register" class="link-primary">Sign up</a>
-                        </div>
-
-                        <!-- System Test Accounts Helper -->
-                        <div class="auth-test-accounts-card">
-                            <div class="test-acc-header">
-                                <i class="fa-solid fa-key"></i> <span>Quick Test Accounts</span>
-                            </div>
-                            <div class="test-acc-chips">
-                                <button type="button" class="test-chip" id="btn-fill-student">
-                                    <span class="chip-role student">Student</span>
-                                    <span class="chip-creds">student@codequest.edu (pass: student123)</span>
-                                </button>
-                                <button type="button" class="test-chip" id="btn-fill-teacher">
-                                    <span class="chip-role teacher">Teacher</span>
-                                    <span class="chip-creds">teacher@codequest.edu (pass: teacher123)</span>
-                                </button>
-                            </div>
+                        <!-- Switch to Signup Link -->
+                        <div style="text-align: center; margin-top: 0.5rem; font-size: 0.88rem; color: #64748B;">
+                            Don't have an account? <a href="#/register" style="color: #2563EB; font-weight: 700; text-decoration: none;">Create an account</a>
                         </div>
                     </form>
                 </div>
@@ -93,37 +72,36 @@ export function renderLogin(container) {
         </div>
     `;
 
-    const form = document.getElementById("login-form");
-    const errorEl = document.getElementById("login-error");
-    const submitBtn = document.getElementById("login-submit-btn");
+    const form = document.getElementById("student-login-form");
+    const errorEl = document.getElementById("login-error-msg");
+    const submitBtn = document.getElementById("btn-login-submit");
     const emailInput = document.getElementById("login-email");
     const passwordInput = document.getElementById("login-password");
+    const togglePasswordBtn = document.getElementById("btn-toggle-password");
 
-    // Quick fill test chips
-    document.getElementById("btn-fill-student")?.addEventListener("click", () => {
-        emailInput.value = "student@codequest.edu";
-        passwordInput.value = "student123";
-        hideError();
+    // Toggle password visibility
+    togglePasswordBtn?.addEventListener("click", () => {
+        const isPassword = passwordInput.type === "password";
+        passwordInput.type = isPassword ? "text" : "password";
+        const icon = togglePasswordBtn.querySelector("i");
+        if (icon) {
+            icon.className = isPassword ? "fa-regular fa-eye-slash" : "fa-regular fa-eye";
+        }
     });
 
-    document.getElementById("btn-fill-teacher")?.addEventListener("click", () => {
-        emailInput.value = "teacher@codequest.edu";
-        passwordInput.value = "teacher123";
-        hideError();
-    });
-
+    // Form submit handler
     form?.addEventListener("submit", async (e) => {
         e.preventDefault();
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
         if (!email || !password) {
-            showError("Please enter both email and password.");
+            showError("Please enter your email and password.");
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span class="spinner-sm"></span> Signing in...`;
+        submitBtn.innerHTML = `<span class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;"></span> <span>Signing in...</span>`;
         hideError();
 
         try {
@@ -131,47 +109,106 @@ export function renderLogin(container) {
             const userCred = await signInWithEmailAndPassword(auth, email, password);
             const user = userCred.user;
             const role = (email.includes("teacher") || email.includes("admin")) ? "teacher" : "student";
+            const displayName = user.displayName || email.split("@")[0];
 
-            setCurrentUser({
+            const profile = {
                 uid: user.uid,
                 id: user.uid,
                 email: user.email,
-                name: user.displayName || email.split("@")[0],
-                displayName: user.displayName || email.split("@")[0],
-                role: role
-            });
+                name: displayName,
+                displayName: displayName,
+                display_name: displayName,
+                role: role,
+                joinedAt: new Date().toISOString()
+            };
 
+            // Sync with backend persistent storage
+            try {
+                await AuthAPI.register({
+                    uid: user.uid,
+                    email: user.email,
+                    display_name: displayName,
+                    name: displayName,
+                    role: role
+                });
+            } catch (e) {}
+
+            // Store in local registry
+            try {
+                const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
+                if (role === "student" && !registry.some(r => r.email === email || r.uid === user.uid)) {
+                    registry.push(profile);
+                    localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
+                }
+            } catch (e) {}
+
+            setCurrentUser(profile);
+
+            // Redirect: Student to Home page; Teacher to teacher dashboard
             if (role === "teacher") {
                 window.location.hash = "#/teacher/dashboard";
             } else {
-                window.location.hash = "#/student/dashboard";
+                window.location.hash = "#/student/home";
             }
 
         } catch (err) {
-            // Local fallback for offline credentials
+            // Local fallback for offline/local accounts with valid length
             if (password.length >= 6) {
                 const role = (email.includes("teacher") || email.includes("admin")) ? "teacher" : "student";
-                setCurrentUser({
-                    uid: "local_" + Date.now(),
-                    id: "local_" + Date.now(),
+                const fallbackUid = "user_" + Date.now();
+                const displayName = email.split("@")[0];
+
+                const profile = {
+                    uid: fallbackUid,
+                    id: fallbackUid,
                     email: email,
-                    name: email.split("@")[0],
-                    displayName: email.split("@")[0],
+                    name: displayName,
+                    displayName: displayName,
+                    display_name: displayName,
                     role: role,
                     joinedAt: new Date().toISOString()
-                });
+                };
+
+                try {
+                    await AuthAPI.register({
+                        uid: fallbackUid,
+                        email: email,
+                        display_name: displayName,
+                        name: displayName,
+                        role: role
+                    });
+                } catch (e) {}
+
+                try {
+                    const registry = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
+                    if (role === "student" && !registry.some(r => r.email === email)) {
+                        registry.push(profile);
+                        localStorage.setItem("codequest_registered_students", JSON.stringify(registry));
+                    }
+                } catch (e) {}
+
+                setCurrentUser(profile);
 
                 if (role === "teacher") {
                     window.location.hash = "#/teacher/dashboard";
                 } else {
-                    window.location.hash = "#/student/dashboard";
+                    window.location.hash = "#/student/home";
                 }
                 return;
             }
 
-            showError(err.message ? err.message.replace("Firebase: ", "") : "Authentication failed. Password must be at least 6 characters.");
+            let msg = "Invalid email or password.";
+            if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found") {
+                msg = "Invalid email or password.";
+            } else if (err.code === "auth/too-many-requests") {
+                msg = "Too many attempts. Please wait a moment and try again.";
+            } else if (err.message) {
+                msg = "Unable to sign in. Please check your credentials and try again.";
+            }
+
+            showError(msg);
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `Log in`;
+            submitBtn.innerHTML = `<span>Sign In</span>`;
         }
     });
 

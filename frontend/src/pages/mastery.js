@@ -8,7 +8,7 @@
  * Student sees:        progress %, friendly level badges, encouraging messages
  */
 
-import { MasteryAPI } from "../api/api.js";
+import { MasteryAPI, SchemaMasteryAPI } from "../api/api.js";
 import { renderPostTest } from "./posttest.js";
 
 // Short-lived client cache (60 seconds) to prevent redundant queries
@@ -76,69 +76,6 @@ function pctText(value) {
 
 function getSelectedStudent(studentId) {
     return loadedStudents.find(s => s.studentId === studentId) || normalizeStudent({ studentId });
-}
-
-function getFallbackStatus(studentId) {
-    const student = getSelectedStudent(studentId);
-    const conceptFocus = String(student.conceptName || "Loops").toLowerCase();
-    const concepts = {
-        loops: {
-            conceptName: "Loops",
-            mastery_score: 0.45,
-            evidenceScore: 0.45,
-            mcqPostTestScore: 0.70,
-            postTestCompleted: true,
-            preTestScore: 0.45,
-            postTestScore: 0.70,
-            predictedMasteryLevel: "Good Progress",
-            nextAction: "DONE",
-            levelConfidence: 0.86,
-            actionConfidence: 0.91,
-            schema_state: "Developing",
-            breakdown: { correctness_score: 0.60, attempt_score: 0.55, quiz_score: 0.70 },
-        },
-        arrays: {
-            conceptName: "Arrays",
-            mastery_score: 0.40,
-            evidenceScore: 0.40,
-            mcqPostTestScore: 0.56,
-            postTestCompleted: true,
-            preTestScore: 0.40,
-            postTestScore: 0.56,
-            predictedMasteryLevel: "Needs More Practice",
-            nextAction: "LEARN_AGAIN",
-            levelConfidence: 0.78,
-            actionConfidence: 0.86,
-            schema_state: "Fragile",
-            breakdown: { correctness_score: 0.50, attempt_score: 0.48, quiz_score: 0.56 },
-        },
-        methods: {
-            conceptName: "Methods",
-            mastery_score: 0.35,
-            evidenceScore: 0.35,
-            mcqPostTestScore: 0.62,
-            postTestCompleted: true,
-            preTestScore: 0.35,
-            postTestScore: 0.62,
-            predictedMasteryLevel: "Good Progress",
-            nextAction: "DONE",
-            levelConfidence: 0.80,
-            actionConfidence: 0.87,
-            schema_state: "Developing",
-            breakdown: { correctness_score: 0.58, attempt_score: 0.45, quiz_score: 0.62 },
-        },
-    };
-    const selectedConcepts = concepts[conceptFocus] ? { [conceptFocus]: concepts[conceptFocus] } : concepts;
-
-    return {
-        found: true,
-        offline: true,
-        studentName: student.studentName || student.name || studentId,
-        studentId,
-        overall_mastery: clamp01(Object.values(selectedConcepts)[0]?.mcqPostTestScore, 0.67),
-        overall_state: Object.values(selectedConcepts)[0]?.schema_state || "Developing",
-        concepts: selectedConcepts,
-    };
 }
 
 // ── Internal: calculate card state from scores ──────────────────────
@@ -277,11 +214,105 @@ export async function renderMastery(container) {
 async function loadStudents() {
     const select = document.getElementById("student-select");
     try {
+ mastery-main-integration
+        const [masteryRes, authRes, postTestRes] = await Promise.allSettled([
+            MasteryAPI.getStudents(),
+            fetch("/api/auth/users").then(r => r.json()).catch(() => ({ students: [] })),
+            SchemaMasteryAPI.getPostTestResults(),
+        ]);
+
+        const masteryStudents = (masteryRes.status === "fulfilled" && masteryRes.value)
+            ? (Array.isArray(masteryRes.value) ? masteryRes.value : (masteryRes.value.students || []))
+            : [];
+        const authStudents = (authRes.status === "fulfilled" && authRes.value?.students)
+            ? authRes.value.students
+            : [];
+        const postTestResults = (postTestRes.status === "fulfilled" && postTestRes.value?.results)
+            ? postTestRes.value.results
+            : [];
+
+        // Local storage registered students
+        let localStudents = [];
+        try {
+            localStudents = JSON.parse(localStorage.getItem("codequest_registered_students") || "[]");
+        } catch (e) {}
+
+        const activeUser = getCurrentUser();
+        if (activeUser && activeUser.role !== "teacher" && activeUser.role !== "admin") {
+            localStudents.push(activeUser);
+        }
+
+        // Merge all real registered students
+        const studentMap = new Map();
+
+        authStudents.forEach(s => {
+            const key = s.email || s.uid || s.id || s.studentId;
+            if (key) studentMap.set(key, { ...s, studentId: s.uid || s.id || key, studentName: s.display_name || s.name || key });
+        });
+
+        masteryStudents.forEach(s => {
+            const key = s.email || s.studentId || s.uid || s.id;
+            if (key) {
+                const existing = studentMap.get(key) || {};
+                studentMap.set(key, { ...existing, ...s });
+            }
+        });
+
+        localStudents.forEach(s => {
+            const key = s.email || s.uid || s.id;
+            if (key) {
+                const existing = studentMap.get(key) || {};
+                studentMap.set(key, {
+                    ...existing,
+                    studentId: s.uid || s.id || key,
+                    studentName: s.name || s.displayName || s.display_name || existing.studentName || "Student",
+                    email: s.email || existing.email,
+                    created_at: s.joinedAt || s.created_at || existing.created_at,
+                    ...s
+                });
+            }
+        });
+
+        postTestResults.forEach(r => {
+            const key = r.student_email || r.student_id;
+            if (key) {
+                const existing = studentMap.get(key) || {};
+                studentMap.set(key, {
+                    ...existing,
+                    studentId: r.student_id || existing.studentId || key,
+                    studentName: r.student_name || existing.studentName || r.student_id || "Student",
+                    email: r.student_email || existing.email,
+                    overall_mastery: r.post_test_score ?? existing.overall_mastery ?? 0,
+                    overall_state: r.learning_status || existing.overall_state || "Post-Test Submitted",
+                    conceptName: r.concept_name,
+                    postTestCompleted: true,
+                    masteryLevel: r.mastery_level,
+                    nextAction: r.next_action,
+                    created_at: r.created_at || existing.created_at,
+                });
+            }
+        });
+
+        const students = Array.from(studentMap.values()).map(normalizeStudent).filter(s => s && (s.studentId || s.email));
+        loadedStudents = students;
+
+        if (students.length === 0) {
+            if (select) select.innerHTML = `<option value="">No registered students found</option>`;
+            if (grid) grid.innerHTML = `
+                <div class="card" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary); background: #FFFFFF; border: 1px solid var(--border-color); grid-column: 1 / -1;">
+                    <div style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"><i class="fa-solid fa-user-slash"></i></div>
+                    <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;">No Registered Students Found</h3>
+                    <p style="font-size: 0.9rem; max-width: 400px; margin: 0 auto;">When students register or login, their profile will appear in this selector.</p>
+                </div>
+            `;
+            return;
+
         const data = await getCachedStudents();
         let students = normalizeStudentsResponse(data);
 
         if (students.length === 0) {
             students = fallbackStudents.map(normalizeStudent);
+development
         }
         loadedStudents = students;
 
@@ -290,7 +321,7 @@ async function loadStudents() {
             students.map(s => `
                 <option value="${s.studentId}"
                         data-name="${s.studentName}">
-                    ${s.studentName} (${s.studentId})
+                    ${s.studentName} (${s.email ? s.email : s.studentId})
                 </option>
             `).join("");
 
@@ -308,24 +339,15 @@ async function loadStudents() {
         }
 
     } catch (err) {
-        loadedStudents = fallbackStudents.map(normalizeStudent);
-        select.innerHTML = `<option value="">Choose a student</option>` +
-            loadedStudents.map(s => `
-                <option value="${s.studentId}"
-                        data-name="${s.studentName}">
-                    ${s.studentName} (${s.studentId})
-                </option>
-            `).join("");
-
-        select.addEventListener("change", () => {
-            const studentId = select.value;
-            if (studentId) {
-                loadMasteryStatus(studentId);
-            }
-        });
-
-        select.value = loadedStudents[0].studentId;
-        loadMasteryStatus(loadedStudents[0].studentId);
+        loadedStudents = [];
+        if (select) select.innerHTML = `<option value="">No student records found</option>`;
+        if (grid) grid.innerHTML = `
+            <div class="card" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary); background: #FFFFFF; border: 1px solid var(--border-color); grid-column: 1 / -1;">
+                <div style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"><i class="fa-solid fa-user-clock"></i></div>
+                <h3 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.3rem;">No Student Submissions Yet</h3>
+                <p style="font-size: 0.9rem; max-width: 400px; margin: 0 auto;">Student understanding check scores and mastery validations will appear here once registered students complete their post-tests.</p>
+            </div>
+        `;
     }
 }
 
@@ -336,13 +358,43 @@ async function loadMasteryStatus(studentId) {
     grid.innerHTML = `<div style="text-align: center; padding: 2rem;"><div class="spinner"></div></div>`;
 
     try {
+mastery-main-integration
+        let data = await MasteryAPI.getStatus(studentId);
+
         let data = await getCachedStatus(studentId);
 
         if (!data.found) {
             data = getFallbackStatus(studentId);
         }
+development
         const selectedStudent = getSelectedStudent(studentId);
         const studentName = data.studentName || selectedStudent.studentName || selectedStudent.name || studentId;
+
+        if (!data.found || !data.concepts || Object.keys(data.concepts).length === 0) {
+            overview.classList.remove("hidden");
+            overview.innerHTML = `
+                <div class="mastery-overview-card">
+                    <div class="mastery-overview-left">
+                        <h2><i class="fa-solid fa-user-graduate" style="color: var(--accent-blue); margin-right: 0.5rem;"></i>${studentName}</h2>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Registered Student ID: ${studentId}</span>
+                    </div>
+                    <div class="mastery-overview-right">
+                        <div class="mastery-overall-score" style="--ring-color: #94A3B8">
+                            <span class="mastery-overall-value">0%</span>
+                            <span class="mastery-overall-label">Mastery</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            grid.innerHTML = `
+                <div class="card" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary); background: #FFFFFF; border: 1px solid var(--border-color); grid-column: 1 / -1;">
+                    <div style="font-size: 2.2rem; color: var(--text-muted); margin-bottom: 0.5rem;"><i class="fa-solid fa-clipboard-question"></i></div>
+                    <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;">No Concept Check Submissions Yet</h3>
+                    <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto;">This student is registered in the database, but has not completed any game lessons or post-test understanding checks yet.</p>
+                </div>
+            `;
+            return;
+        }
 
         // Overview card — student-friendly
         overview.classList.remove("hidden");
@@ -576,49 +628,28 @@ async function loadMasteryStatus(studentId) {
         });
 
     } catch (err) {
-        const data = getFallbackStatus(studentId);
         overview.classList.remove("hidden");
         overview.innerHTML = `
             <div class="mastery-overview-card">
                 <div class="mastery-overview-left">
-                    <h2><i class="fa-solid fa-user-graduate" style="color: var(--accent-blue); margin-right: 0.5rem;"></i>${data.studentName}</h2>
-                    <span style="color: var(--text-secondary); font-size: 0.85rem;">Selected student: ${studentId}</span>
+                    <h2><i class="fa-solid fa-user-graduate" style="color: var(--accent-blue); margin-right: 0.5rem;"></i>${studentId}</h2>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">Registered Student ID: ${studentId}</span>
                 </div>
                 <div class="mastery-overview-right">
-                    <div class="mastery-overall-score" style="--ring-color: var(--accent-blue)">
-                        <span class="mastery-overall-value">${pctText(data.overall_mastery)}</span>
-                        <span class="mastery-overall-label">Overall</span>
+                    <div class="mastery-overall-score" style="--ring-color: #94A3B8">
+                        <span class="mastery-overall-value">0%</span>
+                        <span class="mastery-overall-label">Mastery</span>
                     </div>
                 </div>
             </div>
         `;
-        grid.innerHTML = Object.entries(data.concepts || {}).map(([key, c]) => `
-            <div class="c4-concept-card" data-level="good">
-                <div class="c4-card-top">
-                    <div class="c4-card-info">
-                        <h3 class="c4-card-title">${c.conceptName || key}</h3>
-                        <span class="c4-level-badge" style="background-color: #3b82f615; color: #3b82f6; border: 1px solid #3b82f630;">
-                            <i class="fa-solid fa-arrow-trend-up"></i> ${c.predictedMasteryLevel}
-                        </span>
-                    </div>
-                    <div class="c4-card-score" style="color: #3b82f6">
-                        ${Math.round(clamp01(c.postTestScore) * 100)}<span class="c4-card-score-pct">%</span>
-                    </div>
-                </div>
-                <div class="c4-progress-bar">
-                    <div class="c4-progress-fill" style="width: ${pctText(c.postTestScore)}; background: #3b82f6;"></div>
-                </div>
-                <div class="c4-breakdown">
-                    <div class="c4-breakdown-row"><span>Concept</span><span class="c4-breakdown-val">${c.conceptName || key}</span></div>
-                    <div class="c4-breakdown-row"><span>Pre-test Score</span><span class="c4-breakdown-val">${pctText(c.preTestScore)}</span></div>
-                    <div class="c4-breakdown-row"><span>Post-test Score</span><span class="c4-breakdown-val">${pctText(c.postTestScore)}</span></div>
-                    <div class="c4-breakdown-row"><span>Predicted Level</span><span class="c4-breakdown-val">${c.predictedMasteryLevel}</span></div>
-                    <div class="c4-breakdown-row"><span>Next Action</span><span class="c4-breakdown-val">${c.nextAction}</span></div>
-                    <div class="c4-breakdown-row"><span>Level Confidence</span><span class="c4-breakdown-val">${pctText(c.levelConfidence)}</span></div>
-                    <div class="c4-breakdown-row"><span>Action Confidence</span><span class="c4-breakdown-val">${pctText(c.actionConfidence)}</span></div>
-                </div>
+        grid.innerHTML = `
+            <div class="card" style="text-align: center; padding: 3rem 1rem; color: var(--text-secondary); background: #FFFFFF; border: 1px solid var(--border-color); grid-column: 1 / -1;">
+                <div style="font-size: 2.2rem; color: var(--text-muted); margin-bottom: 0.5rem;"><i class="fa-solid fa-clipboard-question"></i></div>
+                <h3 style="font-size: 1.05rem; color: var(--text-primary); margin-bottom: 0.3rem;">No Active Submissions Recorded</h3>
+                <p style="font-size: 0.88rem; max-width: 440px; margin: 0 auto;">No post-test or schema mastery data found in database for this student.</p>
             </div>
-        `).join("");
+        `;
     }
 }
 

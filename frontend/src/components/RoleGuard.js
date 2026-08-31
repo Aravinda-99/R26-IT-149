@@ -2,8 +2,10 @@
  * RoleGuard
  * =========
  * Route protection and role validation utility.
- * Student learning routes are open for learning exploration.
- * Faculty / Teacher workspace is strictly protected.
+ * Enforces strict role boundary separation:
+ *   - Public auth pages (/login, /register, /signup, /teacher/login)
+ *   - Student learning pages (Students only; teachers redirected to /teacher/dashboard)
+ *   - Faculty workspace (Teachers/Admins only; students redirected to /student/home)
  */
 
 import { getCurrentUser } from "../utils/auth.js";
@@ -12,28 +14,33 @@ export function checkRouteAccess(routePath) {
     const user = getCurrentUser();
     const role = user?.role || (user?.email?.includes("teacher") || user?.email?.includes("admin") ? "teacher" : "student");
 
-    // Public auth routes
+    // Public authentication routes
     if (
-        routePath.startsWith("/login") ||
-        routePath.startsWith("/register") ||
-        routePath.startsWith("/signup") ||
+        routePath === "/login" ||
+        routePath === "/register" ||
+        routePath === "/signup" ||
         routePath === "/teacher/login" ||
-        routePath.startsWith("/welcome") ||
         routePath === "/" ||
         routePath === ""
     ) {
         return { allowed: true };
     }
 
-    // Student learning pages are open to all students & learners
+    // Teacher/Admin attempts to access student routes
     if (routePath.startsWith("/student")) {
+        if (user && (role === "teacher" || role === "admin")) {
+            return { allowed: false, redirectTo: "/teacher/dashboard", reason: "Educators access the teacher dashboard" };
+        }
         return { allowed: true };
     }
 
-    // Teacher-only routes (excluding /teacher/login which was checked above)
+    // Student or unauthenticated user attempts to access teacher workspace
     if (routePath.startsWith("/teacher")) {
-        if (!user || (role !== "teacher" && role !== "admin")) {
-            return { allowed: false, redirectTo: "/teacher/login", reason: "Faculty credentials required" };
+        if (!user) {
+            return { allowed: false, redirectTo: "/teacher/login", reason: "Educator credentials required" };
+        }
+        if (role !== "teacher" && role !== "admin") {
+            return { allowed: false, redirectTo: "/student/home", reason: "Students cannot access teacher workspace" };
         }
     }
 

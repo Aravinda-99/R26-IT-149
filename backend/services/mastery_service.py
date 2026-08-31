@@ -49,6 +49,7 @@ except ImportError:
         process_diagnostic,
     )
 from utils.helpers import timestamp_now
+from services.schema_post_test_result_service import SchemaPostTestResultService
 
 
 # Display names for concepts
@@ -69,6 +70,90 @@ _STUDENTS_CACHE_TTL = 60  # seconds
 
 
 class MasteryService:
+    @staticmethod
+    def _concept_key(concept_name):
+        normalized = str(concept_name or "loops").strip().lower()
+        aliases = {
+            "variables & data types": "variables",
+            "operators & expressions": "operators",
+            "loops & iteration": "loops",
+            "arrays & lists": "arrays",
+            "arrays & data structures": "arrays",
+            "methods & functions": "methods",
+        }
+        return aliases.get(normalized, normalized.replace(" ", "_"))
+
+    @staticmethod
+    def _state_from_mastery_level(mastery_level):
+        mapping = {
+            "Strong Understanding": "Stable",
+            "Good Progress": "Developing",
+            "Needs More Practice": "Fragile",
+            "Learn Again": "Misconception",
+        }
+        return mapping.get(str(mastery_level or ""), "Developing")
+
+    @staticmethod
+    def _apply_local_post_test_results(user_id, status):
+        local_results = SchemaPostTestResultService.list_results({"student_id": user_id})
+        if not local_results:
+            return status
+
+        concepts = status.setdefault("concepts", {})
+        latest_by_concept = {}
+        for result in local_results:
+            key = MasteryService._concept_key(result.get("concept_name"))
+            if key not in latest_by_concept:
+                latest_by_concept[key] = result
+
+        for concept_key, result in latest_by_concept.items():
+            state = MasteryService._state_from_mastery_level(result.get("mastery_level"))
+            post_score = MasteryService._clamp01(result.get("post_test_score", 0))
+            evidence_score = MasteryService._clamp01(result.get("error_pattern_score", result.get("pre_test_score", 0)))
+            concept_view = concepts.get(concept_key, {})
+            concept_view.update({
+                "conceptName": result.get("concept_name") or CONCEPT_NAMES.get(concept_key, concept_key),
+                "mastery_score": concept_view.get("mastery_score", evidence_score),
+                "schema_state": state,
+                "color": get_state_color(state),
+                "needs_posttest": False,
+                "postTestCompleted": True,
+                "mcqPostTestScore": post_score,
+                "postTestScore": post_score,
+                "post_test_score": post_score,
+                "finalSchemaScore": post_score,
+                "evidenceScore": evidence_score,
+                "preTestScore": result.get("pre_test_score"),
+                "errorType": result.get("error_type"),
+                "predictedMasteryLevel": result.get("mastery_level"),
+                "mastery_level": result.get("mastery_level"),
+                "learningStatus": result.get("learning_status"),
+                "nextAction": result.get("next_action"),
+                "next_action": result.get("next_action"),
+                "masteryProbability": result.get("mastery_probability"),
+                "resultId": result.get("result_id"),
+                "sessionId": result.get("session_id"),
+                "level_updated_at": result.get("updated_at") or result.get("created_at"),
+                "breakdown": concept_view.get("breakdown") or {
+                    "correctness_score": post_score,
+                    "attempt_score": 0,
+                    "quiz_score": post_score,
+                    "error_pattern_score": evidence_score,
+                },
+            })
+            concepts[concept_key] = concept_view
+
+        scores = [MasteryService._clamp01(c.get("finalSchemaScore", c.get("mcqPostTestScore", c.get("mastery_score", 0)))) for c in concepts.values()]
+        overall = round(sum(scores) / max(1, len(scores)), 4)
+        status.update({
+            "found": True,
+            "overall_mastery": overall,
+            "overall_state": status.get("overall_state") if status.get("overall_state") not in (None, "No Data") else "Post-Test Submitted",
+            "overall_color": status.get("overall_color") or "#3b82f6",
+            "total_concepts": len(concepts),
+            "concepts": concepts,
+        })
+        return status
 
     @staticmethod
     def _map_current_level_to_schema_state(current_level: str):
@@ -302,7 +387,7 @@ class MasteryService:
         calculator, and return the full mastery status. Strictly read-only.
         """
         if not db:
-            return MasteryService._offline_status(user_id)
+            return MasteryService._apply_local_post_test_results(user_id, MasteryService._offline_status(user_id))
 
         try:
             doc_ref = db.collection("student_behaviour").document(user_id)
@@ -312,7 +397,7 @@ class MasteryService:
             return MasteryService._offline_status(user_id)
 
         if not doc.exists:
-            return MasteryService._offline_status(user_id)
+            return MasteryService._apply_local_post_test_results(user_id, MasteryService._offline_status(user_id))
 
         student_data = doc.to_dict()
         result = process_student(student_data)
@@ -438,54 +523,108 @@ class MasteryService:
         }
         db.collection("mastery_history").add(history_entry)
 
+
+        response = {
+            "user_id": user_id,
+            "found": True,
+            "studentName": result["studentName"],
+            "overall_mastery": result["overall_mastery"],
+            "overall_state": result["overall_state"],
+            "overall_color": result["overall_color"],
+            "total_concepts": result["total_concepts"],
+            "concepts": result["concepts"],
+        }
+        return MasteryService._apply_local_post_test_results(user_id, response)
+
+development
     # -----------------------------------------------------------------
     # GET ALL STUDENTS — Cached with 60s TTL
     # -----------------------------------------------------------------
     @staticmethod
     def get_all_students():
+mastery-main-integration
+        """Fetch all real registered students from persistent storage and compute mastery for each."""
+        from services.user_storage_service import UserStorageService
+        registered_students = UserStorageService.get_all_students()
+
         """Fetch all students from Firestore with 60-second TTL cache and compute mastery for each."""
         now = time.time()
         if _students_cache["data"] is not None and (now - _students_cache["timestamp"] < _STUDENTS_CACHE_TTL):
             return _students_cache["data"]
 
+development
         students = []
-        if db:
-            try:
-                docs = db.collection("student_behaviour").stream()
-                for doc in docs:
-                    student_data = doc.to_dict()
-                    result = process_student(student_data)
-                    students.append({
-                        "studentId": result["studentId"],
-                        "studentName": result["studentName"],
-                        "name": result["studentName"],
-                        "overall_mastery": result["overall_mastery"],
-                        "overall_state": result["overall_state"],
-                        "overall_color": result["overall_color"],
-                        "total_concepts": result["total_concepts"],
-                    })
-            except Exception as e:
-                print(f"[WARN] Error fetching Firestore students: {e}")
+        seen_ids = set()
 
-        if not students:
-            from data.mock_students import mock_students
-            focus_concepts = ["Loops", "Arrays", "Methods"]
-            for idx, student in enumerate(mock_students[:3]):
-                result = process_student(student)
+        for u in registered_students:
+            uid = str(u.get("uid") or u.get("id") or u.get("user_id"))
+            seen_ids.add(uid)
+            student_name = u.get("display_name") or u.get("name") or u.get("email", "").split("@")[0] or uid
+            
+            # Check if student has behavior data in Firestore
+            beh_data = None
+            if db:
+                try:
+                    beh_doc = db.collection("student_behaviour").document(uid).get()
+                    if beh_doc.exists:
+                        beh_data = beh_doc.to_dict()
+                except Exception:
+                    pass
+
+            if beh_data:
+                result = process_student(beh_data)
                 students.append({
-                    "studentId": result["studentId"],
-                    "studentName": result["studentName"],
-                    "name": result["studentName"],
-                    "conceptName": focus_concepts[idx] if idx < len(focus_concepts) else "Loops",
+                    "studentId": uid,
+                    "studentName": student_name,
+                    "name": student_name,
+                    "email": u.get("email", ""),
                     "overall_mastery": result["overall_mastery"],
                     "overall_state": result["overall_state"],
                     "overall_color": result["overall_color"],
                     "total_concepts": result["total_concepts"],
-                    "offline": True,
+                    "created_at": u.get("created_at") or u.get("joinedAt", ""),
                 })
+            else:
+                students.append({
+                    "studentId": uid,
+                    "studentName": student_name,
+                    "name": student_name,
+                    "email": u.get("email", ""),
+                    "overall_mastery": 0.0,
+                    "overall_state": "Enrolled",
+                    "overall_color": "#94A3B8",
+                    "total_concepts": 0,
+                    "created_at": u.get("created_at") or u.get("joinedAt", ""),
+                })
+
+mastery-main-integration
+        for result in SchemaPostTestResultService.list_results():
+            uid = str(result.get("student_id") or "").strip()
+            if not uid or uid in seen_ids:
+                continue
+            seen_ids.add(uid)
+            post_score = MasteryService._clamp01(result.get("post_test_score", 0))
+            students.append({
+                "studentId": uid,
+                "studentName": result.get("student_name") or uid,
+                "name": result.get("student_name") or uid,
+                "email": result.get("student_email", ""),
+                "overall_mastery": post_score,
+                "overall_state": result.get("learning_status") or "Post-Test Submitted",
+                "overall_color": "#3b82f6",
+                "total_concepts": 1,
+                "conceptName": result.get("concept_name", ""),
+                "postTestCompleted": True,
+                "postTestScore": post_score,
+                "masteryLevel": result.get("mastery_level", ""),
+                "nextAction": result.get("next_action", ""),
+                "created_at": result.get("created_at", ""),
+            })
+
 
         _students_cache["data"] = students
         _students_cache["timestamp"] = now
+development
         return students
 
     # -----------------------------------------------------------------
@@ -937,30 +1076,15 @@ class MasteryService:
     # -----------------------------------------------------------------
     @staticmethod
     def _offline_status(user_id):
-        """Fallback when Firebase is offline: use local mock data."""
-        from data.mock_students import mock_students
-
-        student = None
-        for s in mock_students:
-            if s["studentId"] == user_id:
-                student = s
-                break
-
-        if not student:
-            if mock_students:
-                student = mock_students[0]
-            else:
-                return {"user_id": user_id, "found": False, "error": "No data available"}
-
-        result = process_student(student)
+        """Clean response when no record is found in DB for student."""
         return {
             "user_id": user_id,
-            "found": True,
-            "offline": True,
-            "studentName": result["studentName"],
-            "overall_mastery": result["overall_mastery"],
-            "overall_state": result["overall_state"],
-            "overall_color": result["overall_color"],
-            "total_concepts": result["total_concepts"],
-            "concepts": result["concepts"],
+            "found": False,
+            "studentName": str(user_id),
+            "overall_mastery": 0.0,
+            "overall_state": "No Data",
+            "overall_color": "#94A3B8",
+            "total_concepts": 0,
+            "concepts": {},
+            "message": "No mastery or post-test submissions recorded yet for this student."
         }
