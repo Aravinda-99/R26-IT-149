@@ -53,27 +53,25 @@ export async function renderGamePlayer(container) {
         <div class="game-player-page" style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.25rem;">
             
             <!-- Top Game Player Bar -->
-            <div class="game-player-topbar" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <a href="#/student/games" id="btn-exit-game" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 8px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #0F172A; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem;">
+            <div class="game-player-topbar" style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 14px; padding: 1rem 1.5rem; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 1rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);">
+                <div style="display: flex; align-items: center; justify-content: flex-start; min-width: 0;">
+                    <a href="#/student/games" id="btn-exit-game" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 8px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #0F172A; text-decoration: none; display: inline-flex; align-items: center; gap: 0.45rem; white-space: nowrap;">
                         <i class="fa-solid fa-arrow-left"></i> Exit to Game Lessons
                     </a>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <h2 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0;">🎮 ${info.name}</h2>
-                            <span class="badge" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 9999px;">${info.category}</span>
-                        </div>
-                        <p style="font-size: 0.8rem; color: #64748B; margin: 0.15rem 0 0 0;">${info.level} • Follow the on-screen interactive instructions.</p>
-                    </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 0.6rem;">
-                    <button id="btn-restart-game" class="btn btn-outline btn-sm" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem;">
+                <div style="text-align: center; min-width: 0;">
+                    <div style="display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin: 0;">🎮 ${info.name}</h2>
+                        <span class="badge" style="background: #EFF6FF; color: #2563EB; font-weight: 700; font-size: 0.72rem; padding: 0.15rem 0.55rem; border-radius: 9999px;">${info.category}</span>
+                    </div>
+                    <p style="font-size: 0.8rem; color: #64748B; margin: 0.15rem 0 0 0; text-align: center;">${info.level} • Follow the on-screen interactive instructions.</p>
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.6rem; min-width: 0;">
+                    <button id="btn-restart-game" class="btn btn-outline btn-sm" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
                         <i class="fa-solid fa-rotate-right"></i> Restart Level
                     </button>
-                    <a href="#/student/error-analysis" class="btn btn-outline btn-sm" style="padding: 0.45rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #0F172A; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
-                        <i class="fa-solid fa-magnifying-glass-chart"></i> View Feedback
-                    </a>
                 </div>
             </div>
 

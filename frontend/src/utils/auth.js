@@ -20,35 +20,67 @@ try {
     console.warn("Failed to load local auth session:", e);
 }
 
+/**
+ * Attaches the Firebase auth-state listener and returns a Promise that
+ * resolves once the FIRST onAuthStateChanged firing has fully settled —
+ * including GameManager.syncWithFirebase() when a user is signed in.
+ * Callers (main.js) should await this before their first page render, so
+ * pages never paint GameManager's empty DEFAULT_STATE while the real
+ * backend data is still in flight.
+ */
 export function initAuthListener() {
-    try {
-        const auth = getAuth();
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const role = (user.email && (user.email.includes("teacher") || user.email.includes("admin"))) ? "teacher" : "student";
-                currentUser = {
-                    uid: user.uid,
-                    id: user.uid,
-                    email: user.email,
-                    displayName: user.displayName || user.email?.split("@")[0] || "Learner",
-                    name: user.displayName || user.email?.split("@")[0] || "Learner",
-                    role: role,
-                    joinedAt: new Date().toISOString(),
-                };
-                localStorage.setItem("codequest_user", JSON.stringify(currentUser));
-                await GameManager.syncWithFirebase();
-            } else {
-                if (!localStorage.getItem("codequest_user")) {
+    return new Promise((resolve) => {
+        let settled = false;
+        const settle = () => {
+            if (settled) return;
+            settled = true;
+            resolve(currentUser);
+        };
+
+        try {
+            const auth = getAuth();
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const role = (user.email && (user.email.includes("teacher") || user.email.includes("admin"))) ? "teacher" : "student";
+                    currentUser = {
+                        uid: user.uid,
+                        id: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email?.split("@")[0] || "Learner",
+                        name: user.displayName || user.email?.split("@")[0] || "Learner",
+                        role: role,
+                        joinedAt: new Date().toISOString(),
+                    };
+                    localStorage.setItem("codequest_user", JSON.stringify(currentUser));
+                    // settle() only happens AFTER this fully finishes, so authReady
+                    // never resolves with GameManager still at its empty defaults.
+                    await GameManager.syncWithFirebase();
+                    authListeners.forEach((cb) => cb(currentUser));
+                    settle();
+                } else if (localStorage.getItem("codequest_user")) {
+                    // Firebase reporting "no user" here doesn't necessarily mean a
+                    // real logout — on a fresh page load, onAuthStateChanged commonly
+                    // fires once with a not-yet-resolved/null user BEFORE it finishes
+                    // checking the persisted session and fires again with the real
+                    // one. We have a cached session, so treat this as transient:
+                    // don't touch currentUser, don't settle, don't notify listeners —
+                    // just wait for the subsequent (real) firing. If no subsequent
+                    // firing ever comes, main.js's own bounded timeout is the safety
+                    // net that keeps the app from hanging forever.
+                    return;
+                } else {
+                    // Genuinely logged out — no cached session either.
                     currentUser = null;
                     GameManager.resetAll();
+                    authListeners.forEach((cb) => cb(currentUser));
+                    settle();
                 }
-            }
-
-            authListeners.forEach((cb) => cb(currentUser));
-        });
-    } catch (err) {
-        console.warn("[Auth] Firebase auth listener unavailable (running in local mode):", err);
-    }
+            });
+        } catch (err) {
+            console.warn("[Auth] Firebase auth listener unavailable (running in local mode):", err);
+            settle();
+        }
+    });
 }
 
 export function onAuthChange(callback) {

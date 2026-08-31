@@ -42,7 +42,13 @@ import { renderMastery } from "./pages/mastery.js";
 
 // Initialize Firebase & Auth
 initFirebase();
-initAuthListener();
+// initAuthListener() resolves once Firebase's first auth check AND
+// GameManager.syncWithFirebase() (when a user is signed in) have both fully
+// completed. Awaited below, before the very first render, so pages never
+// paint GameManager's empty DEFAULT_STATE while the real backend fetch is
+// still in flight (this was the root cause of state appearing "lost" on
+// refresh — see the earlier investigation).
+const authReady = initAuthListener();
 
 // Global navigation bridge for internal module routing
 window.navigateTo = function (page) {
@@ -236,7 +242,15 @@ export async function handleNavigation() {
 // Global window event listeners
 window.addEventListener("hashchange", handleNavigation);
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    // Wait for the first auth resolution + full state sync — but don't let a
+    // stuck/unavailable Firebase Auth hang the app forever (bounded fallback,
+    // same defensive spirit as initAuthListener()'s own try/catch).
+    await Promise.race([
+        authReady,
+        new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
+
     // Check if launched directly from a game module link
     const launchModule = new URLSearchParams(window.location.search).get("launchModule");
     if (launchModule) {
@@ -248,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Auth change listener
+    // Auth change listener — handles subsequent login/logout while the app is running.
     onAuthChange(() => {
         handleNavigation();
     });

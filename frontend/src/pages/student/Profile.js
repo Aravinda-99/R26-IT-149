@@ -1,12 +1,28 @@
 /**
  * Student Profile Page
  * ====================
- * Clean student account details and dynamic learning milestones.
+ * Clean student account details plus real gameplay statistics
+ * (XP, Score, Levels Completed) and an unlocked-badges trophy case,
+ * sourced directly from GameManager / BadgeSystem.
  */
 
 import { getCurrentUser, logout } from "../../utils/auth.js";
+import { GameManager } from "../../game/GameManager.js";
+import { BadgeSystem } from "../../game/BadgeSystem.js";
+
+// Tracks the currently-attached GameManager listener so repeated
+// renderProfile() calls (re-navigating to Profile, or GameManager.syncWithFirebase()
+// finishing after an initial render) never stack duplicate listeners — each
+// render tears down the previous one before attaching its own, the same
+// off-before-on pattern UIScene.js uses for its own GameManager subscriptions.
+let stateChangeListener = null;
 
 export function renderProfile(container) {
+    if (stateChangeListener) {
+        GameManager.off("stateChange", stateChangeListener);
+        stateChangeListener = null;
+    }
+
     const user = getCurrentUser();
     if (!user) {
         container.innerHTML = `
@@ -26,8 +42,30 @@ export function renderProfile(container) {
     const initial = studentName.charAt(0).toUpperCase();
     const joinedDate = user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : "Active Member";
 
-    // Load real milestone progress
-    const progress = getLocalProgress(user.uid || user.id);
+    // ── Real gameplay stats, straight from GameManager (defaults are always
+    // present via DEFAULT_STATE, but we still guard defensively). ──
+    const state = GameManager.getState() || {};
+    const levelsCompletedArr = Array.isArray(state.levelsCompleted) ? state.levelsCompleted : [];
+    const totalLevels = levelsCompletedArr.length || 88;
+    const levelsCompletedCount = levelsCompletedArr.filter(Boolean).length;
+    const totalXP = Number.isFinite(state.xp) ? state.xp : 0;
+    const totalScore = Number.isFinite(state.score) ? state.score : 0;
+    const unlockedBadgeIds = Array.isArray(state.badges) ? state.badges : [];
+
+    const badgesHTML = unlockedBadgeIds.length > 0
+        ? unlockedBadgeIds.map(badgeId => {
+            const badge = BadgeSystem.getBadge(badgeId);
+            if (!badge) return "";
+            const colorHex = "#" + (typeof badge.color === "number" ? badge.color.toString(16).padStart(6, "0") : "ffd700");
+            const safeDesc = (badge.description || "").replace(/"/g, "&quot;");
+            return `
+                <div title="${safeDesc}" style="display:flex; align-items:center; gap:0.5rem; padding: 0.5rem 0.85rem; border-radius: 10px; border: 1px solid ${colorHex}40; background: ${colorHex}14;">
+                    <span style="font-size:1.3rem; line-height:1;">${badge.emoji || "🏅"}</span>
+                    <span style="font-size:0.82rem; font-weight:700; color:${colorHex};">${badge.name}</span>
+                </div>
+            `;
+        }).join("")
+        : `<p class="text-muted" style="padding: 0.5rem 0; color: var(--text-secondary);">Play learning modules to unlock your first badge!</p>`;
 
     container.innerHTML = `
         <div class="profile-page">
@@ -40,7 +78,7 @@ export function renderProfile(container) {
             <div class="ea-header">
                 <div>
                     <h1 class="ea-title">My Learner Profile</h1>
-                    <p class="ea-subtitle">Manage your student account details and track your real learning milestones.</p>
+                    <p class="ea-subtitle">Manage your student account details and track your real learning progress.</p>
                 </div>
             </div>
 
@@ -59,7 +97,7 @@ export function renderProfile(container) {
                     </div>
                 </div>
 
-                <!-- Learning Milestones & Progress -->
+                <!-- Curriculum, Real Game Stats & Trophy Case -->
                 <div class="profile-details-column">
                     <div class="card">
                         <h3><i class="fa-solid fa-graduation-cap" style="color:var(--primary);"></i> Enrolled Curriculum</h3>
@@ -78,45 +116,27 @@ export function renderProfile(container) {
                     </div>
 
                     <div class="card" style="margin-top: 1.5rem;">
-                        <h3><i class="fa-solid fa-chart-line" style="color:var(--secondary);"></i> Learning Milestones</h3>
-                        <div class="milestones-list">
-                            <div class="milestone-item">
-                                <div class="milestone-icon green"><i class="fa-solid fa-check"></i></div>
-                                <div class="milestone-text">
-                                    <strong>Account Registered & Active</strong>
-                                    <p class="text-muted">Enrolled in CodeQuest Adaptive Learning track.</p>
-                                </div>
+                        <h3><i class="fa-solid fa-chart-line" style="color:var(--secondary);"></i> Game Statistics</h3>
+                        <div class="profile-stats-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.75rem;">
+                            <div style="text-align:center; padding: 1rem 0.5rem; background: var(--bg-secondary, #F8FAFC); border-radius: 10px;">
+                                <div style="font-size:1.5rem; font-weight:800; color: var(--primary);">${totalXP.toLocaleString()}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Total XP</div>
                             </div>
-                            
-                            <div class="milestone-item">
-                                <div class="milestone-icon ${progress.preTestCompleted ? 'green' : 'amber'}">
-                                    <i class="fa-solid ${progress.preTestCompleted ? 'fa-check' : 'fa-clock'}"></i>
-                                </div>
-                                <div class="milestone-text">
-                                    <strong>Diagnostic Pre-Test</strong>
-                                    <p class="text-muted">${progress.preTestCompleted ? "Diagnostic check completed." : "Pending diagnostic completion."}</p>
-                                </div>
+                            <div style="text-align:center; padding: 1rem 0.5rem; background: var(--bg-secondary, #F8FAFC); border-radius: 10px;">
+                                <div style="font-size:1.5rem; font-weight:800; color: var(--secondary);">${totalScore.toLocaleString()}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Total Score</div>
                             </div>
+                            <div style="text-align:center; padding: 1rem 0.5rem; background: var(--bg-secondary, #F8FAFC); border-radius: 10px;">
+                                <div style="font-size:1.5rem; font-weight:800; color: #10b981;">${levelsCompletedCount} / ${totalLevels}</div>
+                                <div style="font-size:0.75rem; color:var(--text-secondary); margin-top:0.25rem;">Levels Completed</div>
+                            </div>
+                        </div>
+                    </div>
 
-                            <div class="milestone-item">
-                                <div class="milestone-icon ${progress.currentStep >= 3 ? 'green' : 'amber'}">
-                                    <i class="fa-solid ${progress.currentStep >= 3 ? 'fa-check' : 'fa-clock'}"></i>
-                                </div>
-                                <div class="milestone-text">
-                                    <strong>Interactive Practice & Lessons</strong>
-                                    <p class="text-muted">${progress.currentStep >= 3 ? "Practiced targeted conceptual challenges." : "Unlocked after diagnostic check."}</p>
-                                </div>
-                            </div>
-
-                            <div class="milestone-item">
-                                <div class="milestone-icon ${progress.currentStep >= 5 ? 'green' : 'blue'}">
-                                    <i class="fa-solid ${progress.currentStep >= 5 ? 'fa-trophy' : 'fa-lock'}"></i>
-                                </div>
-                                <div class="milestone-text">
-                                    <strong>Schema Mastery Validation</strong>
-                                    <p class="text-muted">${progress.currentStep >= 5 ? "Mastery check successfully completed." : "Available after completing practice drills."}</p>
-                                </div>
-                            </div>
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <h3><i class="fa-solid fa-trophy" style="color:#f59e0b;"></i> Trophy Case — Unlocked Badges</h3>
+                        <div class="trophy-case-grid" style="display:flex; flex-wrap:wrap; gap: 0.6rem; margin-top: 0.75rem;">
+                            ${badgesHTML}
                         </div>
                     </div>
                 </div>
@@ -128,16 +148,11 @@ export function renderProfile(container) {
         await logout();
         window.location.hash = "#/login";
     });
-}
 
-function getLocalProgress(studentId) {
-    try {
-        const raw = localStorage.getItem(`cq_progress_${studentId}`);
-        if (raw) return JSON.parse(raw);
-    } catch (e) { }
-
-    return {
-        currentStep: 1,
-        preTestCompleted: false
-    };
+    // Stay reactive: if GameManager's state changes after this render (e.g.
+    // syncWithFirebase() finishes loading real backend data slightly after
+    // this page already painted, or the player earns XP/a badge while this
+    // tab is open), re-render with the fresh data instead of going stale.
+    stateChangeListener = () => renderProfile(container);
+    GameManager.on("stateChange", stateChangeListener);
 }
