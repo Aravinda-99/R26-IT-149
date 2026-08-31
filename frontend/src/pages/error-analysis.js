@@ -503,7 +503,7 @@ async function refreshGlobalState(studentId) {
         // ── History List ──────────────────────────────────────────────
         const histCont = document.getElementById("history-container");
         const errorHistory = historyData.history ? historyData.history.filter(item => item.label !== "CORRECT") : [];
-        
+
         if (errorHistory.length === 0) {
             histCont.innerHTML = `<div style="text-align:center; padding: 2rem; color: var(--text-secondary); font-size: 0.8rem;">No error entries found.</div>`;
         } else {

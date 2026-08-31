@@ -49,8 +49,5 @@ analytics-ml/dataset_merged/
 # Local runtime auth/user data - do not commit real users or password hashes
 backend/data/registered_users.json
 backend/data/registered_users.local.backup.json
-
-# Local runtime auth/user data
-backend/data/registered_users.json
-backend/data/registered_users.local.backup.json
 backend/data/*.local.backup.json
+

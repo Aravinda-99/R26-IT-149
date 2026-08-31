@@ -50,11 +50,19 @@ class SchemaPostTestService:
         # If concept is not provided, load from active student session
         if not concept and student_id:
             saved_session = SchemaSessionService.get_current_session(student_id)
-            concept = saved_session.get("component_1", {}).get("concept_name")
+            component_1 = saved_session.get("component_1", {})
+            concept = component_1.get("weak_concept") or component_1.get("concept_name")
             if not error_type:
                 error_type = saved_session.get("component_2", {}).get("error_type")
 
-        concept_clean = concept.strip() if concept else "Loops"
+        concept_clean = concept.strip() if concept else ""
+        if not concept_clean:
+            return {
+                "success": False,
+                "error": "No weak concept found for this student. Please complete the diagnostic pre-test first.",
+                "questions": [],
+                "total_questions": 0,
+            }
         
         # 1. Fetch all active approved questions for this concept
         all_approved = SchemaQuestionBankService.get_approved_question_bank(concept=concept_clean, active_only=True)
@@ -191,7 +199,7 @@ class SchemaPostTestService:
         c1 = saved_session.get("component_1", {})
         c2 = saved_session.get("component_2", {})
 
-        concept_name = str(submission.get("concept_name") or c1.get("concept_name") or "Arrays")
+        concept_name = str(submission.get("concept_name") or c1.get("weak_concept") or c1.get("concept_name") or "Unknown")
         
         # Pull real Component 1 features
         if submission.get("pre_test_score") is not None:

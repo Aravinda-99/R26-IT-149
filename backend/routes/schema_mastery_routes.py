@@ -75,10 +75,15 @@ def generate_questions():
             target_error_type=target_error_type,
             count=count,
         )
+        generated_count = len(drafts)
+        invalid_count = max(0, int(count or 0) - generated_count)
         return jsonify({
             "success": True,
             "message": f"Generated {len(drafts)} draft questions for {concept_name} with status PENDING",
-            "count": len(drafts),
+            "count": generated_count,
+            "generated_count": generated_count,
+            "invalid_count": invalid_count,
+            "storage_source": SchemaQuestionBankService.get_storage_status(),
             "questions": drafts,
         }), 200
     except (ValueError, RuntimeError) as e:
@@ -86,11 +91,17 @@ def generate_questions():
         code = "LLM_NOT_CONFIGURED" if "OPENAI_API_KEY" in err_msg or "not configured" in err_msg else "LLM_GENERATION_FAILED"
         return jsonify({
             "success": False,
+            "message": "Gemini question generation failed. Please try again.",
             "error": err_msg,
             "code": code,
         }), 400
     except Exception as e:
-        return jsonify({"success": False, "error": str(e), "code": "INTERNAL_ERROR"}), 500
+        return jsonify({
+            "success": False,
+            "message": "Gemini question generation failed. Please try again.",
+            "error": str(e),
+            "code": "INTERNAL_ERROR",
+        }), 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -104,10 +115,11 @@ def get_pending_questions():
     """
     concept = request.args.get("concept")
     try:
-        pending = SchemaQuestionBankService.get_pending_questions(concept=concept)
+        pending, storage_source = SchemaQuestionBankService.get_pending_questions(concept=concept, return_source=True)
         return jsonify({
             "success": True,
             "count": len(pending),
+            "storage_source": storage_source,
             "questions": pending,
         }), 200
     except Exception as e:
@@ -124,10 +136,11 @@ def get_rejected_questions():
     """
     concept = request.args.get("concept")
     try:
-        rejected = SchemaQuestionBankService.get_rejected_questions(concept=concept)
+        rejected, storage_source = SchemaQuestionBankService.get_rejected_questions(concept=concept, return_source=True)
         return jsonify({
             "success": True,
             "count": len(rejected),
+            "storage_source": storage_source,
             "questions": rejected,
         }), 200
     except Exception as e:
@@ -288,7 +301,7 @@ def get_approved_bank():
     Teacher views approved questions with exposure statistics and answer keys.
     """
     concept = request.args.get("concept")
-    active_only = request.args.get("active_only", "false").lower() == "true"
+    active_only = request.args.get("active_only", "true").lower() == "true"
     include_deleted = request.args.get("include_deleted", "false").lower() == "true"
     try:
         bank, storage_source = SchemaQuestionBankService.get_approved_question_bank(
@@ -317,7 +330,7 @@ def get_post_test_questions():
     Does NOT reveal correct_option or option_quality.
     """
     student_id = request.args.get("student_id", "STU001")
-    concept = request.args.get("concept") or request.args.get("concept_name", "Loops")
+    concept = request.args.get("concept") or request.args.get("concept_name")
     error_type = request.args.get("error_type")
 
     try:

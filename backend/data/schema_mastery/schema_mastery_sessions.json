@@ -1,6 +1,6 @@
 {
   "STU_VERIFY_FLOW_999": {
-    "session_id": "SESS_2B9C9BFA",
+    "session_id": "SESS_36835AD1",
     "student_id": "STU_VERIFY_FLOW_999",
     "student_name": "Test Learner 999",
     "student_email": "test999@codequest.edu",
@@ -11,7 +11,7 @@
       "pre_test_score": 0.4,
       "attempt_count": 2,
       "time_taken_seconds": 95.0,
-      "completed_at": "2026-08-31T15:47:26.489962+00:00"
+      "completed_at": "2026-08-31T16:51:46.900319+00:00"
     },
     "component_2": {
       "completed": true,
@@ -21,13 +21,13 @@
       "error_reason": "Index out of bounds due to loop terminating at <= length instead of < length",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-08-31T15:47:26.503441+00:00"
+      "completed_at": "2026-08-31T16:51:46.921059+00:00"
     },
     "component_3": {
       "completed": true,
       "recommended_game_id": "arrays",
       "recommended_game_name": "Array Index Rescue Game",
-      "completed_at": "2026-08-31T15:47:26.517316+00:00"
+      "completed_at": "2026-08-31T16:51:46.935365+00:00"
     },
     "component_4": {
       "unlocked": true,
@@ -36,11 +36,11 @@
       "post_test_score": 0.6,
       "mastery_level": "Needs More Practice",
       "next_action": "LEARN_AGAIN",
-      "completed_at": "2026-08-31T15:48:06.674649+00:00"
+      "completed_at": "2026-08-31T16:52:24.586667+00:00"
     },
     "current_stage": "MASTERY_EVALUATED",
-    "created_at": "2026-08-31T15:47:26.476695+00:00",
-    "updated_at": "2026-08-31T15:48:06.674649+00:00",
+    "created_at": "2026-08-31T16:51:46.888127+00:00",
+    "updated_at": "2026-08-31T16:52:24.586667+00:00",
     "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
     "error_pattern_score": 0.85,
     "error_pattern_score_source": "component2_confidence"
@@ -54,20 +54,63 @@
       "completed": true,
       "concept_name": "Loops",
       "weak_concept": "Loops",
-      "pre_test_score": 0.28,
+      "pre_test_score": 0.16,
       "attempt_count": 1,
-      "time_taken_seconds": 26.0,
-      "completed_at": "2026-08-31T15:56:54.461253+00:00"
+      "time_taken_seconds": 23.0,
+      "completed_at": "2026-08-31T18:08:25.663850+00:00"
     },
     "component_2": {
       "completed": true,
-      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
-      "error_pattern_score": 0.77,
+      "error_type": "CORRECT_NO_ERROR",
+      "error_pattern_score": 0.42,
       "error_pattern_score_source": "component2_confidence",
-      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "error_reason": "The learner correctly applies the required logic.",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-08-31T15:56:53.877080+00:00"
+      "completed_at": "2026-08-31T18:08:25.246691+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.4,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-08-31T16:58:09.390893+00:00"
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-08-31T15:56:01.094442+00:00",
+    "updated_at": "2026-08-31T18:08:25.663850+00:00",
+    "error_type": "CORRECT_NO_ERROR",
+    "error_pattern_score": 0.42,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "YOUR_STUDENT_ID": {
+    "session_id": "SESS_7AFA3D0F",
+    "student_id": "YOUR_STUDENT_ID",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": false,
+      "concept_name": null,
+      "weak_concept": null,
+      "pre_test_score": null,
+      "attempt_count": 0,
+      "time_taken_seconds": 0,
+      "completed_at": null
+    },
+    "component_2": {
+      "completed": false,
+      "error_type": null,
+      "error_pattern_score": null,
+      "error_reason": null,
+      "completed_at": null
     },
     "component_3": {
       "completed": false,
@@ -84,11 +127,8 @@
       "next_action": null,
       "completed_at": null
     },
-    "current_stage": "GAME_LESSON_READY",
-    "created_at": "2026-08-31T15:56:01.094442+00:00",
-    "updated_at": "2026-08-31T15:56:54.461253+00:00",
-    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
-    "error_pattern_score": 0.77,
-    "error_pattern_score_source": "component2_confidence"
+    "current_stage": "PRE_TEST_PENDING",
+    "created_at": "2026-08-31T17:06:09.345439+00:00",
+    "updated_at": "2026-08-31T17:06:09.345439+00:00"
   }
 }

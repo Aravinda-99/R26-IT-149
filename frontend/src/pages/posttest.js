@@ -14,6 +14,7 @@ let currentStudentId = null;
 let currentSessionId = null;
 let currentConcept = null;
 let currentWeakConcept = null;
+let currentAssessmentConcept = null;
 let currentErrorType = null;
 let currentPreTestScore = 0.50;
 let currentAttemptCount = 1;
@@ -69,54 +70,52 @@ export async function renderPostTest(container, opts = {}) {
 
     try {
         const contextRes = await SchemaMasteryAPI.getCurrentContext(currentStudentId);
-        
+
         const c1 = contextRes?.component_1 || {};
         const c2 = contextRes?.component_2 || {};
-        const c3 = contextRes?.component_3 || {};
+
+        const hasPreTestData =
+            Boolean(c1.completed &&
+            (c1.concept_name || c1.weak_concept) &&
+            c1.pre_test_score !== undefined &&
+            c1.attempt_count !== undefined &&
+            c1.time_taken_seconds !== undefined);
+
+        const hasErrorData =
+            Boolean(c2.completed &&
+            c2.error_type &&
+            c2.error_pattern_score !== undefined &&
+            c2.error_pattern_score !== null);
 
         // ── 1. Check Prerequisite 1: Diagnostic Pre-Test ───────────────────────
-        if (!c1.completed || !c1.concept_name) {
+        if (!hasPreTestData) {
             renderLockedScreen(container, {
                 title: "Diagnostic Pre-Test Required",
                 message: "Complete the Pre-Test first to identify your weak Java concept.",
                 actionLabel: "Start Diagnostic Pre-Test",
                 actionHref: "#/student/pre-test",
-                icon: "fa-solid fa-clipboard-list",
-                stepNumber: 1
+                icon: "fa-solid fa-clipboard-list"
             });
             return;
         }
 
-        // ── 2. Check Prerequisite 2: Error Feedback Review & Pattern Score ─────
-        if (!c2.completed || !c2.error_type || c2.error_pattern_score === undefined || c2.error_pattern_score === null) {
+        // ── 2. Check Prerequisite 2: Error Feedback Review ─────────────────────
+        if (!hasErrorData) {
             renderLockedScreen(container, {
                 title: "Error Feedback Review Required",
-                message: "Complete Error Feedback first to generate the diagnostic pattern score.",
+                message: "Review your diagnostic error feedback before starting the understanding check.",
                 actionLabel: "Go to Error Feedback",
                 actionHref: "#/student/error-analysis",
-                icon: "fa-solid fa-magnifying-glass-chart",
-                stepNumber: 2
-            });
-            return;
-        }
-
-        // ── 3. Check Prerequisite 3: Game Lesson Practice ──────────────────────
-        if (!c3.completed) {
-            renderLockedScreen(container, {
-                title: "Game Lesson Practice Required",
-                message: "Complete the recommended game lesson before the post-learning check.",
-                actionLabel: "Go to Game Lessons",
-                actionHref: "#/student/games",
-                icon: "fa-solid fa-gamepad",
-                stepNumber: 3
+                icon: "fa-solid fa-magnifying-glass-chart"
             });
             return;
         }
 
         // ── Prerequisites Satisfied: Load Real Context ─────────────────────────
         currentSessionId = contextRes.session_id;
-        currentConcept = c1.concept_name || c1.weak_concept || "Arrays";
+        currentConcept = c1.concept_name || c1.weak_concept;
         currentWeakConcept = c1.weak_concept || currentConcept;
+        currentAssessmentConcept = currentWeakConcept || currentConcept;
         currentPreTestScore = typeof c1.pre_test_score === "number" ? c1.pre_test_score : 0.50;
         currentAttemptCount = c1.attempt_count || 1;
         currentTimeTakenSeconds = c1.time_taken_seconds || 120;
@@ -146,17 +145,13 @@ export async function renderPostTest(container, opts = {}) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Gated Locked Screen
 // ─────────────────────────────────────────────────────────────────────────────
-function renderLockedScreen(container, { title, message, actionLabel, actionHref, icon, stepNumber }) {
+function renderLockedScreen(container, { title, message, actionLabel, actionHref, icon }) {
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 2rem 1.5rem; max-width: 720px; margin: 0 auto;">
             <div class="card" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow-sm);">
                 
                 <div style="width: 72px; height: 72px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; font-size: 2rem; border: 2px solid #DBEAFE;">
                     <i class="${icon}"></i>
-                </div>
-
-                <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: #FEF3C7; color: #D97706; font-weight: 700; font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 9999px; margin-bottom: 0.75rem;">
-                    Step ${stepNumber} of 4 Pending
                 </div>
 
                 <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.5rem 0;">
@@ -166,18 +161,6 @@ function renderLockedScreen(container, { title, message, actionLabel, actionHref
                 <p style="font-size: 0.95rem; color: var(--text-secondary); max-width: 480px; margin: 0 auto 2rem auto; line-height: 1.6;">
                     ${message}
                 </p>
-
-                <div style="background: var(--bg-subtle); border-radius: 12px; padding: 1.25rem; text-align: left; max-width: 480px; margin: 0 auto 2rem auto; border: 1px solid var(--border-color);">
-                    <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-primary); margin-bottom: 0.6rem;">
-                        <i class="fa-solid fa-route" style="color: var(--primary); margin-right: 0.35rem;"></i> Understanding Check Requirements:
-                    </div>
-                    <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.7;">
-                        <li style="color: ${stepNumber === 1 ? '#D97706; font-weight: 600;' : '#16A34A;'}">1. Complete Diagnostic Pre-Test</li>
-                        <li style="color: ${stepNumber === 2 ? '#D97706; font-weight: 600;' : (stepNumber > 2 ? '#16A34A;' : '#94A3B8;')}">2. Review Diagnostic Error Feedback</li>
-                        <li style="color: ${stepNumber === 3 ? '#D97706; font-weight: 600;' : (stepNumber > 3 ? '#16A34A;' : '#94A3B8;')}">3. Practice in Recommended Game Lessons</li>
-                        <li style="color: #94A3B8;">4. Validate Understanding in Post-Test</li>
-                    </ul>
-                </div>
 
                 <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
                     <a href="${actionHref}" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px;">
@@ -197,8 +180,7 @@ function renderLockedScreen(container, { title, message, actionLabel, actionHref
 // ─────────────────────────────────────────────────────────────────────────────
 function renderStartScreen(container) {
     const conceptTitle = conceptDisplayNames[currentConcept] || currentConcept;
-    const preTestPct = Math.round(currentPreTestScore * 100);
-    const confidencePct = Math.round(currentErrorPatternScore * 100);
+    const weakConceptTitle = conceptDisplayNames[currentWeakConcept] || currentWeakConcept;
 
     container.innerHTML = `
         <div class="posttest-page c4-check-page" style="padding: 1.5rem 2rem; max-width: 860px; margin: 0 auto; color: var(--text-primary);">
@@ -228,7 +210,7 @@ function renderStartScreen(container) {
                     </span>
                 </div>
 
-                <!-- Real Context Metrics Grid -->
+                <!-- Real Context Summary -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                     
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
@@ -241,35 +223,14 @@ function renderStartScreen(container) {
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
                         <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Identified Weak Area</span>
                         <div style="font-size: 1.15rem; font-weight: 800; color: #D97706; margin-top: 0.25rem;">
-                            ${currentWeakConcept}
-                        </div>
-                    </div>
-
-                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Detected Misconception</span>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #2563EB; margin-top: 0.25rem; word-break: break-word;">
-                            ${currentErrorType}
-                        </div>
-                    </div>
-
-                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Pre-Test Score</span>
-                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 0.25rem;">
-                            ${preTestPct}%
-                        </div>
-                    </div>
-
-                    <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                        <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Error Pattern Strength</span>
-                        <div style="font-size: 1.25rem; font-weight: 800; color: #16A34A; margin-top: 0.25rem;">
-                            ${confidencePct}%
+                            ${weakConceptTitle}
                         </div>
                     </div>
 
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
                         <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Assessment Size</span>
                         <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: 0.25rem;">
-                            15 Concept Questions
+                            15 Questions
                         </div>
                     </div>
                 </div>
@@ -301,13 +262,13 @@ async function loadQuestionsAndStart(container) {
         <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
             <div class="spinner" style="margin-bottom: 1.5rem;"></div>
             <h3 style="color: var(--text-primary); font-weight: 600;">Loading Understanding Check Questions...</h3>
-            <p style="margin-top: 0.5rem;">Fetching teacher-approved questions for ${conceptDisplayNames[currentConcept] || currentConcept}</p>
+            <p style="margin-top: 0.5rem;">Fetching questions for ${conceptDisplayNames[currentAssessmentConcept] || currentAssessmentConcept}</p>
         </div>
     `;
 
     try {
         const res = await SchemaMasteryAPI.getPostTestQuestions({
-            concept: currentConcept,
+            concept: currentAssessmentConcept,
             student_id: currentStudentId,
             error_type: currentErrorType,
         });
@@ -317,7 +278,7 @@ async function loadQuestionsAndStart(container) {
                 <div class="card" style="text-align: center; padding: 4rem 1.5rem; max-width: 600px; margin: 2rem auto;">
                     <div style="font-size: 3rem; color: var(--danger); margin-bottom: 1rem;"><i class="fa-solid fa-circle-exclamation"></i></div>
                     <h2 style="font-size: 1.4rem; margin-bottom: 0.5rem;">No Questions Available</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">${res.error || `No teacher-approved questions found for concept '${currentConcept}'.`}</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">${res.error || `No questions found for concept '${currentAssessmentConcept}'.`}</p>
                     <a href="#/student/dashboard" class="btn btn-outline"><i class="fa-solid fa-house"></i> Return to Hub</a>
                 </div>
             `;
@@ -368,7 +329,7 @@ function renderQuestionScreen(container, index) {
                     </span>
                 </div>
                 <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">
-                    ${conceptDisplayNames[currentConcept] || currentConcept}
+                    ${conceptDisplayNames[currentAssessmentConcept] || currentAssessmentConcept}
                 </div>
             </div>
 
@@ -392,8 +353,8 @@ function renderQuestionScreen(container, index) {
                 <!-- 4 Options (A, B, C, D) -->
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                     ${Object.entries(q.options || {}).map(([key, text]) => {
-                        const isSelected = currentSelected === key;
-                        return `
+        const isSelected = currentSelected === key;
+        return `
                             <button class="opt-choice-btn" data-key="${key}" style="text-align: left; padding: 1rem 1.2rem; border: 2px solid ${isSelected ? 'var(--primary)' : 'var(--border-color)'}; background: ${isSelected ? 'var(--primary-soft)' : '#FFFFFF'}; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 1rem;">
                                 <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: ${isSelected ? 'var(--primary)' : 'var(--bg-subtle)'}; color: ${isSelected ? '#FFFFFF' : 'var(--text-secondary)'}; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">
                                     ${key}
@@ -403,7 +364,7 @@ function renderQuestionScreen(container, index) {
                                 </span>
                             </button>
                         `;
-                    }).join("")}
+    }).join("")}
                 </div>
             </div>
 
@@ -415,22 +376,22 @@ function renderQuestionScreen(container, index) {
 
                 <div style="display: flex; gap: 0.5rem;">
                     ${isLast
-                        ? `<button class="btn btn-primary" id="submit-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem; font-weight: 700;">Submit Understanding Check <i class="fa-solid fa-check"></i></button>`
-                        : `<button class="btn btn-primary" id="next-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem;">Next <i class="fa-solid fa-arrow-right"></i></button>`
-                    }
+            ? `<button class="btn btn-primary" id="submit-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem; font-weight: 700;">Submit Understanding Check <i class="fa-solid fa-check"></i></button>`
+            : `<button class="btn btn-primary" id="next-btn" ${!currentSelected ? 'disabled style="opacity: 0.6;"' : ''} style="padding: 0.65rem 1.8rem;">Next <i class="fa-solid fa-arrow-right"></i></button>`
+        }
                 </div>
             </div>
 
             <!-- Question Jump Palette -->
             <div style="display: flex; justify-content: center; gap: 0.45rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1.2rem; border-top: 1px solid var(--border-color);">
                 ${questions.map((ques, i) => {
-                    const answered = Boolean(selectedAnswers[ques.question_id]);
-                    const isCurrent = i === index;
-                    const bg = isCurrent ? "var(--primary)" : (answered ? "var(--success)" : "var(--border-color)");
-                    return `
-                        <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;" title="Question ${i+1}"></span>
+            const answered = Boolean(selectedAnswers[ques.question_id]);
+            const isCurrent = i === index;
+            const bg = isCurrent ? "var(--primary)" : (answered ? "var(--success)" : "var(--border-color)");
+            return `
+                        <span class="q-dot" data-idx="${i}" style="cursor: pointer; width: 12px; height: 12px; border-radius: 50%; background: ${bg}; transform: ${isCurrent ? 'scale(1.3)' : 'scale(1)'}; transition: all 0.2s;" title="Question ${i + 1}"></span>
                     `;
-                }).join("")}
+        }).join("")}
             </div>
         </div>
     `;
@@ -499,7 +460,7 @@ async function submitPostTest(container) {
         const payload = {
             student_id: currentStudentId,
             session_id: currentSessionId,
-            concept_name: currentConcept,
+            concept_name: currentAssessmentConcept,
             pre_test_score: currentPreTestScore,
             attempt_count: currentAttemptCount,
             time_taken_seconds: elapsedSeconds,
@@ -525,18 +486,33 @@ async function submitPostTest(container) {
 // 5. Post-Test Result Screen (Student-Safe White Theme)
 // ─────────────────────────────────────────────────────────────────────────────
 function renderResultScreen(container, res) {
+    const understandingLevel = res.mastery_level || "Needs More Practice";
     const isDone = res.next_action === "DONE";
+
     const levelColors = {
         "Strong Understanding": "var(--success)",
         "Good Progress": "var(--primary)",
         "Needs More Practice": "var(--warning)",
         "Learn Again": "var(--danger)",
     };
-    const levelColor = levelColors[res.mastery_level] || (isDone ? "var(--success)" : "var(--danger)");
+    const levelColor = levelColors[understandingLevel] || (isDone ? "var(--success)" : "var(--danger)");
 
-    const friendlyAction = isDone ? "Advance to Next Topic" : "Reinforce with Game Lessons";
-    const learningStatus = res.learning_status || (isDone ? "Progressing Well" : "Developing");
-    const scorePct = Math.round((res.post_test_score || 0) * 100);
+    // Display mappings
+    const statusMap = {
+        "Strong Understanding": "Stable",
+        "Good Progress": "Progressing Well",
+        "Needs More Practice": "Developing",
+        "Learn Again": "Needs Support",
+    };
+    const learningStatus = res.learning_status || statusMap[understandingLevel] || (isDone ? "Progressing Well" : "Needs Support");
+
+    const stepMap = {
+        "DONE": "Continue",
+        "LEARN_AGAIN": "Reinforce with Game Lessons",
+    };
+    const recommendedStep = res.student_next_action_label || stepMap[res.next_action] || (isDone ? "Continue" : "Reinforce with Game Lessons");
+
+    const scorePct = Math.round((res.post_test_score !== undefined && res.post_test_score !== null ? res.post_test_score : 0) * 100);
 
     const message = isDone
         ? "Great job! You have demonstrated strong conceptual understanding and overcome targeted misconceptions."
@@ -553,29 +529,50 @@ function renderResultScreen(container, res) {
                     ${isDone ? '<i class="fa-solid fa-trophy"></i>' : '<i class="fa-solid fa-rotate-left"></i>'}
                 </div>
 
-                <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">
+                <div style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">
                     Understanding Level
                 </div>
-                <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.3rem;">
-                    ${res.mastery_level}
+                <h1 style="font-size: 2rem; font-weight: 800; color: ${levelColor}; margin-bottom: 0.3rem;">
+                    ${escapeHtml(understandingLevel)}
                 </h1>
-                <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
-                    ${conceptDisplayNames[currentConcept] || currentConcept}
+                <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
+                    ${conceptDisplayNames[currentAssessmentConcept] || currentAssessmentConcept}
                 </p>
 
-                <!-- Student Outcome Pill Box -->
-                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; max-width: 440px; margin: 0 auto 1.8rem auto;">
-                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Evaluation Outcome
+                <!-- Student Outcome Box -->
+                <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; max-width: 460px; margin: 0 auto 1.8rem auto; text-align: left;">
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 1rem; text-align: center; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                        EVALUATION OUTCOME
                     </div>
-                    <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.3rem;">
-                        Recommended Step: <span style="color: ${levelColor}">${friendlyAction}</span>
-                    </div>
-                    <div style="font-size: 0.9rem; color: var(--text-primary); margin-top: 0.25rem;">
-                        Learning Status: <strong>${escapeHtml(learningStatus)}</strong>
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
-                        Score Achieved: <strong>${scorePct}%</strong>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Understanding Level:</div>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: ${levelColor}; margin-top: 0.15rem;">
+                                ${escapeHtml(understandingLevel)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Learning Status:</div>
+                            <div style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-top: 0.15rem;">
+                                ${escapeHtml(learningStatus)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Recommended Step:</div>
+                            <div style="font-size: 1rem; font-weight: 700; color: var(--primary); margin-top: 0.15rem;">
+                                ${escapeHtml(recommendedStep)}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Score Achieved:</div>
+                            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin-top: 0.15rem;">
+                                ${scorePct}%
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -610,7 +607,7 @@ function renderResultScreen(container, res) {
                 <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     ${isDone
                         ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue Learning</a>`
-                        : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Review with Game Lesson</a>`
+                        : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Reinforce with Game Lessons</a>`
                     }
                     <a href="#/student/profile" class="btn btn-outline btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;">
                         <i class="fa-solid fa-user"></i> View Profile

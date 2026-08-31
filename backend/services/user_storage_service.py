@@ -20,25 +20,50 @@ _firestore_cooldown_until = 0  # Timestamp until which Firestore reads are skipp
 COOLDOWN_SECONDS = 300  # 5 minutes
 
 
+def _ensure_storage_file():
+    """Ensures registered_users.json exists on disk with at least an empty JSON object."""
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        if not os.path.exists(STORAGE_FILE):
+            with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+                json.dump({}, f, indent=2)
+    except Exception as e:
+        print(f"[WARN] Error ensuring registered_users.json: {e}")
+
+
 def _load_from_disk():
     global _in_memory_users
+    _ensure_storage_file()
     if os.path.exists(STORAGE_FILE):
         try:
             with open(STORAGE_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                content = f.read().strip()
+                if not content:
+                    data = {}
+                else:
+                    data = json.loads(content)
                 if isinstance(data, dict):
                     _in_memory_users = data
                 elif isinstance(data, list):
                     _in_memory_users = {u.get("uid") or u.get("id"): u for u in data if u}
+                else:
+                    _in_memory_users = {}
         except Exception as e:
-            print(f"[WARN] Error reading registered_users.json: {e}")
+            print(f"[WARN] Error reading registered_users.json, resetting to empty dict: {e}")
+            _in_memory_users = {}
+            _save_to_disk()
+    else:
+        _in_memory_users = {}
+        _save_to_disk()
 
 
 def _save_to_disk():
     try:
         os.makedirs(DATA_DIR, exist_ok=True)
-        with open(STORAGE_FILE, "w", encoding="utf-8") as f:
+        tmp_file = f"{STORAGE_FILE}.tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(_in_memory_users, f, indent=2)
+        os.replace(tmp_file, STORAGE_FILE)
     except Exception as e:
         print(f"[WARN] Error saving registered_users.json: {e}")
 

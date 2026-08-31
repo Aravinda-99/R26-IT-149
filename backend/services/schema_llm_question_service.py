@@ -20,6 +20,7 @@ import os
 import json
 import uuid
 import random
+import re
 import requests
 from datetime import datetime, timezone
 from config import Config
@@ -28,6 +29,7 @@ from services.schema_question_bank_service import SchemaQuestionBankService
 VALID_CONCEPTS = ["Variables", "Operators", "Loops", "Arrays", "Methods"]
 VALID_TYPES = ["Basic Understanding", "Code Output Prediction", "Error Recognition", "Application", "Transfer"]
 VALID_DIFFICULTIES = ["Easy", "Medium", "Hard"]
+LLM_REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_REQUEST_TIMEOUT_SECONDS", "120"))
 
 # Template library for development/mock mode only
 QUESTION_TEMPLATES = {
@@ -444,11 +446,16 @@ class SchemaLLMQuestionService:
             matched = [c for c in VALID_CONCEPTS if c.lower() == concept.lower()]
             concept = matched[0] if matched else "Loops"
 
+        if question_type and str(question_type).strip().lower() in ("all", "all types", "all types (balanced blueprint)"):
+            question_type = None
+
         count = max(1, min(20, int(count or 5)))
 
         provider = (Config.LLM_PROVIDER or os.getenv("LLM_PROVIDER", "gemini")).strip().lower()
         use_llm = Config.USE_LLM_QUESTION_GENERATION
         allow_mock = Config.ALLOW_MOCK_QUESTIONS
+        print(f"[LLM] provider={provider} model={Config.LLM_MODEL}")
+        print(f"[LLM] requested_count={count}")
 
         if not use_llm:
             if not allow_mock:
@@ -502,6 +509,7 @@ class SchemaLLMQuestionService:
 
         # Save into generated_questions table with status PENDING and active=False
         saved = SchemaQuestionBankService.save_generated_questions(generated_raw)
+        print(f"[QUESTION_BANK] saved_pending={len(saved)} source={SchemaQuestionBankService.get_storage_status()}")
         return saved
 
     @classmethod
@@ -565,6 +573,44 @@ class SchemaLLMQuestionService:
             "option_d_quality": assigned["D"][1],
             "correct_option": target_correct_letter,
         }
+
+    @staticmethod
+    def _parse_llm_json(raw_text: str):
+        """Parses the first JSON object/array from a possibly wrapped LLM response."""
+        if not raw_text or not str(raw_text).strip():
+            raise ValueError("LLM response was empty.")
+
+        text = str(raw_text).strip()
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text)
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        decoder = json.JSONDecoder()
+        candidates = [text, re.sub(r",\s*([}\]])", r"\1", text)]
+        for candidate in candidates:
+            for idx, char in enumerate(candidate):
+                if char not in "{[":
+                    continue
+                try:
+                    parsed, _ = decoder.raw_decode(candidate[idx:])
+                    return parsed
+                except json.JSONDecodeError:
+                    continue
+
+        raise ValueError("Could not parse valid JSON from LLM response.")
+
+    @staticmethod
+    def _extract_questions_from_llm_payload(payload) -> list:
+        if isinstance(payload, dict):
+            questions = payload.get("questions")
+        elif isinstance(payload, list):
+            questions = payload
+        else:
+            questions = None
+
+        if not isinstance(questions, list):
+            raise ValueError("LLM JSON must contain a 'questions' list or be a JSON array.")
+        return questions
 
     @classmethod
     def _generate_with_gemini(cls, concept, question_type, difficulty, target_error_type, count, api_key):
@@ -646,14 +692,14 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             }
 
             try:
-                response = requests.post(url, json=payload, timeout=45)
+                response = requests.post(url, json=payload, timeout=LLM_REQUEST_TIMEOUT_SECONDS)
                 if response.status_code == 200:
                     res_json = response.json()
                     candidates = res_json.get("candidates", [])
                     if candidates:
                         part_text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                        parsed = json.loads(part_text)
-                        raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+                        parsed = cls._parse_llm_json(part_text)
+                        raw_list = cls._extract_questions_from_llm_payload(parsed)
                         used_model = candidate_model
                         break
                 elif response.status_code == 404:
@@ -668,6 +714,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         if not raw_list and last_error:
             raise RuntimeError(last_error)
 
+        print(f"[LLM] parsed_count={len(raw_list)}")
         validated = []
         now = datetime.now(timezone.utc).isoformat()
         letters = ["A", "B", "C", "D"]
@@ -682,6 +729,8 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             if val_q:
                 validated.append(val_q)
 
+        print(f"[LLM] valid_count={len(validated)}")
+        print(f"[LLM] invalid_count={max(0, len(raw_list) - len(validated))}")
         if len(validated) > 0:
             print(f"[OK] Gemini generated {len(validated)} validated draft questions for {concept} using {used_model}")
             return validated
@@ -751,9 +800,10 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         )
 
         content = response.choices[0].message.content
-        parsed = json.loads(content)
-        raw_list = parsed.get("questions", []) if isinstance(parsed, dict) else parsed
+        parsed = cls._parse_llm_json(content)
+        raw_list = cls._extract_questions_from_llm_payload(parsed)
 
+        print(f"[LLM] parsed_count={len(raw_list)}")
         validated = []
         now = datetime.now(timezone.utc).isoformat()
         letters = ["A", "B", "C", "D"]
@@ -768,6 +818,8 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             if val_q:
                 validated.append(val_q)
 
+        print(f"[LLM] valid_count={len(validated)}")
+        print(f"[LLM] invalid_count={max(0, len(raw_list) - len(validated))}")
         if len(validated) > 0:
             print(f"[OK] OpenAI generated {len(validated)} validated draft questions for {concept} using {model_name}")
             return validated
@@ -800,6 +852,9 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         if not (opt_a and opt_b and opt_c and opt_d):
             return None
 
+        if len({opt_a.lower(), opt_b.lower(), opt_c.lower(), opt_d.lower()}) < 4:
+            return None
+
         qual_dict = q.get("option_qualities")
         if isinstance(qual_dict, dict):
             qual_a = qual_dict.get("A", "Correct")
@@ -823,7 +878,7 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
         balanced = cls.rebalance_options_dict(raw_opts, target_correct_letter=target_correct_letter)
 
         qid_prefix = concept[:4].upper()
-        return {
+        formatted = {
             "id": f"GEN_{uuid.uuid4().hex[:8].upper()}",
             "question_id": f"{qid_prefix}_Q{uuid.uuid4().hex[:4].upper()}",
             "concept_name": concept,
@@ -865,6 +920,11 @@ Return ONLY a JSON object with a single key "questions" containing a list of {co
             "created_at": timestamp,
             "updated_at": timestamp,
         }
+
+        is_valid, _ = SchemaQuestionBankService.validate_question_data(formatted)
+        if not is_valid:
+            return None
+        return formatted
 
     @classmethod
     def _generate_mock_questions(cls, concept, question_type, difficulty, target_error_type, count):

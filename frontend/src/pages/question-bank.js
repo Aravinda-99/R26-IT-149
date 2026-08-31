@@ -148,7 +148,7 @@ async function refreshCounts() {
     try {
         const [penRes, appRes, rejRes] = await Promise.allSettled([
             SchemaMasteryAPI.getPendingQuestions(),
-            SchemaMasteryAPI.getQuestionBank("", false), // get all active + inactive
+            SchemaMasteryAPI.getQuestionBank("", true),
             SchemaMasteryAPI.getRejectedQuestions(),
         ]);
         pendingQuestions = (penRes.status === "fulfilled" && penRes.value && penRes.value.questions) ? penRes.value.questions : [];
@@ -195,6 +195,21 @@ function renderTabContent() {
     } else if (activeTab === "rejected") {
         renderRejectedTab(content);
     }
+}
+
+const GENERATION_TIMEOUT_MS = 190000;
+
+function withGenerationTimeout(promise, timeoutMs) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            setTimeout(() => reject(new Error("Gemini question generation timed out. Please try again or check Pending Review before retrying.")), timeoutMs);
+        }),
+    ]);
+}
+
+function generateQuestionsWithTimeout(payload) {
+    return withGenerationTimeout(SchemaMasteryAPI.generateQuestions(payload), GENERATION_TIMEOUT_MS);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -407,42 +422,54 @@ function renderGenerateTab(content) {
                         </select>
                     </div>
 
-                    <div>
-                        <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Question Type (Cognitive Level)</label>
-                        <select id="gen-type" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
-                            <option value="">All Types (Balanced Blueprint)</option>
-                            ${QUESTION_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
-                        </select>
+                    <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 0.5rem; padding: 0.75rem 0.85rem; color: #1E40AF; font-size: 0.8rem; line-height: 1.45;">
+                        <strong style="display: block; color: #1E3A8A; margin-bottom: 0.15rem;">Quick mode</strong>
+                        Select the Java concept and generate a complete 15-question draft set.
                     </div>
 
-                    <div>
-                        <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Difficulty</label>
-                        <select id="gen-difficulty" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
-                            <option value="Easy">Easy</option>
-                            <option value="Medium" selected>Medium</option>
-                            <option value="Hard">Hard</option>
-                        </select>
-                    </div>
+                    <details style="border: 1px solid var(--border-color); border-radius: 0.5rem; padding: 0.65rem 0.75rem; background: #F8FAFC;">
+                        <summary style="cursor: pointer; font-size: 0.82rem; font-weight: 700; color: #334155;">Advanced options</summary>
+                        <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 0.8rem;">
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Question Type</label>
+                                <select id="gen-type" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                                    <option value="">All Types (Balanced Blueprint)</option>
+                                    ${QUESTION_TYPES.map(t => `<option value="${t}">${t}</option>`).join("")}
+                                </select>
+                            </div>
 
-                    <div>
-                        <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Target Error Focus (Component 2)</label>
-                        <select id="gen-error-type" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
-                            ${ERROR_TYPES.map(e => `<option value="${e}" ${e === 'LOOP_CONDITION_ERROR' ? 'selected' : ''}>${e}</option>`).join("")}
-                        </select>
-                    </div>
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Difficulty</label>
+                                <select id="gen-difficulty" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
 
-                    <div>
-                        <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Batch Size</label>
-                        <select id="gen-count" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
-                            <option value="4">4 Questions (1 A, 1 B, 1 C, 1 D)</option>
-                            <option value="8" selected>8 Questions (2 A, 2 B, 2 C, 2 D)</option>
-                            <option value="12">12 Questions (3 A, 3 B, 3 C, 3 D)</option>
-                        </select>
-                        <span style="font-size: 0.72rem; color: #16A34A; display: block; margin-top: 0.2rem;"><i class="fa-solid fa-check"></i> Automatically balances correct option positions A/B/C/D</span>
-                    </div>
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Target Error Focus</label>
+                                <select id="gen-error-type" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                                    <option value="UNKNOWN_ERROR" selected>General Concept Focus</option>
+                                    ${ERROR_TYPES.map(e => `<option value="${e}">${e}</option>`).join("")}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #334155; display: block; margin-bottom: 0.25rem;">Batch Size</label>
+                                <select id="gen-count" class="input input-field" style="width: 100%; padding: 0.5rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 0.4rem;">
+                                    <option value="4">4 Questions (1 A, 1 B, 1 C, 1 D)</option>
+                                    <option value="8">8 Questions (2 A, 2 B, 2 C, 2 D)</option>
+                                    <option value="12">12 Questions (3 A, 3 B, 3 C, 3 D)</option>
+                                    <option value="15" selected>15 Questions (Full Post-Test Set)</option>
+                                </select>
+                                <span style="font-size: 0.72rem; color: #16A34A; display: block; margin-top: 0.2rem;"><i class="fa-solid fa-check"></i> Automatically balances correct option positions A/B/C/D</span>
+                            </div>
+                        </div>
+                    </details>
 
                     <button type="submit" class="btn btn-primary" id="gen-submit-btn" style="margin-top: 0.3rem; padding: 0.65rem; font-size: 0.88rem; font-weight: 600; border-radius: 0.4rem; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Generate 15 Draft Questions
                     </button>
                 </form>
             </div>
@@ -469,7 +496,7 @@ function renderGenerateTab(content) {
                     <div style="text-align: center; padding: 3.5rem 1rem; background: #FFFFFF; border: 1px dashed var(--border-color); border-radius: 0.75rem; color: var(--text-secondary);">
                         <i class="fa-solid fa-sliders" style="font-size: 2.2rem; color: #6366F1; opacity: 0.6; margin-bottom: 0.8rem;"></i>
                         <h4 style="font-size: 0.95rem; font-weight: 600; color: #0F172A; margin: 0 0 0.25rem 0;">Ready to Generate</h4>
-                        <p style="font-size: 0.84rem; margin: 0;">Configure your target concept and parameters on the left, then click Generate Draft Questions.</p>
+                        <p style="font-size: 0.84rem; margin: 0;">Select a concept on the left, then generate a complete draft set for teacher review.</p>
                     </div>
                 </div>
             </div>
@@ -489,19 +516,22 @@ function renderGenerateTab(content) {
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<div class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></div> Generating Drafts...`;
-        outputList.innerHTML = `<div style="text-align: center; padding: 3rem; background: #FFFFFF; border-radius: 0.75rem; border: 1px solid var(--border-color);"><div class="spinner" style="margin: 0 auto 0.75rem;"></div><p style="color: var(--text-secondary); font-size: 0.85rem;">Generating structured draft questions with 4-tier qualities...</p></div>`;
+        outputList.innerHTML = `
+            <div style="text-align: center; padding: 3rem; background: #FFFFFF; border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                <div class="spinner" style="margin: 0 auto 0.75rem;"></div>
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #0F172A; margin: 0 0 0.35rem 0;">Generating draft questions...</h4>
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Requesting ${count} Gemini questions for ${escapeHtml(concept)}.</p>
+            </div>
+        `;
 
         try {
-            const res = await SchemaMasteryAPI.generateQuestions({
+            const res = await generateQuestionsWithTimeout({
                 concept_name: concept,
                 question_type: qType,
                 difficulty: difficulty,
                 target_error_type: errorType,
-                count: count,
+                count,
             });
-
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions`;
 
             await refreshCounts();
 
@@ -517,6 +547,7 @@ function renderGenerateTab(content) {
                             <span style="font-size: 0.78rem; color: #047857; margin-left: 0.5rem;">
                                 Balanced Positions: <strong>A: ${dist.A}</strong> • <strong>B: ${dist.B}</strong> • <strong>C: ${dist.C}</strong> • <strong>D: ${dist.D}</strong>
                             </span>
+                            ${(res.invalid_count || 0) > 0 ? `<span style="display: block; font-size: 0.78rem; color: #92400E; margin-top: 0.25rem;">Generated ${res.generated_count || res.questions.length} questions. ${res.invalid_count} failed validation.</span>` : ""}
                         </div>
                         <button class="btn btn-sm" id="view-pending-tab-btn" style="background: #10B981; color: white; font-weight: 600; padding: 0.35rem 0.8rem; font-size: 0.8rem; border-radius: 0.35rem; border: none; cursor: pointer;">
                             Go to Review Queue →
@@ -541,10 +572,10 @@ function renderGenerateTab(content) {
                 outputList.innerHTML = `<div style="color: #EF4444; background: #FEF2F2; padding: 1rem; border-radius: 0.5rem;">Failed to generate questions. Please verify parameters.</div>`;
             }
         } catch (err) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Draft Questions`;
             const errMsg = err?.message || String(err);
             const isApiKeyMissing = errMsg.includes("GEMINI_API_KEY") || errMsg.includes("OPENAI_API_KEY") || errMsg.includes("LLM_NOT_CONFIGURED") || errMsg.includes("not configured");
+            const isTimeout = errMsg.includes("taking too long") || errMsg.includes("timed out");
+            await refreshCounts();
 
             if (isApiKeyMissing) {
                 outputList.innerHTML = `
@@ -563,6 +594,25 @@ function renderGenerateTab(content) {
                         </div>
                     </div>
                 `;
+            } else if (isTimeout) {
+                outputList.innerHTML = `
+                    <div style="background: #FFFBEB; border: 1px solid #FCD34D; border-radius: 0.6rem; padding: 1rem 1.25rem; color: #92400E;">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <i class="fa-solid fa-clock" style="font-size: 1.25rem; color: #D97706; margin-top: 0.15rem;"></i>
+                            <div>
+                                <h4 style="font-weight: 700; font-size: 0.95rem; margin: 0 0 0.25rem 0; color: #B45309;">Generation Is Taking Longer Than Expected</h4>
+                                <p style="font-size: 0.85rem; margin: 0 0 0.55rem 0; color: #78350F; line-height: 1.45;">${escapeHtml(errMsg)}</p>
+                                <button class="btn btn-sm" id="timeout-pending-tab-btn" style="background: #F59E0B; color: white; font-weight: 700; padding: 0.4rem 0.8rem; font-size: 0.8rem; border-radius: 0.35rem; border: none; cursor: pointer;">
+                                    Check Pending Review (${pendingQuestions.length})
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById("timeout-pending-tab-btn")?.addEventListener("click", () => {
+                    activeTab = "pending";
+                    renderTabContent();
+                });
             } else {
                 outputList.innerHTML = `
                     <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: 0.6rem; padding: 1rem 1.25rem; color: #991B1B;">
@@ -576,6 +626,9 @@ function renderGenerateTab(content) {
                     </div>
                 `;
             }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Generate 15 Draft Questions`;
         }
     });
 }
@@ -886,7 +939,14 @@ function attachQuestionCardHandlers() {
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
             try {
-                await SchemaMasteryAPI.approveQuestion(qid, { approved_by: "Teacher Reviewer" });
+                const res = await SchemaMasteryAPI.approveQuestion(qid, { approved_by: "Teacher Reviewer" });
+                pendingQuestions = pendingQuestions.filter(q => q.id !== qid && q.question_id !== qid);
+                if (res?.question) {
+                    approvedQuestions = [
+                        res.question,
+                        ...approvedQuestions.filter(q => q.id !== res.question.id && q.question_id !== res.question.question_id),
+                    ];
+                }
                 await refreshCounts();
                 renderTabContent();
             } catch (e) {
@@ -904,7 +964,14 @@ function attachQuestionCardHandlers() {
             const reason = prompt("Enter reason for rejection:", "Does not meet conceptual diagnostic standard");
             if (!reason) return;
             try {
-                await SchemaMasteryAPI.rejectQuestion(qid, { reason, rejected_by: "Teacher Reviewer" });
+                const res = await SchemaMasteryAPI.rejectQuestion(qid, { reason, rejected_by: "Teacher Reviewer" });
+                pendingQuestions = pendingQuestions.filter(q => q.id !== qid && q.question_id !== qid);
+                if (res?.question) {
+                    rejectedQuestions = [
+                        res.question,
+                        ...rejectedQuestions.filter(q => q.id !== res.question.id && q.question_id !== res.question.question_id),
+                    ];
+                }
                 await refreshCounts();
                 renderTabContent();
             } catch (e) {

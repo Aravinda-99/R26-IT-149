@@ -336,8 +336,8 @@ class SchemaQuestionBankService:
         Guarantees exact parity between stats counts and question list views.
         Uses Firestore as primary source with local JSON as fallback.
         """
-        approved_list, app_src = cls.get_approved_question_bank(active_only=False, return_source=True)
-        active_approved_list = [q for q in approved_list if q.get("active", False) is True]
+        approved_list, app_src = cls.get_approved_question_bank(active_only=True, return_source=True)
+        active_approved_list = approved_list
         pending_list, pen_src = cls.get_pending_questions(return_source=True)
         rejected_list, rej_src = cls.get_rejected_questions(return_source=True)
 
@@ -354,6 +354,11 @@ class SchemaQuestionBankService:
             "rejected_questions": len(rejected_list),
             "total_questions": len(approved_list) + len(pending_list) + len(rejected_list),
             "storage_source": app_src,
+            "storage_sources": {
+                "approved": app_src,
+                "pending": pen_src,
+                "rejected": rej_src,
+            },
         }
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -374,10 +379,11 @@ class SchemaQuestionBankService:
             if not q_copy.get("question_id"):
                 prefix = (q_copy.get("concept_name") or "GEN")[:4].upper()
                 q_copy["question_id"] = f"{prefix}_Q{uuid.uuid4().hex[:4].upper()}"
-            q_copy["status"] = q_copy.get("status") or "PENDING"
+            q_copy["status"] = "PENDING"
             q_copy["active"] = False
             q_copy["deleted"] = False
-            q_copy["source"] = q_copy.get("source") or "LLM"
+            q_copy["source"] = q_copy.get("source") or "GEMINI"
+            q_copy["created_by"] = q_copy.get("created_by") or "LLM_Generator"
             q_copy["created_at"] = q_copy.get("created_at") or now
             q_copy["updated_at"] = now
             existing.append(q_copy)
@@ -398,6 +404,7 @@ class SchemaQuestionBankService:
         """Returns all non-deleted questions with status PENDING for teacher review."""
         pending = []
         source = "local_fallback"
+        firestore_loaded = False
 
         # Try Firestore first if available
         if db:
@@ -409,13 +416,13 @@ class SchemaQuestionBankService:
                     norm = cls._normalize_question_record(d)
                     if norm.get("status") == "PENDING" and not norm.get("deleted", False):
                         pending.append(norm)
-                if pending:
-                    source = "firestore"
+                firestore_loaded = True
+                source = "firestore"
             except Exception as e:
                 print(f"[WARN] Firestore get_pending error: {e}")
 
-        # Fallback to local generated_questions.json if Firestore empty or offline
-        if not pending:
+        # Fallback to local generated_questions.json only if Firestore is unavailable or failed
+        if not firestore_loaded:
             all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
             for q in all_gen:
                 norm = cls._normalize_question_record(q)
@@ -444,6 +451,7 @@ class SchemaQuestionBankService:
         """Returns all non-deleted questions with status REJECTED for teacher inspection."""
         rejected = []
         source = "local_fallback"
+        firestore_loaded = False
 
         if db:
             try:
@@ -454,12 +462,12 @@ class SchemaQuestionBankService:
                     norm = cls._normalize_question_record(d)
                     if norm.get("status") == "REJECTED" and not norm.get("deleted", False):
                         rejected.append(norm)
-                if rejected:
-                    source = "firestore"
+                firestore_loaded = True
+                source = "firestore"
             except Exception as e:
                 print(f"[WARN] Firestore get_rejected error: {e}")
 
-        if not rejected:
+        if not firestore_loaded:
             all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
             for q in all_gen:
                 norm = cls._normalize_question_record(q)
@@ -516,7 +524,9 @@ class SchemaQuestionBankService:
                 if not is_valid:
                     raise ValueError(err)
 
-                merged["status"] = "EDITED" if merged.get("status") == "PENDING" else merged.get("status")
+                if merged.get("status") in ("PENDING", "EDITED"):
+                    merged["status"] = "PENDING"
+                    merged["active"] = False
                 merged["updated_at"] = now
                 merged["updated_by"] = updated_by
                 all_gen[idx] = merged
@@ -526,6 +536,11 @@ class SchemaQuestionBankService:
 
         if gen_found:
             _write_json(GEN_QUESTIONS_FILE, all_gen)
+            if db and updated_q:
+                try:
+                    db.collection("generated_questions").document(updated_q["id"]).set(updated_q)
+                except Exception as e:
+                    print(f"[WARN] Firestore generated question update failed: {e}")
 
         # 2. Check approved questions
         all_app = _read_json(APP_QUESTIONS_FILE, default=[])
@@ -570,10 +585,12 @@ class SchemaQuestionBankService:
             cls.initialize_seed_data()
         all_gen = _read_json(GEN_QUESTIONS_FILE, default=[])
         target_q = None
+        target_doc_id = None
 
         for idx, q in enumerate(all_gen):
             if q.get("id") == question_id or q.get("question_id") == question_id:
                 target_q = q
+                target_doc_id = q.get("id")
                 all_gen[idx]["status"] = "APPROVED"
                 all_gen[idx]["active"] = True
                 all_gen[idx]["deleted"] = False
@@ -583,12 +600,41 @@ class SchemaQuestionBankService:
                 break
 
         if not target_q:
-            # Check if it was already in approved bank
-            approved_list = _read_json(APP_QUESTIONS_FILE, default=[])
-            for aq in approved_list:
-                if aq.get("id") == question_id or aq.get("question_id") == question_id:
-                    return aq
-            return None
+            if db:
+                try:
+                    doc = db.collection("generated_questions").document(question_id).get()
+                    if doc.exists:
+                        target_q = doc.to_dict()
+                        target_q["id"] = doc.id
+                        target_doc_id = doc.id
+                    else:
+                        docs = db.collection("generated_questions").where("question_id", "==", question_id).limit(1).stream()
+                        for found_doc in docs:
+                            target_q = found_doc.to_dict()
+                            target_q["id"] = found_doc.id
+                            target_doc_id = found_doc.id
+                            break
+                except Exception as e:
+                    print(f"[WARN] Firestore generated question lookup failed during approval: {e}")
+
+            if target_q:
+                target_q["status"] = "APPROVED"
+                target_q["active"] = True
+                target_q["deleted"] = False
+                target_q["approved_by"] = approved_by
+                target_q["approved_at"] = _now_iso()
+                target_q["updated_at"] = _now_iso()
+                all_gen.append(target_q)
+            else:
+                # Check if it was already in approved bank
+                approved_list = _read_json(APP_QUESTIONS_FILE, default=[])
+                for aq in approved_list:
+                    if aq.get("id") == question_id or aq.get("question_id") == question_id:
+                        return aq
+                return None
+
+        if not target_doc_id:
+            target_doc_id = target_q.get("id")
 
         # Validate question before approval
         is_valid, err = cls.validate_question_data(target_q)
@@ -618,10 +664,18 @@ class SchemaQuestionBankService:
         # Sync to Firestore if online
         if db:
             try:
-                db.collection("approved_question_bank").document(app_entry["id"]).set(app_entry)
+                app_doc_id = app_entry["id"]
+                existing_docs = db.collection("approved_question_bank").where("question_id", "==", target_q.get("question_id")).limit(1).stream()
+                for existing_doc in existing_docs:
+                    app_doc_id = existing_doc.id
+                    app_entry["id"] = existing_doc.id
+                    break
+                db.collection("generated_questions").document(target_doc_id).set(target_q)
+                db.collection("approved_question_bank").document(app_doc_id).set(app_entry)
             except Exception as e:
                 print(f"[WARN] Firestore sync failed for approved question: {e}")
 
+        print(f"[QUESTION_BANK] approved question_id={target_q.get('question_id')} source={cls.get_storage_status()}")
         return app_entry
 
     @classmethod
@@ -645,6 +699,12 @@ class SchemaQuestionBankService:
 
         if target_q:
             _write_json(GEN_QUESTIONS_FILE, all_gen)
+            if db:
+                try:
+                    db.collection("generated_questions").document(target_q["id"]).set(target_q)
+                except Exception as e:
+                    print(f"[WARN] Firestore sync failed for rejected question: {e}")
+            print(f"[QUESTION_BANK] rejected question_id={target_q.get('question_id')} source={cls.get_storage_status()}")
 
         # If it was in approved bank, deactivate it
         all_app = _read_json(APP_QUESTIONS_FILE, default=[])
@@ -769,6 +829,7 @@ class SchemaQuestionBankService:
         """
         approved_raw = []
         source = "local_fallback"
+        firestore_loaded = False
 
         # 1. Primary: Firestore query
         if db:
@@ -780,13 +841,13 @@ class SchemaQuestionBankService:
                     norm = cls._normalize_question_record(d)
                     norm["status"] = "APPROVED"
                     approved_raw.append(norm)
-                if approved_raw:
-                    source = "firestore"
+                firestore_loaded = True
+                source = "firestore"
             except Exception as e:
                 print(f"[WARN] Firestore get_approved_question_bank error (falling back): {e}")
 
-        # 2. Fallback: Local JSON
-        if not approved_raw:
+        # 2. Fallback: Local JSON only if Firestore is unavailable or failed
+        if not firestore_loaded:
             all_app = _read_json(APP_QUESTIONS_FILE, default=[])
             for q in all_app:
                 norm = cls._normalize_question_record(q)

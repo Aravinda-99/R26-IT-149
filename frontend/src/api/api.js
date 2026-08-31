@@ -111,7 +111,7 @@ export const SchemaMasteryAPI = {
     deleteQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}`, "DELETE", data),
     getPostTestQuestions: (params = {}) => {
         const studentId = params.student_id || params.studentId || "";
-        const concept = params.concept || params.concept_name || "Loops";
+        const concept = params.concept || params.concept_name || "";
         const errorType = params.error_type || params.errorType || "";
         const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
