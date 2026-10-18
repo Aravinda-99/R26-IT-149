@@ -20,7 +20,8 @@ regenerate). The API key is never printed.
 
 Usage (from backend/):
   python scripts/build_explanation_cache.py [--model gemini-3.5-flash] [--limit N]
-                                            [--question 4] [--force] [--revalidate] [--min-interval 7]
+                                            [--question 4] [--key "18::<="] [--force] [--revalidate]
+                                            [--min-interval 7]
 """
 
 import argparse
@@ -105,6 +106,8 @@ def main():
     ap.add_argument("--model", default=None, help="LLM model (default: EXPLANATION_LLM_MODEL or LLM_MODEL)")
     ap.add_argument("--limit", type=int, default=None, help="generate at most N new items")
     ap.add_argument("--question", type=int, action="append", help="only these question ids (repeatable)")
+    ap.add_argument("--key", action="append",
+                    help='only these cache keys, e.g. --key "18::<=" (repeatable; combine with --force)')
     ap.add_argument("--force", action="store_true", help="regenerate items already in the cache")
     ap.add_argument("--revalidate", action="store_true",
                     help="re-check cached items with the current validator and regenerate those that fail")
@@ -128,6 +131,11 @@ def main():
     cache["generated_with"] = {"provider": provider, "model": model, "temperature": xs.TEMPERATURE}
 
     todo = [(q, opt) for q in questions for opt in q["options"]]
+    if args.key:
+        unknown = set(args.key) - {cache_key(q["id"], o) for q, o in todo}
+        if unknown:
+            raise SystemExit(f"Unknown cache key(s): {sorted(unknown)}")
+        todo = [(q, opt) for q, opt in todo if cache_key(q["id"], opt) in set(args.key)]
     if args.revalidate:
         for q, opt in todo:
             entry = cache["items"].get(cache_key(q["id"], opt))

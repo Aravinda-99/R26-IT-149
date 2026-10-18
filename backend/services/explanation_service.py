@@ -27,8 +27,18 @@ LLM verification policy
 For wrong answers, if Model 3's prediction_confidence < 0.5 and the LLM says the label
 does not fit, the LLM's llm_suggested_reason_group becomes the final explanation label
 (label_source "llm_verified"); otherwise the C2 label is kept (label_source "model3").
+If Model 3 says CORRECT_NO_ERROR for an answer the answer key marks wrong, the LLM's
+(error) group is used whatever the confidence. Cached answers are re-checked on every
+request, so a policy change applies to them without regenerating.
 Correct answers are labelled by the answer key (label_source "answer_key"). Both the C2
-and the LLM labels are returned.
+and the LLM labels are returned. The prompt (c2-expl-v2) requires every text field to
+describe exactly the label the card shows, so card and explanation never disagree.
+
+Free code (mode "free", the Java Sandbox's "Analyze with AI")
+-------------------------------------------------------------
+Any Java code without a pre-test question: Model 3 decides (no answer key), then ONE live
+LLM call explains its label (template on failure). Never cached or memoised, so every
+request really reaches the model.
 """
 
 import copy
@@ -47,7 +57,7 @@ from services.explanation_templates import localised_template
 BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CACHE_PATH = os.path.join(BACKEND_DIR, "data", "c2_explanations_cache.json")
 
-PROMPT_VERSION = "c2-expl-v1"
+PROMPT_VERSION = "c2-expl-v2"
 TEMPERATURE = 0.2
 LIVE_TIMEOUT_SECONDS = float(os.getenv("EXPLANATION_LLM_TIMEOUT_SECONDS", "15"))
 # Optional overrides for this service only; default to the Component 4 LLM_MODEL.
@@ -228,12 +238,22 @@ def validate_explanation(obj, code=None):
     return clean, warnings
 
 
-def choose_final_label(c2_reason_group, prediction_confidence, is_correct, llm_expl):
-    """Verification policy. Returns (final_reason_group, label_source)."""
+def choose_final_label(c2_reason_group, prediction_confidence, is_correct, llm_expl, answer_key=True):
+    """
+    Verification policy. Returns (final_reason_group, label_source).
+    answer_key=False (free sandbox code): nothing is known to be wrong, so a "no error"
+    label is only re-checked under the low-confidence rule.
+    """
     if is_correct:
         return "CORRECT_NO_ERROR", "answer_key"
     if c2_reason_group is None:
         return None, "not_applicable"
+    suggested = (llm_expl or {}).get("llm_suggested_reason_group")
+    # The answer key says this answer is wrong, so "no error" is certainly not the mistake:
+    # use the LLM's group whatever Model 3's confidence was.
+    if (answer_key and llm_expl and c2_reason_group == "CORRECT_NO_ERROR"
+            and suggested in REASON_GROUPS and suggested != "CORRECT_NO_ERROR"):
+        return suggested, "llm_verified"
     if (llm_expl and prediction_confidence is not None and prediction_confidence < VERIFY_MAX_CONF
             and llm_expl.get("llm_agrees_with_label") is False
             and llm_expl.get("llm_suggested_reason_group") in REASON_GROUPS
@@ -372,7 +392,60 @@ def _format_runner(runner):
     return "; ".join(parts) or "not available"
 
 
+def group_scope(reason_group):
+    """
+    What a reason group covers: the title of each knowledge-base concept note filed under
+    it (one note per fine error type of the dataset taxonomy). The group's one-line reason
+    text is narrower than the group (e.g. VARIABLE_ASSIGNMENT_ISSUE also covers wrong type
+    keywords), so prompts and the consistency audit use this list.
+    """
+    if not reason_group:
+        return []
+    if reason_group == "CORRECT_NO_ERROR":
+        return ["The code has no mistake."]
+    from ml.component2_error_detection.rag.retriever import get_retriever
+    notes = [c for c in get_retriever().chunks
+             if c["type"] == "concept_note" and c.get("reason_group") == reason_group]
+    return [c["text"].split("\n", 1)[0].split(" (")[0] for c in notes]
+
+
+def _scope_line(reason_group):
+    scope = group_scope(reason_group)
+    return ("LABEL COVERS (any one of these specific mistakes): " + "; ".join(scope)) if scope else ""
+
+
+def _label_rule(ctx):
+    """Rule 1 of the prompt: which mistake the explanation must describe (c2-expl-v2)."""
+    rg, conf = ctx["c2_reason_group"], ctx["prediction_confidence"]
+    same_mistake = ("Every text field (summary, where, why, fix, tip, in all three languages) must describe that one "
+                    "mistake and nothing else: the student sees it named on a card right above your text, so a "
+                    "different diagnosis would contradict the card. Do not mention other problems, even if you see one.")
+    if rg is None:
+        return "Explain the answer using the question and the reference notes. Set llm_agrees_with_label=true."
+    if ctx["is_correct"] and not ctx.get("free"):
+        return "The answer is correct (answer key). Explain why. Set llm_agrees_with_label=true."
+    if rg == "CORRECT_NO_ERROR" and not ctx.get("free"):
+        return ("The error detector found no error pattern, but the answer key says this answer is WRONG, so the "
+                "label cannot be right. Find the student's real mistake: set llm_agrees_with_label=false, put its "
+                "group in llm_suggested_reason_group and explain THAT mistake — the card will show your group. "
+                + same_mistake)
+    if rg == "CORRECT_NO_ERROR":
+        return ("The error detector found no mistake. Explain what the code does correctly. If you clearly see a real "
+                "mistake, set llm_agrees_with_label=false and put its group in llm_suggested_reason_group, but keep "
+                "the text about the code being correct.")
+    if conf is not None and conf < VERIFY_MAX_CONF:
+        return (f"The label's confidence is below {VERIFY_MAX_CONF}, so it may be wrong. Check it against the code. "
+                "If it fits: set llm_agrees_with_label=true and explain THE LABEL'S mistake. If it clearly does not "
+                "fit: set llm_agrees_with_label=false, put the right group in llm_suggested_reason_group and explain "
+                "THAT group's mistake instead — the card will then show your group. " + same_mistake)
+    return ("Explain THE LABEL'S mistake as it appears in this code. " + same_mistake + " If you think another group "
+            "fits better, still explain the label's mistake; only report your view in llm_agrees_with_label=false "
+            "and llm_suggested_reason_group.")
+
+
 def build_prompt(ctx, chunks):
+    if ctx.get("free"):
+        return build_free_prompt(ctx, chunks)
     q = ctx["question"] or {}
     verdict = "CORRECT" if ctx["is_correct"] else "WRONG"
     rg, conf = ctx["c2_reason_group"], ctx["prediction_confidence"]
@@ -384,17 +457,7 @@ def build_prompt(ctx, chunks):
         conf_txt = f"{conf:.2f}" if conf is not None else "unknown"
         label_line = f"{rg} (Model 3, calibrated confidence {conf_txt})"
     rg_desc = ctx.get("c2_reason_text") or ""
-
-    if rg is not None and not ctx["is_correct"] and conf is not None and conf < VERIFY_MAX_CONF:
-        label_rule = (f"The label's confidence is below {VERIFY_MAX_CONF}, so it may be wrong. Check it against the code. "
-                      "If it fits, explain it. If it clearly does not fit, set llm_agrees_with_label=false, put the "
-                      "right group in llm_suggested_reason_group and write the explanation for that group.")
-    elif rg is not None:
-        label_rule = ("Explain the student's mistake in terms of this label. Do not invent a different error and do not "
-                      "mention problems that are not in the student's code. If you think another group fits better, "
-                      "still explain the label but set llm_agrees_with_label=false and give your group.")
-    else:
-        label_rule = "Explain the answer using the question and the reference notes. Set llm_agrees_with_label=true."
+    label_rule = _label_rule(ctx)
 
     notes = "\n".join(f"[{i + 1}] {c['text']}" for i, c in enumerate(chunks))
     options = " | ".join(q.get("options") or [])
@@ -415,6 +478,7 @@ VERDICT (answer key): {verdict}
 
 ERROR DETECTOR (C2) LABEL: {label_line}
 {('LABEL MEANING: ' + rg_desc) if rg_desc else ''}
+{_scope_line(rg) if rg and not ctx['is_correct'] else ''}
 COMPILER / RUNTIME OUTPUT: {_format_runner(ctx.get('runner_output'))}
 
 REFERENCE NOTES (retrieved from the course knowledge base; use them, do not cite their numbers):
@@ -430,6 +494,42 @@ RULES
 7. *_si fields: simple, natural Sinhala in Sinhala script. *_singlish fields: the same meaning in Sinhala written with English letters, the way Sri Lankan students chat (e.g. "meka compile wenne na, mokada..."). In both, keep Java keywords, identifiers, operators and code in English exactly as written (int, boolean, ==, arr.length, break).
 8. llm_suggested_reason_group: the single best group from: {', '.join(REASON_GROUPS)}.
 9. is_correct must be {str(ctx['is_correct']).lower()}.
+10. Before answering, check: does summary_en name the same mistake as rule 1 requires? If not, rewrite it.
+
+Return ONLY one JSON object with exactly these keys:
+{json.dumps(REQUIRED_FIELDS)}
+"""
+
+
+def build_free_prompt(ctx, chunks):
+    """Prompt for free sandbox code: no question and no answer key; Model 3's label decides."""
+    rg, conf = ctx["c2_reason_group"], ctx["prediction_confidence"]
+    conf_txt = f"{conf:.2f}" if conf is not None else "unknown"
+    rg_desc = ctx.get("c2_reason_text") or ""
+    notes = "\n".join(f"[{i + 1}] {c['text']}" for i, c in enumerate(chunks))
+    return f"""You are a patient Java tutor for first-year university students in Sri Lanka. A student wrote this Java code in a
+practice sandbox (there is no quiz question and no answer key). Explain what the error detector found.
+
+STUDENT'S CODE:
+{ctx['code']}
+
+ERROR DETECTOR (Model 3) LABEL: {rg} (calibrated confidence {conf_txt})
+{('LABEL MEANING: ' + rg_desc) if rg_desc else ''}
+{_scope_line(rg)}
+COMPILER / RUNTIME OUTPUT: {_format_runner(ctx.get('runner_output'))}
+
+REFERENCE NOTES (retrieved from the course knowledge base; use them, do not cite their numbers):
+{notes}
+
+RULES
+1. {_label_rule(ctx)}
+2. Beginner level, friendly tone. Every text field has at most 3 short sentences.
+3. "where": the exact wrong token or line copied character-for-character from STUDENT'S CODE, or null if there is no mistake.
+4. "correct_code": the student's code with the mistake fixed (unchanged if it has no mistake).
+5. *_si fields: simple, natural Sinhala in Sinhala script. *_singlish fields: the same meaning in Sinhala written with English letters, the way Sri Lankan students chat. In both, keep Java keywords, identifiers, operators and code in English exactly as written.
+6. llm_suggested_reason_group: the single best group from: {', '.join(REASON_GROUPS)}.
+7. is_correct must be {str(ctx['is_correct']).lower()}.
+8. Before answering, check: does summary_en name the same mistake as rule 1 requires? If not, rewrite it.
 
 Return ONLY one JSON object with exactly these keys:
 {json.dumps(REQUIRED_FIELDS)}
@@ -551,6 +651,34 @@ class ExplanationService:
         }
 
     @classmethod
+    def build_free_context(cls, code, c2_result=None, runner_output=None, run_ml=True):
+        """Context for free sandbox code: no question, no answer key; Model 3's label decides."""
+        c2 = dict(c2_result or {})
+        if run_ml and not c2.get("reason_group"):
+            c2 = cls.run_c2(code, False) or {}
+        rg = c2.get("reason_group") or None
+        try:
+            conf = float(c2["prediction_confidence"]) if c2.get("prediction_confidence") is not None else None
+        except (TypeError, ValueError):
+            conf = None
+        prefix = (rg or "").split("_")[0]
+        return {
+            "free": True,
+            "question_id": None,
+            "question": None,
+            "concept": {"VARIABLE": "Variables", "LOOP": "Loops", "ARRAY": "Arrays", "METHOD": "Methods"}.get(prefix),
+            "chosen_option": None,
+            "code": code,
+            "is_correct": rg == "CORRECT_NO_ERROR",
+            "c2": c2,
+            "c2_reason_group": rg,
+            "c2_reason_text": cls._reason_text(rg),
+            "prediction_confidence": conf,
+            "runner_output": runner_output,
+            "warnings": [],
+        }
+
+    @classmethod
     def minimal_context(cls, question_id, chosen_option, code=None, is_correct=None, runner_output=None):
         """Context without the C2 label (ML skipped); without the question too if even that lookup fails."""
         try:
@@ -568,7 +696,8 @@ class ExplanationService:
         query = " ".join(filter(None, [q.get("question"), ctx["code"], str(ctx["chosen_option"]),
                                        ctx["c2_reason_group"], ctx.get("c2_reason_text"),
                                        _format_runner(ctx.get("runner_output"))]))
-        hits = r.retrieve(query, concept=q.get("topic"), top_k=TOP_K, types=("reason_group", "concept_note"))
+        hits = r.retrieve(query, concept=q.get("topic") or ctx.get("concept"), top_k=TOP_K,
+                          types=("reason_group", "concept_note"))
         own = r.by_id.get(f"question:{q.get('id')}")
         if own:
             hits = [{"id": own["id"], "type": own["type"], "concept": own["concept"], "score": None,
@@ -619,6 +748,8 @@ class ExplanationService:
         correct = q.get("correct_option")
         opt = ctx["chosen_option"]
         rg = ctx["c2_reason_group"]
+        if ctx.get("free"):
+            return cls._free_template(ctx)
         if ctx["is_correct"]:
             kind = "correct"
             summary = f"Correct! '{opt}' is the right answer."
@@ -656,10 +787,43 @@ class ExplanationService:
                 expl[f"{part}_{lang}"] = loc[part]
         return expl
 
+    @staticmethod
+    def _free_template(ctx):
+        """Template for free sandbox code: the reason group's text (no answer to compare with)."""
+        from services.error_service import ErrorService
+        from services.explanation_templates import GROUP_TEXT
+        rg = ctx["c2_reason_group"]
+        if rg and rg != "CORRECT_NO_ERROR":
+            d = ErrorService._get_reason_details(rg, BROAD_OF_PREFIX.get(rg.split("_")[0], "CORRECT"))
+            en = {"summary": d["reason"], "why": d["misconception"], "fix": d["suggested_fix"],
+                  "tip": d["beginner_explanation"]}
+        elif rg:
+            en = {"summary": "The error detector found no mistake in this code.",
+                  "why": "None of the beginner error patterns it knows appear here.",
+                  "fix": "Nothing to fix.",
+                  "tip": "Run it with a few different inputs to be sure it behaves as you expect."}
+        else:
+            en = {"summary": "The error detector could not analyse this code.",
+                  "why": "It needs Java statements, methods or a class to look at.",
+                  "fix": "Check that the code is Java and try again.",
+                  "tip": "Use Run to see compiler messages first."}
+        expl = {"is_correct": ctx["is_correct"], "where": None, "correct_code": "",
+                "llm_agrees_with_label": None, "llm_suggested_reason_group": None}
+        for part in PARTS:
+            expl[f"{part}_en"] = en[part]
+        if rg in GROUP_TEXT:
+            for lang in ("si", "singlish"):
+                for part in PARTS:
+                    expl[f"{part}_{lang}"] = GROUP_TEXT[rg][lang][part]
+        return expl
+
     @classmethod
     def _response(cls, ctx, expl, source, meta=None, error=None, student_id=None):
+        # Free code has no answer key: Model 3's label stands (subject to the low-confidence check).
         final_rg, label_source = choose_final_label(ctx["c2_reason_group"], ctx["prediction_confidence"],
-                                                    ctx["is_correct"], expl if source != "template" else None)
+                                                    ctx["is_correct"] and not ctx.get("free"),
+                                                    expl if source != "template" else None,
+                                                    answer_key=not ctx.get("free"))
         q = ctx["question"] or {}
         languages = ["en"] + (["si", "singlish"] if expl.get("summary_si") else [])
         return {
@@ -729,7 +893,10 @@ class ExplanationService:
         """
         POST /api/errors/explain: cache hit, else ONE live LLM attempt (15 s), else template.
         Any internal failure still returns a template explanation (success=True).
+        mode "free": explain free sandbox code (no question) live — see explain_free.
         """
+        if data.get("mode") == "free":
+            return cls.explain_free(data)
         question_id = data.get("question_id")
         chosen_option = data.get("chosen_option")
         if question_id is None or chosen_option is None:
@@ -750,7 +917,7 @@ class ExplanationService:
         if entry and entry.get("response"):
             resp = copy.deepcopy(entry["response"])
             resp.update({"source": "cache", "student_id": student_id})
-            return resp
+            return cls._reapply_policy(resp)
 
         memo_key = (cache_key(question_id, chosen_option), _norm_code(code))
         with cls._lock:
@@ -758,7 +925,7 @@ class ExplanationService:
         if memo:
             resp = copy.deepcopy(memo)
             resp.update({"source": "cache", "student_id": student_id})
-            return resp
+            return cls._reapply_policy(resp)
 
         c2_result = data.get("c2_result") or {
             k: data.get(k) for k in ("reason_group", "prediction_confidence", "error_pattern_score") if k in data}
@@ -774,6 +941,35 @@ class ExplanationService:
         if resp["source"] == "llm":
             with cls._lock:
                 cls._memo[memo_key] = copy.deepcopy(resp)
+        return resp
+
+    @staticmethod
+    def _reapply_policy(resp):
+        """Stored LLM answers (cache / memo) follow the current verification policy."""
+        resp["final_reason_group"], resp["label_source"] = choose_final_label(
+            resp.get("c2_reason_group"), resp.get("prediction_confidence"), resp.get("is_correct"),
+            resp.get("explanation") or None)
+        return resp
+
+    @classmethod
+    def explain_free(cls, data):
+        """Free sandbox code: Model 3 label (from the caller's /analyze result, else run here) and
+        ONE live LLM explanation, template on failure. No cache, no memo, no history."""
+        code = data.get("code") or ""
+        if not code.strip():
+            return {"success": False, "error": "code is required"}
+        c2_result = data.get("c2_result") or {
+            k: data.get(k) for k in ("reason_group", "prediction_confidence", "error_pattern_score") if k in data}
+        runner = data.get("runner_output") or data.get("compiler_output")
+        try:
+            ctx = cls.build_free_context(code, c2_result, runner)
+        except Exception as e:  # C2 models failed: explain without a label
+            print(f"[WARN] free explanation context failed ({type(e).__name__}: {e}); continuing without the C2 label")
+            ctx = cls.build_free_context(code, {"reason_group": None, "source": "unavailable"}, runner, run_ml=False)
+        _, _, configured = llm_status()
+        resp = cls.generate(ctx, use_llm=configured and EXPLANATION_USE_LLM, timeout=LIVE_TIMEOUT_SECONDS,
+                            student_id=data.get("student_id"), max_attempts=1, live=True)
+        resp["mode"] = "free"
         return resp
 
 def now_iso():

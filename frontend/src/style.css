@@ -6883,4 +6883,642 @@ textarea.input-field {
 
 
 
-
+
+/* =================================
+   Component 2 — Error Feedback page (error-analysis.js, pretest-review.js)
+   Concept colours come in per element as --c (pages/concept-theme.js). Every tint
+   is mixed against --bg-card and all text uses text tokens, so the page follows
+   the app's surface tokens in any theme.
+   ================================= */
+
+.ef-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-height: 100%;
+    padding-bottom: 3rem;
+}
+
+.ef-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.ef-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.ef-title i { color: var(--primary); }
+
+.ef-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+
+.ef-sandbox-btn {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.2rem;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+/* --- Stat cards --- */
+.ef-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    gap: 1rem;
+}
+
+.ef-stat {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.2rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--c) 7%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--c) 28%, var(--border-color));
+    border-left: 4px solid var(--c);
+    min-width: 0;
+}
+
+.ef-stat-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, var(--bg-card));
+}
+
+.ef-stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.ef-stat-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.ef-stat-value--text { font-size: 1.05rem; }
+
+.ef-stat-note {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-top: 0.15rem;
+}
+
+.ef-ring {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    position: relative;
+    display: grid;
+    place-items: center;
+    color: var(--c);
+    font-size: 1.1rem;
+}
+
+.ef-ring svg {
+    position: absolute;
+    inset: 0;
+    transform: rotate(-90deg);
+}
+
+.ef-ring-track { stroke: color-mix(in srgb, var(--c) 18%, var(--bg-card)); }
+.ef-ring-fill { stroke: var(--c); stroke-linecap: round; }
+
+/* --- Concept chip --- */
+.ef-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--c) 14%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--c) 35%, var(--bg-card));
+    white-space: nowrap;
+}
+
+.ef-chip i { color: var(--c); font-size: 0.7rem; }
+
+/* --- Chart + game row --- */
+.ef-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 1.5rem;
+}
+
+.ef-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    min-width: 0;
+}
+
+.ef-card-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.ef-card-title i { color: var(--primary); }
+
+.ef-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    list-style: none;
+}
+
+.ef-bar-row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr) 2rem;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ef-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 0;
+}
+
+.ef-bar-label i { color: var(--c); width: 1rem; text-align: center; }
+
+.ef-bar-track {
+    height: 18px;
+    border-radius: 4px;
+    background: var(--bg-subtle);
+    overflow: hidden;
+}
+
+.ef-bar-fill {
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--c);
+    transform-origin: left center;
+}
+
+.ef-bar-value {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.ef-bar-row--zero .ef-bar-label,
+.ef-bar-row--zero .ef-bar-value { color: var(--text-muted); }
+
+.ef-helper {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-start;
+}
+
+.ef-perfect {
+    text-align: center;
+    padding: 1.5rem 0.5rem;
+}
+
+.ef-perfect-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 0.8rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.7rem;
+    color: var(--success);
+    background: var(--success-soft);
+}
+
+/* --- Game card --- */
+.ef-game {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ef-game-head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--c) 26%, var(--bg-card)),
+        color-mix(in srgb, var(--c) 6%, var(--bg-card)));
+    border-bottom: 1px solid color-mix(in srgb, var(--c) 25%, var(--border-color));
+}
+
+.ef-game-sprite {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    padding: 6px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-md);
+}
+
+.ef-game-kicker {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ef-game-kicker i { color: var(--c); }
+
+.ef-game-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin-top: 0.15rem;
+}
+
+.ef-game-body {
+    padding: 1.2rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+}
+
+.ef-game-line {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.ef-game-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.ef-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+}
+
+.ef-game-start {
+    margin: auto 0 0;
+    width: 100%;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.85rem 1.4rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+/* --- Empty state --- */
+.ef-empty {
+    max-width: 560px;
+    margin: 3rem auto;
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+}
+
+.ef-empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 1.9rem;
+    color: var(--primary);
+    background: var(--primary-soft);
+}
+
+/* --- Pre-Test Review --- */
+.pr-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pr-lang {
+    display: inline-flex;
+    padding: 3px;
+    gap: 2px;
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+}
+
+.pr-lang button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pr-lang button:hover { color: var(--text-primary); }
+
+.pr-lang button[aria-pressed="true"] {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.pr-item {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: var(--font);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--border-color);
+}
+
+.pr-item--ok {
+    background: color-mix(in srgb, var(--success) 6%, var(--bg-card));
+    border-left-color: var(--success);
+}
+
+.pr-item--bad {
+    background: color-mix(in srgb, var(--danger) 6%, var(--bg-card));
+    border-left-color: var(--danger);
+}
+
+.pr-item:hover {
+    border-color: color-mix(in srgb, var(--primary) 45%, var(--border-color));
+    box-shadow: var(--shadow-sm);
+}
+
+.pr-item[aria-current="true"] {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.pr-item:focus-visible,
+.pr-lang button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.pr-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 0.2rem;
+}
+
+.pr-detector {
+    border-radius: var(--radius);
+    padding: 1rem 1.1rem;
+    margin-bottom: 1rem;
+    background: color-mix(in srgb, var(--c) 7%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--c) 30%, var(--border-color));
+    border-left: 4px solid var(--c);
+}
+
+.pr-detector-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.6rem;
+}
+
+.pr-detector-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+.pr-detector-badge i { color: var(--primary); font-size: 0.95rem; }
+
+.pr-detector-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.pr-detector-meaning {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+    line-height: 1.5;
+}
+
+.pr-detector--ok {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.pr-detector--ok i { color: var(--success); font-size: 1.3rem; }
+
+.pr-meter {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-top: 0.8rem;
+}
+
+.pr-meter-fill {
+    height: 100%;
+    border-radius: 999px;
+    transform-origin: left center;
+}
+
+.pr-meter-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 0.35rem;
+}
+
+.pr-caption {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
+}
+
+.pr-detector-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+}
+
+.ef-chip-key {
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-right: 0.15rem;
+}
+
+.pr-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+}
+
+.pr-source i { color: var(--primary); }
+.pr-source--template i { color: var(--text-muted); }
+
+.pr-why-title {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0.2rem 0 0.7rem;
+}
+
+.pr-why-title i { color: var(--primary); }
+
+.pr-tech {
+    margin-top: 1rem;
+    font-size: 0.78rem;
+}
+
+.pr-tech summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: 600;
+    width: fit-content;
+    list-style: none;
+}
+
+.pr-tech summary::-webkit-details-marker { display: none; }
+.pr-tech summary:hover { color: var(--text-secondary); text-decoration: underline; }
+
+.pr-tech table {
+    margin-top: 0.5rem;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 460px;
+}
+
+.pr-tech th,
+.pr-tech td {
+    padding: 0.25rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.pr-tech th { color: var(--text-secondary); font-weight: 600; }
+.pr-tech td { color: var(--text-primary); font-weight: 600; }
+
+/* Motion only when the user has not asked for less. */
+@media (prefers-reduced-motion: no-preference) {
+    .pr-item,
+    .pr-lang button { transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, color 0.15s; }
+    .ef-bar-fill,
+    .pr-meter-fill { animation: ef-grow 0.6s ease-out both; }
+    .ef-game-start { transition: transform 0.15s, box-shadow 0.15s; }
+    .ef-game-start:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+}
+
+@keyframes ef-grow {
+    from { transform: scaleX(0); }
+}
+
+@media (max-width: 480px) {
+    .ef-bar-row { grid-template-columns: 6rem minmax(0, 1fr) 1.5rem; gap: 0.5rem; }
+    .ef-sandbox-btn { width: 100%; justify-content: center; }
+    .ef-game-head,
+    .ef-game-body { padding: 1rem; }
+}

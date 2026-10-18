@@ -3,12 +3,16 @@
  * =================================
  * Edit and run Java on the backend code runner (POST /api/errors/run) and, for a
  * pre-test question, run its execution-validated test cases (POST /api/errors/run-tests).
+ * Free mode adds "Analyze with AI": live Model 3 (POST /api/errors/analyze, persist=false,
+ * no answer key) and a live LLM explanation (POST /api/errors/explain, mode "free").
  *
- *   openSandbox({ mode: "question", questionId, questionText, topic, code, codeTemplate, lang })
- *   openSandbox({ mode: "free" })   // any Java code, Run only
+ *   openSandbox({ mode: "question", questionId, questionText, topic, code, codeTemplate,
+ *                 answered, isCorrect, chosenOption, lang })
+ *   openSandbox({ mode: "free" })   // any Java code: Run + Analyze with AI
  */
 
 import { ErrorAPI } from "../api/api.js";
+import { aiDetectorCardHtml, whyHeadingHtml, explanationBodyHtml } from "./pretest-review.js";
 
 const LANG_KEY = "c2_explanation_lang";
 const SINHALA_FONT = "'Noto Sans Sinhala', var(--font), sans-serif";
@@ -97,6 +101,11 @@ function ensureStyles() {
         .c2sb-btn.primary { background:var(--primary); border-color:var(--primary); color:#fff; }
         .c2sb-btn.primary:hover:not(:disabled) { background:var(--primary-hover, var(--primary)); }
         .c2sb-btn.success { background:var(--success); border-color:var(--success); color:#fff; }
+        .c2sb-btn.ai { background:var(--accent-purple); border-color:var(--accent-purple); color:#fff; }
+        .c2sb-answer { display:inline-flex; align-items:center; gap:0.4rem; margin-top:0.45rem; padding:0.2rem 0.65rem;
+            border-radius:999px; font-size:0.78rem; font-weight:700; color:var(--text-primary);
+            background:color-mix(in srgb, var(--c) 10%, var(--bg-card)); border:1px solid color-mix(in srgb, var(--c) 40%, var(--bg-card)); }
+        .c2sb-answer i { color:var(--c); }
         .c2sb-btn:focus-visible, .c2sb-editor:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
         .c2sb-confetti { position:absolute; top:-12px; width:8px; height:12px; border-radius:2px; pointer-events:none;
             animation: c2sb-fall 2.2s ease-in forwards; }
@@ -116,9 +125,21 @@ export function openSandbox(opts = {}) {
     const localFont = lang === "si" ? SINHALA_FONT : "var(--font)";
     const opener = document.activeElement;
 
+    // opts.code is the question's template filled with the student's chosen option (quizLab.js
+    // buildFullCodeFromTemplate), so the editor opens on exactly the answer they gave.
     let resetCode = formatJava(opts.code || (opts.codeTemplate ? opts.codeTemplate.replace("{BLANK}", "/* your answer */") : ""));
     let spec = null;
     let busy = false;
+
+    let answerChip = "";
+    if (mode === "question" && opts.answered === false) {
+        answerChip = `<div class="c2sb-answer" style="--c:var(--text-muted);"><i class="fa-solid fa-minus" aria-hidden="true"></i>You did not answer this question</div>`;
+    } else if (mode === "question" && opts.chosenOption != null) {
+        const ok = !!opts.isCorrect;
+        answerChip = `<div class="c2sb-answer" style="--c:${ok ? "var(--success)" : "var(--danger)"};">
+            <i class="fa-solid ${ok ? "fa-circle-check" : "fa-circle-xmark"}" aria-hidden="true"></i>Your answer (${ok ? "correct" : "wrong"}):
+            <code style="font-family:${MONO};">${escapeHtml(opts.chosenOption)}</code>${opts.code ? " · prefilled in the editor" : ""}</div>`;
+    }
 
     const overlay = document.createElement("div");
     overlay.style.cssText = "position:fixed;inset:0;z-index:1400;background:rgba(15,23,42,0.55);display:flex;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto;";
@@ -131,6 +152,8 @@ export function openSandbox(opts = {}) {
                     <div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.2rem;">
                         ${mode === "question" ? `Q${escapeHtml(opts.questionId)} · ${escapeHtml(opts.topic || "")} · ${escapeHtml(opts.questionText || "")}` : "Write any Java code: statements, methods or a full class with main()."}
                     </div>
+                    ${answerChip}
+                    <div id="c2sb-prefill-note" style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.3rem;"></div>
                 </div>
                 <button type="button" class="c2sb-btn" id="c2sb-close" aria-label="Close sandbox"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -148,7 +171,8 @@ export function openSandbox(opts = {}) {
                     </details>
                     <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
                         <button type="button" class="c2sb-btn primary" id="c2sb-run" title="Ctrl+Enter"><i class="fa-solid fa-play"></i> Run</button>
-                        ${mode === "question" ? `<button type="button" class="c2sb-btn success" id="c2sb-tests" disabled><i class="fa-solid fa-list-check"></i> Run Tests</button>` : ""}
+                        ${mode === "question" ? `<button type="button" class="c2sb-btn success" id="c2sb-tests" disabled><i class="fa-solid fa-list-check"></i> Run Tests</button>`
+                            : `<button type="button" class="c2sb-btn ai" id="c2sb-analyze"><span aria-hidden="true">🔍</span> Analyze with AI</button>`}
                         <button type="button" class="c2sb-btn" id="c2sb-reset"><i class="fa-solid fa-rotate-left"></i> ${mode === "question" ? "Reset to my answer" : "Clear"}</button>
                         <button type="button" class="c2sb-btn" id="c2sb-copy"><i class="fa-regular fa-copy"></i> Copy</button>
                         <span style="font-size:0.75rem;color:var(--text-muted);">Ctrl+Enter to run · Tab inserts spaces · Esc closes</span>
@@ -167,7 +191,15 @@ export function openSandbox(opts = {}) {
                     <div id="c2sb-tests-list" style="display:flex;flex-direction:column;gap:0.5rem;max-height:520px;overflow-y:auto;">
                         <div style="font-size:0.85rem;color:var(--text-secondary);font-family:${localFont};">${escapeHtml(t.loading_tests)}</div>
                     </div>
-                </div>` : ""}
+                </div>` : `
+                <div style="flex:2 1 300px;min-width:0;">
+                    <h4 style="margin:0 0 0.6rem;font-size:0.95rem;color:var(--text-primary);"><i class="fa-solid fa-robot" style="color:var(--primary);"></i> AI Error Detector</h4>
+                    <div id="c2sb-ai" aria-live="polite" style="max-height:560px;overflow-y:auto;">
+                        <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.5;">
+                            Press <strong>🔍 Analyze with AI</strong>: Model 3 checks this code live (no answer key), then the AI tutor (LLM) explains what it found. Nothing is saved to your history.
+                        </div>
+                    </div>
+                </div>`}
             </div>
         </div>
     `;
@@ -178,6 +210,7 @@ export function openSandbox(opts = {}) {
     const output = $("#c2sb-output");
     const runBtn = $("#c2sb-run");
     const testsBtn = $("#c2sb-tests");
+    const analyzeBtn = $("#c2sb-analyze");
 
     const refreshGutter = () => {
         const n = Math.max(1, editor.value.split("\n").length);
@@ -223,11 +256,13 @@ export function openSandbox(opts = {}) {
         editor.scrollTop = Math.max(0, (line - 3) * lh);
     };
 
-    const setBusy = (v, label) => {
+    const spinnerHtml = (label) => `<div style="display:flex;align-items:center;gap:0.6rem;color:var(--text-secondary);font-size:0.88rem;"><div class="spinner" style="width:18px;height:18px;margin:0;"></div>${escapeHtml(label)}</div>`;
+    const setBusy = (v, label, target = output) => {
         busy = v;
         runBtn.disabled = v;
         if (testsBtn) testsBtn.disabled = v || !spec?.available;
-        if (v) output.innerHTML = `<div style="display:flex;align-items:center;gap:0.6rem;color:var(--text-secondary);font-size:0.88rem;"><div class="spinner" style="width:18px;height:18px;margin:0;"></div>${escapeHtml(label)}</div>`;
+        if (analyzeBtn) analyzeBtn.disabled = v;
+        if (v) target.innerHTML = spinnerHtml(label);
     };
 
     const compileErrorsHtml = (errors) => `
@@ -260,7 +295,8 @@ export function openSandbox(opts = {}) {
                 ${runtimeErrorHtml(res.runtime_error)}
                 <div style="font-size:0.7rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.25rem;">Output</div>
                 <pre style="margin:0;padding:0.6rem 0.8rem;background:var(--bg-subtle);border-radius:4px;font-family:${MONO};font-size:0.82rem;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;color:var(--text-primary);">${res.stdout ? escapeHtml(res.stdout) : '<span style="color:var(--text-muted);">(no output)</span>'}</pre>
-                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.35rem;">${res.output_truncated ? "Output was cut at 10 KB. " : ""}Compiled in ${res.compile_time_ms ?? "?"} ms · ran in ${res.run_time_ms ?? "?"} ms</div>`;
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.35rem;">${res.output_truncated ? "Output was cut at 10 KB. " : ""}Compiled in ${res.compile_time_ms ?? "?"} ms · ran in ${res.run_time_ms ?? "?"} ms</div>
+                ${ok && spec?.available ? `<div style="margin-top:0.6rem;padding:0.5rem 0.7rem;border-radius:var(--radius-sm);background:var(--primary-soft);font-size:0.85rem;color:var(--text-primary);">Program ran ✓ — but is the result right? Click <strong>Run Tests</strong> to check.</div>` : ""}`;
         }
         wireGoto();
     };
@@ -358,8 +394,48 @@ export function openSandbox(opts = {}) {
         }
     }
 
+    // Free code: live Model 3 (no answer key, nothing saved) -> live LLM explanation of that label.
+    async function doAnalyze() {
+        const panel = $("#c2sb-ai");
+        if (busy || !panel) return;
+        const code = editor.value;
+        if (!code.trim()) {
+            panel.innerHTML = `<div style="font-size:0.85rem;color:var(--text-secondary);">Write some Java code first.</div>`;
+            return;
+        }
+        setBusy(true, "Model 3 is checking your code…", panel);
+        try {
+            const a = await ErrorAPI.analyze({ code, persist: false });
+            if (!a?.success) {
+                panel.innerHTML = aiDetectorCardHtml({ emptyMessage: a?.message || "Model 3 could not analyse this code." });
+                return;
+            }
+            panel.innerHTML = spinnerHtml("The AI tutor (LLM) is explaining what Model 3 found…");
+            const e = await ErrorAPI.explain({
+                mode: "free", code,
+                reason_group: a.reason_group,
+                prediction_confidence: a.prediction_confidence,
+                error_pattern_score: a.error_pattern_score,
+            });
+            const card = aiDetectorCardHtml({
+                model3: a.reason_group, conf: a.prediction_confidence, version: a.model_version,
+                llmFinal: e?.label_source === "llm_verified" ? e.final_reason_group : null,
+            });
+            const explanation = e?.explanation
+                ? whyHeadingHtml(e.source, lang) + explanationBodyHtml(e.explanation, lang, !!e.is_correct)
+                : `<div style="font-size:0.85rem;color:var(--danger);">Could not get an explanation. Try again.</div>`;
+            panel.innerHTML = `${card}${explanation}
+                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem;">Live analysis of this exact code · nothing is saved to your history.</div>`;
+        } catch (err) {
+            panel.innerHTML = `<div style="color:var(--danger);font-size:0.88rem;">${escapeHtml(err?.message || "Could not reach the server.")}</div>`;
+        } finally {
+            setBusy(false);
+        }
+    }
+
     runBtn.addEventListener("click", doRun);
     if (testsBtn) testsBtn.addEventListener("click", doTests);
+    if (analyzeBtn) analyzeBtn.addEventListener("click", doAnalyze);
     $("#c2sb-reset").addEventListener("click", () => {
         setCode(resetCode);
         editor.focus();
@@ -386,9 +462,12 @@ export function openSandbox(opts = {}) {
                 setCode(resetCode);
                 const resetBtn = $("#c2sb-reset");
                 if (resetBtn) resetBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Reset to starter code';
+                $("#c2sb-prefill-note").textContent = "Your answer was a text option, so the editor starts from a practice program for this concept.";
             }
             renderTests(null);
             if (testsBtn) testsBtn.disabled = busy || !res.available;
+            // The editor holds the student's own answer: show straight away whether it passes.
+            if (res.available && opts.code) doTests();
         }).catch(() => {
             spec = { available: false };
             renderTests(null);

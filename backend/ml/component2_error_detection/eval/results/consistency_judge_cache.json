@@ -1,0 +1,764 @@
+{
+ "90ecd9f7a09113bec613d5644e718f8c46dda336": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses a syntax error due to a misspelled type keyword rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "1823f4e10ba8ded296a783d9473422c689abad42": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax error due to an invalid type keyword rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "20c71495ecbc9710a582b1349952b8a85af710ba": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a method signature issue involving the misuse of 'void' as a data type rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "4da4171ceeb07a921ccb108cb52e9d3df18ee1ff": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an invalid variable name syntax issue rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a233b85e0752de4f7a061ea49b244047f3d3c681": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an invalid variable name containing a hyphen instead of a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "97714eb8a167017d013ade5887f1bb0974fb10fd": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a reserved keyword usage error rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "cf102973e4e1d3fe921376406c9b9992d839e12c": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation actually describes a type declaration or compilation error rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "c5292a679abbe30dde7702a7e0daf628698c8817": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation discusses using the wrapper class Boolean instead of the primitive type boolean.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "bc910b2ded22a38fb5034cfecd2d0a04c203238c": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a data type keyword error instead of a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f2440bf5371d4790da5c736102246897285d4679": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the incorrect use of the assignment operator instead of comparison.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "7c337506bc6771e03faeeb8ac5f5172d2c6ee417": {
+  "matches_label": false,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation discusses using an invalid operator instead of a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "b5bbee3a36836aa9d2642613a2fe56db7fc0e7f1": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an incorrect operator or method usage rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "d7dd4f1f28ea0fd85978fb63508d48c99631d483": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation discusses updating a variable with the incorrect increment operator, which falls under variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a110b1c636c1d4b61c7611878076e0278f2a5833": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies that the variable was updated incorrectly by using an addition expression instead of an increment operator.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a2244b18127dcc92f0267f4b7958688f77eb22c2": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly describes an incorrect variable assignment where the increment operator was omitted.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "e4cac212bdade2f0e5bf6df1f3cd97e653f6a711": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation describes an undefined variable error rather than a loop condition logic issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "6db984327e3abd0810fdabb093149b352f09616e": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies that the loop condition is flawed because it compares constants instead of the loop variable.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "731977c846b86091c9295dfb331cce804d028ad6": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation focuses on an undeclared variable and a compile error rather than a loop condition issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "6b01a13dcfb692389e32af84bdf82f26999bc7d0": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax and keyword usage error rather than an infinite loop control flow issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f42bcdb5aa678f087542897421705149c6234407": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax and compilation error due to using 'for' instead of 'do' rather than an infinite loop control flow issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "be380b786e4eac048be22046b9e1c58b3767d40b": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation actually describes a syntax and keyword usage issue rather than an infinite loop.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "0beea80b9e3894b8601229b3aa8c7ce58da0d7e3": {
+  "matches_label": true,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation correctly focuses on the incorrect update of the loop counter using i-- instead of i++.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "14b9b3f7877c52fd97d27cdc460380a1ba7564f0": {
+  "matches_label": true,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation focuses on the failure to properly update the loop counter using an increment operator.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "02977bdfe7395e0edbae24f230a974e1c91514a6": {
+  "matches_label": false,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation focuses on a missing loop update statement rather than an infinite loop caused by a missing break.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "4c539bd3a7b93a3eddf2164ebdc51d70261aa5ad": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation describes a compile error caused by using an invalid statement instead of an infinite loop issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "9efe0413e1d6763f3e9b9a967c6019b4251d4224": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation focuses on a compile error caused by using the invalid keyword 'wait' instead of a loop control flow issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "b017c5b0ad4b6d57f4b7a868d56231a3738a8d3b": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly addresses the incorrect loop control flow keyword used to terminate the loop.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "c29b8a5c1ac5c8b0839f4721991477b3365bb722": {
+  "matches_label": false,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation describes a loop control flow issue involving break versus continue instead of indicating no error.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "225fe5feaf11a7deff704e766bf25704a77f2689": {
+  "matches_label": false,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation discusses using return instead of continue, which affects method execution rather than an infinite loop.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "ca7ab2ba2ebe7aa591b468340e320538e1b521ef": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a compile error caused by using an invalid keyword instead of a loop control flow issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "78c923c7819287097968f900d3b236be05ca8229": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax error regarding array declaration using parentheses instead of square brackets.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "466f10199e8abaffb44c5add1c7b867ae748546a": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax error in the array declaration type rather than an out of bounds array index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "bbc353103bca8230439c6b7a44156c58d5e6f1fd": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a syntax error in the array declaration type rather than an out-of-bounds array index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "c24bb7b8bccbc1cb3e91512b4ba4dc47993239da": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation addresses a misunderstanding of zero-indexing rather than an out-of-bounds error.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "18d85d630b07eb0658407452c2ca79b599f6512b": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly describes an out-of-bounds array access caused by using a negative index.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "bea42894d73526a239f37b522399ab0a6b7d5efb": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly identifies that accessing the array at arr.length causes an ArrayIndexOutOfBoundsException due to out-of-bounds indexing.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "9e4434c6ed1d79c2d6132bb3b40759cff05ea662": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly describes an array boundary index issue caused by an out-of-bounds loop condition.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "baf1508b12a29a8b94fbe29e642f5e76eab1847b": {
+  "matches_label": false,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation describes a loop condition issue rather than indicating no error.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "0b5ef3c072503ee0c3394fb1ba7061992e25b2e8": {
+  "matches_label": false,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation describes a loop condition issue, which contradicts the card's label of no error.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "c68db0a5e3e0d8118a58d57d18f2db15b7698440": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses calling a nonexistent method on an array instead of an out-of-bounds index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "19faaf180fbf9eacbfa28ed2f30e85c2f9c7cd77": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a property access error rather than an out of bounds array index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "6cea54848e8c3ef306eb316f9a949f1875b71ce1": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes a compilation error due to using a non-existent property rather than an array boundary index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "5b9e7fa53d5fac6edfd549b0e7aeba8c4cd2c4c2": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies that the assignment operator was misused instead of the addition assignment operator.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "4b22d9cabdae89850243a8331e17c79928084f55": {
+  "matches_label": true,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation correctly identifies that a mathematical operator was used incorrectly to calculate the sum.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "7b4ff6804376521ab05b8fc630f071ef60697155": {
+  "matches_label": true,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation correctly identifies the use of the wrong mathematical operator in the calculation.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "023dfb71897cba1a46a85576fab6b8e091ee4062": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly describes a method return issue where print was used instead of return.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a218e369b3333fd1796c1fbed9dfe1b748b0a7bc": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly describes a method return issue involving the missing return statement.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "bab48166468ef1e301fc0df92186f47bcd131116": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the issue of returning a value from the method using the proper keyword.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "40b9d593c6e245d18d9c4fa99c6592cf82ed8d29": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the incorrect return type in the method signature.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "6a91abacb62419423e6a41a6a39f0b480ae467ed": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation addresses the incorrect return type keyword in the method signature, which is classified as a method return issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8237e678d67c0b9a29e309680f805a36024bb472": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an invalid return type in the method signature rather than a return statement issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "df5ea0a21eca2905de33e69ed174218c2d858fae": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation discusses passing an invalid argument type to the method, which aligns with method signature issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2695b87a87e5360a27e6655591ecf85d8a4e6cf4": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation correctly identifies a method argument type mismatch during the method call.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2002058f0d190e454dcb1d993999bbef1a49f1f0": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation correctly identifies a method call argument error matching the card label.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "49ee9bdc458c8298c2149f570f06e1d9ac832a5d": {
+  "matches_label": false,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation describes an incorrect return value in the base case.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "88b9eb487c5f146612001bad8fb40ad3018342be": {
+  "matches_label": false,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation focuses on using the wrong return value expression in the base case rather than a missing or incorrect return type issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "6dc8ce61fc30971a84d27f03b2ba16702254f261": {
+  "matches_label": false,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation describes an infinite recursion loop issue rather than a method return issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "4aaeb79d966f8641fa3e8aed78583c3fa2567a7f": {
+  "matches_label": true,
+  "described_group": "METHOD_PARAMETER_USAGE_ISSUE",
+  "reason": "The explanation correctly describes an issue with how the method parameter is used in the recursive call.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "88eb29315b5aa3c036e9d666a47bde12da04f30c": {
+  "matches_label": false,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation describes a recursive step moving away from the base case rather than a method parameter usage issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2eea08cdd402312d022d1732c19070fff4bc5fc9": {
+  "matches_label": true,
+  "described_group": "METHOD_PARAMETER_USAGE_ISSUE",
+  "reason": "The explanation focuses on the incorrect parameter passed into the recursive method call.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "7b4df052a2626093083525b0909482fc76cd0b2d": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly describes a case-sensitivity issue with a variable type declaration, which falls under variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "cfefdbc09f68b4dfd27ec75e7721be0ca6944f57": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the use of an invalid type keyword during variable declaration.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "3b20e52420d2392cf830e399af9d48a36b9084f1": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation addresses using an incorrect type in a variable declaration, which falls under variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "b435a023cebd241e4b79462bf2324d1da371d1a5": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies a violation of the rules for Java variable identifiers.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f8ae458baa0bc2bfe8ed4f238e62bdb8be665e5c": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies an invalid variable name due to a hyphen, which falls under the rules for identifiers in variable assignments.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "832ffa184522ae174fab532e64fd97b40a3bfaa3": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies that 'class' is a reserved keyword, which falls under identifier rules for variable assignments.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "142ad6c7000b5e0c861fe17114c9408981c263cf": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the use of an invalid type keyword during variable declaration.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "77215843555e781dbd4707683bce776927512e97": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly addresses a variable declaration mistake regarding data types covered by this group.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "7361e5d8d9147b8edd0c871017f6e226bf14a0ac": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes using an incorrect type keyword in a declaration, which does not match the listed variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "c6575fa6ee83aeed1763908fe16d83b0ffc24874": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the confusion between the assignment operator and the comparison operator.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a0937b6f1c7b9ece270adc6cdecc9bd77be9e96b": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the use of the invalid === operator, which falls under variable assignment and comparison rules.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "1ac1cd2ab4ea6a19471cde3e1d6b7cf54821b016": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the confusion between the assignment operator and comparison operator.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f0c2c8fedcaa896db33b01e3c78766c1ad778913": {
+  "matches_label": false,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation focuses on operator behavior and calculation differences rather than variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f07fa9b87d2764472ec025b426b95be9db1acda3": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly addresses an assignment issue involving updating a variable's value.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "52bdede4666942be51edde164146d285c3a87851": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation addresses assigning the wrong value by missing the increment operator during the variable assignment.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "70a972f796ca5e2221a393944bb61f5da0289dfe": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies that the loop condition tests an incorrect variable.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "d4d28934fddbcbd191c09defe3a281ab4fe1cbe5": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies that the loop condition fails to test the loop variable.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "14bac7b506c83caafddcc389fdbaecad975792c4": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies that the loop condition uses the wrong variable.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8d0ee45e0e3fe58a604bbc0ec1421f65ec899f8d": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly discusses the usage of the do-while loop structure and its execution flow.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "ad772c75a85da2e1f3f99f14345079ec76f02f84": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation discusses using the correct loop construct such as a do-while loop to ensure the body runs at least once, matching the loop control flow category.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "464c23a97ed02c680e02a47d79633e6782a54bb1": {
+  "matches_label": false,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation addresses a syntax error involving the misuse of the 'if' keyword instead of 'do' for a do-while loop rather than a loop control flow keyword issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "e3bb2be8e417dab21f2df521b8afbb3a7d919a09": {
+  "matches_label": true,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation correctly identifies that the loop counter was decreased instead of increased, which is a loop update issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "341cb276f0e23af61e8670690d53c30622e5971a": {
+  "matches_label": true,
+  "described_group": "LOOP_UPDATE_ISSUE",
+  "reason": "The explanation correctly identifies that the loop counter is not updated due to an invalid statement.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2a4b8d9a6310c78af8d08e514e6a521339238143": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly describes an issue with using continue instead of proper control flow, which matches the card mistake type.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "9f4754ac168693afd10d4472336afd9378b24216": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly addresses the misuse of loop jump keywords by suggesting 'break' instead of 'sleep'.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "5bd4fad8dd46e4f1e00d4c1dcf4abcd38ea3cf62": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation discusses using the incorrect keyword instead of break to control the loop flow.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "b3f6b3ac458e8f48d35120f08d8c1c34a23612f5": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation discusses using the break keyword to exit a loop, which falls under loop control flow issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "e6c5dd3791190287ee7a03f2748738150f38aa0d": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly discusses the misuse of break versus continue, which falls under loop control flow issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "7b97557a47df640bf2617c28936e180810f14f18": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly addresses the misuse of the return keyword instead of continue within the loop.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "202872f55e8adf33a6db008a7cf32ac133445ab8": {
+  "matches_label": true,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation correctly addresses the misuse of loop jump keywords by using an invalid exit statement instead of continue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "695f77d2326904cde6a17fe5f81184d424383be3": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an incorrect array declaration syntax using parentheses instead of square brackets, which does not match array boundary or index issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8ce7d907a4c028837dd79e918d010e2251c294f8": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation describes a syntax error in array type declaration using curly braces instead of square brackets, which does not relate to array boundaries or indices.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "87186a91137525f9b31f029ff9effa3abf4410db": {
+  "matches_label": false,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation discusses array declaration syntax using angle brackets instead of square brackets, which does not match array boundary index issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "b6d7da9f9a7186a507f443d4d5902c5fdc8a705f": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly addresses zero-indexing and array position access, which falls under array boundary and index issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a5e5579ab81e0ca87e0de15df15ba854da7584ed": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly addresses accessing an array with a negative index, which falls under array boundary and index issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "279946512658fa10e8427359d07ad6b55f8f1095": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly describes an out of bounds error caused by accessing an array at arr.length.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "1660bad50bce16d4c6303a13749dc5030c9fd6c3": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly identifies an array out of bounds error caused by incorrect index access.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "de42e91a70d371d26b9dad4ccd842e90cb5a86d4": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies an error in the loop condition where the wrong relational operator was used.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "fcee5ba132fbf65e2d7e8e2d355158aeb4692aae": {
+  "matches_label": true,
+  "described_group": "LOOP_CONDITION_ISSUE",
+  "reason": "The explanation correctly identifies an error in the loop condition where '==' was used instead of '<'.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f13545446493a3164a1d0ca5edff8efc72ed34e0": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses calling a method instead of accessing a field, which does not match array boundary or index issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "e8181fff9ee526a6518186ea8e19f09fb79ff19f": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly addresses the array length property usage which falls under the array boundary and structure issue group.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2d6a1beae34aeb7565bddf4881382d73fa0ae912": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation addresses the incorrect usage of array properties related to array size and length.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "2ff215cd6d3ed8d2e803bcf349563c4c2198234b": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the use of assignment instead of accumulation, which is covered under variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "fabfd33b3ccdfd1e5674a4abd3fad62c3cda7e36": {
+  "matches_label": true,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation correctly identifies the use of the wrong operator for calculating the sum.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "34324ac367f150f0d534e09eda466c21e256fb95": {
+  "matches_label": true,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation correctly describes using the wrong arithmetic assignment operator for calculation.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a276145655e50f681f1a2fe4b66039b63775e41c": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly describes a method return issue because it addresses using 'print' instead of 'return' to send a value back.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8c7d005da9d2853163cf8c42644948a5b106a93d": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly describes using the return keyword to send a value back from a method.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "1a6d785d1454942f7bbf2e754d820659183b28b4": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly describes using the return keyword to send a value back from a method.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8f2668e00ff2108b7448a5414ba3f76950bc309d": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the mismatch between the declared return type and the lack of a return statement.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "21456bd0ef9c2e0fcdd05075e3ca920e23f1ad76": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the incorrect use of the return type related to void and method returns.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "716209a4043029141d1da84dc1ac604e2f4cb475": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the incorrect return type null instead of void.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "8361d84dd9328d564e50f9deec4bacb0e2d0c81e": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses passing an incorrect argument type instead of the expected integer parameter.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f237d5447eac0ffe7cbc0a3b9de2fd286dfbc189": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation correctly identifies that the passed argument type does not match the method parameter type.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "ca62aa39b9250680518cd7848157d935d7db09ee": {
+  "matches_label": true,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses passing an invalid argument type that does not match the expected method parameters.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "5e1d10b0b802941c2274e5d24287c473001e9bf8": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation discusses returning the correct expression in the base case of a recursive method.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "32d0a7b1e9b190c7a2e6c8668c5bcbeca08b0750": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly addresses the return value and base case of a recursive method.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "0fcfa27f1e0123b6217d4b89445729e8dbb5194d": {
+  "matches_label": true,
+  "described_group": "METHOD_RETURN_ISSUE",
+  "reason": "The explanation correctly identifies that the recursive base case has a return issue by calling the method again instead of returning a direct value.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "865fb0f510470528ba1f3b1bcd052aaa40c32fc5": {
+  "matches_label": true,
+  "described_group": "METHOD_PARAMETER_USAGE_ISSUE",
+  "reason": "The explanation correctly identifies that the recursive call fails to modify the parameter towards the base case.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "438ea373c877ce7f19a99c0532267ea11bc62ad8": {
+  "matches_label": true,
+  "described_group": "METHOD_PARAMETER_USAGE_ISSUE",
+  "reason": "The explanation correctly identifies that the recursive call uses n + 1 instead of moving towards the base case.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "69f4f43421f12ce519d8d09155be56f08fa2d099": {
+  "matches_label": true,
+  "described_group": "METHOD_PARAMETER_USAGE_ISSUE",
+  "reason": "The explanation correctly describes a recursive call that fails to move towards the base case by passing a fixed value instead of modifying the parameter.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "3ceb2214b144cea96eaf1fb1ca78559590d5b185": {
+  "matches_label": true,
+  "described_group": "VARIABLE_ASSIGNMENT_ISSUE",
+  "reason": "The explanation correctly identifies the use of an invalid Java type in a declaration, which falls under variable assignment issues.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "abe5c90d5cd4d1154b675b5e293b5d2c6f211dcd": {
+  "matches_label": false,
+  "described_group": "VARIABLE_CALCULATION_ISSUE",
+  "reason": "The explanation describes a mistake involving the use of the pre-increment operator instead of the post-increment operator, which is a calculation or expression evaluation issue rather than a variable assignment issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "287f76d8344a8b06784dff413a19e9d6621ed0c8": {
+  "matches_label": false,
+  "described_group": "LOOP_CONTROL_FLOW_ISSUE",
+  "reason": "The explanation discusses using an 'if' statement instead of a 'do' keyword for a do-while loop, which is a structural loop construction issue rather than a control flow keyword issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "a5c763bfa8739916a5732d43134455363326beab": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly identifies the use of incorrect brackets for array declaration which falls under array boundary and syntax rules.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "0d3cac41e0b7441a01cc115621ec2881fb5fdc6e": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation describes an array declaration syntax issue involving brackets rather than an array boundary or index issue.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "f449f825fefbc4ae56fba4cc5a9cb2b9b98d984a": {
+  "matches_label": true,
+  "described_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+  "reason": "The explanation correctly identifies the use of angle brackets instead of square brackets for array declaration, matching the array boundary and syntax issue category.",
+  "model": "gemini-3.5-flash-lite"
+ },
+ "5d613cd929010891cf5663c23d2d7fb44984bbc0": {
+  "matches_label": false,
+  "described_group": "METHOD_SIGNATURE_ISSUE",
+  "reason": "The explanation addresses incorrectly treating an array length field as a method call with parentheses.",
+  "model": "gemini-3.5-flash-lite"
+ }
+}

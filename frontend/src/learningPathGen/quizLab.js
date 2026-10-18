@@ -104,7 +104,9 @@ function sendTelemetry(codeString, isCorrectOption = false) {
     const payload = {
         student_id: studentId,
         code: codeString,
-        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
+        pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 },
+        // Clicks are exploratory — never write error history / Firestore / C4 session.
+        persist: false
     };
     if (isCorrectOption) payload.is_correct_option = true;
     // Fire-and-forget — never blocks quiz interaction on the network call.

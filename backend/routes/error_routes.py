@@ -180,8 +180,11 @@ def analyze_code():
         student_id = data.get("student_id") or data.get("studentId") or data.get("user_id") or data.get("userId")
         if _is_teacher_like_user_id(student_id):
             return jsonify(_teacher_skip_response(student_id, "analyze")), 200
-        result = ErrorService.analyze(data)
-        if student_id:
+        # persist=false (quiz option-click telemetry) returns the analysis without
+        # writing error history / Firestore / latest-analysis / the C4 session.
+        persist = data.get("persist", True) is not False
+        result = ErrorService.analyze(data, persist=persist)
+        if student_id and persist:
             _clear_cached_route_responses(student_id)
             if result.get("success"):
                 try:
@@ -223,6 +226,8 @@ def explain_answer():
     (optional: reason_group, prediction_confidence, error_pattern_score, runner_output).
     Served from the explanation cache, else a live LLM call, else the template;
     the response's "source" is "cache" | "llm" | "template".
+    Free sandbox code: {mode: "free", code, reason_group?, prediction_confidence?} — always
+    a live LLM call (template fallback), never cached.
     """
     from services.explanation_service import ExplanationService
     data = request.get_json(silent=True) or {}

@@ -302,6 +302,23 @@ class TestVerificationPolicy(unittest.TestCase):
         self.assertEqual(choose_final_label("CORRECT_NO_ERROR", 0.3, True, self.disagree),
                          ("CORRECT_NO_ERROR", "answer_key"))
 
+    def test_no_error_label_on_wrong_answer_uses_llm_label(self):
+        vote = {"llm_agrees_with_label": True, "llm_suggested_reason_group": "LOOP_CONTROL_FLOW_ISSUE"}
+        self.assertEqual(choose_final_label("CORRECT_NO_ERROR", 0.95, False, vote),
+                         ("LOOP_CONTROL_FLOW_ISSUE", "llm_verified"))
+
+    def test_no_error_label_on_free_code_keeps_model3(self):
+        vote = {"llm_agrees_with_label": False, "llm_suggested_reason_group": "LOOP_CONTROL_FLOW_ISSUE"}
+        self.assertEqual(choose_final_label("CORRECT_NO_ERROR", 0.95, False, vote, answer_key=False),
+                         ("CORRECT_NO_ERROR", "model3"))
+
+    def test_cached_answer_follows_current_policy(self):
+        resp = {"c2_reason_group": "CORRECT_NO_ERROR", "prediction_confidence": 0.99, "is_correct": False,
+                "final_reason_group": "CORRECT_NO_ERROR", "label_source": "model3",
+                "explanation": {"llm_agrees_with_label": True, "llm_suggested_reason_group": "LOOP_CONDITION_ISSUE"}}
+        ExplanationService._reapply_policy(resp)
+        self.assertEqual((resp["final_reason_group"], resp["label_source"]), ("LOOP_CONDITION_ISSUE", "llm_verified"))
+
     def test_template_has_no_llm_vote(self):
         self.assertEqual(choose_final_label("LOOP_CONDITION_ISSUE", 0.3, False, None),
                          ("LOOP_CONDITION_ISSUE", "model3"))
@@ -314,6 +331,83 @@ class TestVerificationPolicy(unittest.TestCase):
         self.assertEqual(res["final_reason_group"], "VARIABLE_CALCULATION_ISSUE")
         self.assertEqual(res["label_source"], "llm_verified")
         self.assertEqual(res["c2_reason_group"], "VARIABLE_ASSIGNMENT_ISSUE")
+
+
+class TestPromptSameMistake(unittest.TestCase):
+    """c2-expl-v2: the explanation must describe the mistake the card shows."""
+
+    def test_high_confidence_prompt_requires_the_label(self):
+        prompt = xs.build_prompt(make_ctx(conf=0.9), [])
+        self.assertIn("Explain THE LABEL'S mistake", prompt)
+        self.assertIn("contradict the card", prompt)
+
+    def test_low_confidence_prompt_lets_llm_relabel(self):
+        prompt = xs.build_prompt(make_ctx(conf=0.3), [])
+        self.assertIn("the card will then show your group", prompt)
+
+    def test_correct_answer_prompt(self):
+        prompt = xs.build_prompt(make_ctx(option="int", is_correct=True, reason_group="CORRECT_NO_ERROR"), [])
+        self.assertIn("The answer is correct (answer key)", prompt)
+
+
+class TestFreeCode(unittest.TestCase):
+    """mode "free": Java Sandbox code without a question — live, never cached, no answer key."""
+    FREE = "for (int i = 0; i <= arr.length; i++) { sum += arr[i]; }"
+
+    def setUp(self):
+        ExplanationService._memo = {}
+        ExplanationService._llm_blocked_until = 0.0
+        self.configured = mock.patch.object(xs, "llm_status", return_value=("gemini", "m", True))
+        self.configured.start()
+
+    def tearDown(self):
+        self.configured.stop()
+
+    def body(self, **kw):
+        b = {"mode": "free", "code": self.FREE, "reason_group": "LOOP_BOUNDARY_ISSUE", "prediction_confidence": 0.93}
+        b.update(kw)
+        return b
+
+    def test_live_llm_and_model3_label(self):
+        reply = json.dumps(valid_payload(where=None, llm_suggested_reason_group="LOOP_BOUNDARY_ISSUE",
+                                         correct_code="for (int i = 0; i < arr.length; i++) { sum += arr[i]; }"),
+                           ensure_ascii=False)
+        with mock.patch.object(xs, "call_llm", return_value=(reply, "mock")) as llm, \
+                mock.patch.object(ExplanationService, "lookup_cache", side_effect=AssertionError("no cache")):
+            res = ExplanationService.explain(self.body())
+            ExplanationService.explain(self.body())
+        self.assertEqual(llm.call_count, 2)  # never memoised: every request is live
+        self.assertEqual(res["source"], "llm")
+        self.assertEqual(res["mode"], "free")
+        self.assertEqual(res["final_reason_group"], "LOOP_BOUNDARY_ISSUE")
+        self.assertEqual(res["label_source"], "model3")
+        self.assertFalse(res["is_correct"])
+        self.assertIn("i < arr.length", res["explanation"]["correct_code"])  # LLM's fix kept (no answer key)
+
+    def test_no_error_label_is_model3_not_answer_key(self):
+        with mock.patch.object(xs, "call_llm", side_effect=xs.LLMTimeout("slow")):
+            res = ExplanationService.explain(self.body(reason_group="CORRECT_NO_ERROR"))
+        self.assertTrue(res["is_correct"])
+        self.assertEqual(res["label_source"], "model3")
+        self.assertEqual(res["source"], "template")
+
+    def test_template_fallback_has_group_text_without_answer_prefix(self):
+        with mock.patch.object(xs, "call_llm", side_effect=xs.LLMTimeout("slow")):
+            res = ExplanationService.explain(self.body())
+        expl = res["explanation"]
+        self.assertEqual(res["source"], "template")
+        self.assertNotIn("None", expl["summary_en"])
+        self.assertTrue(xs.SINHALA_RE.search(expl["summary_si"]))
+
+    def test_free_prompt_has_no_answer_key(self):
+        ctx = ExplanationService.build_free_context(self.FREE, {"reason_group": "LOOP_BOUNDARY_ISSUE",
+                                                                "prediction_confidence": 0.93})
+        prompt = xs.build_prompt(ctx, [])
+        self.assertIn("no answer key", prompt)
+        self.assertNotIn("CORRECT OPTION", prompt)
+
+    def test_empty_code_rejected(self):
+        self.assertFalse(ExplanationService.explain({"mode": "free", "code": "  "})["success"])
 
 
 if __name__ == "__main__":
