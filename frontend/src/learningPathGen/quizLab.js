@@ -115,8 +115,8 @@ function sendTelemetry(codeString, isCorrectOption = false) {
     }).catch(err => console.error("Telemetry error:", err));
 }
 
-// Splits a question into { intro, code }
-function parseQuestion(text) {
+// Splits a question into { intro, code } (also used by the Pre-Test Review panel)
+export function parseQuestion(text) {
     const m1 = text.match(/^(.+?:\s*)([a-z].+[;{}].*)$/);
     if (m1) return { intro: m1[1].trimEnd(), code: m1[2] };
     const m2 = text.match(/^(.+\?)\s+([a-z].+[;{}].*)$/);
@@ -661,6 +661,8 @@ export function setupQuizUI(root = document) {
                         "Methods": "METHOD_ERROR"
                     };
                     wrongCodeQuestions.push({
+                        question_id: q.id,
+                        chosenOption: typeof ans === "number" ? q.options[ans] : null,
                         questionText: q.question,
                         topic: q.topic,
                         // Provenance only. The displayed label comes from the model
@@ -674,6 +676,28 @@ export function setupQuizUI(root = document) {
                 }
             });
 
+            // 1b. Every question, correct and wrong, with the chosen option's TEXT
+            // (options are shuffled per session, so an index is meaningless later).
+            // The Error Feedback "Pre-Test Review" lists these and asks the backend
+            // for a per-question explanation keyed by question id + option text.
+            const questionResults = state.quizBank.map((q, idx) => {
+                const ans = state.selectedAnswers[idx];
+                const answered = ans !== null && typeof ans === "number";
+                return {
+                    question_id: q.id,
+                    topic: q.topic,
+                    questionText: q.question,
+                    codeTemplate: q.codeTemplate || null,
+                    chosenOption: answered ? q.options[ans] : null,
+                    correctOption: q.options[q.correctIndex],
+                    isCorrect: answered && ans === q.correctIndex,
+                    answered,
+                    code: answered && q.codeTemplate ? buildFullCodeFromTemplate(q, ans) : "",
+                    // Text-only MCQs (Operators): the Java expression in the question, if any
+                    expression: q.codeTemplate ? null : (parseQuestion(q.question).code || null)
+                };
+            });
+
             // 2. Synchronously write results to both sessionStorage and localStorage
             const resultsPayload = {
                 score,
@@ -682,6 +706,7 @@ export function setupQuizUI(root = document) {
                 answeredCount: state.selectedAnswers.filter(a => a !== null).length,
                 sessionMetrics,
                 wrongCodeQuestions,
+                questionResults,
                 completedAt: new Date().toISOString()
             };
             const persistResults = () => {

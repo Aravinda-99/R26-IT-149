@@ -861,10 +861,12 @@ class ErrorService:
         }
 
     @classmethod
-    def analyze(cls, data):
+    def analyze(cls, data, persist=True):
         """
         Detect error patterns in submitted code using Two-stage Linear SVM models
         backed by a rule-based safety layer.
+        persist=False skips the history / Firestore / latest-analysis writes (used by
+        the explanation service, which only needs the label).
         """
         student_id = data.get("student_id", "anonymous")
         code = data.get("code", "")
@@ -1370,6 +1372,9 @@ class ErrorService:
             "reason_group": reason_group,          # Feature 3 — learning report detail
             "full_response": response,             # Full payload for history item click-through
         }
+
+        if not persist:
+            return response
 
         cls._history.append(history_entry)
 

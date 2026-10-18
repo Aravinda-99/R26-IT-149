@@ -215,6 +215,34 @@ def analyze_code():
         }), 200
 
 
+@error_bp.route("/explain", methods=["POST"])
+def explain_answer():
+    """
+    Per-question explanation for a pre-test answer (EN / Sinhala / Singlish).
+    Body: {student_id, question_id, chosen_option, code, is_correct}
+    (optional: reason_group, prediction_confidence, error_pattern_score, runner_output).
+    Served from the explanation cache, else a live LLM call, else the template;
+    the response's "source" is "cache" | "llm" | "template".
+    """
+    from services.explanation_service import ExplanationService
+    data = request.get_json(silent=True) or {}
+    try:
+        result = ExplanationService.explain(data)
+        return jsonify(result), (200 if result.get("success") else 400)
+    except Exception as e:
+        # Last resort: still answer with the template explanation.
+        print(f"[WARN] /api/errors/explain failed ({type(e).__name__}: {e}); returning template")
+        try:
+            ctx = ExplanationService.minimal_context(data.get("question_id"), str(data.get("chosen_option", "")),
+                                                     data.get("code"), data.get("is_correct"))
+            result = ExplanationService.generate(ctx, use_llm=False, student_id=data.get("student_id"))
+            result["llm_error"] = f"{type(e).__name__}: {e}"
+            return jsonify(result), 200
+        except Exception as e2:
+            print(f"[WARN] /api/errors/explain template fallback failed: {e2}")
+            return jsonify({"success": False, "error": "Could not build an explanation for this answer."}), 200
+
+
 @error_bp.route("/history/<user_id>", methods=["GET"])
 def get_error_history(user_id):
     """Return error analysis history for a user (last 10 items)."""

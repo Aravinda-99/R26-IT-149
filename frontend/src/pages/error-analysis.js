@@ -7,6 +7,7 @@
 
 import { ErrorAPI, SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
+import { renderPretestReview } from "./pretest-review.js";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
@@ -240,6 +241,9 @@ export async function renderErrorAnalysis(container) {
                 </div>
             </div>
 
+            <!-- Pre-Test Review: every question with a per-question explanation (pretest-review.js) -->
+            <div id="pretest-review-section"></div>
+
             <!-- Analytics Dashboard -->
             <div id="analytics-section" style="margin-top: 2rem;">
                 <!-- Section Header -->
@@ -310,6 +314,13 @@ export async function renderErrorAnalysis(container) {
 
     // Load initial stats and history
     refreshGlobalState(studentId);
+
+    // Pre-Test Review is independent of the panels above; a failure here must not affect them.
+    try {
+        renderPretestReview(document.getElementById("pretest-review-section"), studentId);
+    } catch (err) {
+        console.warn("Pre-Test Review failed to render:", err);
+    }
 
     // --- Live Telemetry Fetch ---
     let lastPolledTimestamp = null;

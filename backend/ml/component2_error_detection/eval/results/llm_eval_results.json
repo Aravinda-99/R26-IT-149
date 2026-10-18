@@ -1,0 +1,91 @@
+{
+  "n_rows": 80,
+  "missing_rows": [],
+  "verify_max_conf": 0.5,
+  "models": [
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite"
+  ],
+  "caveat": "The LLM sees the C2 label in its prompt, so llm_alone is anchored on Model 3.",
+  "all_rows": {
+    "model3_gate": {
+      "n": 80,
+      "reason_accuracy": 0.9125,
+      "reason_macro_f1": 0.8568
+    },
+    "llm_alone": {
+      "n": 80,
+      "reason_accuracy": 0.9375,
+      "reason_macro_f1": 0.8524
+    },
+    "policy": {
+      "n": 80,
+      "reason_accuracy": 0.9125,
+      "reason_macro_f1": 0.8568
+    }
+  },
+  "wrong_option_rows": {
+    "model3_gate": {
+      "n": 60,
+      "reason_accuracy": 0.8833,
+      "reason_macro_f1": 0.7778
+    },
+    "llm_alone": {
+      "n": 60,
+      "reason_accuracy": 0.9167,
+      "reason_macro_f1": 0.7659
+    },
+    "policy": {
+      "n": 60,
+      "reason_accuracy": 0.8833,
+      "reason_macro_f1": 0.7778
+    }
+  },
+  "policy_effect": {
+    "wrong_rows_with_model3_conf_below_threshold": 1,
+    "llm_disagreed_on_those": 0,
+    "labels_changed": 0,
+    "changes_fixed_an_error": 0,
+    "changes_broke_a_correct_label": 0,
+    "changed_rows": []
+  },
+  "llm_alone_errors": [
+    {
+      "sample_id": "PT03_2",
+      "option": "Boolean",
+      "reason_group": "CORRECT_NO_ERROR",
+      "model3_gate": "VARIABLE_ASSIGNMENT_ISSUE",
+      "llm_alone": "VARIABLE_ASSIGNMENT_ISSUE"
+    },
+    {
+      "sample_id": "PT05_2",
+      "option": "a + 1",
+      "reason_group": "VARIABLE_CALCULATION_ISSUE",
+      "model3_gate": "VARIABLE_ASSIGNMENT_ISSUE",
+      "llm_alone": "VARIABLE_ASSIGNMENT_ISSUE"
+    },
+    {
+      "sample_id": "PT18_2",
+      "option": ">",
+      "reason_group": "ARRAY_TRAVERSAL_ISSUE",
+      "model3_gate": "CORRECT_NO_ERROR",
+      "llm_alone": "LOOP_CONDITION_ISSUE"
+    },
+    {
+      "sample_id": "PT18_3",
+      "option": "==",
+      "reason_group": "ARRAY_TRAVERSAL_ISSUE",
+      "model3_gate": "CORRECT_NO_ERROR",
+      "llm_alone": "LOOP_CONDITION_ISSUE"
+    },
+    {
+      "sample_id": "PT24_2",
+      "option": "n",
+      "reason_group": "CORRECT_NO_ERROR",
+      "model3_gate": "METHOD_RETURN_ISSUE",
+      "llm_alone": "METHOD_RETURN_ISSUE"
+    }
+  ],
+  "llm_disagreements_with_c2": 3,
+  "cache_c2_matches_eval_pretest_v2_full_gate": 1.0
+}

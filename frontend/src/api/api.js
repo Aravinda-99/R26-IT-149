@@ -21,16 +21,28 @@ function shouldTryDevFallback(response, endpoint) {
     }
 }
 
-async function apiRequest(endpoint, method = "GET", body = null) {
+// timeoutMs (optional): abort the request after this long; the promise rejects.
+async function apiRequest(endpoint, method = "GET", body = null, { timeoutMs } = {}) {
     const options = {
         method,
         headers: { "Content-Type": "application/json" },
     };
     if (body) options.body = JSON.stringify(body);
+    const controller = timeoutMs ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    if (controller) options.signal = controller.signal;
 
-    let response = await fetch(`${API_BASE}${endpoint}`, options);
-    if (shouldTryDevFallback(response, endpoint)) {
-        response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+    let response;
+    try {
+        response = await fetch(`${API_BASE}${endpoint}`, options);
+        if (shouldTryDevFallback(response, endpoint)) {
+            response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+        }
+    } catch (err) {
+        if (err?.name === "AbortError") throw new Error(`Request timed out after ${timeoutMs / 1000}s (${endpoint})`);
+        throw err;
+    } finally {
+        if (timer) clearTimeout(timer);
     }
 
     const text = await response.text();
@@ -69,6 +81,9 @@ export const ErrorAPI = {
     getAnalytics: (userId) => apiRequest(`/errors/analytics/${userId}`),
     // Feature 3 — Personalized Learning Report
     getLearningReport: (userId) => apiRequest(`/errors/learning-report/${userId}`),
+    // Per-question pre-test explanation (EN / Sinhala / Singlish): cache, live LLM or template.
+    // The backend answers with a template when the LLM fails, so 25 s is only hit if it is unreachable.
+    explain: (data) => apiRequest("/errors/explain", "POST", data, { timeoutMs: 25000 }),
 };
 
 // --- Component 3: Gamification ---

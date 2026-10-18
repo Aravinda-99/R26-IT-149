@@ -83,6 +83,32 @@ The v1 numbers on this reconstruction match the real-pre-test numbers from `eval
 - Model 3's raw probabilities are over-confident and should be calibrated before being used as `error_pattern_score`.
 - Results were produced with scikit-learn 1.9.1. Retrain with the project's pinned 1.8.0.
 
+## LLM explanation layer (pre-test, EN / Sinhala / Singlish)
+
+Per-question explanations for every pre-test answer, grounded by retrieval and tied to the C2 label.
+
+| Path | What it is |
+|---|---|
+| `rag/concept_notes.py` | 40 beginner Java notes, one per fine error type in `families.py` / `families_blank.py` |
+| `rag/build_kb.py` → `rag/knowledge_base.json` | 77 chunks: 25 pre-test questions (data.js), 12 reason groups (`_get_reason_details`), 40 concept notes. Reviewed eval labels are **not** included |
+| `rag/retriever.py` | TF-IDF cosine retrieval (case-sensitive, Java operators kept as tokens), top-4, filtered by concept |
+| `backend/services/explanation_service.py` | Prompt + LLM call (Component 4 settings) + strict JSON validation + template fallback + circuit breaker + verification policy |
+| `backend/services/explanation_templates.py` | Sinhala / Singlish template text per reason group (plus correct-answer and text-question cases), so the fallback is trilingual |
+| `backend/scripts/build_explanation_cache.py` → `backend/data/c2_explanations_cache.json` | Offline explanations for all 100 (question, option) pairs (20 fill-in-the-blank + 5 text-only Operators questions); JSON retry, 429/503 backoff, throttled, resumable |
+| `eval/eval_llm.py` | LLM-alone vs Model 3 + gate vs verification policy on the 80 reviewed rows; exports `eval/results/explanation_review_sheet.csv` for manual rating |
+
+`POST /api/errors/explain` serves the cache, else ONE live LLM attempt (15 s, no retries), else the template (EN / SI / Singlish). After a 429 / quota / 503 the LLM is skipped for 10 minutes (circuit breaker), and any internal error also ends in the template, so the endpoint always returns an explanation. `source` in the response says which (`cache` | `llm` | `template`). `EXPLANATION_USE_LLM=false` disables live calls.
+**Verification policy:** for a wrong answer with Model 3 calibrated confidence < 0.5 where the LLM says the label does not fit, the LLM's `llm_suggested_reason_group` becomes the explanation label (`label_source: "llm_verified"`); correct answers are labelled by the answer key (`"answer_key"`), everything else keeps Model 3 (`"model3"`).
+The LLM sees the C2 label in its prompt, so "LLM alone" accuracy is anchored on Model 3 and is not an independent classifier.
+
+```bash
+# from backend/
+python ml/component2_error_detection/rag/build_kb.py           # needs node
+python scripts/build_explanation_cache.py --model gemini-3.5-flash
+python ml/component2_error_detection/eval/eval_llm.py
+python -m unittest test_c2_explanations -v
+```
+
 ## Reproduce (Linux/WSL for generation; training works on any OS)
 
 ```bash
