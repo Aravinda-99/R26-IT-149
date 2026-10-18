@@ -243,6 +243,45 @@ def explain_answer():
             return jsonify({"success": False, "error": "Could not build an explanation for this answer."}), 200
 
 
+@error_bp.route("/run", methods=["POST"])
+def run_code():
+    """
+    Java sandbox: compile + run a snippet or a full program.
+    Body: {code, stdin?} -> {compiled, compile_errors[], runtime_error, stdout, timed_out, time_ms}.
+    """
+    from services import code_runner_service
+    data = request.get_json(silent=True) or {}
+    try:
+        result = code_runner_service.run_code(data.get("code") or "", data.get("stdin") or "")
+    except Exception as e:
+        print(f"[WARN] /api/errors/run failed: {type(e).__name__}: {e}")
+        result = {"success": False, "error": "The code runner failed. Please try again."}
+    return jsonify(result), (200 if result.get("success") else 400)
+
+
+@error_bp.route("/run-tests", methods=["POST"])
+def run_sandbox_tests():
+    """Body: {question_id, code} -> per-test {name, passed, expected, actual, error}."""
+    from services import sandbox_tests_service
+    data = request.get_json(silent=True) or {}
+    try:
+        result = sandbox_tests_service.run_tests(data.get("question_id"), data.get("code") or "")
+    except Exception as e:
+        print(f"[WARN] /api/errors/run-tests failed: {type(e).__name__}: {e}")
+        result = {"success": False, "error": "The test runner failed. Please try again."}
+    return jsonify(result), (200 if result.get("success") else 400)
+
+
+@error_bp.route("/sandbox-tests/<question_id>", methods=["GET"])
+def get_sandbox_tests(question_id):
+    """Test cases (without the harness) and starter code for the sandbox UI."""
+    from services import sandbox_tests_service
+    spec = sandbox_tests_service.get_spec(question_id)
+    if not spec or not spec.get("tests"):
+        return jsonify({"success": True, "question_id": question_id, "available": False, "tests": []}), 200
+    return jsonify({"success": True, "available": True, **sandbox_tests_service.public_spec(spec)}), 200
+
+
 @error_bp.route("/history/<user_id>", methods=["GET"])
 def get_error_history(user_id):
     """Return error analysis history for a user (last 10 items)."""

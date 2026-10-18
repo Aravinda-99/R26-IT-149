@@ -267,13 +267,13 @@ def _retry_delay_seconds(body):
     return None
 
 
-def _call_gemini(prompt, timeout, api_key, model):
+def _call_gemini(prompt, timeout, api_key, model, response_schema=None):
     # Key goes in a header, not the URL, so it can never appear in exception text.
     headers = {"x-goog-api-key": api_key, "Content-Type": "application/json"}
     gen_config = {
         "temperature": TEMPERATURE,
         "responseMimeType": "application/json",
-        "responseSchema": _gemini_response_schema(),
+        "responseSchema": response_schema or _gemini_response_schema(),
     }
     if EXPLANATION_THINKING_LEVEL and EXPLANATION_THINKING_LEVEL != "none":
         gen_config["thinkingConfig"] = {"thinkingLevel": EXPLANATION_THINKING_LEVEL}
@@ -341,13 +341,13 @@ def llm_status(model_override=None):
     return provider, (model_override or EXPLANATION_LLM_MODEL or Config.LLM_MODEL), configured
 
 
-def call_llm(prompt, timeout, model=None):
+def call_llm(prompt, timeout, model=None, response_schema=None):
     """Returns (raw_text, model_used). Raises LLMError / LLMTimeout / LLMRateLimited / LLMUnavailable."""
     provider, model, configured = llm_status(model)
     if not configured:
         raise LLMError(f"No API key configured for LLM_PROVIDER={provider}")
     if provider == "gemini":
-        return _call_gemini(prompt, timeout, Config.GEMINI_API_KEY, model)
+        return _call_gemini(prompt, timeout, Config.GEMINI_API_KEY, model, response_schema)
     if provider == "openai":
         return _call_openai(prompt, timeout, Config.OPENAI_API_KEY, model)
     raise LLMError(f"Unsupported LLM_PROVIDER {provider!r}")

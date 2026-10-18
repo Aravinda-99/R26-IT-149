@@ -8,6 +8,7 @@
 
 import { ErrorAPI } from "../api/api.js";
 import { parseQuestion } from "../learningPathGen/quizLab.js";
+import { openSandbox } from "./sandbox.js";
 
 const LANG_KEY = "c2_explanation_lang";
 const LANGS = [
@@ -316,12 +317,24 @@ export function renderPretestReview(root, studentId) {
                 </div>` : ""}
                 ${body}
                 <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border-color);">
-                    <button type="button" class="btn btn-secondary" disabled title="The code sandbox is coming soon" style="margin:0;opacity:0.55;cursor:not-allowed;font-size:0.82rem;">
+                    <button type="button" id="pr-sandbox" class="btn btn-primary" style="margin:0;font-size:0.82rem;">
                         <i class="fa-solid fa-flask"></i> Open in Sandbox
                     </button>
                 </div>
             </div>
         `;
+
+        panelEl.querySelector("#pr-sandbox")?.addEventListener("click", () => {
+            openSandbox({
+                mode: "question",
+                questionId: item.question_id,
+                questionText: item.questionText,
+                topic: item.topic,
+                code: item.code || "",            // text-only questions start from the starter program
+                codeTemplate: item.codeTemplate || null,
+                lang,
+            });
+        });
 
         const copyBtn = panelEl.querySelector("#pr-copy");
         if (copyBtn) {

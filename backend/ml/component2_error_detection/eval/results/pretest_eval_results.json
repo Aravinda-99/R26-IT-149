@@ -1,7 +1,7 @@
 {
   "filters": {
     "exclude_ambiguous": false,
-    "reviewed_only": true
+    "reviewed_only": false
   },
   "label_status_counts": {
     "reviewed": 80
@@ -90,6 +90,18 @@
       "brier": 0.2875,
       "ece_15bin": 0.1508,
       "mean_max_proba": 0.9267
+    }
+  },
+  "runner_evidence": {
+    "source": "fresh_code_runner",
+    "jdk": "javac 24.0.1",
+    "rows_matching_csv_evidence": 80,
+    "rows": 80,
+    "outcomes": {
+      "RAN": 38,
+      "COMPILE_ERROR": 37,
+      "RUNTIME_EXCEPTION": 3,
+      "NON_TERMINATING": 2
     }
   },
   "v2_rule_layer": {

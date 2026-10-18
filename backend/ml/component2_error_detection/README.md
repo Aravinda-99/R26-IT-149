@@ -109,6 +109,24 @@ python ml/component2_error_detection/eval/eval_llm.py
 python -m unittest test_c2_explanations -v
 ```
 
+## Java sandbox (Code Runner + validated test cases)
+
+| Path | What it is |
+|---|---|
+| `backend/services/code_runner_service.py` | Wraps snippets into `Main` (statements → `main`, methods → static methods), compiles (10 s) and runs (5 s, `-Xmx64m`, stdin, 10 KB output cap, whole process tree killed on timeout). Compiler errors and stack traces are mapped to the student's line numbers and simple categories |
+| `backend/services/sandbox_tests_service.py` | Runs a question's test cases against the student's code (harness with a `{STUDENT_CODE}` slot, compiled once, tests in parallel) |
+| `backend/scripts/build_sandbox_tests.py` → `backend/data/c2_sandbox_tests.json` | LLM-written harness + tests per pre-test question, **validated by execution**: the correct option passes every test, every wrong option fails one or does not compile (reviewed-equivalent options exempt), each test must still fail when the student's code is removed (ablation), tests must use different stdin and expect ≥ 2 different outputs. Text-only Operators questions use an LLM starter program and wrong variants instead |
+
+Routes: `POST /api/errors/run` `{code, stdin}`, `POST /api/errors/run-tests` `{question_id, code}`, `GET /api/errors/sandbox-tests/<id>`.
+`eval/eval_pretest.py --fresh-runner` re-executes all 80 rows with the Code Runner instead of reading the CSV evidence: on JDK 24 all 80 rows match the stored javac/java evidence, and `v2_model3_runner` makes the same predictions as `v2_model3` (reason acc 0.8625). Every remaining Model 3 error is code that compiles and runs, which compile/exception evidence cannot separate; behaviour tests can.
+
+```bash
+# from backend/ (needs a JDK; set C2_JAVA_HOME to pick one)
+python scripts/build_sandbox_tests.py
+python ml/component2_error_detection/eval/eval_pretest.py --fresh-runner
+python -m unittest test_c2_sandbox -v
+```
+
 ## Reproduce (Linux/WSL for generation; training works on any OS)
 
 ```bash

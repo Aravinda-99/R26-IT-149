@@ -21,7 +21,9 @@ quiz key, so a valid-Java distractor relabelled CORRECT (e.g. Q3 "Boolean") coun
 as correct. Calibration (Brier, ECE) of Model 3 before vs after is reported too.
 
 Usage (from backend/):
-  python ml/component2_error_detection/eval/eval_pretest.py [--exclude-ambiguous] [--reviewed-only]
+  python ml/component2_error_detection/eval/eval_pretest.py [--exclude-ambiguous] [--reviewed-only] [--fresh-runner]
+--fresh-runner re-executes every row with services/code_runner_service.py (needs a JDK) instead of
+reading the CSV's execution columns, and reports how many rows match the stored evidence.
 Writes eval/results/pretest_eval_results.json and pretest_eval_predictions.csv.
 Firestore writes are disabled during the run.
 """
@@ -71,10 +73,46 @@ def score(df, broad_col, reason_col):
     }
 
 
+def fresh_runner_evidence(df):
+    """Re-runs every row with the sandbox Code Runner; replaces the evidence columns in memory."""
+    from concurrent.futures import ThreadPoolExecutor
+    from services import code_runner_service as cr
+
+    def evidence(code):
+        r = cr.run_code(code)
+        if not r.get("success"):
+            return "NOT_RUN", "", ""
+        if not r["compiled"]:
+            return "COMPILE_ERROR", r["compile_errors"][0]["message"].split(" (")[0], ""
+        err = r["runtime_error"]
+        if err and err["category"] in ("timeout", "output_limit"):
+            return "NON_TERMINATING", "", ""
+        if err:
+            return "RUNTIME_EXCEPTION", "", err.get("qualified_type") or err["type"]
+        return "RAN", "", ""
+
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        fresh = list(ex.map(evidence, df.code))
+    same = [o == r.verified_outcome and (o != "COMPILE_ERROR" or ce == r.compile_error)
+            and (o != "RUNTIME_EXCEPTION" or rt == r.runtime_exception)
+            for (o, ce, rt), r in zip(fresh, df.itertuples())]
+    df["verified_outcome"] = [f[0] for f in fresh]
+    df["compile_error"] = [f[1] for f in fresh]
+    df["runtime_exception"] = [f[2] for f in fresh]
+    info = {"source": "fresh_code_runner", "jdk": cr.find_jdk()["version"],
+            "rows_matching_csv_evidence": int(sum(same)), "rows": int(len(df)),
+            "outcomes": df.verified_outcome.value_counts().to_dict()}
+    print(f"fresh runner evidence ({info['jdk']}): {info['rows_matching_csv_evidence']}/{info['rows']} rows match the CSV")
+    return info
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--exclude-ambiguous", action="store_true", help="drop rows whose review_note starts with AMBIGUOUS")
     ap.add_argument("--reviewed-only", action="store_true", help="keep only rows with label_status == reviewed")
+    ap.add_argument("--fresh-runner", action="store_true",
+                    help="re-execute every row with services/code_runner_service.py (this machine's JDK) and use that "
+                         "evidence for v2_model3_runner; the CSV is not modified")
     args = ap.parse_args()
 
     df = pd.read_csv(CSV_PATH, keep_default_na=False)
@@ -85,6 +123,9 @@ def main():
     df = df[df.reason_group != ""].reset_index(drop=True)
     if df.empty:
         sys.exit("no rows to evaluate")
+    runner_evidence = {"source": "csv"}
+    if args.fresh_runner:
+        runner_evidence = fresh_runner_evidence(df)
     has_runner = (df.verified_outcome != "NOT_RUN").all()
 
     # old raw
@@ -150,6 +191,7 @@ def main():
                "label_status_counts": df.label_status.value_counts().to_dict(),
                "systems": {s: score(df, f"{s}_broad", f"{s}_reason") for s in systems},
                "model3_calibration": calibration,
+               "runner_evidence": runner_evidence,
                "v2_rule_layer": {s: {"rows_overridden": int((df[f"{s}_n_rule_overrides"] > 0).sum()),
                                      "rows_with_suppressed_rule": int((df[f"{s}_n_rules_suppressed"] > 0).sum())}
                                  for s in ("v2_full", "v2_full_gate")},

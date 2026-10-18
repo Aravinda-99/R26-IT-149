@@ -8,6 +8,7 @@
 import { ErrorAPI, SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 import { renderPretestReview } from "./pretest-review.js";
+import { openSandbox } from "./sandbox.js";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
@@ -87,6 +88,12 @@ export async function renderErrorAnalysis(container) {
                 <div class="stat-item" style="text-align: center;">
                     <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">System Status</div>
                     <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent-green);">● Operational</div>
+                </div>
+                <div style="width: 1px; background: var(--border-color);"></div>
+                <div class="stat-item" style="display: flex; align-items: center;">
+                    <button type="button" id="open-free-sandbox" class="btn btn-secondary" style="margin: 0; font-size: 0.85rem;">
+                        <i class="fa-solid fa-flask"></i> Java Sandbox
+                    </button>
                 </div>
             </div>
 
@@ -314,6 +321,9 @@ export async function renderErrorAnalysis(container) {
 
     // Load initial stats and history
     refreshGlobalState(studentId);
+
+    // Free-form Java sandbox (Run only, no tests)
+    document.getElementById("open-free-sandbox")?.addEventListener("click", () => openSandbox({ mode: "free" }));
 
     // Pre-Test Review is independent of the panels above; a failure here must not affect them.
     try {

@@ -84,6 +84,10 @@ export const ErrorAPI = {
     // Per-question pre-test explanation (EN / Sinhala / Singlish): cache, live LLM or template.
     // The backend answers with a template when the LLM fails, so 25 s is only hit if it is unreachable.
     explain: (data) => apiRequest("/errors/explain", "POST", data, { timeoutMs: 25000 }),
+    // Java sandbox: compile (10 s) + run (5 s) on the backend; tests run in parallel
+    runCode: (data) => apiRequest("/errors/run", "POST", data, { timeoutMs: 30000 }),
+    runTests: (data) => apiRequest("/errors/run-tests", "POST", data, { timeoutMs: 45000 }),
+    getSandboxTests: (questionId) => apiRequest(`/errors/sandbox-tests/${questionId}`, "GET", null, { timeoutMs: 15000 }),
 };
 
 // --- Component 3: Gamification ---
