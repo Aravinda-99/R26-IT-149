@@ -1,0 +1,1208 @@
+{
+  "random": {
+    "E1": {
+      "stage1_broad": {
+        "accuracy": 0.8514,
+        "macro_f1": 0.7307,
+        "weighted_f1": 0.8089
+      },
+      "stage2_reason": {
+        "accuracy": 0.5164,
+        "macro_f1": 0.5085,
+        "weighted_f1": 0.4881
+      },
+      "stage1_stage2_agreement": 0.9698
+    },
+    "E2": {
+      "stage1_broad": {
+        "accuracy": 0.9181,
+        "macro_f1": 0.8604,
+        "weighted_f1": 0.9003
+      },
+      "stage2_reason": {
+        "accuracy": 0.927,
+        "macro_f1": 0.9314,
+        "weighted_f1": 0.9209
+      },
+      "stage1_stage2_agreement": 0.971
+    },
+    "E3": {
+      "stage1_broad": {
+        "accuracy": 0.9761,
+        "macro_f1": 0.9661,
+        "weighted_f1": 0.9758
+      },
+      "stage2_reason": {
+        "accuracy": 0.9748,
+        "macro_f1": 0.9782,
+        "weighted_f1": 0.9748
+      }
+    },
+    "E4": {
+      "stage1_broad": {
+        "accuracy": 0.9798,
+        "macro_f1": 0.9719,
+        "weighted_f1": 0.9797
+      },
+      "stage2_reason": {
+        "accuracy": 0.9786,
+        "macro_f1": 0.9814,
+        "weighted_f1": 0.9785
+      }
+    },
+    "_reports": {
+      "E1": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.5454545454545454,
+          "recall": 0.5625,
+          "f1-score": 0.5538461538461539,
+          "support": 64.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.5584415584415584,
+          "recall": 0.671875,
+          "f1-score": 0.6099290780141844,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.15625,
+          "recall": 0.052083333333333336,
+          "f1-score": 0.078125,
+          "support": 96.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.30097087378640774,
+          "recall": 0.484375,
+          "f1-score": 0.3712574850299401,
+          "support": 64.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.08695652173913043,
+          "recall": 0.03125,
+          "f1-score": 0.04597701149425287,
+          "support": 64.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.8870967741935484,
+          "recall": 0.9482758620689655,
+          "f1-score": 0.9166666666666666,
+          "support": 58.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.27631578947368424,
+          "recall": 0.328125,
+          "f1-score": 0.3,
+          "support": 64.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.6307692307692307,
+          "recall": 0.640625,
+          "f1-score": 0.6356589147286822,
+          "support": 64.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.5873015873015873,
+          "recall": 0.578125,
+          "f1-score": 0.5826771653543307,
+          "support": 64.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.45454545454545453,
+          "recall": 0.625,
+          "f1-score": 0.5263157894736842,
+          "support": 64.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.71875,
+          "recall": 0.71875,
+          "f1-score": 0.71875,
+          "support": 64.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.7066666666666667,
+          "recall": 0.828125,
+          "f1-score": 0.762589928057554,
+          "support": 64.0
+        },
+        "accuracy": 0.5163727959697733,
+        "macro avg": {
+          "precision": 0.4924599168643178,
+          "recall": 0.5390924329501916,
+          "f1-score": 0.5084827660554541,
+          "support": 794.0
+        },
+        "weighted avg": {
+          "precision": 0.47592775252724784,
+          "recall": 0.5163727959697733,
+          "f1-score": 0.4880538593584241,
+          "support": 794.0
+        }
+      },
+      "E2": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.9552238805970149,
+          "recall": 1.0,
+          "f1-score": 0.9770992366412213,
+          "support": 64.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.84,
+          "recall": 0.984375,
+          "f1-score": 0.9064748201438849,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9444444444444444,
+          "recall": 0.53125,
+          "f1-score": 0.68,
+          "support": 96.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.9666666666666667,
+          "recall": 1.0,
+          "f1-score": 0.9830508474576272,
+          "support": 58.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.9142857142857143,
+          "recall": 1.0,
+          "f1-score": 0.9552238805970149,
+          "support": 64.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.9482758620689655,
+          "recall": 0.859375,
+          "f1-score": 0.9016393442622951,
+          "support": 64.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.7654320987654321,
+          "recall": 0.96875,
+          "f1-score": 0.8551724137931035,
+          "support": 64.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.875,
+          "recall": 0.984375,
+          "f1-score": 0.9264705882352942,
+          "support": 64.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.9846153846153847,
+          "recall": 1.0,
+          "f1-score": 0.9922480620155039,
+          "support": 64.0
+        },
+        "accuracy": 0.9269521410579346,
+        "macro avg": {
+          "precision": 0.9328286709536352,
+          "recall": 0.9440104166666666,
+          "f1-score": 0.9314482660954955,
+          "support": 794.0
+        },
+        "weighted avg": {
+          "precision": 0.933041110219917,
+          "recall": 0.9269521410579346,
+          "f1-score": 0.9209243869982301,
+          "support": 794.0
+        }
+      },
+      "E3": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.9846153846153847,
+          "recall": 1.0,
+          "f1-score": 0.9922480620155039,
+          "support": 64.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.9846153846153847,
+          "recall": 1.0,
+          "f1-score": 0.9922480620155039,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9325842696629213,
+          "recall": 0.8645833333333334,
+          "f1-score": 0.8972972972972973,
+          "support": 96.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 58.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.9682539682539683,
+          "recall": 0.953125,
+          "f1-score": 0.9606299212598425,
+          "support": 64.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.863013698630137,
+          "recall": 0.984375,
+          "f1-score": 0.9197080291970803,
+          "support": 64.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 1.0,
+          "recall": 0.953125,
+          "f1-score": 0.976,
+          "support": 64.0
+        },
+        "accuracy": 0.9748110831234257,
+        "macro avg": {
+          "precision": 0.9777568921481498,
+          "recall": 0.9796006944444445,
+          "f1-score": 0.9781776143154358,
+          "support": 794.0
+        },
+        "weighted avg": {
+          "precision": 0.975768249117119,
+          "recall": 0.9748110831234257,
+          "f1-score": 0.974753049506005,
+          "support": 794.0
+        }
+      },
+      "E4": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.9846153846153847,
+          "recall": 1.0,
+          "f1-score": 0.9922480620155039,
+          "support": 64.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.9846153846153847,
+          "recall": 1.0,
+          "f1-score": 0.9922480620155039,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9347826086956522,
+          "recall": 0.8958333333333334,
+          "f1-score": 0.9148936170212766,
+          "support": 96.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 58.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.9682539682539683,
+          "recall": 0.953125,
+          "f1-score": 0.9606299212598425,
+          "support": 64.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.9,
+          "recall": 0.984375,
+          "f1-score": 0.9402985074626866,
+          "support": 64.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 1.0,
+          "recall": 0.953125,
+          "f1-score": 0.976,
+          "support": 64.0
+        },
+        "accuracy": 0.9785894206549118,
+        "macro avg": {
+          "precision": 0.9810222788483659,
+          "recall": 0.9822048611111112,
+          "f1-score": 0.9813598474812345,
+          "support": 794.0
+        },
+        "weighted avg": {
+          "precision": 0.9790153068435842,
+          "recall": 0.9785894206549118,
+          "f1-score": 0.9785402501388779,
+          "support": 794.0
+        }
+      }
+    }
+  },
+  "instance": {
+    "E1": {
+      "stage1_broad": {
+        "accuracy": 0.848,
+        "macro_f1": 0.7313,
+        "weighted_f1": 0.7975
+      },
+      "stage2_reason": {
+        "accuracy": 0.5859,
+        "macro_f1": 0.5605,
+        "weighted_f1": 0.5466
+      },
+      "stage1_stage2_agreement": 0.979
+    },
+    "E2": {
+      "stage1_broad": {
+        "accuracy": 0.911,
+        "macro_f1": 0.8593,
+        "weighted_f1": 0.8919
+      },
+      "stage2_reason": {
+        "accuracy": 0.9172,
+        "macro_f1": 0.9264,
+        "weighted_f1": 0.9094
+      },
+      "stage1_stage2_agreement": 0.9778
+    },
+    "E3": {
+      "stage1_broad": {
+        "accuracy": 0.9839,
+        "macro_f1": 0.9788,
+        "weighted_f1": 0.9838
+      },
+      "stage2_reason": {
+        "accuracy": 0.9827,
+        "macro_f1": 0.986,
+        "weighted_f1": 0.9828
+      }
+    },
+    "E4": {
+      "stage1_broad": {
+        "accuracy": 0.9876,
+        "macro_f1": 0.9842,
+        "weighted_f1": 0.9876
+      },
+      "stage2_reason": {
+        "accuracy": 0.9852,
+        "macro_f1": 0.9877,
+        "weighted_f1": 0.9853
+      }
+    },
+    "_reports": {
+      "E1": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.74,
+          "recall": 0.5362318840579711,
+          "f1-score": 0.6218487394957983,
+          "support": 69.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.5392156862745098,
+          "recall": 0.859375,
+          "f1-score": 0.6626506024096386,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.2222222222222222,
+          "recall": 0.037037037037037035,
+          "f1-score": 0.06349206349206349,
+          "support": 108.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.3333333333333333,
+          "recall": 0.5925925925925926,
+          "f1-score": 0.4266666666666667,
+          "support": 54.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.3125,
+          "recall": 0.09259259259259259,
+          "f1-score": 0.14285714285714285,
+          "support": 54.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.8360655737704918,
+          "recall": 0.9272727272727272,
+          "f1-score": 0.8793103448275862,
+          "support": 55.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.2786885245901639,
+          "recall": 0.3469387755102041,
+          "f1-score": 0.3090909090909091,
+          "support": 49.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.7435897435897436,
+          "recall": 0.8169014084507042,
+          "f1-score": 0.7785234899328859,
+          "support": 71.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.7205882352941176,
+          "recall": 0.6282051282051282,
+          "f1-score": 0.6712328767123288,
+          "support": 78.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.5675675675675675,
+          "recall": 0.7682926829268293,
+          "f1-score": 0.6528497409326425,
+          "support": 82.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.6341463414634146,
+          "recall": 0.8,
+          "f1-score": 0.7074829931972789,
+          "support": 65.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.7727272727272727,
+          "recall": 0.85,
+          "f1-score": 0.8095238095238095,
+          "support": 60.0
+        },
+        "accuracy": 0.5859085290482077,
+        "macro avg": {
+          "precision": 0.5583870417360698,
+          "recall": 0.6046199857204821,
+          "f1-score": 0.5604607815948959,
+          "support": 809.0
+        },
+        "weighted avg": {
+          "precision": 0.552791831187856,
+          "recall": 0.5859085290482077,
+          "f1-score": 0.5465500466209545,
+          "support": 809.0
+        }
+      },
+      "E2": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.9324324324324325,
+          "recall": 1.0,
+          "f1-score": 0.965034965034965,
+          "support": 69.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.8311688311688312,
+          "recall": 1.0,
+          "f1-score": 0.9078014184397163,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9642857142857143,
+          "recall": 0.5,
+          "f1-score": 0.6585365853658537,
+          "support": 108.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.9482758620689655,
+          "recall": 1.0,
+          "f1-score": 0.9734513274336283,
+          "support": 55.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.875,
+          "recall": 1.0,
+          "f1-score": 0.9333333333333333,
+          "support": 49.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 71.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.9726027397260274,
+          "recall": 0.9102564102564102,
+          "f1-score": 0.9403973509933775,
+          "support": 78.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.801980198019802,
+          "recall": 0.9878048780487805,
+          "f1-score": 0.8852459016393442,
+          "support": 82.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.8181818181818182,
+          "recall": 0.9692307692307692,
+          "f1-score": 0.8873239436619719,
+          "support": 65.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.9827586206896551,
+          "recall": 0.95,
+          "f1-score": 0.9661016949152542,
+          "support": 60.0
+        },
+        "accuracy": 0.9171817058096415,
+        "macro avg": {
+          "precision": 0.9272238513811039,
+          "recall": 0.94310767146133,
+          "f1-score": 0.9264355434014537,
+          "support": 809.0
+        },
+        "weighted avg": {
+          "precision": 0.926425708218473,
+          "recall": 0.9171817058096415,
+          "f1-score": 0.9093512067665049,
+          "support": 809.0
+        }
+      },
+      "E3": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 69.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9702970297029703,
+          "recall": 0.9074074074074074,
+          "f1-score": 0.937799043062201,
+          "support": 108.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 55.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 49.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 71.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 78.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.975609756097561,
+          "recall": 0.975609756097561,
+          "f1-score": 0.975609756097561,
+          "support": 82.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.8767123287671232,
+          "recall": 0.9846153846153847,
+          "f1-score": 0.927536231884058,
+          "support": 65.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 1.0,
+          "recall": 0.9833333333333333,
+          "f1-score": 0.9915966386554622,
+          "support": 60.0
+        },
+        "accuracy": 0.9826946847960445,
+        "macro avg": {
+          "precision": 0.9852182595473046,
+          "recall": 0.9875804901211406,
+          "f1-score": 0.9860451391416069,
+          "support": 809.0
+        },
+        "weighted avg": {
+          "precision": 0.9836568363137006,
+          "recall": 0.9826946847960445,
+          "f1-score": 0.9827786774320262,
+          "support": 809.0
+        }
+      },
+      "E4": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 69.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 64.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.9622641509433962,
+          "recall": 0.9444444444444444,
+          "f1-score": 0.9532710280373832,
+          "support": 108.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 54.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 55.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 49.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 71.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 78.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.9875,
+          "recall": 0.9634146341463414,
+          "f1-score": 0.9753086419753086,
+          "support": 82.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.9014084507042254,
+          "recall": 0.9846153846153847,
+          "f1-score": 0.9411764705882353,
+          "support": 65.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 1.0,
+          "recall": 0.9666666666666667,
+          "f1-score": 0.9830508474576272,
+          "support": 60.0
+        },
+        "accuracy": 0.9851668726823238,
+        "macro avg": {
+          "precision": 0.9875977168039686,
+          "recall": 0.9882617608227364,
+          "f1-score": 0.9877339156715461,
+          "support": 809.0
+        },
+        "weighted avg": {
+          "precision": 0.9857738907264046,
+          "recall": 0.9851668726823238,
+          "f1-score": 0.9852757739254704,
+          "support": 809.0
+        }
+      }
+    }
+  },
+  "family": {
+    "E1": {
+      "stage1_broad": {
+        "accuracy": 0.7289,
+        "macro_f1": 0.612,
+        "weighted_f1": 0.6909
+      },
+      "stage2_reason": {
+        "accuracy": 0.2905,
+        "macro_f1": 0.2785,
+        "weighted_f1": 0.2667
+      },
+      "stage1_stage2_agreement": 0.8838
+    },
+    "E2": {
+      "stage1_broad": {
+        "accuracy": 0.7481,
+        "macro_f1": 0.6563,
+        "weighted_f1": 0.7348
+      },
+      "stage2_reason": {
+        "accuracy": 0.3417,
+        "macro_f1": 0.3539,
+        "weighted_f1": 0.3447
+      },
+      "stage1_stage2_agreement": 0.8939
+    },
+    "E3": {
+      "stage1_broad": {
+        "accuracy": 0.6803,
+        "macro_f1": 0.6279,
+        "weighted_f1": 0.6968
+      },
+      "stage2_reason": {
+        "accuracy": 0.3522,
+        "macro_f1": 0.3706,
+        "weighted_f1": 0.3618
+      }
+    },
+    "E4": {
+      "stage1_broad": {
+        "accuracy": 0.6969,
+        "macro_f1": 0.6493,
+        "weighted_f1": 0.7184
+      },
+      "stage2_reason": {
+        "accuracy": 0.4062,
+        "macro_f1": 0.4385,
+        "weighted_f1": 0.4265
+      }
+    },
+    "_reports": {
+      "E1": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.356234096692112,
+          "recall": 0.4375,
+          "f1-score": 0.39270687237026647,
+          "support": 320.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.4444444444444444,
+          "recall": 0.7375,
+          "f1-score": 0.554641598119859,
+          "support": 320.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.12745098039215685,
+          "recall": 0.027083333333333334,
+          "f1-score": 0.044673539518900345,
+          "support": 480.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.2863247863247863,
+          "recall": 0.41875,
+          "f1-score": 0.3401015228426396,
+          "support": 320.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.15441176470588236,
+          "recall": 0.065625,
+          "f1-score": 0.09210526315789473,
+          "support": 320.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.6099290780141844,
+          "recall": 0.5951557093425606,
+          "f1-score": 0.6024518388791593,
+          "support": 289.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.23694779116465864,
+          "recall": 0.184375,
+          "f1-score": 0.20738137082601055,
+          "support": 320.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.11764705882352941,
+          "recall": 0.0694006309148265,
+          "f1-score": 0.0873015873015873,
+          "support": 317.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.1827956989247312,
+          "recall": 0.159375,
+          "f1-score": 0.17028380634390652,
+          "support": 320.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.34986945169712796,
+          "recall": 0.41875,
+          "f1-score": 0.3812233285917496,
+          "support": 320.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.12059620596205962,
+          "recall": 0.278125,
+          "f1-score": 0.16824196597353497,
+          "support": 320.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.37155963302752293,
+          "recall": 0.253125,
+          "f1-score": 0.30111524163568776,
+          "support": 320.0
+        },
+        "accuracy": 0.29046898638426627,
+        "macro avg": {
+          "precision": 0.27985091584776633,
+          "recall": 0.30373038946589337,
+          "f1-score": 0.2785189946300997,
+          "support": 3966.0
+        },
+        "weighted avg": {
+          "precision": 0.2712453179836756,
+          "recall": 0.29046898638426627,
+          "f1-score": 0.2666976283246213,
+          "support": 3966.0
+        }
+      },
+      "E2": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.7310344827586207,
+          "recall": 0.6625,
+          "f1-score": 0.6950819672131148,
+          "support": 320.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.6055276381909548,
+          "recall": 0.753125,
+          "f1-score": 0.6713091922005571,
+          "support": 320.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.13846153846153847,
+          "recall": 0.13125,
+          "f1-score": 0.13475935828877006,
+          "support": 480.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.46218487394957986,
+          "recall": 0.515625,
+          "f1-score": 0.4874446085672083,
+          "support": 320.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.7218543046357616,
+          "recall": 0.340625,
+          "f1-score": 0.46284501061571126,
+          "support": 320.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.5120772946859904,
+          "recall": 0.36678200692041524,
+          "f1-score": 0.4274193548387097,
+          "support": 289.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.19742489270386265,
+          "recall": 0.2875,
+          "f1-score": 0.2340966921119593,
+          "support": 320.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.14012738853503184,
+          "recall": 0.0694006309148265,
+          "f1-score": 0.09282700421940929,
+          "support": 317.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.16923076923076924,
+          "recall": 0.20625,
+          "f1-score": 0.18591549295774648,
+          "support": 320.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.14074074074074075,
+          "recall": 0.2375,
+          "f1-score": 0.17674418604651163,
+          "support": 320.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.3014705882352941,
+          "recall": 0.25625,
+          "f1-score": 0.27702702702702703,
+          "support": 320.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.4275618374558304,
+          "recall": 0.378125,
+          "f1-score": 0.4013266998341625,
+          "support": 320.0
+        },
+        "accuracy": 0.3416540595057993,
+        "macro avg": {
+          "precision": 0.3789746957986646,
+          "recall": 0.3504110531529368,
+          "f1-score": 0.35389971616007393,
+          "support": 3966.0
+        },
+        "weighted avg": {
+          "precision": 0.36841197673218545,
+          "recall": 0.3416540595057993,
+          "f1-score": 0.344681776693956,
+          "support": 3966.0
+        }
+      },
+      "E3": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.7593360995850622,
+          "recall": 0.571875,
+          "f1-score": 0.6524064171122995,
+          "support": 320.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.6277602523659306,
+          "recall": 0.621875,
+          "f1-score": 0.6248037676609105,
+          "support": 320.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.13055954088952654,
+          "recall": 0.18958333333333333,
+          "f1-score": 0.1546304163126593,
+          "support": 480.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.3811881188118812,
+          "recall": 0.48125,
+          "f1-score": 0.425414364640884,
+          "support": 320.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.7383966244725738,
+          "recall": 0.546875,
+          "f1-score": 0.6283662477558348,
+          "support": 320.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.8229166666666666,
+          "recall": 0.27335640138408307,
+          "f1-score": 0.4103896103896104,
+          "support": 289.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.17408906882591094,
+          "recall": 0.134375,
+          "f1-score": 0.15167548500881833,
+          "support": 320.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.21428571428571427,
+          "recall": 0.06624605678233439,
+          "f1-score": 0.10120481927710843,
+          "support": 317.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.1960352422907489,
+          "recall": 0.278125,
+          "f1-score": 0.22997416020671835,
+          "support": 320.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.16167664670658682,
+          "recall": 0.253125,
+          "f1-score": 0.19732034104750304,
+          "support": 320.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.34096109839816935,
+          "recall": 0.465625,
+          "f1-score": 0.39365918097754293,
+          "support": 320.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.5611814345991561,
+          "recall": 0.415625,
+          "f1-score": 0.47755834829443444,
+          "support": 320.0
+        },
+        "accuracy": 0.35224407463439233,
+        "macro avg": {
+          "precision": 0.4256988756581606,
+          "recall": 0.3581613159583126,
+          "f1-score": 0.3706169298903603,
+          "support": 3966.0
+        },
+        "weighted avg": {
+          "precision": 0.4108471848865701,
+          "recall": 0.35224407463439233,
+          "f1-score": 0.3617963149291729,
+          "support": 3966.0
+        }
+      },
+      "E4": {
+        "ARRAY_BOUNDARY_INDEX_ISSUE": {
+          "precision": 0.8475336322869955,
+          "recall": 0.590625,
+          "f1-score": 0.6961325966850829,
+          "support": 320.0
+        },
+        "ARRAY_TRAVERSAL_ISSUE": {
+          "precision": 0.6472602739726028,
+          "recall": 0.590625,
+          "f1-score": 0.6176470588235294,
+          "support": 320.0
+        },
+        "CORRECT_NO_ERROR": {
+          "precision": 0.15196078431372548,
+          "recall": 0.25833333333333336,
+          "f1-score": 0.19135802469135801,
+          "support": 480.0
+        },
+        "LOOP_BOUNDARY_ISSUE": {
+          "precision": 0.42597402597402595,
+          "recall": 0.5125,
+          "f1-score": 0.4652482269503546,
+          "support": 320.0
+        },
+        "LOOP_CONDITION_ISSUE": {
+          "precision": 0.75,
+          "recall": 0.58125,
+          "f1-score": 0.6549295774647887,
+          "support": 320.0
+        },
+        "LOOP_CONTROL_FLOW_ISSUE": {
+          "precision": 0.9114583333333334,
+          "recall": 0.6055363321799307,
+          "f1-score": 0.7276507276507277,
+          "support": 289.0
+        },
+        "LOOP_UPDATE_ISSUE": {
+          "precision": 0.6127659574468085,
+          "recall": 0.45,
+          "f1-score": 0.518918918918919,
+          "support": 320.0
+        },
+        "METHOD_PARAMETER_USAGE_ISSUE": {
+          "precision": 0.1746031746031746,
+          "recall": 0.0694006309148265,
+          "f1-score": 0.09932279909706546,
+          "support": 317.0
+        },
+        "METHOD_RETURN_ISSUE": {
+          "precision": 0.1952941176470588,
+          "recall": 0.259375,
+          "f1-score": 0.22281879194630871,
+          "support": 320.0
+        },
+        "METHOD_SIGNATURE_ISSUE": {
+          "precision": 0.16598360655737704,
+          "recall": 0.253125,
+          "f1-score": 0.2004950495049505,
+          "support": 320.0
+        },
+        "VARIABLE_ASSIGNMENT_ISSUE": {
+          "precision": 0.4189189189189189,
+          "recall": 0.3875,
+          "f1-score": 0.4025974025974026,
+          "support": 320.0
+        },
+        "VARIABLE_CALCULATION_ISSUE": {
+          "precision": 0.5416666666666666,
+          "recall": 0.40625,
+          "f1-score": 0.4642857142857143,
+          "support": 320.0
+        },
+        "accuracy": 0.4062027231467474,
+        "macro avg": {
+          "precision": 0.4869516243100574,
+          "recall": 0.41371002470234086,
+          "f1-score": 0.4384504073846835,
+          "support": 3966.0
+        },
+        "weighted avg": {
+          "precision": 0.4703552559212489,
+          "recall": 0.4062027231467474,
+          "f1-score": 0.4264779897512199,
+          "support": 3966.0
+        }
+      }
+    }
+  }
+}

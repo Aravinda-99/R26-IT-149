@@ -59,3 +59,6 @@ backend/data/schema_mastery/*.json
 backend/ml/component4_schema_mastery/question_bank/local_storage/*.json
 !backend/ml/component4_schema_mastery/question_bank/local_storage/seed_questions.json
 
+
+# Component 2 research-only Model 3 variants (uncalibrated / with_runner); regenerate with backend/scripts/train_final_c2.py
+backend/ml/component2_error_detection/research_models/

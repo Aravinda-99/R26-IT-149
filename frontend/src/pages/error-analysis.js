@@ -42,12 +42,17 @@ function showTelemetryResult(res, isHistory = false) {
     if (studentId) {
         const errType = res.reason_group || res.predicted_label || res.prediction || "UNKNOWN_ERROR";
         const confRaw = res.confidence_score !== undefined ? res.confidence_score : (res.confidence !== undefined ? res.confidence : 80);
-        const confVal = (Number(confRaw) || 80) / 100.0;
+        // error_pattern_score = probability the code contains an error (v2: 1 - P(correct) from
+        // calibrated Model 3; answer key: 0). Only the legacy v1 backend omits it, then the
+        // old confidence-based value is used.
+        const errorPatternScore = typeof res.error_pattern_score === "number"
+            ? res.error_pattern_score
+            : (Number(confRaw) || 80) / 100.0;
         const reasonText = res.explanation?.misconception || res.explanation?.reason || "";
         SchemaMasteryAPI.saveComponent2({
             student_id: studentId,
             error_type: errType,
-            error_pattern_score: confVal,
+            error_pattern_score: errorPatternScore,
             error_reason: reasonText
         }).catch(err => console.warn("Failed to persist Component 2 learning session:", err));
     }

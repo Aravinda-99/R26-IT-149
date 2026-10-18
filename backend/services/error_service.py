@@ -16,6 +16,33 @@ The response always includes:
   final_label         – label after optional rule override
   override_applied    – bool, True when a rule changed the label
   override_reason     – human-readable explanation of the override
+
+v2 models (USE_C2_V2=true)
+--------------------------
+Code-aware TF-IDF + LinearSVC stages (c2_stage1_v2.pkl / c2_stage2_v2.pkl) feed
+Model 3 (c2_model3_meta.pkl, HistGradientBoosting over stage scores + structural
+code features), whose reason group becomes the ML prediction. The rule layer above
+still runs on top. If any v2 file is missing or fails to load, the original
+models are used. Trained by scripts/train_final_c2.py.
+
+Model 3 is isotonic-calibrated. error_pattern_score = probability that the code
+contains an error = 1 - P(CORRECT_NO_ERROR) (source "model3_calibrated_p_error");
+prediction_confidence = the calibrated max class probability.
+
+v2 rule policy: Model 3 is the primary decision. The "obviously correct" CORRECT
+override is disabled; a rule may override Model 3 only if it is a high-precision
+error rule (method arity mismatch) or Model 3's calibrated confidence is < 0.5.
+Every override (and every suppressed rule hit) is logged in model_trace.
+Input validation is relaxed in v2: only text with no code structure is rejected.
+v1 behaviour (USE_C2_V2 unset) is unchanged.
+
+Answer-key gate
+---------------
+When the caller already knows the submitted code is the quiz's correct option
+(is_correct_option=true, sent by quizLab.js for pre-test answers), the result is
+CORRECT / CORRECT_NO_ERROR with source "answer_key" and error_pattern_score 0.0. The ML models still run and
+their output is kept in model_trace["ml_before_answer_key"] for research.
+Free-form code (no flag) is decided by ML + rules only (source "ml").
 """
 
 import os
@@ -23,15 +50,72 @@ import re
 import time
 import joblib
 import datetime
+import numpy as np
 from firebase.firebase_service import db
 
 # Path to the saved models
 MODEL_1_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "best_error_detection_model.pkl"))
 MODEL_2_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "best_reason_detection_model.pkl"))
 
+# v2 models (enabled with USE_C2_V2=true)
+C2_V2_STAGE1_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_stage1_v2.pkl"))
+C2_V2_STAGE2_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_stage2_v2.pkl"))
+C2_V2_MODEL3_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_model3_meta.pkl"))
+
+
+def _use_c2_v2():
+    return os.getenv("USE_C2_V2", "false").strip().lower() in ("1", "true", "yes")
+
+
+def _is_true_flag(value):
+    """Strict boolean flag from JSON: true / "true" / 1 only."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    return isinstance(value, str) and value.strip().lower() in ("1", "true", "yes")
+
+
+# v2 rule layer: a non-high-precision rule may override Model 3 only below this calibrated confidence.
+V2_RULE_OVERRIDE_MAX_CONF = 0.5
+
+# detect_obviously_correct_java error patterns -> broad label / reason group
+RULE_PATTERN_LABEL = {
+    "method_argument_mismatch": "METHOD_ERROR",
+    "array_length_index": "ARRAY_ERROR",
+    "array_out_of_bounds": "ARRAY_ERROR",
+    "loop_boundary_risk": "LOOP_ERROR",
+    "loop_start_at_1": "LOOP_ERROR",
+    "for_empty_update": "LOOP_ERROR",
+    "infinite_loop_no_break": "LOOP_ERROR",
+    "while_no_update": "LOOP_ERROR",
+    "discount_wrong_operator": "VARIABLE_ERROR",
+    "add_returns_subtraction": "VARIABLE_ERROR",
+    "void_method_returns_value": "METHOD_ERROR",
+    "non_void_method_missing_return": "METHOD_ERROR",
+    "self_assignment": "VARIABLE_ERROR"
+}
+RULE_PATTERN_REASON = {
+    "method_argument_mismatch": "METHOD_SIGNATURE_ISSUE",
+    "array_length_index": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "array_out_of_bounds": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "loop_boundary_risk": "LOOP_BOUNDARY_ISSUE",
+    "loop_start_at_1": "LOOP_BOUNDARY_ISSUE",
+    "for_empty_update": "LOOP_UPDATE_ISSUE",
+    "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
+    "while_no_update": "LOOP_UPDATE_ISSUE",
+    "discount_wrong_operator": "VARIABLE_CALCULATION_ISSUE",
+    "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
+    "void_method_returns_value": "METHOD_RETURN_ISSUE",
+    "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
+    "self_assignment": "VARIABLE_ASSIGNMENT_ISSUE"
+}
+
+
 class ErrorService:
     _model_1 = None
     _model_2 = None
+    _v2_models = None  # dict once loaded, False if unavailable
     _history = []  # In-memory history (fallback if Firestore is offline)
     _last_analysis = {} # Store full response of last analysis per user for Component 2 polling
     _history_cache = {} # Cache by student_id: student_id -> {"timestamp": float, "data": list, "source": str}
@@ -64,6 +148,59 @@ class ErrorService:
                 
         return cls._model_1, cls._model_2
 
+    @classmethod
+    def _load_v2_models(cls):
+        """Loads the v2 stage models and Model 3 once. Returns None if any file is missing or broken."""
+        if cls._v2_models is None:
+            missing = [p for p in (C2_V2_STAGE1_PATH, C2_V2_STAGE2_PATH, C2_V2_MODEL3_PATH) if not os.path.exists(p)]
+            if missing:
+                print(f"[WARN] USE_C2_V2 is set but v2 model files are missing ({missing}); using original models.")
+                cls._v2_models = False
+            else:
+                try:
+                    # The pickled vectorizers reference this module's code_normalize.
+                    from ml.component2_error_detection.features import struct_features, broad_of
+                    cls._v2_models = {
+                        "stage1": joblib.load(C2_V2_STAGE1_PATH),
+                        "stage2": joblib.load(C2_V2_STAGE2_PATH),
+                        "model3": joblib.load(C2_V2_MODEL3_PATH),
+                        "struct_features": struct_features,
+                        "broad_of": broad_of,
+                    }
+                except Exception as e:
+                    print(f"[WARN] Failed to load v2 models ({e}); using original models.")
+                    cls._v2_models = False
+        return cls._v2_models or None
+
+    @staticmethod
+    def _predict_v2(v2, code):
+        """v2 stage 1 + stage 2 + Model 3 (no_runner variant: the backend has no Code Runner)."""
+        stage1, stage2, bundle = v2["stage1"], v2["stage2"], v2["model3"]
+        s1 = stage1.decision_function([code])[0]
+        s2 = stage2.decision_function([code])[0]
+        stage1_label = stage1.classes_[int(np.argmax(s1))]
+        stage2_label = stage2.classes_[int(np.argmax(s2))]
+
+        meta = bundle["no_runner"]
+        z = np.hstack([s1, s2, v2["struct_features"](code)]).reshape(1, -1)
+        proba = meta.predict_proba(z)[0]
+        best = int(np.argmax(proba))
+        model3_label = str(meta.classes_[best])
+        model3_broad = v2["broad_of"](model3_label)
+        classes = [str(c) for c in meta.classes_]
+        p_correct = float(proba[classes.index("CORRECT_NO_ERROR")]) if "CORRECT_NO_ERROR" in classes else 0.0
+        return {
+            "stage1_label": str(stage1_label),
+            "stage2_label": str(stage2_label),
+            "stage1_scores": s1,
+            "model3_label": model3_label,
+            "model3_broad_label": model3_broad,
+            "model3_confidence": round(float(proba[best]), 4),
+            "model3_p_error": round(1.0 - p_correct, 4),
+            "model3_calibrated": bool(bundle.get("calibration")),
+            "model3_changed_output": bool(model3_label != stage2_label or model3_broad != stage1_label),
+        }
+
     @staticmethod
     def clean_java_code(code):
         """Preprocesses Java code to match training data format."""
@@ -84,7 +221,13 @@ class ErrorService:
         return code.strip()
 
     @staticmethod
-    def validate_java_submission(code):
+    def validate_java_submission(code, relaxed=False):
+        """
+        Default (v1): accept only text matching a recognised Java construct.
+        relaxed (v2): reject only text with no code structure at all (plain natural
+        language). Invalid-but-code-like input such as "Int age = 25;" or "int() arr"
+        goes to the models, because invalid code is itself the error to classify.
+        """
         if not code or not code.strip():
             return {
                 "valid": False,
@@ -92,6 +235,16 @@ class ErrorService:
             }
 
         text = code.strip()
+
+        if relaxed:
+            code_structure = (
+                re.search(r"[;{}]", text) or                        # statement / block delimiters
+                re.search(r"[A-Za-z_]\w*\s*\[|[A-Za-z_]\w*\(", text) or  # indexing or call: arr[ / foo(
+                re.search(r"\w\s*(?:[-+*/%<>!=]=|=|\+\+|--|&&|\|\||<|>)\s*[\w\"'(]", text)  # operator between operands
+            )
+            if code_structure:
+                return {"valid": True, "reason": "Code-like structure detected (relaxed v2 validation)."}
+            return {"valid": False, "reason": "Input has no code structure (looks like natural language)."}
 
         java_patterns = [
             r"\bpublic\s+class\b",
@@ -716,8 +869,11 @@ class ErrorService:
         student_id = data.get("student_id", "anonymous")
         code = data.get("code", "")
         pretest = data.get("pretest_results", {})
+        answer_key_correct = _is_true_flag(data.get("is_correct_option"))
 
-        validation = cls.validate_java_submission(code)
+        # v2 models are loaded first: relaxed validation only applies when they will run.
+        v2 = cls._load_v2_models() if _use_c2_v2() else None
+        validation = cls.validate_java_submission(code, relaxed=bool(v2))
 
         if not validation["valid"]:
             return {
@@ -728,33 +884,51 @@ class ErrorService:
                 "validation_reason": validation["reason"]
             }
 
-        model_1, model_2 = cls._load_models()
-        if not model_1 or not model_2:
-            return {"success": False, "error": "ML Models not available on backend"}
-
         # ------------------------------------------------------------------
-        # Step 1 — ML predictions
+        # Step 1 — ML predictions (v2 + Model 3 when enabled, else original models)
         # ------------------------------------------------------------------
-        cleaned_code = cls.clean_java_code(code)
         decision_scores_raw = None  # raw decision_function output, used for XAI confidence %
-        try:
-            ml_label = model_1.predict([cleaned_code])[0]
-            reason_group = model_2.predict([cleaned_code])[0]
+        v2_result = None
+        if v2:
+            try:
+                v2_result = cls._predict_v2(v2, code)
+                ml_label = v2_result["model3_broad_label"]
+                reason_group = v2_result["model3_label"]
+                decision_scores_raw = v2_result["stage1_scores"]
+                m3_conf = v2_result["model3_confidence"]
+                confidence = "High" if m3_conf >= 0.8 else ("Low" if m3_conf < 0.5 else "Medium")
+            except Exception as e:
+                print(f"[WARN] v2 prediction failed ({e}); using original models.")
+                v2_result = None
 
-            confidence = "Medium"
-            if hasattr(model_1, "decision_function"):
-                decision_scores_raw = model_1.decision_function([cleaned_code])[0]
-                if max(decision_scores_raw) > 1.0:
-                    confidence = "High"
-                elif max(decision_scores_raw) < 0.3:
-                    confidence = "Low"
-        except Exception as e:
-            return {"success": False, "error": f"Prediction failed: {str(e)}"}
+        if v2_result is None:
+            model_1, model_2 = cls._load_models()
+            if not model_1 or not model_2:
+                return {"success": False, "error": "ML Models not available on backend"}
+
+            cleaned_code = cls.clean_java_code(code)
+            try:
+                ml_label = model_1.predict([cleaned_code])[0]
+                reason_group = model_2.predict([cleaned_code])[0]
+
+                confidence = "Medium"
+                if hasattr(model_1, "decision_function"):
+                    decision_scores_raw = model_1.decision_function([cleaned_code])[0]
+                    if max(decision_scores_raw) > 1.0:
+                        confidence = "High"
+                    elif max(decision_scores_raw) < 0.3:
+                        confidence = "Low"
+            except Exception as e:
+                return {"success": False, "error": f"Prediction failed: {str(e)}"}
 
         # ------------------------------------------------------------------
         # Step 1.5 — Hybrid Confidence Recalibration Layer
         # ------------------------------------------------------------------
-        svm_conf_pct = cls._compute_confidence_pct(confidence, decision_scores_raw)
+        if v2_result:
+            # Model 3 gives a class probability; use it as the ML confidence (same 35–97 clamp).
+            svm_conf_pct = min(97, max(35, int(round(v2_result["model3_confidence"] * 100))))
+        else:
+            svm_conf_pct = cls._compute_confidence_pct(confidence, decision_scores_raw)
         
         # Calculate rule-based validation score (base is 0.5)
         rule_validation_score = 0.5
@@ -871,48 +1045,91 @@ class ErrorService:
         correctness_validation_applied = False
         correctness_validation_reason = None
         correctness_check = None
+        rule_overrides = []    # v2: every rule decision that changed Model 3's output
+        rules_suppressed = []  # v2: rule hits that were not allowed to override Model 3
 
         mismatch = cls.detect_method_argument_mismatch(code)
-        if mismatch["mismatch_found"]:
-            final_label = "METHOD_ERROR"
-            override_applied = True
-            override_reason = mismatch["reason"]
-            hybrid_correction_badge = "Rule-based correction applied"
 
-        if not override_applied:
-            correctness_check = cls.detect_obviously_correct_java(code)
-            if correctness_check.get("is_correct"):
-                final_label = "CORRECT"
-                override_applied = True
-                override_reason = "Correctness validation identified a simple valid Java pattern with no obvious beginner error."
-                correctness_validation_applied = True
-                correctness_validation_reason = correctness_check.get("reason")
-                hybrid_correction_badge = "Validated as Correct"
+        if v2_result:
+            # v2: Model 3 is the primary decision. A rule may override it only when it is a
+            # high-precision error rule (arity mismatch) or Model 3's calibrated confidence is low.
+            # The "obviously correct" CORRECT override is disabled.
+            m3_conf = v2_result["model3_confidence"]
+            low_conf = m3_conf < V2_RULE_OVERRIDE_MAX_CONF
+            if mismatch["mismatch_found"]:
+                if (final_label, reason_group) != ("METHOD_ERROR", "METHOD_SIGNATURE_ISSUE"):
+                    rule_overrides.append({
+                        "rule": "method_argument_mismatch",
+                        "allowed_because": "high_precision_error_rule",
+                        "from": f"{final_label}/{reason_group}",
+                        "to": "METHOD_ERROR/METHOD_SIGNATURE_ISSUE",
+                        "model3_confidence": m3_conf,
+                        "rule_reason": mismatch["reason"],
+                    })
+                    final_label = "METHOD_ERROR"
+                    override_applied = True
+                    override_reason = mismatch["reason"]
+                    hybrid_correction_badge = "Rule-based correction applied"
             else:
-                # ML model falsely predicted CORRECT, but rule validation detected an error pattern
-                if final_label == "CORRECT":
-                    pattern_map = {
-                        "method_argument_mismatch": "METHOD_ERROR",
-                        "array_length_index": "ARRAY_ERROR",
-                        "array_out_of_bounds": "ARRAY_ERROR",
-                        "loop_boundary_risk": "LOOP_ERROR",
-                        "loop_start_at_1": "LOOP_ERROR",
-                        "for_empty_update": "LOOP_ERROR",
-                        "infinite_loop_no_break": "LOOP_ERROR",
-                        "while_no_update": "LOOP_ERROR",
-                        "discount_wrong_operator": "VARIABLE_ERROR",
-                        "add_returns_subtraction": "VARIABLE_ERROR",
-                        "void_method_returns_value": "METHOD_ERROR",
-                        "non_void_method_missing_return": "METHOD_ERROR",
-                        "self_assignment": "VARIABLE_ERROR"
-                    }
-                    mp = correctness_check.get("matched_pattern")
-                    mapped_label = pattern_map.get(mp)
-                    if mapped_label:
-                        final_label = mapped_label
-                        override_applied = True
-                        override_reason = correctness_check.get('reason')
-                        hybrid_correction_badge = "Rule-based correction applied"
+                correctness_check = cls.detect_obviously_correct_java(code)
+                mp = correctness_check.get("matched_pattern")
+                if correctness_check.get("is_correct"):
+                    if final_label != "CORRECT":
+                        rules_suppressed.append({
+                            "rule": f"obviously_correct:{mp}",
+                            "would_set": "CORRECT/CORRECT_NO_ERROR",
+                            "why_suppressed": "CORRECT override disabled in v2 mode",
+                            "model3_confidence": m3_conf,
+                        })
+                elif RULE_PATTERN_LABEL.get(mp):
+                    target = (RULE_PATTERN_LABEL[mp], RULE_PATTERN_REASON[mp])
+                    if target != (final_label, reason_group):
+                        if low_conf:
+                            rule_overrides.append({
+                                "rule": mp,
+                                "allowed_because": f"model3_confidence<{V2_RULE_OVERRIDE_MAX_CONF}",
+                                "from": f"{final_label}/{reason_group}",
+                                "to": "/".join(target),
+                                "model3_confidence": m3_conf,
+                                "rule_reason": correctness_check.get("reason"),
+                            })
+                            final_label = target[0]
+                            override_applied = True
+                            override_reason = correctness_check.get("reason")
+                            hybrid_correction_badge = "Rule-based correction applied"
+                        else:
+                            rules_suppressed.append({
+                                "rule": mp,
+                                "would_set": "/".join(target),
+                                "why_suppressed": f"model3_confidence>={V2_RULE_OVERRIDE_MAX_CONF}",
+                                "model3_confidence": m3_conf,
+                            })
+        else:
+            if mismatch["mismatch_found"]:
+                final_label = "METHOD_ERROR"
+                override_applied = True
+                override_reason = mismatch["reason"]
+                hybrid_correction_badge = "Rule-based correction applied"
+
+            if not override_applied:
+                correctness_check = cls.detect_obviously_correct_java(code)
+                if correctness_check.get("is_correct"):
+                    final_label = "CORRECT"
+                    override_applied = True
+                    override_reason = "Correctness validation identified a simple valid Java pattern with no obvious beginner error."
+                    correctness_validation_applied = True
+                    correctness_validation_reason = correctness_check.get("reason")
+                    hybrid_correction_badge = "Validated as Correct"
+                else:
+                    # ML model falsely predicted CORRECT, but rule validation detected an error pattern
+                    if final_label == "CORRECT":
+                        mp = correctness_check.get("matched_pattern")
+                        mapped_label = RULE_PATTERN_LABEL.get(mp)
+                        if mapped_label:
+                            final_label = mapped_label
+                            override_applied = True
+                            override_reason = correctness_check.get('reason')
+                            hybrid_correction_badge = "Rule-based correction applied"
 
         # ------------------------------------------------------------------
         # Step 2b — Consistency Validation
@@ -943,23 +1160,8 @@ class ErrorService:
             reason_group_adjusted = True
             reason_group_adjustment_reason = "Method signature mismatch rule overrode the predicted sub-reason."
         elif override_applied and correctness_check and not correctness_check.get("is_correct"):
-            sub_reason_map = {
-                "method_argument_mismatch": "METHOD_SIGNATURE_ISSUE",
-                "array_length_index": "ARRAY_BOUNDARY_INDEX_ISSUE",
-                "array_out_of_bounds": "ARRAY_BOUNDARY_INDEX_ISSUE",
-                "loop_boundary_risk": "LOOP_BOUNDARY_ISSUE",
-                "loop_start_at_1": "LOOP_BOUNDARY_ISSUE",
-                "for_empty_update": "LOOP_UPDATE_ISSUE",
-                "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
-                "while_no_update": "LOOP_UPDATE_ISSUE",
-                "discount_wrong_operator": "VARIABLE_CALCULATION_ISSUE",
-                "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
-                "void_method_returns_value": "METHOD_RETURN_ISSUE",
-                "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
-                "self_assignment": "VARIABLE_ASSIGNMENT_ISSUE"
-            }
             mp = correctness_check.get("matched_pattern")
-            mapped_sub = sub_reason_map.get(mp)
+            mapped_sub = RULE_PATTERN_REASON.get(mp)
             if mapped_sub:
                 reason_group_final = mapped_sub
                 reason_group_adjusted = True
@@ -972,18 +1174,49 @@ class ErrorService:
         reason_group = reason_group_final
 
         # ------------------------------------------------------------------
+        # Step 2c — Answer-key gate: the caller knows this is the correct option.
+        # ML + rules have already run; keep their output for research.
+        # ------------------------------------------------------------------
+        decision_source = "ml"
+        ml_before_answer_key = None
+        if answer_key_correct:
+            decision_source = "answer_key"
+            ml_before_answer_key = {
+                "broad_prediction": final_label,
+                "reason_group": reason_group_final,
+                "rule_override_applied": override_applied,
+                "rule_override_reason": override_reason or "None",
+                "confidence_score": final_confidence_pct,
+                "model3_probability": v2_result["model3_confidence"] if v2_result else None,
+                "model3_p_error": v2_result["model3_p_error"] if v2_result else None,
+                "agrees_with_answer_key": final_label == "CORRECT",
+            }
+            final_label = "CORRECT"
+            reason_group = reason_group_final = "CORRECT_NO_ERROR"
+            override_applied = False
+            override_reason = None
+            mismatch = {"mismatch_found": False}
+            hybrid_correction_badge = "Verified by answer key"
+            final_confidence_pct = 100
+            confidence = "High"
+
+        # ------------------------------------------------------------------
         # Step 3 — Build response using the reason group
         # ------------------------------------------------------------------
         details = cls._get_reason_details(reason_group, final_label)
         
         evidence = cls._extract_evidence(code, reason_group)
         
+        model_version = "v2" if v2_result else "v1"
+        svm_name = "Linear SVM + code-aware TF-IDF (v2)" if v2_result else "Linear SVM + TF-IDF"
         model_trace = {
-            "preprocessing": "Java code cleaned using training preprocessing pipeline",
-            "broad_model": "Linear SVM + TF-IDF",
+            "model_version": model_version,
+            "preprocessing": ("Code-aware normalisation (operators kept, literals normalised)" if v2_result
+                              else "Java code cleaned using training preprocessing pipeline"),
+            "broad_model": svm_name,
             "original_broad_prediction": original_ml_label,
             "final_broad_prediction": final_label,
-            "reason_model": "Linear SVM + TF-IDF",
+            "reason_model": svm_name,
             "original_reason_prediction": reason_group_original,
             "final_reason_group": reason_group_final,
             "reason_group_adjusted": "Yes" if reason_group_adjusted else "No",
@@ -991,8 +1224,37 @@ class ErrorService:
             "rule_override_applied": override_applied,
             "rule_override_reason": override_reason if override_reason else "None",
             "correctness_validation_applied": correctness_validation_applied,
-            "correctness_validation_reason": correctness_validation_reason if correctness_validation_applied else "None"
+            "correctness_validation_reason": correctness_validation_reason if correctness_validation_applied else "None",
+            "decision_source": decision_source,
         }
+        if v2_result:
+            model_trace["meta_model"] = ("Model 3: HistGradientBoosting meta-corrector (no_runner"
+                                         + (", isotonic-calibrated)" if v2_result["model3_calibrated"] else ")"))
+            model_trace["v2_stage1_prediction"] = v2_result["stage1_label"]
+            model_trace["v2_stage2_prediction"] = v2_result["stage2_label"]
+            model_trace["model3_prediction"] = v2_result["model3_label"]
+            model_trace["model3_probability"] = v2_result["model3_confidence"]
+            model_trace["model3_p_error"] = v2_result["model3_p_error"]
+            model_trace["rule_policy"] = (f"Model 3 primary; rules override only if high-precision (arity mismatch) "
+                                          f"or Model 3 confidence < {V2_RULE_OVERRIDE_MAX_CONF}; CORRECT override disabled")
+            model_trace["rule_overrides"] = rule_overrides
+            model_trace["rules_suppressed"] = rules_suppressed
+        if ml_before_answer_key:
+            model_trace["ml_before_answer_key"] = ml_before_answer_key
+
+        # error_pattern_score = probability the code contains an error:
+        #   answer key says correct -> 0.0; v2 -> 1 - P(CORRECT_NO_ERROR) from calibrated Model 3.
+        # None (v1 models) lets calculate_error_pattern_score fall back to confidence_score.
+        # prediction_confidence = Model 3's calibrated max probability (confidence in the predicted class).
+        prediction_confidence = v2_result["model3_confidence"] if v2_result else None
+        if decision_source == "answer_key":
+            error_pattern_score, error_pattern_score_source = 0.0, "answer_key"
+        elif v2_result:
+            error_pattern_score = v2_result["model3_p_error"]
+            error_pattern_score_source = ("model3_calibrated_p_error" if v2_result["model3_calibrated"]
+                                          else "model3_uncalibrated_p_error")
+        else:
+            error_pattern_score, error_pattern_score_source = None, None
 
         if override_applied and override_reason:
             details = dict(details)
@@ -1035,9 +1297,18 @@ class ErrorService:
             },
             "explanation_steps": xai_explanation["explanation_steps"],
             "why_not_correct": xai_explanation["why_not_correct"],
-            "analysis_source": "Two-stage ML prediction",
-            "model_1": "Linear SVM broad error classifier",
-            "model_2": "Linear SVM reason-group classifier",
+            "analysis_source": "Two-stage ML prediction + Model 3 meta-corrector" if v2_result else "Two-stage ML prediction",
+            "model_1": "Linear SVM broad error classifier" + (" (v2)" if v2_result else ""),
+            "model_2": "Linear SVM reason-group classifier" + (" (v2)" if v2_result else ""),
+            "model_version": model_version,
+            "model3_label": v2_result["model3_label"] if v2_result else None,
+            "model3_confidence": v2_result["model3_confidence"] if v2_result else None,
+            "model3_changed_output": v2_result["model3_changed_output"] if v2_result else False,
+            "source": decision_source,
+            "is_correct_option": answer_key_correct,
+            "error_pattern_score": error_pattern_score,
+            "error_pattern_score_source": error_pattern_score_source,
+            "prediction_confidence": prediction_confidence,
             "broad_label": ml_label,
             "reason_group_original": reason_group_original,
             "reason_group_adjusted": reason_group_adjusted,
@@ -1090,6 +1361,8 @@ class ErrorService:
             "label": final_label,
             "original_ml_label": original_ml_label,
             "override_applied": override_applied,
+            "model_version": model_version,
+            "decision_source": decision_source,
             "concept": details["concept"],
             "timestamp": _now.isoformat(),
             "activity": details["gamification"]["recommended_activity"],

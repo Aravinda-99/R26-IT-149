@@ -94,16 +94,21 @@ function buildFullCodeFromTemplate(question, optionIndex) {
     return question.codeTemplate.replace("{BLANK}", answer);
 }
 
-function sendTelemetry(codeString) {
+// isCorrectOption: the quiz key says the chosen option is the right one. The
+// backend then returns CORRECT_NO_ERROR (source "answer_key") and only logs the
+// ML output. The flag is never sent for wrong options, so ML classifies those.
+function sendTelemetry(codeString, isCorrectOption = false) {
     const user = getCurrentUser();
     const studentId = user?.uid || user?.id;
     if (!studentId || !codeString) return;
-    // Fire-and-forget — never blocks quiz interaction on the network call.
-    ErrorAPI.analyze({
+    const payload = {
         student_id: studentId,
         code: codeString,
         pretest_results: { variables: 3, loops: 3, arrays: 3, methods: 3 }
-    }).then(res => {
+    };
+    if (isCorrectOption) payload.is_correct_option = true;
+    // Fire-and-forget — never blocks quiz interaction on the network call.
+    ErrorAPI.analyze(payload).then(res => {
         if (res && res.prediction) {
             sessionStorage.setItem("latest_error_analysis", JSON.stringify(res));
         }
@@ -599,7 +604,7 @@ export function setupQuizUI(root = document) {
                 // student's choice and send it in the background.
                 if (q.codeTemplate) {
                     const fullCodeString = buildFullCodeFromTemplate(q, optionIndex);
-                    sendTelemetry(fullCodeString);
+                    sendTelemetry(fullCodeString, optionIndex === q.correctIndex);
                 }
             });
         });

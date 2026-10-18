@@ -88,6 +88,8 @@ def calculate_error_pattern_score(error_analysis_result: dict) -> dict:
     indicating how strongly the detected error pattern appears in the learner's evidence.
     
     Priority Hierarchy:
+      0. error_pattern_score already set by ErrorService = P(code contains an error)
+         (source answer_key -> 0.0, or model3_calibrated_p_error = 1 - P(CORRECT_NO_ERROR))
       1. Component 2 confidence / probability (confidence_score, final_confidence_pct,
          xai_confidence_pct, confidence, probability, score) -> normalized to 0.0 - 1.0
       2. Dominant error count / total error count ratio (if repeated error counts are present)
@@ -100,6 +102,18 @@ def calculate_error_pattern_score(error_analysis_result: dict) -> dict:
             "error_pattern_score_source": "fallback_no_confidence_available",
             "dominant_error_count": None,
             "total_error_count": None,
+        }
+
+    # 0. Score already set by ErrorService (answer-key gate or calibrated Model 3 P(error))
+    preset_source = error_analysis_result.get("error_pattern_score_source")
+    preset_score = error_analysis_result.get("error_pattern_score")
+    if preset_source in ("answer_key", "model3_calibrated_p_error", "model3_uncalibrated_p_error") \
+            and isinstance(preset_score, (int, float)):
+        return {
+            "error_pattern_score": _normalize_score(preset_score),
+            "error_pattern_score_source": preset_source,
+            "dominant_error_count": error_analysis_result.get("dominant_error_count"),
+            "total_error_count": error_analysis_result.get("total_error_count"),
         }
 
     # 1. Check direct numerical confidence / probability fields
