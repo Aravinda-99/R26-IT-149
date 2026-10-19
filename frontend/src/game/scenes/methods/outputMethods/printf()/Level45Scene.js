@@ -2070,7 +2070,7 @@ export class Level45Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(45, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(44, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("printf_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level45_results", JSON.stringify({

@@ -1703,7 +1703,7 @@ export class Level28Scene extends Phaser.Scene {
     this.hideBubble();
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
-    try { GameManager.completeLevel(28, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(27, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_schema"); } catch (_) {}
     try {
       localStorage.setItem("level28_results", JSON.stringify({

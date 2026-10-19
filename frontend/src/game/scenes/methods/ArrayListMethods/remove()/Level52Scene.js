@@ -2086,7 +2086,7 @@ export class Level52Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(52, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(51, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_remove_schema"); } catch (_) {}
     try {
       localStorage.setItem("level52_results", JSON.stringify({

@@ -1873,7 +1873,7 @@ export class Level39Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(39, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(38, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("println_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level39_results", JSON.stringify({

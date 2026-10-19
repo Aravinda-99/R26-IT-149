@@ -8,10 +8,20 @@
 import { ProgressTracker } from "./ProgressTracker.js";
 import { FusionEngine } from "./FusionEngine.js";
 
-const TOTAL_LEVELS = 88;
+// The official game is exactly 63 levels (21 trilogies). Progress arrays are
+// positional: slot N-1 belongs to Level N.
+export const TOTAL_LEVELS = 63;
+
+// Pad or truncate a saved progress array to exactly TOTAL_LEVELS entries, so
+// old saves made when the game had more levels load cleanly.
+function fitToTotalLevels(arr, fill) {
+  const out = Array.isArray(arr) ? arr.slice(0, TOTAL_LEVELS) : [];
+  while (out.length < TOTAL_LEVELS) out.push(fill);
+  return out;
+}
 
 const DEFAULT_STATE = {
-  currentLevel: 0,       // 0 = menu, 1-15 = levels
+  currentLevel: 0,       // 0 = menu, 1-63 = levels
   score: 0,
   xp: 0,
   lives: 3,
@@ -166,16 +176,13 @@ class _GameManager {
   applyState(saved) {
     if (!saved) return;
     if (saved.levelsCompleted) {
-      while (saved.levelsCompleted.length < TOTAL_LEVELS) saved.levelsCompleted.push(false);
-      this.set("levelsCompleted", saved.levelsCompleted);
+      this.set("levelsCompleted", fitToTotalLevels(saved.levelsCompleted, false));
     }
     if (saved.levelAccuracy) {
-      while (saved.levelAccuracy.length < TOTAL_LEVELS) saved.levelAccuracy.push(0);
-      this.set("levelAccuracy", saved.levelAccuracy);
+      this.set("levelAccuracy", fitToTotalLevels(saved.levelAccuracy, 0));
     }
     if (saved.levelAttempts) {
-      while (saved.levelAttempts.length < TOTAL_LEVELS) saved.levelAttempts.push(0);
-      this.set("levelAttempts", saved.levelAttempts);
+      this.set("levelAttempts", fitToTotalLevels(saved.levelAttempts, 0));
     }
     this.set("xp", saved.xp || 0);
     this.set("score", saved.score || 0);

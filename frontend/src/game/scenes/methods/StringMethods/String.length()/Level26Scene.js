@@ -1556,7 +1556,7 @@ export class Level26Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(26, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(25, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("length_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level26_results", JSON.stringify({

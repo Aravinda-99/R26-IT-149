@@ -2241,7 +2241,7 @@ export class Level51Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(51, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(50, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_get_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level51_results", JSON.stringify({

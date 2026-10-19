@@ -7,7 +7,7 @@
  */
 
 import { getCurrentUser, logout } from "../../utils/auth.js";
-import { GameManager } from "../../game/GameManager.js";
+import { GameManager, TOTAL_LEVELS } from "../../game/GameManager.js";
 import { BadgeSystem } from "../../game/BadgeSystem.js";
 
 // Tracks the currently-attached GameManager listener so repeated
@@ -45,8 +45,8 @@ export function renderProfile(container) {
     // ── Real gameplay stats, straight from GameManager (defaults are always
     // present via DEFAULT_STATE, but we still guard defensively). ──
     const state = GameManager.getState() || {};
-    const levelsCompletedArr = Array.isArray(state.levelsCompleted) ? state.levelsCompleted : [];
-    const totalLevels = levelsCompletedArr.length || 88;
+    const levelsCompletedArr = Array.isArray(state.levelsCompleted) ? state.levelsCompleted.slice(0, TOTAL_LEVELS) : [];
+    const totalLevels = TOTAL_LEVELS;
     const levelsCompletedCount = levelsCompletedArr.filter(Boolean).length;
     const totalXP = Number.isFinite(state.xp) ? state.xp : 0;
     const totalScore = Number.isFinite(state.score) ? state.score : 0;
@@ -59,7 +59,7 @@ export function renderProfile(container) {
     // agree on module sizing past the first few (e.g. games.js describes the
     // For Loop wing as 2 levels, while BadgeSystem.js's per-level badges
     // imply 3), so a generic numbering avoids asserting a mapping that isn't
-    // actually verified for the full 88-level range.
+    // actually verified for the full 63-level range.
     const MODULE_SIZE = 3;
     const totalModules = Math.floor(levelsCompletedArr.length / MODULE_SIZE);
     const completedModules = [];

@@ -1932,7 +1932,7 @@ export class Level32Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(32, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(31, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("case_methods_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level32_results", JSON.stringify({

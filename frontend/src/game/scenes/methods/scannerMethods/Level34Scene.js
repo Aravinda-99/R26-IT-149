@@ -1797,7 +1797,7 @@ export class Level34Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(34, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(33, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("scanner_schema"); } catch (_) {}
     try {
       localStorage.setItem("level34_results", JSON.stringify({

@@ -59,41 +59,17 @@ import { Level55Scene } from "./scenes/methods/mathClassMethods/max().min()/Leve
 import { Level56Scene } from "./scenes/methods/mathClassMethods/max().min()/Level56Scene.js";
 import { Level57Scene } from "./scenes/methods/mathClassMethods/max().min()/Level57Scene.js";
 import { Level58Scene } from "./scenes/methods/mathClassMethods/abs()/Level58Scene.js";
+import { Level59Scene } from "./scenes/methods/mathClassMethods/abs()/Level59Scene.js";
 import { Level60Scene } from "./scenes/methods/mathClassMethods/abs()/Level60Scene.js";
 import { Level61Scene } from "./scenes/methods/mathClassMethods/pow()/Level61Scene.js";
 import { Level62Scene } from "./scenes/methods/mathClassMethods/pow()/Level62Scene.js";
 import { Level63Scene } from "./scenes/methods/mathClassMethods/pow()/Level63Scene.js";
-import { Level64Scene } from "./scenes/methods/ArrayMethods/toString()/Level64Scene.js";
-import { Level65Scene } from "./scenes/methods/ArrayMethods/sort()/Level65Scene.js";
-import { Level66Scene } from "./scenes/methods/ArrayMethods/sort()/Level66Scene.js";
-import { Level67Scene } from "./scenes/methods/ArrayMethods/sort()/Level67Scene.js";
-import { Level68Scene } from "./scenes/methods/ArrayMethods/copyOf()/Level68Scene.js";
-import { Level69Scene } from "./scenes/methods/ArrayMethods/copyOf()/Level69Scene.js";
-import { Level70Scene } from "./scenes/methods/ArrayMethods/copyOf()/Level70Scene.js";
-import { Level71Scene } from "./scenes/methods/TypeConversionMethods/parseInt()/Level71Scene.js";
-import { Level72Scene } from "./scenes/methods/TypeConversionMethods/parseInt()/Level72Scene.js";
-import { Level73Scene } from "./scenes/methods/TypeConversionMethods/parseInt()/Level73Scene.js";
-import { Level74Scene } from "./scenes/methods/TypeConversionMethods/parseDouble()/Level74Scene.js";
-import { Level75Scene } from "./scenes/methods/TypeConversionMethods/parseDouble()/Level75Scene.js";
-import { Level76Scene } from "./scenes/methods/TypeConversionMethods/parseDouble()/Level76Scene.js";
-import { Level77Scene } from "./scenes/methods/TypeConversionMethods/valueOf()/Level77Scene.js";
-import { Level78Scene } from "./scenes/methods/TypeConversionMethods/valueOf()/Level78Scene.js";
-import { Level79Scene } from "./scenes/methods/TypeConversionMethods/valueOf()/Level79Scene.js";
-import { Level80Scene } from "./scenes/methods/CharacterMethods/isDigit()/Level80Scene.js";
-import { Level81Scene } from "./scenes/methods/CharacterMethods/isDigit()/Level81Scene.js";
-import { Level82Scene } from "./scenes/methods/CharacterMethods/isDigit()/Level82Scene.js";
-import { Level83Scene } from "./scenes/methods/CharacterMethods/isLetter()/Level83Scene.js";
-import { Level84Scene } from "./scenes/methods/CharacterMethods/isLetter()/Level84Scene.js";
-import { Level85Scene } from "./scenes/methods/CharacterMethods/isLetter()/Level85Scene.js";
-import { Level86Scene } from "./scenes/methods/CharacterMethods/isUpperCase()/Level86Scene.js";
-import { Level87Scene } from "./scenes/methods/CharacterMethods/isUpperCase()/Level87Scene.js";
-import { Level88Scene } from "./scenes/methods/CharacterMethods/isUpperCase()/Level88Scene.js";
 import { UIScene } from "./scenes/UIScene.js";
 
 /**
  * Creates a Phaser configuration object for CodeQuest learning games.
  *
- * Registers all scenes: Boot → Menu → Level1-15 + UIScene overlay.
+ * Registers all scenes: Boot → Menu → Levels 1–63 + UIScene overlay.
  * Level1 uses arcade physics with per-body gravity overrides.
  */
 export function createGameConfig({ parent } = {}) {
@@ -117,6 +93,6 @@ export function createGameConfig({ parent } = {}) {
         debug: false,
       },
     },
-    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, Level32Scene, Level33Scene, Level34Scene, Level35Scene, Level36Scene, Level37Scene, Level38Scene, Level39Scene, Level40Scene, Level41Scene, Level42Scene, Level43Scene, Level44Scene, Level45Scene, Level46Scene, Level47Scene, Level48Scene, Level49Scene, Level50Scene, Level51Scene, Level52Scene, Level53Scene, Level54Scene, Level55Scene, Level56Scene, Level57Scene, Level58Scene, Level60Scene, Level61Scene, Level62Scene, Level63Scene, Level64Scene, Level65Scene, Level66Scene, Level67Scene, Level68Scene, Level69Scene, Level70Scene, Level71Scene, Level72Scene, Level73Scene, Level74Scene, Level75Scene, Level76Scene, Level77Scene, Level78Scene, Level79Scene, Level80Scene, Level81Scene, Level82Scene, Level83Scene, Level84Scene, Level85Scene, Level86Scene, Level87Scene, Level88Scene, UIScene],
+    scene: [BootScene, MenuScene, Level1Scene, Level2Scene, Level3Scene, Level4Scene, Level5Scene, Level6Scene, Level7Scene, Level8Scene, Level9Scene, Level10Scene, Level11Scene, Level12Scene, Level13Scene, Level14Scene, Level15Scene, Level16Scene, Level17Scene, Level18Scene, Level19Scene, Level20Scene, Level21Scene, Level22Scene, Level23Scene, Level24Scene, Level25Scene, Level26Scene, Level27Scene, Level28Scene, Level29Scene, Level30Scene, Level31Scene, Level32Scene, Level33Scene, Level34Scene, Level35Scene, Level36Scene, Level37Scene, Level38Scene, Level39Scene, Level40Scene, Level41Scene, Level42Scene, Level43Scene, Level44Scene, Level45Scene, Level46Scene, Level47Scene, Level48Scene, Level49Scene, Level50Scene, Level51Scene, Level52Scene, Level53Scene, Level54Scene, Level55Scene, Level56Scene, Level57Scene, Level58Scene, Level59Scene, Level60Scene, Level61Scene, Level62Scene, Level63Scene, UIScene],
   };
 }

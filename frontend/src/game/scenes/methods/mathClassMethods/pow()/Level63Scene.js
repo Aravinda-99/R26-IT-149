@@ -3193,7 +3193,7 @@ export class Level63Scene extends Phaser.Scene {
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(63, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(62, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("math_pow_mastery"); } catch (_) {}
     try { BadgeSystem.unlock("math_wing_seal"); } catch (_) {}
     try {
