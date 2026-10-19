@@ -9,6 +9,7 @@
 import { getCurrentUser, logout } from "../../utils/auth.js";
 import { GameManager } from "../../game/GameManager.js";
 import { BadgeSystem } from "../../game/BadgeSystem.js";
+import { loadProfileMastery } from "./ProfileMastery.js";
 
 // Tracks the currently-attached GameManager listener so repeated
 // renderProfile() calls (re-navigating to Profile, or GameManager.syncWithFirebase()
@@ -129,6 +130,10 @@ export function renderProfile(container) {
 
                 <!-- Curriculum, Real Game Stats & Trophy Case -->
                 <div class="profile-details-column">
+                    <section class="c4-profile-results" aria-labelledby="profile-mastery-title">
+                        <h3 id="profile-mastery-title"><i class="fa-solid fa-clipboard-check" style="color:var(--primary);"></i> Understanding Check Results</h3>
+                        <div id="profile-mastery-results" aria-live="polite"></div>
+                    </section>
                     <div class="card">
                         <h3><i class="fa-solid fa-graduation-cap" style="color:var(--primary);"></i> Enrolled Curriculum</h3>
                         <div class="profile-info-row">
@@ -188,6 +193,9 @@ export function renderProfile(container) {
         await logout();
         window.location.hash = "#/login";
     });
+
+    const masterySlot = container.querySelector("#profile-mastery-results");
+    if (masterySlot) loadProfileMastery(masterySlot, user.uid || user.id);
 
     // Stay reactive: if GameManager's state changes after this render (e.g.
     // syncWithFirebase() finishes loading real backend data slightly after

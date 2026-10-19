@@ -6781,6 +6781,28 @@ textarea.input-field {
     box-sizing: border-box;
 }
 
+.profile-details-column { min-width: 0; }
+.c4-profile-results { padding: 0 0 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+.c4-profile-results h3 { margin: 0 0 1rem; }
+.c4-profile-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.c4-profile-heading h4 { margin: 0.25rem 0 0; font-size: 1.1rem; }
+.c4-profile-heading > span { font-weight: 700; overflow-wrap: anywhere; }
+.c4-outcome-done { color: var(--success); }
+.c4-outcome-review { color: var(--warning); }
+.c4-profile-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 1rem; margin: 1.25rem 0; }
+.c4-profile-summary dt { font-size: 0.8rem; color: var(--text-secondary); }
+.c4-profile-summary dd { margin: 0.35rem 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.c4-profile-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.c4-profile-actions .btn { white-space: normal; }
+.c4-profile-history { margin-top: 1.25rem; }
+.c4-profile-history summary { cursor: pointer; font-weight: 600; padding: 0.5rem 0; }
+.c4-history-scroll { max-width: 100%; overflow-x: auto; }
+.c4-history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.c4-history-table th, .c4-history-table td { padding: 0.8rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border-color); vertical-align: top; min-width: 90px; }
+.c4-history-table th { color: var(--text-secondary); font-weight: 600; }
+.c4-history-table small { display: block; margin-top: 0.3rem; color: var(--text-secondary); }
+.c4-history-table a { color: var(--primary); }
+
 /* Responsive Breakpoints */
 @media (max-width: 1240px) {
     .student-track-chip {

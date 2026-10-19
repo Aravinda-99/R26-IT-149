@@ -16,7 +16,7 @@ import random
 from services.schema_question_bank_service import SchemaQuestionBankService
 from services.schema_mastery_service import predict_schema_mastery, normalize_score
 from services.schema_post_test_result_service import SchemaPostTestResultService
-from services.schema_session_service import SchemaSessionService
+from services.schema_session_service import SchemaSessionService, assessment_target_for_session, normalize_concept
 from firebase.firebase_service import db
 
 BLUEPRINT = {
@@ -33,6 +33,7 @@ class SchemaPostTestService:
     """Handles post-test generation, student answer grading, and ML mastery evaluation."""
 
     _SESSION_SHUFFLE_CACHE = {}
+    _SESSION_TARGET_CACHE = {}
 
     @staticmethod
     def _normalize_text(value) -> str:
@@ -105,16 +106,16 @@ class SchemaPostTestService:
         # Load active student session context when available. The saved weak
         # concept/error from Component 1/2 is the source of truth for post-test
         # delivery, while URL values remain useful for direct/manual testing.
+        target = {}
         if student_id:
             saved_session = SchemaSessionService.get_current_session(student_id)
-            component_1 = saved_session.get("component_1", {})
-            session_concept = component_1.get("weak_concept") or component_1.get("concept_name")
+            target = assessment_target_for_session(saved_session)
+            session_concept = target.get("concept_name")
             if session_concept:
                 concept = session_concept
-            if not error_type:
-                error_type = saved_session.get("component_2", {}).get("error_type")
+            error_type = target.get("error_type") or error_type
 
-        concept_clean = concept.strip() if concept else ""
+        concept_clean = normalize_concept(concept) or ""
         if not concept_clean:
             return {
                 "success": False,
@@ -130,44 +131,21 @@ class SchemaPostTestService:
         )
         exact_concept_questions = [
             q for q in all_active
-            if q.get("concept_name", "").strip().lower() == concept_clean.lower()
+            if normalize_concept(q.get("concept_name")) == concept_clean
         ]
 
         all_approved = exact_concept_questions
         selection_scope = "exact_concept"
         fallback_reason = ""
         
-        # Prefer questions that match the weak error when the exact concept bank
-        # has no active approved questions. This keeps the student flow usable
-        # while still using teacher-approved saved questions only.
+        # A different concept cannot validate the lesson the student just learned.
         if not all_approved:
-            error_matched = [
-                q for q in all_active
-                if cls._question_matches_error(q, error_type)
-            ]
-            if error_matched:
-                all_approved = error_matched
-                selection_scope = "weak_error_fallback"
-                fallback_reason = (
-                    f"No active approved questions found for concept '{concept_clean}', "
-                    "so saved approved questions matching the weak error were used."
-                )
-            elif all_active:
-                all_approved = all_active
-                selection_scope = "approved_bank_fallback"
-                fallback_reason = (
-                    f"No active approved questions found for concept '{concept_clean}' "
-                    "or its weak error, so saved active approved questions were used."
-                )
-            else:
-                return {
-                    "success": False,
-                    "error": "No active approved post-test questions are available in the question bank.",
-                    "questions": [],
-                    "total_questions": 0,
-                    "concept_name": concept_clean,
-                    "storage_source": storage_source,
-                }
+            return {
+                "success": False,
+                "error": f"No active approved questions are available for {concept_clean}. Please ask your teacher to add questions for this concept.",
+                "questions": [], "total_questions": 0,
+                "concept_name": concept_clean, "storage_source": storage_source,
+            }
 
         # 2. Retrieve student history to avoid repeats
         used_qids, used_groups = SchemaQuestionBankService.get_student_used_questions(student_id, concept_clean)
@@ -216,14 +194,6 @@ class SchemaPostTestService:
                     if len(selected_questions) >= TOTAL_POSTTEST_QUESTIONS:
                         break
 
-        # 5. If still under 15, allow cycling of low-exposure questions to ensure a 15-question test
-        if selected_questions and len(selected_questions) < TOTAL_POSTTEST_QUESTIONS:
-            pool = list(selected_questions)
-            idx = 0
-            while len(selected_questions) < TOTAL_POSTTEST_QUESTIONS and pool:
-                selected_questions.append(pool[idx % len(pool)])
-                idx += 1
-
         # 6. Sanitize and Shuffle Options for student delivery
         # MUST NOT expose correct_option or option_qualities to the student
         session_id = f"SES_{uuid.uuid4().hex[:8].upper()}"
@@ -255,7 +225,7 @@ class SchemaPostTestService:
 
             student_safe_questions.append({
                 "question_id": qid,
-                "concept_name": q.get("concept_name"),
+                "concept_name": concept_clean,
                 "question_type": q.get("question_type"),
                 "difficulty": q.get("difficulty"),
                 "question_text": q.get("question_text") or q.get("question"),
@@ -265,6 +235,10 @@ class SchemaPostTestService:
 
         # Cache session shuffle map in memory
         cls._SESSION_SHUFFLE_CACHE[session_id] = session_shuffle
+        cls._SESSION_TARGET_CACHE[session_id] = {
+            **target, "concept_name": concept_clean, "error_type": error_type,
+            "student_id": student_id,
+        }
 
         return {
             "success": True,
@@ -294,7 +268,12 @@ class SchemaPostTestService:
         c1 = saved_session.get("component_1", {})
         c2 = saved_session.get("component_2", {})
 
-        concept_name = str(submission.get("concept_name") or c1.get("weak_concept") or c1.get("concept_name") or "Unknown")
+        target = cls._SESSION_TARGET_CACHE.get(session_id) or assessment_target_for_session(saved_session)
+        if target.get("student_id") and target["student_id"] != student_id:
+            return {"success": False, "error": "This assessment belongs to another student."}
+        concept_name = target.get("concept_name") or normalize_concept(submission.get("concept_name"))
+        if not concept_name:
+            return {"success": False, "error": "No learning target is available for this assessment."}
         
         # Pull real Component 1 features
         if submission.get("pre_test_score") is not None:
@@ -308,7 +287,9 @@ class SchemaPostTestService:
         time_taken_seconds = float(submission.get("time_taken_seconds") or c1.get("time_taken_seconds", 120.0) or 120.0)
 
         # Pull and validate real Component 2 features from session
-        raw_error_pattern_score = submission.get("error_pattern_score")
+        raw_error_pattern_score = target.get("error_pattern_score")
+        if raw_error_pattern_score is None:
+            raw_error_pattern_score = submission.get("error_pattern_score")
         if raw_error_pattern_score is None:
             raw_error_pattern_score = c2.get("error_pattern_score")
 
@@ -323,7 +304,7 @@ class SchemaPostTestService:
         else:
             error_pattern_score = normalize_score(raw_error_pattern_score)
 
-        raw_error_type = submission.get("error_type") or c2.get("error_type")
+        raw_error_type = target.get("error_type") or submission.get("error_type") or c2.get("error_type")
         if not raw_error_type or raw_error_type == "UNKNOWN_ERROR":
             if not (student_id.startswith("TEST_") or student_id.startswith("STU_VERIFY_") or student_id == "STU_ANON"):
                 return {
@@ -335,6 +316,8 @@ class SchemaPostTestService:
             error_type = str(raw_error_type)
 
         answers = submission.get("answers", [])
+        if not answers or len({a.get("question_id") for a in answers}) != len(answers):
+            return {"success": False, "error": "Submit a non-empty set of unique question answers."}
         total_questions = len(answers) if answers else 1
 
         correct_count = 0
@@ -347,6 +330,12 @@ class SchemaPostTestService:
         review_items = []
 
         session_map = cls._SESSION_SHUFFLE_CACHE.get(session_id, {})
+        approved_questions = SchemaQuestionBankService.get_approved_question_bank(active_only=True)
+        approved_by_id = {}
+        for question in approved_questions:
+            for key in (question.get("question_id"), question.get("id")):
+                if key:
+                    approved_by_id[key] = question
 
         # Evaluate each answer
         for idx, item in enumerate(answers):
@@ -359,9 +348,11 @@ class SchemaPostTestService:
             canonical_selected = q_map.get(selected_disp, selected_disp)
 
             # Look up hidden metadata in approved bank
-            q_meta = SchemaQuestionBankService.get_approved_question_by_id(qid)
-            if not q_meta:
-                q_meta = SchemaQuestionBankService.get_generated_question_by_id(qid) or {}
+            q_meta = approved_by_id.get(qid)
+            if not q_meta or normalize_concept(q_meta.get("concept_name")) != concept_name:
+                return {"success": False, "error": "An answer does not belong to the approved question bank for this learning concept."}
+            if session_map and qid not in session_map:
+                return {"success": False, "error": "An answer does not belong to this assessment."}
 
             correct_option = str(q_meta.get("correct_option", "A")).upper()
             
