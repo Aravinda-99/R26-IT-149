@@ -247,21 +247,21 @@ export class Level12Scene extends Phaser.Scene {
     this.add.rectangle(W / 2, 78, W, 50, 0x0a0a1a, 0.88).setDepth(dp - 1);
     this.add.rectangle(W / 2, 105, W, 1, 0xff00ff, 0.15).setDepth(dp - 1);
 
-    this.scoreText = this.add.text(16, 62, "SCORE: 0", {
-      fontFamily: "Courier New, monospace", fontSize: "15px",
+    this.scoreText = this.add.text(16, 55, "SCORE: 0", {
+      fontFamily: "Courier New, monospace", fontSize: "18px",
       color: "#ff00ff", fontStyle: "bold",
     }).setDepth(dp);
 
-    this.waveText = this.add.text(16, 85, "MASTER: 0 / 50", {
-      fontFamily: "Courier New, monospace", fontSize: "11px", color: "#888888",
+    this.waveText = this.add.text(16, 78, "MASTER: 0 / 50", {
+      fontFamily: "Courier New, monospace", fontSize: "18px", color: "#888888",
     }).setDepth(dp);
 
-    this.progBg = this.add.rectangle(W / 2, 66, 240, 12, 0x1a1a2e, 0.8).setDepth(dp);
+    this.progBg = this.add.rectangle(W / 2, 74, 240, 24, 0x1a1a2e, 0.8).setDepth(dp);
     this.progBg.setStrokeStyle(1, 0xff00ff, 0.3);
-    this.progFill = this.add.rectangle(W / 2 - 120, 66, 0, 10, 0xff00ff, 0.7)
+    this.progFill = this.add.rectangle(W / 2 - 120, 74, 0, 22, 0xff00ff, 0.7)
       .setOrigin(0, 0.5).setDepth(dp + 1);
-    this.progText = this.add.text(W / 2, 66, "0 / 50", {
-      fontFamily: "Courier New, monospace", fontSize: "9px",
+    this.progText = this.add.text(W / 2, 74, "0 / 50", {
+      fontFamily: "Courier New, monospace", fontSize: "18px",
       color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(dp + 2);
 
@@ -274,20 +274,28 @@ export class Level12Scene extends Phaser.Scene {
       this.livesIcons.push(heart);
     }
 
-    this.accText = this.add.text(W - 16, 86, "ACC: 100%", {
-      fontFamily: "Courier New, monospace", fontSize: "10px", color: "#888888",
-    }).setOrigin(1, 0).setDepth(dp);
+    // Left of the hearts (they occupy the right ~150px), vertically centred in the HUD band.
+    this.accText = this.add.text(W - 170, 78, "ACC: 100%", {
+      fontFamily: "Courier New, monospace", fontSize: "18px", color: "#888888",
+    }).setOrigin(1, 0.5).setDepth(dp);
 
-    this.tooltip = this.add.text(W / 2, 360, "", {
-      fontFamily: "Courier New, monospace", fontSize: "12px",
+    this.tooltip = this.add.text(W / 2, 0, "", {
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ffffff",
       backgroundColor: "rgba(10, 10, 26, 0.9)",
-      padding: { x: 12, y: 6 },
+      padding: { x: 14, y: 8 },
       align: "center",
-      wordWrap: { width: 580 },
+      wordWrap: { width: 900 },
     }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
+    // Reserve room for a two-line explanation at the bottom of the play area; the question block is centred above it
+    // so a lingering explanation never overlaps the next question.
+    this.tooltip.setText("Mg\nMg");
+    this._tipH = this.tooltip.height;
+    this.tooltip.setText("");
+    this._tipY = H - 12 - this._tipH / 2;
+    this.tooltip.setY(this._tipY);
 
-    this.timerBarBg = this.add.rectangle(W / 2, 160, 200, 8, 0x1a1a2e, 0.6).setDepth(dp);
+    this.timerBarBg = this.add.rectangle(W / 2, 160, 200, 8, 0x1a1a2e, 0.6).setDepth(dp); // y is set per question by _createChallengeButtons
     this.timerBarBg.setStrokeStyle(1, 0xff00ff, 0.2);
     this.timerBarFill = this.add.rectangle(W / 2 - 100, 160, 200, 6, 0xff00ff, 0.7)
       .setOrigin(0, 0.5).setDepth(dp + 1);
@@ -446,12 +454,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "split", answer: q.expected };
 
     const title = this.add.text(W / 2, 110, "✂️ STRING SPLIT", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.split(${q.delimiter}).length = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -459,7 +467,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.expected, "1", "0", "4"];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.expected), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.expected), q.explanation);
   }
 
   _showJoinChallenge() {
@@ -467,12 +475,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "join", answer: q.result };
 
     const title = this.add.text(W / 2, 110, "🔗 ARRAY JOIN", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.arr}.join(${q.joiner}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -480,7 +488,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.result, '""', "[]", q.arr];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation);
   }
 
   _showTrimChallenge() {
@@ -488,12 +496,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "trim", answer: q.result };
 
     const title = this.add.text(W / 2, 110, "🧹 TRIM WHITESPACE", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.trim() = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -501,7 +509,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.result, q.string, '""', '"  "'];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation);
   }
 
   _showSliceChallenge() {
@@ -509,13 +517,13 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "slice", answer: q.result };
 
     const title = this.add.text(W / 2, 110, "🍰 STRING SLICE", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const endStr = q.end === undefined ? "" : `, ${q.end}`;
     const problem = this.add.text(W / 2, 190, `${q.string}.slice(${q.start}${endStr}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -523,7 +531,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.result, '""', q.string, '"?"'];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation);
   }
 
   _showIncludesChallenge() {
@@ -532,19 +540,19 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "includes", answer };
 
     const title = this.add.text(W / 2, 110, "🔍 INCLUDES CHECK", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.includes(${q.search}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     this.currentElements.push(title, problem);
 
     const options = ["TRUE", "FALSE"];
-    this._createChallengeButtons(options, options.indexOf(answer), q.explanation, 260);
+    this._createChallengeButtons(options, options.indexOf(answer), q.explanation);
   }
 
   _showStartsWithChallenge() {
@@ -554,19 +562,19 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "method", answer };
 
     const title = this.add.text(W / 2, 110, `🎯 ${method.toUpperCase()}`, {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.${method}(${q.check}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "16px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     this.currentElements.push(title, problem);
 
     const options = ["TRUE", "FALSE"];
-    this._createChallengeButtons(options, options.indexOf(answer), q.explanation, 260);
+    this._createChallengeButtons(options, options.indexOf(answer), q.explanation);
   }
 
   _showRepeatChallenge() {
@@ -574,12 +582,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "repeat", answer: q.result };
 
     const title = this.add.text(W / 2, 110, "🔁 REPEAT STRING", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.repeat(${q.count}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -587,7 +595,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.result, q.string, '""', `${q.string} x ${q.count}`];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation);
   }
 
   _showIndexOfChallenge() {
@@ -595,12 +603,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "indexof", answer: q.result };
 
     const title = this.add.text(W / 2, 110, "📍 INDEX OF", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `${q.string}.indexOf(${q.search}) = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "18px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -608,7 +616,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const options = [q.result, "0", "1", "-1"];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.result), q.explanation);
   }
 
   _showRealWorldChallenge() {
@@ -617,12 +625,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "realworld", answer };
 
     const title = this.add.text(W / 2, 110, `🌐 REAL-WORLD: ${q.scenario}`, {
-      fontFamily: "Courier New, monospace", fontSize: "12px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `Input: ${q.input}\n${q.check} = ?`, {
-      fontFamily: "Courier New, monospace", fontSize: "16px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
       align: "center",
     }).setOrigin(0.5).setDepth(110);
@@ -636,7 +644,7 @@ export class Level12Scene extends Phaser.Scene {
 
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
     const correctIdx = shuffled.indexOf(answer === "YES" ? q.result === 'true' ? "YES" : "NO" : answer);
-    this._createChallengeButtons(shuffled, correctIdx, q.explanation, 260);
+    this._createChallengeButtons(shuffled, correctIdx, q.explanation);
   }
 
   _showEscapeChallenge() {
@@ -644,12 +652,12 @@ export class Level12Scene extends Phaser.Scene {
     this.currentChallenge = { type: "escape", answer: q.meaning };
 
     const title = this.add.text(W / 2, 110, "⚡ ESCAPE SEQUENCE", {
-      fontFamily: "Courier New, monospace", fontSize: "13px",
+      fontFamily: "Courier New, monospace", fontSize: "22px",
       color: "#ff00ff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
     const problem = this.add.text(W / 2, 190, `What does ${q.seq} produce?`, {
-      fontFamily: "Courier New, monospace", fontSize: "20px",
+      fontFamily: "Courier New, monospace", fontSize: "36px",
       color: "#00ffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(110);
 
@@ -658,38 +666,71 @@ export class Level12Scene extends Phaser.Scene {
     const allMeanings = ESCAPE_SEQUENCE_CHALLENGES.map(e => e.meaning);
     const options = [q.meaning, ...Phaser.Utils.Array.GetRandom(allMeanings, 3)];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    this._createChallengeButtons(shuffled, shuffled.indexOf(q.meaning), q.explanation, 260);
+    this._createChallengeButtons(shuffled, shuffled.indexOf(q.meaning), q.explanation);
   }
 
   /* ═══════════════════════════════════════════════════════════════
    *  CHALLENGE BUTTONS
    * ═══════════════════════════════════════════════════════════════ */
-  _createChallengeButtons(options, correctIndex, explanation, yStart) {
-    const btnW = 140;
-    const btnH = 40;
-    const cols = Math.min(options.length, 2);
-    const gapX = 14;
-    const gapY = 10;
-    const totalW = cols * btnW + (cols - 1) * gapX;
-    const startX = W / 2 - totalW / 2 + btnW / 2;
+  /**
+   * Builds the answer buttons and lays the whole question block out from measured sizes:
+   * timer bar, category label, question and the button grid are stacked and centred vertically in the free
+   * play area (below the HUD, above the explanation strip). The label and question were pushed to
+   * currentElements by the caller just before this runs.
+   */
+  _createChallengeButtons(options, correctIndex, explanation) {
+    const [title, problem] = this.currentElements;
+    const FONT = 24, MIN_FONT = 20, PAD = 32, GAP_X = 24, GAP_Y = 20;
+    const AREA_TOP = 135, AREA_BOTTOM = this._tipY - this._tipH / 2 - 14;
+    const GAP_TIMER = 20, GAP_TITLE = 26, GAP_PROBLEM = 36, TIMER_H = 8;
 
+    // question text must stay inside the canvas, wrap rather than shrink
+    if (problem.width > W - 80) problem.setWordWrapWidth(W - 80, true).setAlign("center");
+
+    // answer texts first, so the button size comes from the real text
+    const txts = options.map((opt) => this.add.text(0, 0, opt, {
+      fontFamily: "Courier New, monospace", fontSize: `${FONT}px`,
+      color: "#00ffff", fontStyle: "bold", align: "center",
+    }).setOrigin(0.5).setDepth(121));
+    const widest = Math.max(...txts.map((x) => x.width));
+    let cols = options.length <= 4 ? Math.min(options.length, 2) : 2;
+    let btnW = Phaser.Math.Clamp(Math.ceil(widest) + 2 * PAD, 240, Math.floor((W - 120 - GAP_X * (cols - 1)) / cols));
+    if (options.length > 4) cols = Math.max(2, Math.min(options.length, Math.floor((W - 120 + GAP_X) / (btnW + GAP_X))));
+    txts.forEach((x) => {
+      let fs = FONT;
+      while (x.width > btnW - PAD && fs > MIN_FONT) { fs--; x.setFontSize(`${fs}px`); }
+      if (x.width > btnW - PAD) x.setWordWrapWidth(btnW - PAD, true);
+    });
+    const btnH = Math.max(64, Math.ceil(Math.max(...txts.map((x) => x.height))) + 24);
+    const rows = Math.ceil(options.length / cols);
+    const gridW = cols * btnW + (cols - 1) * GAP_X;
+    const gridH = rows * btnH + (rows - 1) * GAP_Y;
+
+    // block geometry
+    const total = TIMER_H + GAP_TIMER + title.height + GAP_TITLE + problem.height + GAP_PROBLEM + gridH;
+    const top = Math.max(AREA_TOP, AREA_TOP + (AREA_BOTTOM - AREA_TOP - total) / 2);
+    let y = top;
+    const timerY = y + TIMER_H / 2; y += TIMER_H + GAP_TIMER;
+    title.setY(y + title.height / 2); y += title.height + GAP_TITLE;
+    problem.setY(y + problem.height / 2); y += problem.height + GAP_PROBLEM;
+    const gridTop = y;
+    this.timerBarBg.setY(timerY); this.timerBarFill.setY(timerY);
+    this._popupY = Math.max(AREA_TOP + 20, top - 6);   // score popups rise from just above the block
+    this._fxY = problem.y;                              // particle burst on the question
+
+    const startX = W / 2 - gridW / 2 + btnW / 2;
     const buttons = [];
 
     options.forEach((opt, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
-      const bx = startX + col * (btnW + gapX);
-      const by = yStart + row * (btnH + gapY);
+      const bx = startX + col * (btnW + GAP_X);
+      const by = gridTop + btnH / 2 + row * (btnH + GAP_Y);
 
       const bg = this.add.rectangle(bx, by, btnW, btnH, 0x1a0a2a, 0.9).setDepth(120);
       bg.setStrokeStyle(2, 0xff00ff, 0.4);
 
-      const fontSize = opt.length > 12 ? "11px" : opt.length > 8 ? "12px" : "14px";
-      const txt = this.add.text(bx, by, opt, {
-        fontFamily: "Courier New, monospace", fontSize,
-        color: "#00ffff", fontStyle: "bold",
-        wordWrap: { width: btnW - 12 }, align: "center",
-      }).setOrigin(0.5).setDepth(121);
+      const txt = txts[i].setPosition(bx, by);
 
       bg.setInteractive({ useHandCursor: true });
       bg.on("pointerover", () => {
@@ -749,8 +790,8 @@ export class Level12Scene extends Phaser.Scene {
     GameManager.addScore(points);
     GameManager.addCombo();
 
-    this.correctPart.emitParticleAt(W / 2, 270, 15);
-    this._showPopup(W / 2, 240, `+${points}`, "#00ff88");
+    this.correctPart.emitParticleAt(W / 2, this._fxY ?? 270, 15);
+    this._showPopup(W / 2, this._popupY ?? 240, `+${points}`, "#00ff88");
     this._showTooltip(message, "#00ff88");
 
     if ([8, 15, 25].includes(this.combo)) {
@@ -768,11 +809,11 @@ export class Level12Scene extends Phaser.Scene {
     GameManager.resetCombo();
     GameManager.loseLife();
 
-    this.wrongPart.emitParticleAt(W / 2, 270, 12);
+    this.wrongPart.emitParticleAt(W / 2, this._fxY ?? 270, 12);
     this.cameras.main.shake(150, 0.012);
     this.cameras.main.flash(120, 255, 50, 0);
 
-    this._showPopup(W / 2, 240, "WRONG!", "#ff4444");
+    this._showPopup(W / 2, this._popupY ?? 240, "WRONG!", "#ff4444");
     this._showTooltip(message, "#ff4444");
 
     if (this.lives <= 0) {

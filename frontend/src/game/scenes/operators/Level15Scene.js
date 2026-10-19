@@ -94,16 +94,16 @@ export class Level15Scene extends Phaser.Scene {
     // Menu bar (Stretched — Y/height unchanged)
     this.add.rectangle(W / 2, 71, W * 5, 30, 0x2d2d30).setDepth(1);
     ["File", "Edit", "View", "Run", "Help"].forEach((m, i) => {
-      this.add.text(20 + i * 60, 71, m, { fontFamily: "Arial", fontSize: "12px", color: "#cccccc" }).setOrigin(0, 0.5).setDepth(2);
+      this.add.text(20 + i * 70, 71, m, { fontFamily: "Arial", fontSize: "16px", color: "#cccccc" }).setOrigin(0, 0.5).setDepth(2);
     });
     // Status bar (Stretched — Y/height unchanged)
     this.statusBg = this.add.rectangle(W / 2, H - 15, W * 5, 30, 0x007acc).setDepth(1);
-    this.statusTxt = this.add.text(W / 2, H - 15, "Ready", { fontFamily: "Arial", fontSize: "12px", color: "#fff" }).setOrigin(0.5).setDepth(2);
+    this.statusTxt = this.add.text(W / 2, H - 15, "Ready", { fontFamily: "Arial", fontSize: "16px", color: "#fff" }).setOrigin(0.5).setDepth(2);
   }
 
   _createHUD() {
-    this.projTxt = this.add.text(W / 2, 71, `Project 0/${PROJECTS.length}`, { fontFamily: "Arial", fontSize: "12px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(3);
-    this.scoreTxt = this.add.text(W - 20, 71, `Score: 0`, { fontFamily: "Arial", fontSize: "12px", color: "#4ade80" }).setOrigin(1, 0.5).setDepth(3);
+    this.projTxt = this.add.text(W / 2, 71, `Project 0/${PROJECTS.length}`, { fontFamily: "Arial", fontSize: "16px", color: "#fbbf24", fontStyle: "bold" }).setOrigin(0.5).setDepth(3);
+    this.scoreTxt = this.add.text(W - 20, 71, `Score: 0`, { fontFamily: "Arial", fontSize: "16px", color: "#4ade80" }).setOrigin(1, 0.5).setDepth(3);
   }
 
   _addEl(...els) { els.forEach(e => this.elements.push(e)); }
@@ -134,6 +134,14 @@ export class Level15Scene extends Phaser.Scene {
     bb.on("pointerup", () => { [ov, pg, t1, t2, t3, bb, bt].forEach(e => e.destroy()); this._loadProject(); });
   }
 
+  /** Width of a string in the code font, measured (not guessed). */
+  _measure(str, fontSize, bold) {
+    const m = this.add.text(0, 0, str, { fontFamily: "Courier New", fontSize: `${fontSize}px`, fontStyle: bold ? "bold" : "normal" });
+    const w = m.width, h = m.height;
+    m.destroy();
+    return { w, h };
+  }
+
   _loadProject() {
     this._clear();
     const p = PROJECTS[this.projIdx];
@@ -141,127 +149,137 @@ export class Level15Scene extends Phaser.Scene {
     this.projTxt.setText(`Project ${this.projIdx + 1}/${PROJECTS.length}`);
     this.statusTxt.setText(`${p.icon} ${p.title}.java`);
 
-    // Client panel
-    const cpg = this.add.graphics().setDepth(10);
-    cpg.fillStyle(0x2d2d30, 0.95); cpg.fillRoundedRect(20, 90, W - 40, 65, 8);
-    cpg.lineStyle(2, 0x007acc, 0.5); cpg.strokeRoundedRect(20, 90, W - 40, 65, 8);
-    this._addEl(cpg);
-    this._addEl(this.add.text(40, 100, `${p.icon} Client: ${p.client}`, { fontFamily: "Arial", fontSize: "14px", color: "#4fc3f7", fontStyle: "bold" }).setDepth(11));
-    this._addEl(this.add.text(40, 120, `Task: ${p.title}`, { fontFamily: "Arial", fontSize: "13px", color: "#e0e0e0" }).setDepth(11));
-    this._addEl(this.add.text(40, 140, p.reqs.map(r => "• " + r).join("  |  "), { fontFamily: "Arial", fontSize: "11px", color: "#81c784" }).setDepth(11));
+    const PAD = 14, CODE_FONT = 20, LINE_H = 28, GAP = 8;
+    const CODE_X = 76, NUM_RIGHT = 62;              // one left edge for every code line; line numbers right-aligned in their own column
 
-    // Code editor area
+    // Client panel — header and hint stacked from their measured heights
+    const hdr = this.add.text(40, 98, `${p.icon} Client: ${p.client}   •   Task: ${p.title}`, { fontFamily: "Arial", fontSize: "20px", color: "#4fc3f7", fontStyle: "bold" }).setDepth(11);
+    const hint = this.add.text(40, hdr.y + hdr.height + 4, p.reqs.map(r => "• " + r).join("  |  "), { fontFamily: "Arial", fontSize: "20px", color: "#81c784" }).setDepth(11);
+    const cTop = 90, cH = (hint.y + hint.height + 8) - cTop;
+    const cpg = this.add.graphics().setDepth(10);
+    cpg.fillStyle(0x2d2d30, 0.95); cpg.fillRoundedRect(20, cTop, W - 40, cH, 8);
+    cpg.lineStyle(2, 0x007acc, 0.5); cpg.strokeRoundedRect(20, cTop, W - 40, cH, 8);
+    this._addEl(cpg, hdr, hint);
+
+    // Code editor area — tall enough for the longest project, so every project has the same frame
+    const maxLines = Math.max(...PROJECTS.map(pr => pr.code.length));
+    const eTop = cTop + cH + 8, eH = maxLines * LINE_H + 2 * PAD;
     const eg = this.add.graphics().setDepth(10);
-    eg.fillStyle(0x1e1e1e, 1); eg.fillRoundedRect(20, 165, W - 40, 240, 8);
-    eg.lineStyle(1, 0x3e3e42); eg.strokeRoundedRect(20, 165, W - 40, 240, 8);
+    eg.fillStyle(0x1e1e1e, 1); eg.fillRoundedRect(20, eTop, W - 40, eH, 8);
+    eg.lineStyle(1, 0x3e3e42); eg.strokeRoundedRect(20, eTop, W - 40, eH, 8);
     this._addEl(eg);
 
-    // Line numbers + code
+    // Blank width: the widest thing a blank ever shows, plus padding
+    const widest = Math.max(this._measure("___", CODE_FONT, true).w, ...p.blanks.flatMap(bl => bl.opts.map(o => this._measure(o, CODE_FONT, true).w)));
+    const bw = Math.max(60, Math.ceil(widest) + 24);
+    const th = this._measure("Mg", CODE_FONT, false).h;       // text height of one code line
+    const codeStyle = { fontFamily: "Courier New", fontSize: `${CODE_FONT}px`, color: "#d4d4d4" };
+
     let blankCounter = 0;
     this.blankBtns = [];
     p.code.forEach((line, li) => {
-      const ly = 180 + li * 28;
-      // Line number
-      this._addEl(this.add.text(35, ly, `${li + 1}`, { fontFamily: "Courier New", fontSize: "13px", color: "#6a737d" }).setDepth(11));
+      const ly = eTop + PAD + li * LINE_H;
+      this._addEl(this.add.text(NUM_RIGHT, ly, `${li + 1}`, { fontFamily: "Courier New", fontSize: `${CODE_FONT}px`, color: "#6a737d" }).setOrigin(1, 0).setDepth(11));
 
-      if (line.includes("___")) {
-        // Split around blanks
-        const parts = line.split("___");
-        let cx = 55;
-        parts.forEach((part, pi) => {
-          if (pi > 0) {
-            // Render blank button
-            const bi = blankCounter;
-            blankCounter++;
-            const blank = p.blanks[bi];
-            const bw = 50;
-            const bbg = this.add.graphics().setDepth(11);
-            bbg.fillStyle(0x0d47a1, 0.6); bbg.fillRoundedRect(cx, ly - 8, bw, 22, 4);
-            bbg.lineStyle(1, 0x42a5f5); bbg.strokeRoundedRect(cx, ly - 8, bw, 22, 4);
-            const btxt = this.add.text(cx + bw / 2, ly + 3, "___", { fontFamily: "Courier New", fontSize: "13px", color: "#ffcc80", fontStyle: "bold" }).setOrigin(0.5).setDepth(12);
-            const bhit = this.add.rectangle(cx + bw / 2, ly + 3, bw, 22).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(13);
-            this._addEl(bbg, btxt, bhit);
-            this.blankBtns.push({ bbg, btxt, bhit, bi, blank, cx, ly });
+      const parts = line.split("___");
+      let cx = CODE_X;
+      parts.forEach((rawPart, pi) => {
+        if (pi > 0) {
+          // The blank sits in the gap after the text measured so far; the next token starts after it.
+          const bi = blankCounter++;
+          const blank = p.blanks[bi];
+          const bx = cx;
+          const bbg = this.add.graphics().setDepth(11);
+          const drawBox = (fill, line) => {
+            bbg.clear();
+            bbg.fillStyle(fill, 0.6); bbg.fillRoundedRect(bx, ly - 2, bw, th + 4, 4);
+            bbg.lineStyle(1, line); bbg.strokeRoundedRect(bx, ly - 2, bw, th + 4, 4);
+          };
+          drawBox(0x0d47a1, 0x42a5f5);
+          const btxt = this.add.text(bx + bw / 2, ly + th / 2, "___", { fontFamily: "Courier New", fontSize: `${CODE_FONT}px`, color: "#ffcc80", fontStyle: "bold" }).setOrigin(0.5).setDepth(12);
+          const bhit = this.add.rectangle(bx + bw / 2, ly + th / 2, bw, th + 4).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(13);
+          this._addEl(bbg, btxt, bhit);
+          this.blankBtns.push({ bbg, btxt, bhit, bi, blank, cx: bx, ly });
 
-            // Dropdown Menu Logic
-            bhit.on("pointerup", () => {
-              // 1. Destroy any currently open dropdown
-              if (this.currentDropdown) {
-                this.currentDropdown.destroy();
-              }
+          // Dropdown Menu Logic
+          bhit.on("pointerup", () => {
+            // 1. Destroy any currently open dropdown
+            if (this.currentDropdown) {
+              this.currentDropdown.destroy();
+            }
 
-              const dropW = 60;
-              const dropH = blank.opts.length * 28;
-              const dropContainer = this.add.container(cx - 5, ly + 16).setDepth(200);
-              this.currentDropdown = dropContainer;
+            const OPT_H = 32;
+            const dropW = Math.max(bw, 76);
+            const dropH = blank.opts.length * OPT_H;
+            const dropContainer = this.add.container(bx + bw / 2 - dropW / 2, ly + th + 6).setDepth(200);
+            this.currentDropdown = dropContainer;
 
-              // 2. Draw Dropdown Background (VS Code Dark Style)
-              const dbg = this.add.graphics();
-              dbg.fillStyle(0x252526, 0.98);
-              dbg.fillRoundedRect(0, 0, dropW, dropH, 4);
-              dbg.lineStyle(1, 0x454545);
-              dbg.strokeRoundedRect(0, 0, dropW, dropH, 4);
-              dropContainer.add(dbg);
+            // 2. Draw Dropdown Background (VS Code Dark Style)
+            const dbg = this.add.graphics();
+            dbg.fillStyle(0x252526, 0.98);
+            dbg.fillRoundedRect(0, 0, dropW, dropH, 4);
+            dbg.lineStyle(1, 0x454545);
+            dbg.strokeRoundedRect(0, 0, dropW, dropH, 4);
+            dropContainer.add(dbg);
 
-              // 3. Add Options
-              blank.opts.forEach((opt, idx) => {
-                const optY = idx * 28;
-                const optHit = this.add.rectangle(dropW / 2, optY + 14, dropW - 4, 24).setInteractive({ useHandCursor: true });
-                const optTxt = this.add.text(dropW / 2, optY + 14, opt, {
-                  fontFamily: "Courier New", fontSize: "16px", color: "#d4d4d4", fontStyle: "bold"
-                }).setOrigin(0.5);
+            // 3. Add Options
+            blank.opts.forEach((opt, idx) => {
+              const optY = idx * OPT_H;
+              const optHit = this.add.rectangle(dropW / 2, optY + OPT_H / 2, dropW - 4, OPT_H - 4).setInteractive({ useHandCursor: true });
+              const optTxt = this.add.text(dropW / 2, optY + OPT_H / 2, opt, {
+                fontFamily: "Courier New", fontSize: "20px", color: "#d4d4d4", fontStyle: "bold"
+              }).setOrigin(0.5);
 
-                // Hover effects
-                optHit.on("pointerover", () => optHit.setFillStyle(0x094771, 1));
-                optHit.on("pointerout", () => optHit.setFillStyle(0x000000, 0));
+              // Hover effects
+              optHit.on("pointerover", () => optHit.setFillStyle(0x094771, 1));
+              optHit.on("pointerout", () => optHit.setFillStyle(0x000000, 0));
 
-                // Select option
-                optHit.on("pointerup", () => {
-                  this.userAnswers[bi] = opt;
-                  btxt.setText(opt);
-                  btxt.setColor("#ffd700");
-                  bbg.clear();
-                  bbg.fillStyle(0x1b5e20, 0.6);
-                  bbg.fillRoundedRect(cx, ly - 8, bw, 22, 4);
-                  bbg.lineStyle(1, 0x66bb6a);
-                  bbg.strokeRoundedRect(cx, ly - 8, bw, 22, 4);
+              // Select option
+              optHit.on("pointerup", () => {
+                this.userAnswers[bi] = opt;
+                btxt.setText(opt);
+                btxt.setColor("#ffd700");
+                drawBox(0x1b5e20, 0x66bb6a);
 
-                  dropContainer.destroy();
-                  this.currentDropdown = null;
-                });
-
-                dropContainer.add([optHit, optTxt]);
+                dropContainer.destroy();
+                this.currentDropdown = null;
               });
 
-              this._addEl(dropContainer); // Add to elements array for scene cleanup
+              dropContainer.add([optHit, optTxt]);
             });
-            cx += bw + 4;
-          }
-          // Render code text with basic highlighting
-          const colored = this._highlight(part);
-          const pt = this.add.text(cx, ly, part, { fontFamily: "Courier New", fontSize: "13px", color: "#d4d4d4" }).setDepth(11);
+
+            this._addEl(dropContainer); // Add to elements array for scene cleanup
+          });
+          cx += bw + GAP;
+        }
+        // Text between blanks: edge spaces are dropped because the gap around the blank already separates tokens
+        let part = rawPart;
+        if (pi > 0) part = part.replace(/^\s+/, "");
+        if (pi < parts.length - 1) part = part.replace(/\s+$/, "");
+        if (part) {
+          const pt = this.add.text(cx, ly, part, codeStyle).setDepth(11);
           this._addEl(pt);
-          cx += pt.width + 2;
-        });
-      } else {
-        const ct = this.add.text(55, ly, line, { fontFamily: "Courier New", fontSize: "13px", color: "#d4d4d4" }).setDepth(11);
-        this._addEl(ct);
-      }
+          cx += pt.width;
+          if (pi < parts.length - 1) cx += GAP;
+        }
+      });
     });
 
-    // Output panel
+    // Output panel — fills the space between the editor and the Run button
+    const RUN_Y = 546;
+    const oTop = eTop + eH + 8, oBottom = RUN_Y - 26;
     const og = this.add.graphics().setDepth(10);
-    og.fillStyle(0x1e1e1e, 1); og.fillRoundedRect(20, 415, W - 40, 100, 8);
-    og.lineStyle(1, 0x3e3e42); og.strokeRoundedRect(20, 415, W - 40, 100, 8);
+    og.fillStyle(0x1e1e1e, 1); og.fillRoundedRect(20, oTop, W - 40, oBottom - oTop, 8);
+    og.lineStyle(1, 0x3e3e42); og.strokeRoundedRect(20, oTop, W - 40, oBottom - oTop, 8);
     this._addEl(og);
-    this._addEl(this.add.text(35, 420, "OUTPUT", { fontFamily: "Arial", fontSize: "11px", color: "#888", fontStyle: "bold" }).setDepth(11));
-    this.outputTxt = this.add.text(35, 435, "Click blanks to select operators, then Run Code.", { fontFamily: "Courier New", fontSize: "12px", color: "#4ec9b0", lineSpacing: 3 }).setDepth(11);
+    this._addEl(this.add.text(W - 36, oTop + 8, "OUTPUT", { fontFamily: "Arial", fontSize: "18px", color: "#888", fontStyle: "bold" }).setOrigin(1, 0).setDepth(11));
+    this.outputTxt = this.add.text(36, oTop + 8, "Click blanks to select operators, then Run Code.", { fontFamily: "Courier New", fontSize: "18px", color: "#4ec9b0", lineSpacing: 2, wordWrap: { width: W - 190 } }).setDepth(11);
     this._addEl(this.outputTxt);
 
     // Run button
-    const runBg = this.add.rectangle(W / 2, 540, 180, 36, 0x007acc).setDepth(20).setInteractive({ useHandCursor: true });
+    const runBg = this.add.rectangle(W / 2, RUN_Y, 190, 40, 0x007acc).setDepth(20).setInteractive({ useHandCursor: true });
     runBg.setStrokeStyle(2, 0x4fc3f7);
-    const runTxt = this.add.text(W / 2, 540, "▶ Run Code", { fontFamily: "Arial", fontSize: "15px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
+    const runTxt = this.add.text(W / 2, RUN_Y, "▶ Run Code", { fontFamily: "Arial", fontSize: "20px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(21);
     this._addEl(runBg, runTxt);
     runBg.on("pointerover", () => runBg.setFillStyle(0x005a9e));
     runBg.on("pointerout", () => runBg.setFillStyle(0x007acc));
@@ -312,13 +330,13 @@ export class Level15Scene extends Phaser.Scene {
   _showProjectResult(passed, p) {
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.6).setDepth(300);
     const pg = this.add.graphics().setDepth(301);
-    pg.fillStyle(0x252526, 0.98); pg.fillRoundedRect(W / 2 - 220, H / 2 - 100, 440, 200, 12);
-    pg.lineStyle(3, passed ? 0x4caf50 : 0xd32f2f); pg.strokeRoundedRect(W / 2 - 220, H / 2 - 100, 440, 200, 12);
-    const ic = this.add.text(W / 2, H / 2 - 60, passed ? "✅ PROJECT COMPLETE!" : "❌ Try Again", { fontFamily: "Arial", fontSize: "20px", color: passed ? "#4ade80" : "#ef5350", fontStyle: "bold" }).setOrigin(0.5).setDepth(302);
-    const sc = this.add.text(W / 2, H / 2 - 25, `${p.icon} ${p.title}`, { fontFamily: "Arial", fontSize: "14px", color: "#e0e0e0" }).setOrigin(0.5).setDepth(302);
-    const exp = this.add.text(W / 2, H / 2 + 5, `Correct operators: ${p.blanks.map(b => b.ans).join("  ")}`, { fontFamily: "Courier New", fontSize: "13px", color: "#ffd700" }).setOrigin(0.5).setDepth(302);
-    const nb = this.add.rectangle(W / 2, H / 2 + 60, 180, 40, passed ? 0x007acc : 0xd32f2f).setDepth(302).setInteractive({ useHandCursor: true });
-    const nt = this.add.text(W / 2, H / 2 + 60, passed ? "Next Project →" : "Retry", { fontFamily: "Arial", fontSize: "15px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(303);
+    pg.fillStyle(0x252526, 0.98); pg.fillRoundedRect(W / 2 - 250, H / 2 - 115, 500, 230, 12);
+    pg.lineStyle(3, passed ? 0x4caf50 : 0xd32f2f); pg.strokeRoundedRect(W / 2 - 250, H / 2 - 115, 500, 230, 12);
+    const ic = this.add.text(W / 2, H / 2 - 78, passed ? "✅ PROJECT COMPLETE!" : "❌ Try Again", { fontFamily: "Arial", fontSize: "24px", color: passed ? "#4ade80" : "#ef5350", fontStyle: "bold" }).setOrigin(0.5).setDepth(302);
+    const sc = this.add.text(W / 2, H / 2 - 36, `${p.icon} ${p.title}`, { fontFamily: "Arial", fontSize: "20px", color: "#e0e0e0" }).setOrigin(0.5).setDepth(302);
+    const exp = this.add.text(W / 2, H / 2 + 2, `Correct operators: ${p.blanks.map(b => b.ans).join("  ")}`, { fontFamily: "Courier New", fontSize: "18px", color: "#ffd700" }).setOrigin(0.5).setDepth(302);
+    const nb = this.add.rectangle(W / 2, H / 2 + 66, 210, 46, passed ? 0x007acc : 0xd32f2f).setDepth(302).setInteractive({ useHandCursor: true });
+    const nt = this.add.text(W / 2, H / 2 + 66, passed ? "Next Project →" : "Retry", { fontFamily: "Arial", fontSize: "20px", color: "#fff", fontStyle: "bold" }).setOrigin(0.5).setDepth(303);
     nb.on("pointerup", () => {
       [ov, pg, ic, sc, exp, nb, nt].forEach(e => e.destroy());
       if (passed) {

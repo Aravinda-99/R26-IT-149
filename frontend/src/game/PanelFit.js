@@ -138,10 +138,16 @@ function deepTexts(o, out = []) {
 
 const isFullScreen = (b) => b.w >= 1200 && b.h >= 680;
 
+/** Everything that was already on the display list when the scene armed the helper is scenery (backgrounds, menu
+ * bars, HUD, the gameplay screen itself) and can never be the dim overlay or part of the panel: PanelFit only lays out
+ * what was built AFTER arm(). Without this, an opaque full-screen background looked like an "overlay" and the whole
+ * gameplay screen was re-stacked (Level 15's code editor). */
+const isBaseline = (scene, o) => !!(scene.__pf && scene.__pf.baseline && scene.__pf.baseline.has(o));
+
 function findOverlay(scene) {
   let best = null;
   for (const o of scene.children.list) {
-    if (!isVisible(o)) continue;
+    if (!isVisible(o) || isBaseline(scene, o)) continue;
     const full = (o.type === "Rectangle" && o.displayWidth >= 1200 && o.displayHeight >= 680)
       || (o.type === "Graphics" && opRects(o).some((r) => r.fill && isFullScreen(toWorld(o, r))));
     if (full && (!best || o.depth >= best.depth)) best = o;
@@ -166,7 +172,7 @@ const hasPositionTween = (scene, o) => tweenState(scene, o).blocking;
 function collectLayer(scene, overlay) {
   const out = [];
   for (const o of scene.children.list) {
-    if (o === overlay || !isVisible(o) || o.depth < overlay.depth) continue;
+    if (o === overlay || !isVisible(o) || o.depth < overlay.depth || isBaseline(scene, o)) continue;
     if (o.type === "ParticleEmitter" || o.type === "DOMElement") continue;
     if (o.type === "Zone" && !(o.input && o.input.enabled)) continue;
     out.push(o);
@@ -570,10 +576,15 @@ export const PanelFit = {
    * level-complete / game-over path. Safe to call more than once.
    */
   arm(scene) {
-    if (scene.__pf) return; // already armed for this run of the scene
+    if (scene.__pf) {
+      // already armed: if no panel is on screen right now, what exists now is scenery for the next panel
+      if (!findOverlay(scene)) scene.__pf.baseline = new Set(scene.children.list);
+      return;
+    }
     installRecorder();
     scene.__pfArmed = true;
     const st = { saved: [], sig: "", stable: 0, fitted: "", fits: 0, timer: null, overlay: null, idle: 0 };
+    st.baseline = new Set(scene.children.list);
     scene.__pf = st;
     st.timer = scene.time.addEvent({
       delay: TICK_MS, loop: true,
