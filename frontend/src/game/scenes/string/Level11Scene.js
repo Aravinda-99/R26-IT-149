@@ -5,7 +5,7 @@
  *
  * Operations & Mechanics:
  * 1. length()           → Ruler Measure (drag notch to cut point)
- * 2. charAt(i)          → Index Jumper (click correct character at index)
+ * 2. charAt(i)          → Frog Hop (hop to the character charAt(i) returns, then Grab)
  * 3. toUpperCase/Lower  → Case Flipper (click letters to flip case)
  * 4. concat (+)         → Magnet Merge (drag two halves together)
  * 5. substring(a,b)     → Slice Cutter (drag two blades to mark range)
@@ -73,7 +73,7 @@ const OPERATIONS = [
         '"Hello" has 5 characters → length() returns 5'
       ],
       extras: [
-        { str: "a b c", length: 5, note: "Spaces count! Length = 5" },
+        { str: "a b c", length: 5, note: "Spaces count too — each one is a character" },
         { str: "", length: 0, note: 'Empty string "" → Length = 0' }
       ]
     },
@@ -81,8 +81,8 @@ const OPERATIONS = [
       { str: "Java", answer: "4" },
       { str: "Hi", answer: "2" },
       { str: "World!", answer: "6" },
-      { str: "a b c", answer: "5" },
-      { str: "Hello", answer: "5" }
+      { str: "I am", answer: "4" },
+      { str: "Level", answer: "5" }
     ]
   },
   {
@@ -126,7 +126,7 @@ const OPERATIONS = [
       ]
     },
     rounds: [
-      { str: "hello", op: "upper", answer: "HELLO" },
+      { str: "debug", op: "upper", answer: "DEBUG" },
       { str: "WORLD", op: "lower", answer: "world" },
       { str: "Java", op: "upper", answer: "JAVA" },
       { str: "HeLLo", op: "lower", answer: "hello" },
@@ -146,11 +146,11 @@ const OPERATIONS = [
       ],
       extras: [
         { a: "Hi", b: "!", answer: "Hi!", note: "Strings merge exactly as-is" },
-        { a: "Java", b: " is fun", answer: "Java is fun", note: "Don't forget the space!" }
+        { a: "Java", b: " is fun", answer: "Java is fun", note: "Every character joins, spaces included" }
       ]
     },
     rounds: [
-      { a: "Hello", b: " World", answer: "Hello World" },
+      { a: "Sun", b: "shine", answer: "Sunshine" },
       { a: "Good", b: "bye", answer: "Goodbye" },
       { a: "Hi", b: "!", answer: "Hi!" },
       { a: "Java", b: " ", answer: "Java " },
@@ -169,8 +169,8 @@ const OPERATIONS = [
         '"Hello".substring(1,4) → "ell" (indices 1,2,3)'
       ],
       extras: [
-        { str: "Welcome", a: 0, b: 3, answer: "Wel", note: "substring(0,3) = first 3 characters" },
-        { str: "Hello", a: 2, b: 5, answer: "llo", note: "substring(2,5) = index 2,3,4" }
+        { str: "Welcome", a: 0, b: 3, answer: "Wel", note: "The start index is included, the end index is not" },
+        { str: "Hello", a: 2, b: 5, answer: "llo", note: "A longer slice works the same way" }
       ]
     },
     rounds: [
@@ -178,7 +178,7 @@ const OPERATIONS = [
       { str: "World!", a: 0, b: 5, answer: "World" },
       { str: "Java", a: 1, b: 4, answer: "ava" },
       { str: "Coding", a: 2, b: 4, answer: "di" },
-      { str: "String", a: 0, b: 3, answer: "Str" }
+      { str: "Planet", a: 0, b: 4, answer: "Plan" }
     ]
   },
   {
@@ -202,7 +202,7 @@ const OPERATIONS = [
       { str: "   Hi", answer: "Hi" },
       { str: "World!   ", answer: "World!" },
       { str: " a b c ", answer: "a b c" },
-      { str: "  Hello World  ", answer: "Hello World" }
+      { str: "  Good Day  ", answer: "Good Day" }
     ]
   }
 ];
@@ -242,6 +242,8 @@ export class Level11Scene extends Phaser.Scene {
     this.totalCorrect = 0;
     this.totalAttempted = 0;
     this.elements = [];
+    this._tutSeq = 0;
+    this._resolved = false;
     this.combo = 0;
     this._timerTween = null;
     this.startTime = this.time.now;
@@ -479,7 +481,8 @@ export class Level11Scene extends Phaser.Scene {
     this._addEl(container);
 
     this.time.delayedCall(800, () => {
-      this._btn(W / 2, H - 40, "Continue →", true, callback);
+      let used = false;
+      this._btn(W / 2, H - 40, "Continue →", true, () => { if (used) return; used = true; callback(); });
     });
   }
 
@@ -638,6 +641,7 @@ export class Level11Scene extends Phaser.Scene {
       return;
     }
     this._clear();
+    this._resolved = false; // one commit (or timeout) per round
     this._createHUD(op);
 
     switch (op.id) {
@@ -648,6 +652,13 @@ export class Level11Scene extends Phaser.Scene {
       case "substring": this._playSubstring(); break;
       case "trim": this._playTrim(); break;
     }
+  }
+
+  /** True exactly once per round: the first commit (correct or wrong) or timeout wins; later clicks are ignored. */
+  _tryResolve() {
+    if (this._resolved) return false;
+    this._resolved = true;
+    return true;
   }
 
   _nextRound() {
@@ -675,7 +686,9 @@ export class Level11Scene extends Phaser.Scene {
     this._addEl(title, sub);
     this._spawnConfetti(W / 2, 150, 30);
 
+    let used = false;
     this._btn(W / 2, 340, "Continue →", true, () => {
+      if (used) return; used = true;
       this.opIndex++;
       this._startOperation();
     });
@@ -740,16 +753,18 @@ export class Level11Scene extends Phaser.Scene {
     }
 
     // Skip & Got it buttons
-    const skipBtn = this._btn(W - 70, 86, "Skip →", false, () => {
+    const tutId = ++this._tutSeq;
+    const leave = () => {
+      if (this._tutSeq !== tutId) return;
+      this._tutSeq++; // invalidates the other button and the delayed "Got it"
       this._clear();
       this._startRound();
-    });
+    };
+    this._btn(W - 70, 86, "Skip →", false, leave);
 
     this.time.delayedCall(2500, () => {
-      this._btn(W / 2, H - 50, "Got it — let me play! →", true, () => {
-        this._clear();
-        this._startRound();
-      });
+      if (this._tutSeq !== tutId) return;
+      this._btn(W / 2, H - 50, "Got it — let me play! →", true, leave);
     });
   }
 
@@ -804,6 +819,7 @@ export class Level11Scene extends Phaser.Scene {
     this._addEl(cutLbl, nc);
 
     nc.on("drag", (_, dx) => {
+      if (this._resolved) return;
       pulse.stop(); nc.setScale(1);
       pos = Phaser.Math.Clamp(Math.round((dx - x0) / step), 0, str.length);
       nc.x = x0 + pos * step; nt.setText(`${pos}`); cutLbl.setText(`CUT AT: ${pos}`);
@@ -818,12 +834,14 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     this._startTimer(20, () => {
+      if (!this._tryResolve()) return;
       this._stopTimer(); this._handleWrong();
       this._showFeedback(false, `Time's up! Length = ${correctLen}`, "Count every character!", () => this._nextRound());
     });
 
     this.time.delayedCall(400, () => {
       this._btn(W / 2, 371, "🔒 Lock Answer", true, () => {
+        if (!this._tryResolve()) return;
         this._stopTimer();
         if (pos === correctLen) {
           flag.clear(); flag.fillStyle(C.success_green, 1); flag.fillRoundedRect(-22, -34, 44, 32, 8);
@@ -849,11 +867,12 @@ export class Level11Scene extends Phaser.Scene {
 
 
   _playCharAt() {
-    /* ── FROG HOP: Hop the frog to the target index using arrow buttons or keys ── */
+    /* ── FROG HOP: hop to the character charAt(idx) returns, then Grab. The target is never shown or hinted. ── */
     const round = OPERATIONS[1].rounds[this.roundIndex];
-    const str = round.str, idx = round.idx, correctChar = round.answer;
+    const str = round.str, idx = round.idx, correctChar = str.charAt(idx);
+    const show = (c) => (c === " " ? "␣" : c);
 
-    this._addEl(this.add.text(W / 2, 118, `🐸  Hop to index ${idx}, then Grab it!  "${str}".charAt(${idx}) = ?`, {
+    this._addEl(this.add.text(W / 2, 118, `🐸  Hop the frog to the character that "${str}".charAt(${idx}) returns, then Grab it!`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
@@ -867,11 +886,6 @@ export class Level11Scene extends Phaser.Scene {
       );
     });
 
-    // Target arrow
-    const arr = this.add.text(boxes[idx].x, boxes[idx].y - 58, "🎯", { fontSize: "18px" }).setOrigin(0.5).setDepth(102);
-    this.tweens.add({ targets: arr, y: arr.y - 8, duration: 600, yoyo: true, repeat: -1 });
-    this._addEl(arr);
-
     let frogPos = 0, hopping = false, hopCount = 0;
     const frog = this.add.text(boxes[0].x, boxes[0].y - 42, "🐸", { fontSize: "30px" }).setOrigin(0.5).setDepth(200);
     const hopLbl = this.add.text(W / 2, 298, "Hops: 0", {
@@ -879,16 +893,14 @@ export class Level11Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(100);
     this._addEl(frog, hopLbl);
 
-    let grabBtn;
     const hopTo = (next) => {
-      if (hopping || next < 0 || next >= str.length) return;
+      if (this._resolved || hopping || next < 0 || next >= str.length) return;
       hopping = true; hopCount++; hopLbl.setText(`Hops: ${hopCount}`);
       this.tweens.add({
         targets: frog, x: boxes[next].x, duration: 280, ease: "Linear",
         onUpdate: (tw) => { frog.y = boxes[0].y - 42 - Math.sin(tw.progress * Math.PI) * 42; },
         onComplete: () => {
           frogPos = next; hopping = false;
-          grabBtn.setAlpha(frogPos === idx ? 1 : 0.45);
           const sq = this.add.circle(boxes[next].x, boxes[next].y + 38, 24, 0x27AE60, 0.5).setDepth(94);
           this.tweens.add({ targets: sq, scaleY: 0.55, duration: 90, yoyo: true, onComplete: () => sq.destroy() });
         }
@@ -898,32 +910,38 @@ export class Level11Scene extends Phaser.Scene {
     this._btn(W / 2 - 130, 366, "◀  Left", false, () => hopTo(frogPos - 1));
     this._btn(W / 2 + 130, 366, "Right  ▶", false, () => hopTo(frogPos + 1));
 
-    grabBtn = this._btn(W / 2, 414, "🤚 Grab it!", true, () => {
+    // Grab always looks the same; it is evaluated only when clicked.
+    this._btn(W / 2, 414, "🤚 Grab it!", true, () => {
+      if (hopping) return;               // wait for the hop to land
+      if (!this._tryResolve()) return;   // one commit per round
       this._stopTimer();
       this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT");
-      if (frogPos === idx) {
+      const grabbed = boxes[frogPos].char;
+      if (grabbed === correctChar) {
         this.tweens.add({ targets: frog, y: frog.y - 90, alpha: 0, scale: 1.5, duration: 450 });
-        boxes[idx].drawBox(C.success_bg, C.success_green);
+        boxes[frogPos].drawBox(C.success_bg, C.success_green);
         this._spawnConfetti(frog.x, frog.y, 18);
         const pts = this._handleCorrect(); this._spawnScorePopup(frog.x, frog.y - 20, `+${pts}`);
-        this._showFeedback(true, `charAt(${idx}) = '${correctChar}' ✓  +${pts} pts`,
+        this._showFeedback(true, `charAt(${idx}) = '${show(correctChar)}' ✓  +${pts} pts`,
           `Index ${idx} = the ${this._ordinal(idx + 1)} character`, () => this._nextRound());
       } else {
         this.tweens.add({ targets: frog, x: frog.x + 8, duration: 60, yoyo: true, repeat: 5 });
+        boxes[frogPos].drawBox(C.error_bg, C.error_red);
         this._handleWrong();
-        this._showFeedback(false, `Frog on index ${frogPos} ('${str[frogPos]}') — need index ${idx}!`,
+        this._showFeedback(false, `You grabbed '${show(grabbed)}' (index ${frogPos}) — charAt(${idx}) = '${show(correctChar)}'`,
           "Counting starts at 0!", () => this._nextRound());
       }
     });
-    grabBtn.setAlpha(0.45);
 
     this.input.keyboard.on("keydown-LEFT", () => hopTo(frogPos - 1));
     this.input.keyboard.on("keydown-RIGHT", () => hopTo(frogPos + 1));
     this._addEl({ destroy: () => { this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT"); } });
 
     this._startTimer(22, () => {
-      this._stopTimer(); this._handleWrong();
-      this._showFeedback(false, `Time's up! charAt(${idx}) = '${correctChar}'`, "Index 0 is always the first character!", () => this._nextRound());
+      if (!this._tryResolve()) return;
+      this._stopTimer(); this.input.keyboard.off("keydown-LEFT"); this.input.keyboard.off("keydown-RIGHT");
+      this._handleWrong();
+      this._showFeedback(false, `Time's up! charAt(${idx}) = '${show(correctChar)}'`, "Index 0 is always the first character!", () => this._nextRound());
     });
   }
 
@@ -971,7 +989,7 @@ export class Level11Scene extends Phaser.Scene {
       const hit = this.add.rectangle(b.x, b.y, BOX_W, BOX_H).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(115);
       this._addEl(hit);
       hit.on("pointerup", () => {
-        if (flipped[i]) return;
+        if (flipped[i] || this._resolved) return;
         flipped[i] = true;
         b.charTxt.setText(isUpper ? str[i].toUpperCase() : str[i].toLowerCase());
         b.drawBox(C.success_bg, C.success_green);
@@ -992,6 +1010,7 @@ export class Level11Scene extends Phaser.Scene {
       targets: sweepLine, x: x0 + str.length * step + 20,
       duration: Math.max(str.length * 900, 3500), ease: "Linear",
       onComplete: () => {
+        if (!this._tryResolve()) return;
         this._stopTimer();
         const allGood = flipped.every(Boolean);
         if (allGood) {
@@ -1044,7 +1063,7 @@ export class Level11Scene extends Phaser.Scene {
     const snapTarget = leftX + leftW / 2 + rightW / 2 + step;
 
     rc.on("drag", (_, dx) => {
-      if (merged) return;
+      if (merged || this._resolved) return;
       const delta = dx - rightStartX;
       rightBoxes.forEach(rb => {
         rb.box.x = rb.x + delta; rb.charTxt.x = rb.x + delta; rb.idxTxt.x = rb.x + delta;
@@ -1059,10 +1078,11 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     rc.on("dragend", () => {
-      if (merged) return;
+      if (merged || this._resolved) return;
       const lastLX = leftBoxes[leftBoxes.length - 1].charTxt.x;
       const dist = Math.abs(rightBoxes[0].charTxt.x - (lastLX + step));
       if (dist < 55) {
+        if (!this._tryResolve()) return;
         merged = true; rc.disableInteractive();
         rightBoxes.forEach((rb, i) => {
           const tx = lastLX + (i + 1) * step;
@@ -1086,6 +1106,7 @@ export class Level11Scene extends Phaser.Scene {
     });
 
     this._startTimer(25, () => {
+      if (!this._tryResolve()) return;
       this._stopTimer(); this._handleWrong();
       this._showFeedback(false, `"${a}" + "${b}" = "${correct}"`, "Strings join end-to-end — every space matters!", () => this._nextRound());
     });
@@ -1101,7 +1122,7 @@ export class Level11Scene extends Phaser.Scene {
     const round = OPERATIONS[4].rounds[this.roundIndex];
     const str = round.str, a = round.a, b = round.b, correct = round.answer;
 
-    this._addEl(this.add.text(W / 2, 118, `✂️  Drag the lasers to cut  "${str}".substring(${a},${b})`, {
+    this._addEl(this.add.text(W / 2, 118, `✂️  Drag the lasers to cut out "${correct}" from "${str}"`, {
       fontFamily: "Arial", fontSize: "13px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
@@ -1109,16 +1130,9 @@ export class Level11Scene extends Phaser.Scene {
     const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2;
     const bx = (i) => x0 + i * step - 2;
 
-    const prevLbl = this.add.text(W / 2, 326, `substring(0,${str.length}) = "${str}"`, {
-      fontFamily: "Courier New", fontSize: "12px", color: COLORS.text_secondary
-    }).setOrigin(0.5).setDepth(100);
-    this._addEl(prevLbl);
-
     let laserA = 0, laserB = str.length;
 
     const updatePreview = () => {
-      const sub = laserA < laserB ? str.substring(laserA, laserB) : "";
-      prevLbl.setText(`substring(${laserA},${laserB}) = "${sub}"`);
       boxes.forEach((box, i) => {
         const inside = i >= laserA && i < laserB;
         box.drawBox(inside ? C.purple_bg : C.white, inside ? C.error_red : C.purple_border);
@@ -1141,6 +1155,7 @@ export class Level11Scene extends Phaser.Scene {
       this._addEl(lc);
       this.tweens.add({ targets: glow, alpha: { from: 0.2, to: 0.6 }, duration: 500, yoyo: true, repeat: -1 });
       lc.on("drag", (_, dx) => {
+        if (this._resolved) return;
         const rawI = Math.round((dx - x0) / step);
         if (isLeft) laserA = Phaser.Math.Clamp(rawI, 0, laserB - 1);
         else laserB = Phaser.Math.Clamp(rawI, laserA + 1, str.length);
@@ -1155,12 +1170,14 @@ export class Level11Scene extends Phaser.Scene {
     updatePreview();
 
     this._startTimer(25, () => {
+      if (!this._tryResolve()) return;
       this._stopTimer(); this._handleWrong();
       this._showFeedback(false, `Correct: "${correct}"`, `Start at ${a}, stop BEFORE ${b}`, () => this._nextRound());
     });
 
     this.time.delayedCall(400, () => {
       this._btn(W / 2, 384, "✂️  Cut!", true, () => {
+        if (!this._tryResolve()) return;
         this._stopTimer();
         if (laserA === a && laserB === b) {
           boxes.forEach((box, i) => {
@@ -1190,11 +1207,12 @@ export class Level11Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _playTrim() {
-    /* ── BROOM SWEEP: Move pointer over spaces to sweep them off the edges ── */
+    /* ── BROOM SWEEP: sweep the spaces you think trim() removes; a click on a swept space puts it back.
+     *    Nothing tells the player which spaces are right until Done is pressed. ── */
     const round = OPERATIONS[5].rounds[this.roundIndex];
     const str = round.str, correct = round.answer;
 
-    this._addEl(this.add.text(W / 2, 118, `🧹  "${str.replace(/ /g, '·')}".trim() — move broom over edge spaces to sweep!`, {
+    this._addEl(this.add.text(W / 2, 118, `🧹  "${str.replace(/ /g, '·')}".trim() — sweep the spaces trim() would remove`, {
       fontFamily: "Arial", fontSize: "12px", color: COLORS.purple_darker, fontStyle: "bold"
     }).setOrigin(0.5).setDepth(100));
 
@@ -1204,6 +1222,8 @@ export class Level11Scene extends Phaser.Scene {
     while (s < str.length && str[s] === " ") { shouldSweep[s] = true; s++; }
     while (e >= 0 && str[e] === " ") { shouldSweep[e] = true; e--; }
     const swept = new Array(str.length).fill(false);
+    const blocked = new Array(str.length).fill(false);   // un-swept by click: don't re-sweep until the broom leaves
+    const sweptAt = new Array(str.length).fill(0);
 
     boxes.forEach((b, i) => {
       if (str[i] === " ") {
@@ -1213,7 +1233,7 @@ export class Level11Scene extends Phaser.Scene {
       }
     });
 
-    const infoLbl = this.add.text(W / 2, 304, "Move broom over spaces — only sweep the ones at the START and END", {
+    const infoLbl = this.add.text(W / 2, 304, "Move the broom over a space to sweep it — click a swept space to put it back", {
       fontFamily: "Arial", fontSize: "11px", color: COLORS.text_secondary
     }).setOrigin(0.5).setDepth(100);
     this._addEl(infoLbl);
@@ -1224,35 +1244,53 @@ export class Level11Scene extends Phaser.Scene {
     const sweepZone = this.add.rectangle(W / 2, 236, W - 40, 70).setAlpha(0.001).setInteractive({ useHandCursor: true }).setDepth(200);
     this._addEl(sweepZone);
 
+    // Every swept space looks the same, right or wrong.
+    const setSwept = (i, on) => {
+      const b = boxes[i];
+      swept[i] = on;
+      if (on) {
+        sweptAt[i] = this.time.now;
+        b.drawBox(0xE8E6F2, C.purple_light); b.charTxt.setAlpha(0.35);
+        for (let p = 0; p < 6; p++) {
+          const px = this.add.circle(b.x + (Math.random() - 0.5) * 30, b.y + (Math.random() - 0.5) * 20, 3, 0x888780, 0.8).setDepth(220);
+          this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 400, onComplete: () => px.destroy() });
+        }
+      } else {
+        b.drawBox(C.white, C.purple_border); b.charTxt.setAlpha(1);
+      }
+    };
+    const near = (b, x, y) => Math.abs(x - b.x) < BOX_W / 2 + 8 && Math.abs(y - b.y) < 40;
+
     sweepZone.on("pointermove", (ptr) => {
+      if (this._resolved) return;
       broom.x = Phaser.Math.Clamp(ptr.x, 20, W - 20);
       broom.y = Phaser.Math.Clamp(ptr.y, 206, 271);
       boxes.forEach((b, i) => {
-        if (swept[i]) return;
-        if (Math.abs(broom.x - b.x) < BOX_W / 2 + 8 && Math.abs(broom.y - b.y) < 40 && str[i] === " ") {
-          swept[i] = true;
-          if (shouldSweep[i]) {
-            b.drawBox(C.success_bg, C.success_green); b.charTxt.setAlpha(0.2);
-            for (let p = 0; p < 6; p++) {
-              const px = this.add.circle(b.x + (Math.random()-0.5)*30, b.y + (Math.random()-0.5)*20, 3, 0x888780, 0.8).setDepth(220);
-              this.tweens.add({ targets: px, alpha: 0, scale: 0, duration: 400, onComplete: () => px.destroy() });
-            }
-          } else {
-            b.drawBox(0xFFF4CC, C.orange);
-            this.tweens.add({ targets: broom, x: broom.x - 25, duration: 80, yoyo: true });
-            infoLbl.setText("⚠️ Middle spaces stay! trim() only removes edge spaces.");
-          }
-        }
+        if (str[i] !== " ") return;
+        if (!near(b, broom.x, broom.y)) { blocked[i] = false; return; }
+        if (!swept[i] && !blocked[i]) setSwept(i, true);
+      });
+    });
+
+    sweepZone.on("pointerup", (ptr) => {
+      if (this._resolved) return;
+      boxes.forEach((b, i) => {
+        if (str[i] !== " " || !near(b, ptr.x, ptr.y)) return;
+        if (!swept[i]) { setSwept(i, true); return; }
+        if (this.time.now - sweptAt[i] < 300) return;   // the same gesture that just swept it
+        setSwept(i, false); blocked[i] = true;
       });
     });
 
     this._startTimer(20, () => {
+      if (!this._tryResolve()) return;
       this._stopTimer(); this._handleWrong();
       this._showFeedback(false, `Correct: "${correct}"`, "Sweep edge spaces only — middle ones stay!", () => this._nextRound());
     });
 
     this.time.delayedCall(400, () => {
       this._btn(W / 2, 381, "🧹 Done Sweeping!", true, () => {
+        if (!this._tryResolve()) return;
         this._stopTimer();
         const ok = shouldSweep.every((should, i) => swept[i] === should);
         if (ok) {
@@ -1264,7 +1302,10 @@ export class Level11Scene extends Phaser.Scene {
           const pts = this._handleCorrect(); this._spawnScorePopup(W / 2, 196, `+${pts}`);
           this._showFeedback(true, `trim() → "${correct}" ✓  +${pts} pts`, "Only edge spaces removed!", () => this._nextRound());
         } else {
-          boxes.forEach((b, i) => { if (shouldSweep[i] && !swept[i]) { b.drawBox(0xFFE0E0, C.error_red); b.charTxt.setText("✕"); } });
+          boxes.forEach((b, i) => {
+            if (shouldSweep[i] && !swept[i]) { b.drawBox(0xFFE0E0, C.error_red); b.charTxt.setText("✕"); }
+            else if (swept[i] && !shouldSweep[i]) { b.drawBox(0xFFF4CC, C.orange); b.charTxt.setAlpha(1); }
+          });
           this._handleWrong();
           this._showFeedback(false, `Correct: "${correct}"`, "trim() removes START and END spaces only!", () => this._nextRound());
         }
@@ -1398,15 +1439,6 @@ export class Level11Scene extends Phaser.Scene {
   /* ═══════════════════════════════════════════════════════════════════════
    *  UTILITIES
    * ═══════════════════════════════════════════════════════════════════════ */
-
-  _generateOptions(correct, min, max) {
-    const opts = new Set([correct]);
-    while (opts.size < 4) {
-      let wrong = Math.floor(Math.random() * (max - min)) + min;
-      if (wrong !== correct) opts.add(wrong);
-    }
-    return [...opts].sort(() => Math.random() - 0.5);
-  }
 
   _ordinal(n) {
     const s = ["th", "st", "nd", "rd"];
