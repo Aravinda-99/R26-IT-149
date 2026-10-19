@@ -25,6 +25,7 @@ import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -605,8 +606,8 @@ export class Level28Scene extends Phaser.Scene {
     g.lineStyle(1, 0x241f36, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE RETRIEVAL CLAW", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Accretion Phase — String Methods: charAt()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE RETRIEVAL CLAW", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Accretion Phase — String Methods: charAt()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     const mg = this.add.graphics().setDepth(51);
     mg.fillStyle(0x1a1a2e, 1);
@@ -744,8 +745,8 @@ export class Level28Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 330 } });
-    const bw = Math.min(inner.width, 330) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - 24 - bw, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh / 2, 80, H - bh - 20);
@@ -1620,6 +1621,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(65);
     this.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1666,6 +1668,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1696,6 +1699,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 const HUD_H = 48;
@@ -1610,6 +1611,7 @@ export class Level21Scene extends Phaser.Scene {
   // ─── Level Complete ───────────────────────────────────────────────────────
 
   _levelComplete() {
+    PanelFit.arm(this);
     const acc = this._firstTry / 8;
     GameManager.completeLevel(20, Math.round(acc * 100));
     try { BadgeSystem.unlock("stream_architect"); } catch (_) {}

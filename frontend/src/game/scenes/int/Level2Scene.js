@@ -20,6 +20,7 @@ import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ───────── Constants ───────── */
 const W = 1280;
@@ -467,6 +468,7 @@ export class Level2Scene extends Phaser.Scene {
    *  INSTRUCTION OVERLAY
    * ═══════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     const els = [];
     const d = 200;
 
@@ -1099,6 +1101,7 @@ export class Level2Scene extends Phaser.Scene {
    *  LEVEL COMPLETE
    * ═══════════════════════════════════════════ */
   _levelComplete() {
+    PanelFit.arm(this);
     this.isComplete = true;
     const accuracy = Math.round((this.correctCount / TOTAL_ENEMIES) * 100);
 
@@ -1163,6 +1166,7 @@ export class Level2Scene extends Phaser.Scene {
    *  GAME OVER
    * ═══════════════════════════════════════════ */
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this.roundElements.forEach(e => { if (e && e.active) e.destroy(); });
 

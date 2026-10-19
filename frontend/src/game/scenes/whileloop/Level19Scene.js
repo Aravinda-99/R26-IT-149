@@ -5,6 +5,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ── Canvas ──────────────────────────────────────────────────────────────── */
 const W = 800, H = 600;
@@ -1450,6 +1451,7 @@ export class Level19Scene extends Phaser.Scene {
 
   /* ── Game Over ───────────────────────────────────────────────────────── */
   _gameOver() {
+    PanelFit.arm(this);
     this._clearRound();
     // Drain core
     this._updateFill(0, 500);
@@ -1476,6 +1478,7 @@ export class Level19Scene extends Phaser.Scene {
 
   /* ── Level Complete ──────────────────────────────────────────────────── */
   _levelComplete() {
+    PanelFit.arm(this);
     try { GameManager.completeLevel(18, Math.round((this.correctFirstTry/10)*100)); } catch(e) {}
     try { BadgeSystem.unlock('while_schema'); } catch(e) {}
 

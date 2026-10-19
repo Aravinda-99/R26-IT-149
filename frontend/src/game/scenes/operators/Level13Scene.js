@@ -8,6 +8,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -133,6 +134,7 @@ export class Level13Scene extends Phaser.Scene {
 
   // ─── INTRO ───
   _showIntro() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0533, 0.98); pg.fillRoundedRect(W / 2 - 300, 60, 600, 460, 16);
@@ -290,6 +292,7 @@ export class Level13Scene extends Phaser.Scene {
   }
 
   _showGameOver() {
+    PanelFit.arm(this);
     this._clear();
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const t = this.add.text(W / 2, H / 2 - 30, "💀 Training Failed!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
@@ -303,6 +306,7 @@ export class Level13Scene extends Phaser.Scene {
   }
 
   _showResults() {
+    PanelFit.arm(this);
     this._clear();
     const acc = this.totalSpells > 0 ? Math.round((this.correct / this.totalSpells) * 100) : 0;
     const passed = acc >= 60;

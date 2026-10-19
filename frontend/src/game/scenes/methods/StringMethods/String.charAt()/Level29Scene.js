@@ -29,6 +29,7 @@ import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -742,8 +743,8 @@ export class Level29Scene extends Phaser.Scene {
     g.lineStyle(1, 0x241f36, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE CLAW TRIALS", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Tuning Phase — String Methods: charAt()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE CLAW TRIALS", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Tuning Phase — String Methods: charAt()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.waveText = this.add.text(640, 12, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(51);
     this.waveSquares = [];
@@ -752,8 +753,8 @@ export class Level29Scene extends Phaser.Scene {
       this.waveSquares.push(sq);
     }
 
-    this.add.text(1060, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
     this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
@@ -808,8 +809,8 @@ export class Level29Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 330 } });
-    const bw = Math.min(inner.width, 330) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -901,7 +902,7 @@ export class Level29Scene extends Phaser.Scene {
 
   createAnnotation(x, y, text, colorHex, arrowTarget = null) {
     const c = this.add.container(0, 0).setDepth(70).setAlpha(0);
-    const txt = this.add.text(x, y, text, { font: "bold 15px Arial", color: colorHex }).setOrigin(0.5);
+    const txt = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5);
     c.add(txt);
     if (arrowTarget) {
       const g = this.add.graphics();
@@ -1821,6 +1822,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(65);
     this.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1859,6 +1861,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1885,6 +1888,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;

@@ -22,6 +22,7 @@ import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -874,8 +875,8 @@ export class Level41Scene extends Phaser.Scene {
     g.lineStyle(1, 0x1a2135, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE LIVE FEED", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Tuning Phase — print()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 14, "THE LIVE FEED", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(50);
+    this.add.text(20, 38, "Tuning Phase — print()", { font: "18px Arial", color: "#546e7a" }).setDepth(50);
 
     this.waveText = this.add.text(W / 2, 18, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
     this._waveSquares = [];
@@ -884,9 +885,9 @@ export class Level41Scene extends Phaser.Scene {
       this._waveSquares.push(sq);
     }
 
-    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(50);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(50);
+    this.comboText = this.add.text(960, 32, "×1", { font: "bold 18px Arial", color: HEX_GOLD }).setOrigin(1, 0.5).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -950,8 +951,8 @@ export class Level41Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1000,14 +1001,15 @@ export class Level41Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "italic 12px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "italic 18px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(1600, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 300 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1400) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
@@ -1282,7 +1284,7 @@ export class Level41Scene extends Phaser.Scene {
     g.fillRoundedRect(-220, -24, 440, 48, 8);
     g.lineStyle(2, C_GOLD, 1);
     g.strokeRoundedRect(-220, -24, 440, 48, 8);
-    const t = this.add.text(0, 0, text, { font: "bold 17px Arial", color: HEX_GOLD }).setOrigin(0.5);
+    const t = this.add.text(0, 0, text, { font: "bold 20px Arial", color: HEX_GOLD }).setOrigin(0.5);
     c.add([g, t]);
     await new Promise((res) => {
       this.tweens.add({
@@ -1660,6 +1662,7 @@ export class Level41Scene extends Phaser.Scene {
   // ══════════════════════════════════════════════════════════════
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1686,6 +1689,7 @@ export class Level41Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;

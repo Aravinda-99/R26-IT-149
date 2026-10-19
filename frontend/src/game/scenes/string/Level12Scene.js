@@ -17,6 +17,7 @@ import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ───────── Constants ───────── */
 const W = 1280;
@@ -329,6 +330,7 @@ export class Level12Scene extends Phaser.Scene {
    *  INSTRUCTION OVERLAY
    * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
 
     // Shifted down 40px (and trimmed 15px shorter) so this modal clears the
@@ -875,6 +877,7 @@ export class Level12Scene extends Phaser.Scene {
    *  LEVEL COMPLETE
    * ═══════════════════════════════════════════════════════════════ */
   _levelComplete() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this._stopTimer();
     this._clearCurrentElements();
@@ -1013,6 +1016,7 @@ export class Level12Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this._stopTimer();
     this._clearCurrentElements();

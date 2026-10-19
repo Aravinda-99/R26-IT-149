@@ -21,6 +21,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -2049,6 +2050,7 @@ export class Level24Scene extends Phaser.Scene {
   // ══════════════════════════════════════════════════════════════
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.hideBubble();

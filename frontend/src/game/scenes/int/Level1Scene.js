@@ -17,6 +17,7 @@ import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ───────── Constants ───────── */
 const W = 1280;
@@ -388,6 +389,7 @@ export class Level1Scene extends Phaser.Scene {
    *  INSTRUCTION OVERLAY
    * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     const panelTop = 85;
     const contentTop = panelTop + 28;
     const titleGap = 14;
@@ -811,6 +813,7 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   _levelComplete(accuracy) {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.spawnTimer) this.spawnTimer.destroy();
 
@@ -959,6 +962,7 @@ export class Level1Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.spawnTimer) this.spawnTimer.destroy();
 

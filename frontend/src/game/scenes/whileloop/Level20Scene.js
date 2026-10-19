@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -717,6 +718,7 @@ export class Level20Scene extends Phaser.Scene {
   // ─── Game Over ────────────────────────────────────────────────────────────
 
   _triggerGameOver() {
+    PanelFit.arm(this);
     if (this._gameOver) return;
     this._gameOver = true;
     this._locked = true;
@@ -744,6 +746,7 @@ export class Level20Scene extends Phaser.Scene {
   // ─── Level Complete ───────────────────────────────────────────────────────
 
   _levelComplete() {
+    PanelFit.arm(this);
     this._gameOver = true;
     this._locked = true;
     this._clearWave();

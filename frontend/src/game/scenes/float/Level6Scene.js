@@ -18,6 +18,7 @@ import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 1280;
 const H = 720;
@@ -316,6 +317,7 @@ export class Level6Scene extends Phaser.Scene {
    *  INTRO OVERLAY
    * ───────────────────────────────────────────────────────────── */
   _showIntro() {
+    PanelFit.arm(this);
     const els = [];
     const track = (e) => { els.push(e); return e; };
 
@@ -692,6 +694,7 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   _showVictoryScreen() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.82).setDepth(200);
 
     const pg = this.add.graphics().setDepth(201);
@@ -860,6 +863,7 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
     this.cameras.main.shake(500, 0.025);

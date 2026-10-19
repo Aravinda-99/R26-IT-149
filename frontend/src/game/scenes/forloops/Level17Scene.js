@@ -5,6 +5,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 const HUD_H = 55;
@@ -960,6 +961,7 @@ export class Level17Scene extends Phaser.Scene {
 
   /* ── End states ──────────────────────────────────────────── */
   _gameOver() {
+    PanelFit.arm(this);
     this._clearWave();
     const ov = this.add.graphics().setDepth(200);
     ov.fillStyle(0x000000, 0.88); ov.fillRect(-W * 2, -H, W * 5, H * 3);
@@ -973,6 +975,7 @@ export class Level17Scene extends Phaser.Scene {
   }
 
   _levelComplete() {
+    PanelFit.arm(this);
     this._clearWave();
     const acc = Math.round((this.correctCount / WAVES.length) * 100);
     const stars = acc >= 90 ? 3 : acc >= 70 ? 2 : 1;

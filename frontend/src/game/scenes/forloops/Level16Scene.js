@@ -5,6 +5,7 @@
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 const TRACK_Y1 = 383, TRACK_Y2 = 395;
@@ -942,6 +943,7 @@ export class Level16Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     const ov=this.add.graphics().setDepth(50);
     ov.fillStyle(0x000000,0.82); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     this.add.text(W/2,H/2-70,"GAME OVER",{fontFamily:"Arial",fontSize:"42px",fontStyle:"bold",color:"#f44336"}).setOrigin(0.5,0.5).setDepth(51);
@@ -954,6 +956,7 @@ export class Level16Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     this.totalRoundTime+=(this.time.now-this.roundStartTime)/1000;
     const accuracy=this.correctFirstTryCount/10;
     const stars=accuracy>=0.9?3:accuracy>=0.7?2:1;

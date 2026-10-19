@@ -19,6 +19,7 @@ import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ───────── Constants ───────── */
 const W = 1280;
@@ -417,6 +418,7 @@ export class Level3Scene extends Phaser.Scene {
    *  INSTRUCTION OVERLAY
    * ═══════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     this.overlayActive = true;
     const els = [];
     const d = 200;
@@ -991,6 +993,7 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this._closeTerminal();
     if (this.robot && this.robot.body) this.robot.body.setVelocity(0, 0);
@@ -1107,6 +1110,7 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   _showVictory() {
+    PanelFit.arm(this);
     const d = 200;
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(d);
 

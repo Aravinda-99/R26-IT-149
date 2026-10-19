@@ -7,6 +7,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -163,6 +164,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showIntro() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0a0a, 0.98); pg.fillRoundedRect(W / 2 - 280, 70, 560, 440, 16);
@@ -303,6 +305,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showGameOver() {
+    PanelFit.arm(this);
     this._clear();
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     this.add.text(W / 2, H / 2 - 30, "💀 Defeated!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
@@ -316,6 +319,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showResults() {
+    PanelFit.arm(this);
     this._clear();
     const acc = this.battlesDone > 0 ? Math.round((this.battlesWon / this.battlesDone) * 100) : 0;
     const passed = acc >= 60;

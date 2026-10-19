@@ -19,6 +19,7 @@ import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 /* ═══════════════════════════════════════════════════════════════════════════
  *  COLORS & CONSTANTS
@@ -1278,6 +1279,7 @@ export class Level11Scene extends Phaser.Scene {
    * ═══════════════════════════════════════════════════════════════════════ */
 
   _showFinalResults() {
+    PanelFit.arm(this);
     this._clear();
 
     // Dark overlay with stars (Stretched to cover the pillarbox area too)

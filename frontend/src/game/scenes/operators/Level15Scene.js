@@ -8,6 +8,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -109,6 +110,7 @@ export class Level15Scene extends Phaser.Scene {
   _clear() { this.elements.forEach(e => { try { e.destroy(); } catch { } }); this.elements = []; }
 
   _showIntro() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1e1e1e, 0.98); pg.fillRoundedRect(W / 2 - 280, 60, 560, 460, 16);
@@ -328,6 +330,7 @@ export class Level15Scene extends Phaser.Scene {
   }
 
   _showResults() {
+    PanelFit.arm(this);
     this._clear();
     const acc = PROJECTS.length > 0 ? Math.round((this.projCorrect / PROJECTS.length) * 100) : 0;
     const passed = acc >= 60;

@@ -23,6 +23,7 @@ import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -496,15 +497,16 @@ export class Level60Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1200) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 300 }, align: "center" }).setOrigin(0.5).setDepth(75).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1200) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(75).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 160 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 220, onComplete: () => t.destroy() }); });
     return t;
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "italic 12px Arial", color: colorHex, wordWrap: { width: 260 }, align: "center" }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "italic 18px Arial", color: colorHex, wordWrap: { width: 380 }, align: "center" }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     return t;
   }
@@ -1736,8 +1738,8 @@ export class Level60Scene extends Phaser.Scene {
     g.lineStyle(1, 0x2a3654, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE STANDARDS OFFICE", { font: "bold 15px Georgia", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — Math Methods: abs()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE STANDARDS OFFICE", { font: "bold 18px Georgia", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — Math Methods: abs()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1747,8 +1749,8 @@ export class Level60Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -1823,8 +1825,8 @@ export class Level60Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -2754,6 +2756,7 @@ export class Level60Scene extends Phaser.Scene {
   // ══════════════════════════════════════════════════════════════
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -2781,6 +2784,7 @@ export class Level60Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
