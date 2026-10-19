@@ -1,4 +1,4 @@
-import { QUIZ_BANK } from "./data.js";
+import { QUIZ_BANK, LEVEL_CHECK_BANK } from "./data.js";
 import { ErrorAPI, SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 
@@ -6,12 +6,53 @@ import { getCurrentUser } from "../utils/auth.js";
 // Use the Vite proxy path (/api/...) so this always hits the correct
 // backend port regardless of what port Flask is running on.
 const ML_API_URL = "/api/adaptive/predict";
+const PLACEMENT_API_URL = "/api/adaptive/placement";
 
-// ── Default difficulty (can be passed in from quiz lab page) ───────────
-let currentDifficulty = "beginner";
+// ── Current difficulty comes from Model A (IRT placement) ──────────────
+// Only used if /placement is unreachable.
+const FALLBACK_DIFFICULTY = "beginner";
+const DIFFICULTY_LEVELS = ["beginner", "intermediate", "advanced"];
+const DIFFICULTY_ENCODE = { beginner: 0, intermediate: 1, advanced: 2 };
+const LEVEL_NAMES = { beginner: "Beginner", intermediate: "Developing", advanced: "Proficient" };
 
-export function setQuizDifficulty(level) {
-    currentDifficulty = level || "beginner";
+// ── Model B (Level Check) thresholds ───────────────────────────────────
+// Label thresholds (same as Model B's training labels) — used only by the
+// offline fallback when /predict is unreachable.
+const PROMOTE_MIN = 0.80;
+const DEMOTE_MAX = 0.40;
+const FIRST_ANSWER_CAP_SEC = 600;   // same cap as ASSISTments ms_first_response
+const RAPID_GUESSING_SEC = 5;       // mirrors the backend flag (offline fallback only)
+
+// ── Learner's current level (localStorage cq_progress_<uid>) ───────────
+// Set by placement, moved by each Level Check.
+function progressKey() {
+    const user = getCurrentUser();
+    return `cq_progress_${user?.uid || user?.id || "anonymous"}`;
+}
+
+function readProgress() {
+    try {
+        return JSON.parse(localStorage.getItem(progressKey()) || "{}");
+    } catch {
+        return {};
+    }
+}
+
+function writeProgress(patch) {
+    localStorage.setItem(progressKey(), JSON.stringify({ ...readProgress(), ...patch }));
+}
+
+export function getStoredLevel() {
+    const level = readProgress().currentLevel;
+    return DIFFICULTY_LEVELS.includes(level) ? level : null;
+}
+
+function recordLevel(level, source, details = {}) {
+    const history = readProgress().levelHistory || [];
+    writeProgress({
+        currentLevel: level,
+        levelHistory: [...history, { level, source, ...details, at: new Date().toISOString() }]
+    });
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -58,9 +99,9 @@ function fisherYatesShuffle(array) {
  *     the option by whatever index the student clicked, not a fixed
  *     position, so the correct answer is still substituted correctly.
  */
-function buildShuffledQuizBank() {
+function buildShuffledQuizBank(questions = QUIZ_BANK) {
     // Step 1: shuffle question order
-    const shuffledQuestions = fisherYatesShuffle(QUIZ_BANK);
+    const shuffledQuestions = fisherYatesShuffle(questions);
 
     // Step 2: shuffle each question's options independently
     return shuffledQuestions.map((q) => {
@@ -173,29 +214,73 @@ function calculateEngagementScore(questionRecords) {
     return Math.min(parseFloat(engagement.toFixed(4)), 1.0);
 }
 
+// ── Model A input: one response per question from the FINAL answers ────
+// Built from selectedAnswers at submit time, not from questionRecords —
+// recordQuestionData() only records the first time a question is left,
+// so a later answer change would be lost. Unanswered → incorrect.
+function buildPlacementResponses(quizBank, selectedAnswers) {
+    return quizBank.map((q, i) => ({
+        id: q.id,
+        level: q.level,
+        correct: selectedAnswers[i] !== null && selectedAnswers[i] === q.correctIndex
+    }));
+}
+
+// ── Model A: estimate current level (Rasch / IRT) ──────────────────────
+// Returns null on failure so the caller can fall back to FALLBACK_DIFFICULTY.
+async function getPlacement(responses) {
+    try {
+        const response = await fetch(PLACEMENT_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ responses })
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log("Placement:", result);
+        return result;
+
+    } catch (error) {
+        console.warn(`Placement API call failed — falling back to "${FALLBACK_DIFFICULTY}":`, error);
+        return null;
+    }
+}
+
 // ── Calculate all session metrics for ML model ─────────────────────────
-function calculateSessionMetrics(questionRecords, topicBreakdown) {
+// current_difficulty / difficulty are filled in by the caller.
+// firstAnswerMs[i] = ms from render to the FIRST option click on question
+// i (null if never answered) — matches ASSISTments ms_first_response.
+function calculateSessionMetrics(questionRecords, topicBreakdown, firstAnswerMs) {
     const completed = questionRecords.filter(q => q.completed);
 
     if (completed.length === 0) {
         return null;
     }
 
-    // avg_attempts — average tries per question
+    // avg_attempts — average answer changes per question (safety layer only)
     const avgAttempts = completed.reduce((s, q) => s + q.attempts, 0) / completed.length;
 
-    // avg_time_sec — average seconds per question (cap at 600)
-    const avgTimeSec = Math.min(
+    // avg_time_sec — Model B input: mean time to FIRST answer, each capped
+    // at 600 s; unanswered questions excluded
+    const firstAnswerSec = firstAnswerMs
+        .filter(ms => ms !== null)
+        .map(ms => Math.min(ms / 1000, FIRST_ANSWER_CAP_SEC));
+    const avgTimeSec = firstAnswerSec.length > 0
+        ? firstAnswerSec.reduce((s, t) => s + t, 0) / firstAnswerSec.length
+        : 0;
+
+    // avg_time_on_question_sec — existing per-question timer, display only (cap at 600)
+    const avgTimeOnQuestionSec = Math.min(
         completed.reduce((s, q) => s + q.timeTaken, 0) / completed.length,
         600
     );
 
     // engagement_score — composite 0-1
     const engagementScore = calculateEngagementScore(questionRecords);
-
-    // difficulty encoding
-    const difficultyMap = { beginner: 0, intermediate: 1, advanced: 2 };
-    const difficultyEnc = difficultyMap[currentDifficulty] || 0;
 
     // topic_scores — accuracy per topic from existing topicBreakdown
     const topicScores = {};
@@ -219,9 +304,10 @@ function calculateSessionMetrics(questionRecords, topicBreakdown) {
     return {
         avg_attempts: parseFloat(avgAttempts.toFixed(2)),
         avg_time_sec: parseFloat(avgTimeSec.toFixed(2)),
+        avg_time_on_question_sec: parseFloat(avgTimeOnQuestionSec.toFixed(2)),
         engagement_score: engagementScore,
-        difficulty: difficultyEnc,
-        current_difficulty: currentDifficulty,
+        difficulty: DIFFICULTY_ENCODE[FALLBACK_DIFFICULTY],
+        current_difficulty: FALLBACK_DIFFICULTY,
         topic_scores: topicScores,
         accuracy: accuracy
     };
@@ -250,61 +336,71 @@ async function getMLRecommendation(sessionMetrics) {
     }
 }
 
-// ── Fallback if ML API is unreachable ──────────────────────────────────
+// ── Fallback if /predict is unreachable: persistence rule ──────────────
+// Same rule the backend uses as its baseline and its own fallback.
 function getFallbackRecommendation(metrics) {
-    const difficultyLevels = ["beginner", "intermediate", "advanced"];
-    const currIdx = difficultyLevels.indexOf(metrics.current_difficulty);
+    const currIdx = Math.max(DIFFICULTY_LEVELS.indexOf(metrics.current_difficulty), 0);
+    const acc = metrics.accuracy;
 
-    const acc = metrics.accuracy !== undefined
-        ? metrics.accuracy
-        : Object.values(metrics.topic_scores).reduce((a, b) => a + b, 0)
-        / Object.values(metrics.topic_scores).length;
-
-    let action, nextDifficulty;
-
-    if (acc >= 0.80 && metrics.avg_attempts <= 1.5 && metrics.engagement_score >= 0.97) {
-        action = "promote";
-        nextDifficulty = difficultyLevels[Math.min(currIdx + 1, 2)];
-    } else if (acc < 0.40 || metrics.avg_attempts >= 3.0 || metrics.engagement_score < 0.85) {
-        action = "demote";
-        nextDifficulty = difficultyLevels[Math.max(currIdx - 1, 0)];
-    } else {
-        action = "maintain";
-        nextDifficulty = metrics.current_difficulty;
-    }
+    const action = acc >= PROMOTE_MIN ? "promote" : acc < DEMOTE_MAX ? "demote" : "maintain";
+    const nextIdx = action === "promote" ? Math.min(currIdx + 1, 2)
+        : action === "demote" ? Math.max(currIdx - 1, 0)
+            : currIdx;
 
     const weakest = Object.entries(metrics.topic_scores)
-        .sort((a, b) => a[1] - b[1])[0][0];
+        .sort((a, b) => a[1] - b[1])[0]?.[0] || "variables";
 
     return {
         action,
-        next_difficulty: nextDifficulty,
+        next_difficulty: DIFFICULTY_LEVELS[nextIdx],
         next_topic: weakest,
-        confidence: 75.0,
-        current: metrics.current_difficulty
+        current: metrics.current_difficulty,
+        accuracy: acc,
+        model_source: "frontend_persistence_fallback",
+        model_prediction: action,
+        confidence: null,
+        low_confidence: false,
+        baseline_action: action,
+        was_overridden: false,
+        rapid_guessing: metrics.avg_time_sec < RAPID_GUESSING_SEC
     };
 }
 
-// ── Build ML recommendation card HTML ──────────────────────────────────
-function buildMLRecommendationCard(mlResult, sessionMetrics) {
-    const actionColors = {
-        promote: { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
-        maintain: { bg: "#FFFBEB", border: "#F59E0B", text: "#B45309", label: "■ MAINTAIN" },
-        demote: { bg: "#FEF2F2", border: "#DC2626", text: "#DC2626", label: "▼ DEMOTE" }
-    };
+// ── Model A placement details (θ ± SE, per-level counts) ──────────────
+function formatTheta(placement) {
+    const sign = placement.theta >= 0 ? "+" : "−";
+    return `θ = ${sign}${Math.abs(placement.theta).toFixed(2)} ± ${placement.se.toFixed(2)}`;
+}
 
-    const action = mlResult.action || "maintain";
-    const colors = actionColors[action] || actionColors.maintain;
-
+function buildPlacementBreakdown(placement) {
+    const byLevel = placement.by_level || {};
     return `
-        <div style="
-            background: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        ">
-            <!-- Header -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1rem;">
+                ${["beginner", "intermediate", "advanced"].map(level => {
+        const counts = byLevel[level] || { correct: 0, total: 0 };
+        return `
+                    <div style="
+                        background:#F8FAFC;
+                        border-radius:8px;
+                        padding:10px;
+                        text-align:center;
+                    ">
+                        <div style="font-size:0.65rem; color:#475569; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
+                            ${level} items
+                        </div>
+                        <div style="font-size:0.95rem; font-weight:600; color:#0F172A;">
+                            ${counts.correct} / ${counts.total}
+                        </div>
+                    </div>
+                `;
+    }).join("")}
+            </div>
+    `;
+}
+
+// ── Shared card pieces ─────────────────────────────────────────────────
+function cardHeader(icon, title, subtitle, badge = "") {
+    return `
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:1.2rem;">
                 <div style="
                     width:36px; height:36px;
@@ -312,87 +408,28 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                     border-radius:10px;
                     display:flex; align-items:center; justify-content:center;
                     font-size:18px;
-                ">🤖</div>
+                ">${icon}</div>
                 <div>
                     <div style="color:#0F172A; font-weight:600; font-size:1rem;">
-                        AI Adaptive Recommendation
+                        ${title}
                     </div>
                     <div style="color:#475569; font-size:0.75rem;">
-                        Powered by Gradient Boosting Classifier
+                        ${subtitle}
                     </div>
                 </div>
-                <div style="
-                    margin-left:auto;
-                    background: #DBEAFE;
-                    color: #2563EB;
-                    font-size:0.7rem;
-                    padding:3px 10px;
-                    border-radius:100px;
-                    border: 1px solid #BFDBFE;
-                ">
-                    ${mlResult.confidence || 75}% confident
-                </div>
+                ${badge}
             </div>
+    `;
+}
 
-            <!-- 3 output tiles -->
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:1rem;">
-                <div style="
-                    background:#F8FAFC;
-                    border-radius:10px;
-                    padding:14px;
-                    text-align:center;
-                ">
-                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
-                        Current Level
-                    </div>
-                    <div style="font-size:1rem; font-weight:600; color:#0F172A; text-transform:capitalize;">
-                        ${mlResult.current || currentDifficulty}
-                    </div>
-                </div>
-
-                <div style="
-                    background: ${colors.bg};
-                    border: 1px solid ${colors.border};
-                    border-radius:10px;
-                    padding:14px;
-                    text-align:center;
-                ">
-                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
-                        Recommendation
-                    </div>
-                    <div style="font-size:1rem; font-weight:700; color:${colors.text};">
-                        ${colors.label}
-                    </div>
-                </div>
-
-                <div style="
-                    background:#F8FAFC;
-                    border-radius:10px;
-                    padding:14px;
-                    text-align:center;
-                ">
-                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
-                        Next Level
-                    </div>
-                    <div style="font-size:1rem; font-weight:600; color:#0D9488; text-transform:capitalize;">
-                        ${mlResult.next_difficulty || currentDifficulty}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Session analytics -->
+function statTiles(items) {
+    return `
             <div style="
                 display:grid;
-                grid-template-columns:1fr 1fr 1fr 1fr 1fr;
+                grid-template-columns:repeat(${items.length}, 1fr);
                 gap:8px;
             ">
-                ${[
-            ["Accuracy", Math.round(sessionMetrics.accuracy * 100) + "%"],
-            ["Avg Attempts", sessionMetrics.avg_attempts],
-            ["Avg Time", sessionMetrics.avg_time_sec + "s"],
-            ["Engagement", Math.round(sessionMetrics.engagement_score * 100) + "%"],
-            ["Difficulty", currentDifficulty]
-        ].map(([label, val]) => `
+                ${items.map(([label, val]) => `
                     <div style="
                         background:#F8FAFC;
                         border-radius:8px;
@@ -408,23 +445,177 @@ function buildMLRecommendationCard(mlResult, sessionMetrics) {
                     </div>
                 `).join("")}
             </div>
+    `;
+}
+
+const CARD_STYLE = `
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1.5rem;`;
+
+// ── Placement card (Model A only — places, does not promote/demote) ────
+// placement = /placement result, or null if it failed (fallback level used).
+function buildPlacementCard(placement, { showLevelCheckButton = true } = {}) {
+    const level = placement ? placement.difficulty : FALLBACK_DIFFICULTY;
+    return `
+        <div style="${CARD_STYLE}">
+            ${cardHeader("🎯", "Your Current Level", "IRT (Rasch) placement")}
+
+            <div style="
+                background:#F8FAFC;
+                border-radius:10px;
+                padding:16px;
+                text-align:center;
+                margin-bottom:1rem;
+            ">
+                <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                    Current Level
+                </div>
+                <div style="font-size:1.3rem; font-weight:700; color:#0F172A;">
+                    ${placement ? placement.level : LEVEL_NAMES[level]}
+                </div>
+                <div style="font-size:0.75rem; color:#475569; margin-top:4px;">
+                    ${placement
+            ? `${formatTheta(placement)} · next quizzes at <strong style="text-transform:capitalize;">${level}</strong> difficulty`
+            : `Placement service unavailable — starting at <strong>${level}</strong> difficulty`}
+                </div>
+            </div>
+
+            ${placement ? buildPlacementBreakdown(placement) : ""}
+
+            ${showLevelCheckButton ? `
+            <div style="text-align:center;">
+                <button id="start-level-check-btn" class="btn btn-primary" style="margin-top:0;">
+                    <i class="fa-solid fa-list-check"></i> Take Level Check
+                </button>
+                <div style="font-size:0.75rem; color:#475569; margin-top:6px;">
+                    10 ${level} questions — decides whether you move up, stay, or move down.
+                </div>
+            </div>
+            ` : ""}
+        </div>
+    `;
+}
+
+// ── Level Check card (Model B: current level → action → next level) ───
+function buildLevelCheckCard(mlResult, sessionMetrics) {
+    const actionColors = {
+        promote: { bg: "#F0FDF4", border: "#16A34A", text: "#16A34A", label: "▲ PROMOTE" },
+        maintain: { bg: "#FFFBEB", border: "#F59E0B", text: "#B45309", label: "■ MAINTAIN" },
+        demote: { bg: "#FEF2F2", border: "#DC2626", text: "#DC2626", label: "▼ DEMOTE" }
+    };
+
+    const action = mlResult.action || "maintain";
+    const colors = actionColors[action] || actionColors.maintain;
+    const current = mlResult.current || sessionMetrics.current_difficulty;
+    const next = mlResult.next_difficulty || current;
+    const usedModel = mlResult.model_source === "model_b";
+
+    const confidenceText = mlResult.confidence !== null && mlResult.confidence !== undefined
+        ? `${Math.round(mlResult.confidence)}% probability${mlResult.low_confidence ? " · low confidence" : ""}`
+        : "rule-based fallback";
+
+    const levelTile = (label, level, color) => `
+                <div style="
+                    background:#F8FAFC;
+                    border-radius:10px;
+                    padding:14px;
+                    text-align:center;
+                ">
+                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                        ${label}
+                    </div>
+                    <div style="font-size:1rem; font-weight:600; color:${color};">
+                        ${LEVEL_NAMES[level] || level}
+                    </div>
+                    <div style="font-size:0.7rem; color:#475569; text-transform:capitalize;">${level}</div>
+                </div>
+    `;
+
+    return `
+        <div style="${CARD_STYLE}">
+            ${cardHeader("🤖", "Level Check Result",
+        "IRT placement + Gradient Boosting progression (trained on real learner outcomes)")}
+
+            ${mlResult.rapid_guessing ? `
+            <div style="
+                background:#FFFBEB;
+                border:1px solid #F59E0B;
+                color:#B45309;
+                border-radius:8px;
+                padding:8px 12px;
+                font-size:0.8rem;
+                margin-bottom:1rem;
+            ">
+                ⚠ Answers were very fast; this result may reflect guessing.
+            </div>
+            ` : ""}
+
+            <!-- current level → action (confidence) → next level -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:0.6rem;">
+                ${levelTile("Current Level", current, "#0F172A")}
+
+                <div style="
+                    background: ${colors.bg};
+                    border: 1px solid ${colors.border};
+                    border-radius:10px;
+                    padding:14px;
+                    text-align:center;
+                ">
+                    <div style="font-size:0.7rem; color:#475569; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">
+                        Recommendation
+                    </div>
+                    <div style="font-size:1rem; font-weight:700; color:${colors.text};">
+                        ${colors.label}
+                    </div>
+                    <div style="font-size:0.7rem; color:${mlResult.low_confidence ? "#B45309" : "#475569"};">
+                        ${confidenceText}
+                    </div>
+                </div>
+
+                ${levelTile("Next Level", next, "#0D9488")}
+            </div>
+
+            <div style="font-size:0.72rem; color:#64748B; text-align:center; margin-bottom:1rem;">
+                Baseline (persistence rule): ${mlResult.baseline_action || "—"}
+                ${mlResult.was_overridden ? ` · Safety layer: ${mlResult.validation_reason}` : ""}
+                ${usedModel ? "" : " · Model unavailable — persistence rule used"}
+            </div>
+
+            ${statTiles([
+            ["Accuracy", Math.round(sessionMetrics.accuracy * 100) + "%"],
+            ["Time to 1st Answer", sessionMetrics.avg_time_sec + "s"],
+            ["Avg Time on Question", sessionMetrics.avg_time_on_question_sec + "s"],
+            ["Avg Attempts", sessionMetrics.avg_attempts],
+            ["Engagement", Math.round(sessionMetrics.engagement_score * 100) + "%"]
+        ])}
         </div>
     `;
 }
 
 /**
  * Initialize the quiz UI within a given root element.
+ *
+ * options.mode:
+ *   "placement"   (default) all 30 questions → /placement (Model A) sets
+ *                 the learner's current level
+ *   "level_check" the 10 questions of the stored current level →
+ *                 /predict (Model B) moves the level up, keeps it, or down
  */
-export function setupQuizUI(root = document) {
+export function setupQuizUI(root = document, options = {}) {
     // ── Build a FRESH shuffled quiz for this session ────────────────────
-    // Every call to setupQuizUI() (page load, Retry, new overlay) gets a
+    // Every startQuiz() call (page load, Retry, Level Check) gets a
     // brand new random shuffle — both question order and option order.
     // This is stored in `state.quizBank` and used everywhere below
     // INSTEAD of the raw QUIZ_BANK import, so two students starting the
     // quiz at the same moment see different question sequences and
     // different option letters for the same underlying question.
     const state = {
-        quizBank: buildShuffledQuizBank(),
+        mode: "placement",
+        level: null,            // Level Check difficulty (level_check mode only)
+        quizBank: [],
         current: 0,
         selectedAnswers: [],
         submitted: false,
@@ -433,12 +624,17 @@ export function setupQuizUI(root = document) {
         questionStartTime: Date.now(),
         currentAttempts: 1,
         questionRecords: [],
+        firstAnswerMs: [],      // ms from render to FIRST option click (Model B time)
+
+        // Placement (30Q) wrong answers — what Error Feedback (Component 2) shows.
+        // Level Check wrong answers are never added here.
+        wrongCodeQuestions: [],
+        rapid_guessing: false,  // last Level Check's /predict flag
 
         // questions the student has left at least once (used to flag
         // skipped questions in the number tracker)
         visited: {},
     };
-    state.selectedAnswers = Array(state.quizBank.length).fill(null);
 
     const quizBox = (root === document) ? document.getElementById("quiz-box") : root.querySelector(".quiz-box");
     const counter = (root === document) ? document.getElementById("quiz-counter") : root.querySelector(".quiz-counter");
@@ -448,6 +644,26 @@ export function setupQuizUI(root = document) {
     const navList = (root === document) ? document.getElementById("quiz-nav-list") : root.querySelector(".quiz-nav-list");
 
     if (!quizBox || !counter || !progressBar || !prevBtn || !nextBtn) return;
+
+    // ── (Re)start the quiz in a given mode ─────────────────────────────
+    function startQuiz(mode) {
+        state.mode = mode;
+        state.level = mode === "level_check" ? (getStoredLevel() || FALLBACK_DIFFICULTY) : null;
+        // Level Check uses its own 10-question bank (ids 31-40), not placement items
+        const pool = mode === "level_check"
+            ? [...LEVEL_CHECK_BANK]
+            : QUIZ_BANK;
+
+        state.quizBank = buildShuffledQuizBank(pool);
+        state.current = 0;
+        state.selectedAnswers = Array(state.quizBank.length).fill(null);
+        state.firstAnswerMs = Array(state.quizBank.length).fill(null);
+        state.submitted = false;
+        state.questionRecords = [];
+        state.visited = {};
+        buildQuizNav();
+        renderQuestion();
+    }
 
     // ── Quiz number tracker (left sidebar) ─────────────────────────────
     // One numbered box per question. The current question's box is
@@ -552,6 +768,9 @@ export function setupQuizUI(root = document) {
             <article class="lp-question-card">
                 <div class="lp-question-meta">
                     <span class="lp-id-tag">Q${state.current + 1}</span>
+                    ${state.mode === "level_check"
+                ? `<span class="lp-id-tag">Level Check · ${LEVEL_NAMES[state.level]}</span>`
+                : ""}
                 </div>
                 <h4 class="lp-question">${intro}</h4>
                 ${code ? `<pre class="lp-code-block"><code>${codeLines.join('\n')}</code></pre>` : ''}
@@ -585,6 +804,12 @@ export function setupQuizUI(root = document) {
         optionButtons.forEach((btn) => {
             btn.addEventListener("click", () => {
                 if (state.submitted) return;
+
+                // Time to FIRST answer (Model B input) — recorded once, before
+                // renderQuestion() below resets questionStartTime.
+                if (state.firstAnswerMs[state.current] === null) {
+                    state.firstAnswerMs[state.current] = Date.now() - state.questionStartTime;
+                }
 
                 // Count attempts
                 if (state.selectedAnswers[state.current] !== null) {
@@ -635,8 +860,14 @@ export function setupQuizUI(root = document) {
 
             const sessionMetrics = calculateSessionMetrics(
                 state.questionRecords,
-                topicBreakdown
+                topicBreakdown,
+                state.firstAnswerMs
             );
+
+            if (state.mode === "level_check") {
+                handleLevelCheckSubmit(score, percent, topicBreakdown, sessionMetrics);
+                return;
+            }
 
             // 1. Immediately extract all wrong questions and their code snippets
             const wrongCodeQuestions = [];
@@ -679,6 +910,7 @@ export function setupQuizUI(root = document) {
                 wrongCodeQuestions,
                 completedAt: new Date().toISOString()
             };
+            state.wrongCodeQuestions = wrongCodeQuestions;
             const persistResults = () => {
                 const serialized = JSON.stringify(resultsPayload);
                 sessionStorage.setItem("quiz-results", serialized);
@@ -706,7 +938,7 @@ export function setupQuizUI(root = document) {
                         color:#475569;
                         font-size:0.85rem;
                     ">
-                        🤖 Analyzing your performance...
+                        🎯 Placing you at your current level...
                     </div>
 
                     <div style="display:flex; gap:1rem; margin-top:1.5rem; justify-content:center; flex-wrap:wrap;">
@@ -720,25 +952,12 @@ export function setupQuizUI(root = document) {
                 </article>
             `;
 
-            progressBar.style.width = "100%";
-            counter.textContent = `Completed: ${state.quizBank.length} questions`;
-            prevBtn.disabled = true;
-            nextBtn.textContent = "Review Again";
-            updateQuizNav();
+            showCompleted();
 
             // 4. Wire buttons immediately
             const retryBtn = quizBox.querySelector("#retry-quiz-btn");
             if (retryBtn) {
-                retryBtn.addEventListener("click", () => {
-                    state.quizBank = buildShuffledQuizBank();
-                    state.current = 0;
-                    state.selectedAnswers = Array(state.quizBank.length).fill(null);
-                    state.submitted = false;
-                    state.questionRecords = [];
-                    state.visited = {};
-                    buildQuizNav();
-                    renderQuestion();
-                });
+                retryBtn.addEventListener("click", () => startQuiz("placement"));
             }
 
             const viewDetailsBtn = quizBox.querySelector("#view-details-btn");
@@ -783,7 +1002,9 @@ export function setupQuizUI(root = document) {
                     weak_concept: weakConcept,
                     pre_test_score: percent / 100.0,
                     attempt_count: 1,
-                    time_taken_seconds: Math.round((sessionMetrics?.avg_time_sec || 5.0) * state.quizBank.length)
+                    // Component 4 keeps the original time-on-question measure;
+                    // first-answer time (avg_time_sec) is for Model B only.
+                    time_taken_seconds: Math.round((sessionMetrics?.avg_time_on_question_sec || 5.0) * state.quizBank.length)
                 }).catch(err => console.warn("Failed to persist Component 1 learning session:", err));
 
                 const topicLabelMap = {
@@ -843,32 +1064,32 @@ export function setupQuizUI(root = document) {
                 }).catch(err => console.warn("Wrong-answer analysis batch failed:", err));
             }
 
-            // 6. Async ML Recommendation in background
+            // 6. Async in background: Model A (placement) sets the current level.
+            //    Placement only places — no promote/demote here.
             const mlLoading = quizBox.querySelector("#ml-loading");
-            if (sessionMetrics) {
-                getMLRecommendation(sessionMetrics).then(mlResult => {
-                    if (mlResult) {
-                        resultsPayload.mlResult = mlResult;
-                        persistResults();
-                        if (mlLoading) {
-                            mlLoading.outerHTML = buildMLRecommendationCard(mlResult, sessionMetrics);
-                            const nextSessionBtn = quizBox.querySelector("#start-next-session-btn");
-                            if (nextSessionBtn) {
-                                nextSessionBtn.addEventListener("click", () => {
-                                    sessionStorage.setItem("ml-recommendation", JSON.stringify(mlResult));
-                                    window.navigateTo("error-analysis");
-                                });
-                            }
-                        }
-                    } else if (mlLoading) {
-                        mlLoading.style.display = "none";
-                    }
-                }).catch(() => {
-                    if (mlLoading) mlLoading.style.display = "none";
-                });
-            } else if (mlLoading) {
-                mlLoading.style.display = "none";
-            }
+            const placementResponses = buildPlacementResponses(state.quizBank, state.selectedAnswers);
+            getPlacement(placementResponses).then(placement => {
+                const level = placement ? placement.difficulty : FALLBACK_DIFFICULTY;
+                recordLevel(level, "placement", placement
+                    ? { placementLevel: placement.level, theta: placement.theta, se: placement.se }
+                    : { placementFailed: true });
+
+                if (sessionMetrics) {
+                    sessionMetrics.current_difficulty = level;
+                    sessionMetrics.difficulty = DIFFICULTY_ENCODE[level];
+                }
+                resultsPayload.placement = placement;
+                resultsPayload.placementResponses = placementResponses;
+                persistResults();
+
+                if (mlLoading) {
+                    mlLoading.outerHTML = buildPlacementCard(placement);
+                    quizBox.querySelector("#start-level-check-btn")
+                        ?.addEventListener("click", () => startQuiz("level_check"));
+                }
+            }).catch(() => {
+                if (mlLoading) mlLoading.style.display = "none";
+            });
 
             return;
         }
@@ -886,8 +1107,133 @@ export function setupQuizUI(root = document) {
         }
     });
 
-    buildQuizNav();
-    renderQuestion();
+    function showCompleted() {
+        progressBar.style.width = "100%";
+        counter.textContent = `Completed: ${state.quizBank.length} questions`;
+        prevBtn.disabled = true;
+        nextBtn.textContent = "Review Again";
+        updateQuizNav();
+    }
+
+    // ── Level Check submit: Model B moves the level by one ─────────────
+    // Kept separate from the pre-test: it does not overwrite the pre-test
+    // results, progress score, or Error Feedback data.
+    function handleLevelCheckSubmit(score, percent, topicBreakdown, sessionMetrics) {
+        const level = state.level;
+
+        // Error Feedback shows the PLACEMENT wrong answers only. Fall back to the
+        // stored placement results (what Component 2 reads) if this quiz
+        // instance has not run a placement itself.
+        let placementWrong = state.wrongCodeQuestions;
+        if (!placementWrong || placementWrong.length === 0) {
+            try {
+                const stored = JSON.parse(sessionStorage.getItem("quiz-results")
+                    || localStorage.getItem("latest_quiz_results") || "{}");
+                placementWrong = stored.wrongCodeQuestions || [];
+            } catch {
+                placementWrong = [];
+            }
+        }
+        const showErrorFeedback = placementWrong.length > 0;
+
+        quizBox.innerHTML = `
+            <article class="lp-result-card">
+                <h4>Level Check Result · ${LEVEL_NAMES[level]}</h4>
+                <p class="lp-result-score">${score} / ${state.quizBank.length} (${percent}%)</p>
+
+                <div id="ml-loading" style="
+                    margin-top:1.5rem;
+                    padding:1rem;
+                    background:#DBEAFE;
+                    border-radius:0.8rem;
+                    text-align:center;
+                    color:#475569;
+                    font-size:0.85rem;
+                ">
+                    🤖 Analyzing your performance...
+                </div>
+
+                <div style="display:flex; gap:1rem; margin-top:1.5rem; justify-content:center; flex-wrap:wrap;">
+                    <button id="retry-quiz-btn" class="btn btn-secondary" style="margin-top:0;">
+                        <i class="fa-solid fa-rotate-right"></i> Retry Pre-Test
+                    </button>
+                    <button id="next-level-check-btn" class="btn btn-primary" style="margin-top:0;">
+                        <i class="fa-solid fa-list-check"></i> Take Another Level Check
+                    </button>
+                    ${showErrorFeedback ? `
+                    <button id="lc-error-feedback-btn" class="btn btn-primary" style="margin-top:0;">
+                        Continue to Error Feedback →
+                    </button>
+                    ` : ""}
+                </div>
+            </article>
+        `;
+        showCompleted();
+
+        quizBox.querySelector("#retry-quiz-btn").addEventListener("click", () => startQuiz("placement"));
+        quizBox.querySelector("#next-level-check-btn").addEventListener("click", () => startQuiz("level_check"));
+        // Same pattern as the placement card: the placement's wrongCodeQuestions
+        // are already persisted in "quiz-results", which Error Feedback reads.
+        // The Level Check never writes "quiz-results", so its own wrong answers
+        // are not passed on.
+        quizBox.querySelector("#lc-error-feedback-btn")?.addEventListener("click", () => {
+            window.navigateTo("error-analysis");
+        });
+
+        const mlLoading = quizBox.querySelector("#ml-loading");
+        if (!sessionMetrics) {
+            // Nothing answered — no evidence to move the level
+            mlLoading.textContent = "No questions answered — your level is unchanged.";
+            return;
+        }
+
+        sessionMetrics.current_difficulty = level;
+        sessionMetrics.difficulty = DIFFICULTY_ENCODE[level];
+
+        getMLRecommendation(sessionMetrics).then(mlResult => {
+            // Rapid-guessing guard: the result is shown but NOT applied —
+            // the stored level stays unchanged.
+            state.rapid_guessing = mlResult.rapid_guessing === true;
+            const levelApplied = !state.rapid_guessing;
+
+            if (levelApplied) {
+                recordLevel(mlResult.next_difficulty, "level_check", {
+                    from: level,
+                    action: mlResult.action,
+                    modelPrediction: mlResult.model_prediction,
+                    baselineAction: mlResult.baseline_action,
+                    confidence: mlResult.confidence,
+                    modelSource: mlResult.model_source,
+                    accuracy: sessionMetrics.accuracy
+                });
+            }
+            sessionStorage.setItem("level-check-results", JSON.stringify({
+                score, percent, topicBreakdown, sessionMetrics, mlResult,
+                levelApplied,
+                completedAt: new Date().toISOString()
+            }));
+
+            mlLoading.outerHTML = (levelApplied ? "" : `
+                <div id="lc-not-applied" style="
+                    margin-top:1.5rem;
+                    background:#FEF2F2;
+                    border:1px solid #DC2626;
+                    color:#B91C1C;
+                    border-radius:8px;
+                    padding:10px 12px;
+                    font-size:0.85rem;
+                    text-align:center;
+                ">
+                    ⚠️ Result not applied — rapid response pattern detected. Your level remains unchanged.
+                </div>
+            `) + buildLevelCheckCard(mlResult, sessionMetrics);
+        }).catch(err => {
+            console.error("Level Check analysis failed:", err);
+            mlLoading.style.display = "none";
+        });
+    }
+
+    startQuiz(options.mode === "level_check" ? "level_check" : "placement");
 }
 
 /**
@@ -899,8 +1245,7 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:1300;";
 
     const savedResults = JSON.parse(sessionStorage.getItem("quiz-results") || "{}");
-    const mlResult = savedResults.mlResult || null;
-    const metrics = savedResults.sessionMetrics || null;
+    const placement = savedResults.placement || null;
 
     const topicDetailsHTML = Object.entries(topicBreakdown).map(([topic, data]) => {
         const accuracy = Math.round((data.correct / data.total) * 100);
@@ -918,10 +1263,10 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
         `;
     }).join("");
 
-    const mlHTML = mlResult && metrics ? `
+    const mlHTML = placement ? `
         <div style="margin-top:2rem;">
-            <h3 style="margin:0 0 1rem 0;color:#0F172A;font-size:1.1rem;">🤖 AI Recommendation</h3>
-            ${buildMLRecommendationCard(mlResult, metrics)}
+            <h3 style="margin:0 0 1rem 0;color:#0F172A;font-size:1.1rem;">🎯 Placement</h3>
+            ${buildPlacementCard(placement, { showLevelCheckButton: false })}
         </div>
     ` : "";
 
@@ -977,7 +1322,7 @@ export function openQuizDetailsOverlay(score, percent, topicBreakdown) {
 /**
  * Open a fullscreen overlay that shows an isolated quiz view.
  */
-export function openQuizOverlay() {
+export function openQuizOverlay(options = {}) {
     const overlay = document.createElement("div");
     overlay.className = "lp-quiz-overlay";
     overlay.style.cssText = "position:fixed;inset:0;background:rgba(248,250,252,0.97);display:flex;align-items:center;justify-content:center;z-index:1200;";
@@ -987,10 +1332,10 @@ export function openQuizOverlay() {
             <div style="padding:1rem 1.2rem;">
                 <div class="lp-quiz-progress-wrap">
                     <div class="lp-quiz-progress-head" style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                        <span class="quiz-counter">Question 1 of 25</span>
+                        <span class="quiz-counter">Question 1 of ${QUIZ_BANK.length}</span>
                     </div>
                     <div class="lp-progress-track">
-                        <div class="quiz-progress-bar lp-progress-bar" style="width:5%;"></div>
+                        <div class="quiz-progress-bar lp-progress-bar" style="width:${100 / QUIZ_BANK.length}%;"></div>
                     </div>
                 </div>
                 <div class="quiz-box" style="margin-top:12px;"></div>
@@ -1009,5 +1354,5 @@ export function openQuizOverlay() {
         "click", () => overlay.remove()
     );
 
-    setupQuizUI(inner);
+    setupQuizUI(inner, options);
 }

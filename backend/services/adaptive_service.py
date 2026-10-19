@@ -1,73 +1,69 @@
 """
 Component 1: Adaptive Learning Path — Service
 ===============================================
-Adaptive recommendation algorithm using trained ML model + a
-rule-based Safety Validation Layer.
+Progression decision for a Level Check (Model B) + a rule-based
+Safety Validation Layer. The student's CURRENT level comes from the
+placement quiz (Model A, services/placement_service.py); this service
+only decides promote / maintain / demote and moves the level by one.
 
 ──────────────────────────────────────────────────────────────────
-ARCHITECTURE: Hybrid ML + Safety Validation Layer
+MODEL B — ml_models/model_b.pkl
 ──────────────────────────────────────────────────────────────────
-This is a standard pattern in production ML systems (used in
-autonomous driving, medical diagnosis, fraud detection): the ML
-model handles the general case, and a thin rule-based layer catches
-predictions that violate domain-specific safety constraints.
+Gradient Boosting classifier + tuned class multipliers (Method A),
+trained on REAL future outcomes from ASSISTments 2009-2010: features
+from a student's current 20-problem window, label from the NEXT
+window's accuracy (>= 80% promote, 40-80% maintain, < 40% demote).
+See ml/progression_results.json.
 
-WHY THIS EXISTS:
-  Model 1 (Gradient Boosting) is trained on 4 BEHAVIORAL features:
-    avg_attempts, avg_time_sec, engagement_score, difficulty
+  Features: accuracy, avg_time_sec (mean time to FIRST answer)
+  avg_attempts is not a feature: the quiz measures answer changes,
+  ASSISTments measures tries until correct.
 
-  It is intentionally NOT trained on accuracy, because including
-  accuracy directly causes data leakage (the model just reads the
-  threshold that created its own training labels — see project
-  documentation for the leakage investigation).
+  avg_time_sec is raised to a floor stored in the model (5th percentile
+  of training times); below it the model has almost no training data.
+  The response reports whether the floor was applied.
 
-  However, this means Model 1 has a genuine blind spot: it cannot
-  see whether the student's answers were actually correct. In rare
-  edge cases (e.g., a student who guesses quickly and confidently
-  but scores low), the behavioral features alone can look like a
-  strong performance even though accuracy is poor — and vice versa.
+  In 5-fold grouped CV it is NON-INFERIOR to the persistence baseline
+  (label thresholds applied to current accuracy), not better. The
+  persistence action is returned as `baseline_action` for transparency.
 
-  The Safety Validation Layer below corrects ONLY these clear
-  contradictions using the student's actual quiz accuracy — which
-  Model 1 never sees. It does not replace the model; it bounds it.
+  If model_b.pkl is missing or fails to load, the persistence rule is
+  the decision and `model_source` says so.
 
-VALIDATION RULES (grounded in Bloom's Mastery Learning, 1968):
-  - accuracy < 40%  → student is struggling → action cannot be
-                       'promote' (forced to 'demote')
-  - accuracy >= 80% → student has mastered the material → action
-                       cannot be 'demote' (forced to 'promote')
-  - 40% <= accuracy < 80% → Model 1's prediction is trusted as-is,
-                       since this is genuinely ambiguous territory
-                       where behavioral signals are meaningful.
-
-This keeps Model 1's evaluation metrics (82.38% test accuracy, no
-leakage) fully valid and reportable, while guaranteeing the system
-never surfaces an accuracy-contradicting recommendation to the user.
 ──────────────────────────────────────────────────────────────────
-
-KEY FIX (unchanged from before): avg_time_sec is floored at 10.0
-seconds. The training data (ASSISTments, OULAD, UCI) has response
-times ranging from ~10s to 600s. Our quiz generates 1-5s times
-(simple MCQ clicks). Without the floor, the model misinterprets
-fast times as random guessing and predicts DEMOTE even for
-high-scoring students.
+SAFETY VALIDATION LAYER (guardrail only, applied to Model B's action)
+──────────────────────────────────────────────────────────────────
+  - accuracy < 40%  → action cannot be 'promote' (forced to 'demote')
+  - accuracy >= 80% → action cannot be 'demote' (forced to 'promote')
+  - narrow combined-evidence guard against an indefensible 'demote'
+──────────────────────────────────────────────────────────────────
 """
 
 import os
 import joblib
+import pandas as pd
 from firebase.firebase_service import db
 
-# ── Load trained ML model once when app starts ──────────────────────
-MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'model.pkl')
-model = joblib.load(MODEL_PATH)
+# ── Load Model B once when app starts (persistence rule if missing) ──
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'model_b.pkl')
+try:
+    model = joblib.load(MODEL_PATH)       # models.progression_model.ThresholdedGBClassifier
+except Exception as e:                    # missing file or failed unpickle
+    print(f"[WARN] Model B not loaded ({e}) — using persistence rule for progression.")
+    model = None
 
 TOPICS      = ["variables", "operators", "conditionals", "loops", "arrays", "methods"]
-LABEL_MAP   = {0: 'maintain', 1: 'promote', 2: 'demote'}
 DIFFICULTY  = ['beginner', 'intermediate', 'advanced']
-DIFF_ENCODE = {'beginner': 0, 'intermediate': 1, 'advanced': 2}
+
+# Label thresholds — the same ones that generated Model B's training labels
+PROMOTE_MIN = 0.80
+DEMOTE_MAX  = 0.40
+
+RAPID_GUESSING_SEC = 5.0    # mean first-answer time below this → flag (action unchanged)
+LOW_CONFIDENCE     = 0.40   # probability of the chosen action below this → flag
 
 # ── Safety Validation Layer thresholds ───────────────────────────────
-# Model 1 remains the PRIMARY decision-maker for promote/maintain/demote.
+# Model B remains the PRIMARY decision-maker for promote/maintain/demote.
 # This layer only intervenes on predictions that are clearly contradictory
 # or extreme — it never re-derives the full Bloom's rule as a blanket
 # replacement for the model's judgment (that was tested and rejected: it
@@ -159,7 +155,7 @@ class AdaptiveService:
     def _apply_safety_validation(action: str, accuracy: float,
                                   attempts: float, engagement: float) -> tuple:
         """
-        Safety Validation Layer — Model 1 remains the PRIMARY decision-
+        Safety Validation Layer — Model B remains the PRIMARY decision-
         maker. This function only overrides predictions that are clearly
         contradictory or extreme; it does NOT re-derive the full Bloom's
         rule as a blanket replacement for the model's judgment (that
@@ -221,56 +217,68 @@ class AdaptiveService:
                 f"together show solid performance — overridden to 'maintain'."
             )
 
-        # ── No guard triggered — trust Model 1's judgment ───────────────
-        return action, False, "Model 1 prediction accepted (no contradiction detected)."
+        # ── No guard triggered — trust Model B's judgment ───────────────
+        return action, False, "Model prediction accepted (no contradiction detected)."
+
+    @staticmethod
+    def _persistence_action(accuracy: float) -> str:
+        """Baseline: label thresholds applied to the CURRENT accuracy."""
+        if accuracy >= PROMOTE_MIN:
+            return 'promote'
+        if accuracy < DEMOTE_MAX:
+            return 'demote'
+        return 'maintain'
 
     @staticmethod
     def predict_recommendation(session_data: dict) -> dict:
         """
-        Uses trained ML model to predict next difficulty level and topic,
-        then applies the Safety Validation Layer before returning.
+        Level Check progression: Model B decides promote / maintain /
+        demote, the Safety Validation Layer bounds it, and the current
+        level moves by one.
 
         Expected session_data keys:
-            avg_attempts       (float) — average attempts per question
-            avg_time_sec       (float) — average time in seconds
-            engagement_score   (float) — 0.0 to 1.0
+            accuracy           (float, optional) — Level Check accuracy;
+                                derived from topic_scores if absent
+            avg_time_sec       (float) — mean time to FIRST answer (s)
+            avg_attempts       (float) — safety layer only (not a model feature)
+            engagement_score   (float) — safety layer only
             current_difficulty (str)   — beginner / intermediate / advanced
             topic_scores       (dict)  — {topic: score} e.g. {"variables": 0.8}
-            accuracy            (float, optional) — overall quiz accuracy
         """
-        # ── Encode difficulty ────────────────────────────────────────
-        curr_diff   = session_data.get('current_difficulty', 'beginner')
-        diff_enc    = DIFF_ENCODE.get(curr_diff, 0)
-
-        # ── Build feature array (4 features, same order as training) ─
-        # FIX: Floor avg_time_sec at 10.0 seconds
-        # Training data range is ~10s to 600s. Quiz MCQ clicks produce
-        # 1-5s times which the model has never seen — it interprets
-        # sub-10s as random guessing (correlates with DEMOTE in training).
-        # Flooring at 10s maps quiz times into the valid training range.
-        features = [[
-            float(session_data.get('avg_attempts',     1.0)),
-            max(10.0, float(session_data.get('avg_time_sec', 30.0))),
-            float(session_data.get('engagement_score', 0.9)),
-            diff_enc
-        ]]
-
-        # ── ML model prediction (Model 1) ─────────────────────────────
-        prediction    = model.predict(features)[0]
-        probabilities = model.predict_proba(features)[0]
-        raw_action    = LABEL_MAP[int(prediction)]
-        confidence    = round(float(max(probabilities)) * 100, 1)
-
-        # ── Safety Validation Layer ────────────────────────────────────
-        # Re-applies the exact Bloom's rule that generated Model 1's
-        # training labels, using the same attempts/engagement values fed
-        # to the model (post time-floor engagement is unaffected by the
-        # floor since it's a separate feature). See _apply_safety_validation
-        # docstring for why a full rule check is needed, not just extremes.
+        curr_diff        = session_data.get('current_difficulty', 'beginner')
         overall_accuracy = AdaptiveService._get_overall_accuracy(session_data)
-        raw_attempts      = float(session_data.get('avg_attempts', 1.0))
-        raw_engagement    = float(session_data.get('engagement_score', 0.9))
+        raw_time         = float(session_data.get('avg_time_sec', 30.0))
+        raw_attempts     = float(session_data.get('avg_attempts', 1.0))
+        raw_engagement   = float(session_data.get('engagement_score', 0.9))
 
+        baseline_action = AdaptiveService._persistence_action(overall_accuracy)
+
+        # ── Model B prediction (persistence rule if the model is missing) ─
+        if model is not None:
+            inputs = {'accuracy': overall_accuracy, 'avg_time_sec': raw_time,
+                      'avg_attempts': raw_attempts}
+            X = pd.DataFrame([[inputs[f] for f in model.feature_names_in_]],
+                             columns=list(model.feature_names_in_))
+            X_used, floor_flags = model.apply_floors(X)
+
+            raw_action    = str(model.predict(X)[0])
+            proba         = model.predict_proba(X)[0]
+            probabilities = {str(c): round(float(p), 4) for c, p in zip(model.classes_, proba)}
+            p_chosen      = probabilities[raw_action]
+            model_source  = 'model_b'
+            time_floor    = model.input_floors.get('avg_time_sec')
+            floor_applied = bool(floor_flags.get('avg_time_sec', [False])[0])
+            time_used     = float(X_used['avg_time_sec'].iloc[0]) if 'avg_time_sec' in X_used else raw_time
+        else:
+            raw_action    = baseline_action
+            probabilities = None
+            p_chosen      = None
+            model_source  = 'persistence_fallback'
+            time_floor    = None
+            floor_applied = False
+            time_used     = raw_time
+
+        # ── Safety Validation Layer (guardrail on Model B's action) ─────
         action, was_overridden, validation_reason = AdaptiveService._apply_safety_validation(
             raw_action, overall_accuracy, raw_attempts, raw_engagement
         )
@@ -298,12 +306,22 @@ class AdaptiveService:
 
         return {
             'action':            action,             # FINAL action (post-validation)
-            'next_difficulty':   next_difficulty,     # beginner / intermediate / advanced
+            'next_difficulty':   next_difficulty,     # current level +/- 1
             'next_topic':        next_topic,          # weakest topic to study next
-            'confidence':        confidence,          # Model 1's raw confidence %
-            'current':           curr_diff,           # what they just completed
-            'accuracy':          round(overall_accuracy, 4),  # for transparency
-            'model_prediction':  raw_action,          # Model 1's raw output (debugging)
+            'current':           curr_diff,           # level the Level Check was taken at
+            'accuracy':          round(overall_accuracy, 4),
+            'model_source':      model_source,        # 'model_b' or 'persistence_fallback'
+            'model_prediction':  raw_action,          # Model B's action before the safety layer
+            # Raw model probability of model_prediction, as % (None on fallback)
+            'confidence':        round(p_chosen * 100, 1) if p_chosen is not None else None,
+            'low_confidence':    p_chosen is not None and p_chosen < LOW_CONFIDENCE,
+            'probabilities':     probabilities,
+            'baseline_action':   baseline_action,     # persistence rule, for transparency
             'was_overridden':    was_overridden,       # True if safety layer intervened
-            'validation_reason': validation_reason     # human-readable explanation
+            'validation_reason': validation_reason,
+            'avg_time_sec':      round(raw_time, 2),   # as received (first-answer mean)
+            'avg_time_sec_used': round(time_used, 2),  # after the floor
+            'time_floor_sec':    round(time_floor, 2) if time_floor is not None else None,
+            'time_floor_applied': floor_applied,
+            'rapid_guessing':    raw_time < RAPID_GUESSING_SEC,  # flag only, action unchanged
         }

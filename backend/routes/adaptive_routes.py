@@ -6,6 +6,7 @@ Adaptive routes with ML-powered recommendation endpoint.
 
 from flask import Blueprint, request, jsonify
 from services.adaptive_service import AdaptiveService
+from services.placement_service import PlacementService
 
 adaptive_bp = Blueprint("adaptive", __name__)
 
@@ -32,17 +33,46 @@ def get_learning_path(user_id):
     return jsonify(result)
 
 
-@adaptive_bp.route("/predict", methods=["POST"])
-def predict():
+@adaptive_bp.route("/placement", methods=["POST"])
+def placement():
     """
-    ML-powered endpoint — predicts next difficulty and topic.
+    Model A — estimates the student's CURRENT level (Rasch / IRT, EAP).
 
     Expected JSON body:
     {
-        "avg_attempts":       1.2,
-        "avg_time_sec":       18.5,
-        "engagement_score":   0.98,
-        "current_difficulty": "beginner",
+        "responses": [
+            {"id": "var_b1", "level": "beginner", "correct": true},
+            ...
+        ]
+    }
+    A bare list of responses is also accepted.
+    """
+    data = request.get_json(silent=True)
+    responses = data.get('responses') if isinstance(data, dict) else data
+
+    error = PlacementService.validate_responses(responses)
+    if error:
+        return jsonify({'error': error}), 400
+
+    try:
+        return jsonify(PlacementService.place(responses)), 200
+    except Exception as e:
+        return jsonify({'error': f'Placement failed: {str(e)}'}), 500
+
+
+@adaptive_bp.route("/predict", methods=["POST"])
+def predict():
+    """
+    Model B — Level Check progression: promote / maintain / demote from
+    the student's current level, plus the persistence baseline action.
+
+    Expected JSON body:
+    {
+        "accuracy":           0.7,      (optional; else from topic_scores)
+        "avg_time_sec":       18.5,     mean time to FIRST answer
+        "avg_attempts":       1.2,      safety layer only
+        "engagement_score":   0.98,     safety layer only
+        "current_difficulty": "intermediate",
         "topic_scores": {
             "variables":   0.9,
             "operators":   0.5,
@@ -52,7 +82,9 @@ def predict():
         }
     }
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'error': 'Request body must be a JSON object'}), 400
 
     # ── Validate required fields ─────────────────────────────────────
     required = [
@@ -75,6 +107,17 @@ def predict():
 
     if not (0.0 <= engagement_score <= 1.0):
         return jsonify({'error': 'engagement_score must be between 0.0 and 1.0'}), 400
+
+    if avg_time_sec < 0:
+        return jsonify({'error': 'avg_time_sec must be >= 0'}), 400
+
+    if 'accuracy' in data:
+        try:
+            accuracy = float(data['accuracy'])
+        except (ValueError, TypeError):
+            return jsonify({'error': 'accuracy must be a number'}), 400
+        if not (0.0 <= accuracy <= 1.0):
+            return jsonify({'error': 'accuracy must be between 0.0 and 1.0'}), 400
 
     valid_difficulties = ['beginner', 'intermediate', 'advanced']
     if data['current_difficulty'] not in valid_difficulties:
