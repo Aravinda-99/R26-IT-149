@@ -329,16 +329,17 @@ export function openSandbox(opts = {}) {
         const byName = Object.fromEntries((results || []).map(r => [r.name, r]));
         list.innerHTML = spec.tests.map(tc => {
             const r = byName[tc.name];
-            const icon = !r ? "⚪" : (r.passed ? "✅" : "❌");
+            const notRun = r?.status === "not_run";
+            const icon = !r || notRun ? "⚪" : (r.passed ? "✅" : "❌");
+            const borderColor = !r || notRun ? "var(--border-color)" : (r.passed ? "var(--success)" : "var(--danger)");
             const descLocal = !!tc[`description_${lang}`];
-            return `<div style="border:1px solid ${r ? (r.passed ? "var(--success)" : "var(--danger)") : "var(--border-color)"};border-radius:var(--radius-sm);padding:0.55rem 0.7rem;background:var(--bg-card);">
+            return `<div style="border:1px solid ${borderColor};border-radius:var(--radius-sm);padding:0.55rem 0.7rem;background:var(--bg-card);opacity:${notRun ? "0.65" : "1"};">
                 <div style="display:flex;gap:0.5rem;align-items:flex-start;">
                     <span aria-hidden="true">${icon}</span>
                     <div style="min-width:0;flex:1;">
-                        <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);">${escapeHtml(tc.name)}<span class="sr-only" style="position:absolute;left:-9999px;">${r ? (r.passed ? " passed" : " failed") : " not run"}</span></div>
+                        <div style="font-size:0.85rem;font-weight:700;color:var(--text-primary);">${escapeHtml(tc.name)}${notRun ? ` <span style="font-size:0.75rem;font-weight:600;color:var(--text-muted);font-family:${localFont};">(${escapeHtml(t.not_run)})</span>` : ""}<span class="sr-only" style="position:absolute;left:-9999px;">${r ? (notRun ? " not run" : r.passed ? " passed" : " failed") : " not run"}</span></div>
                         <div style="font-size:0.8rem;color:var(--text-secondary);line-height:1.45;margin-top:0.15rem;font-family:${descLocal ? localFont : "var(--font)"};">${escapeHtml(testDesc(tc))}</div>
-                        ${tc.stdin ? `<div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">${escapeHtml(t.input)}: <code style="font-family:${MONO};">${escapeHtml(tc.stdin.trim()).replace(/\n/g, " ⏎ ")}</code></div>` : ""}
-                        ${r && !r.passed ? `
+                        ${r && !r.passed && !notRun ? `
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-top:0.45rem;">
                                 <div><div style="font-size:0.68rem;font-weight:700;color:var(--text-secondary);font-family:${localFont};">${escapeHtml(t.expected)}</div>
                                     <pre style="margin:0;padding:0.35rem 0.5rem;background:var(--success-soft);border-radius:4px;font-family:${MONO};font-size:0.75rem;white-space:pre-wrap;word-break:break-word;color:var(--text-primary);">${escapeHtml(r.expected)}</pre></div>
@@ -351,7 +352,10 @@ export function openSandbox(opts = {}) {
             </div>`;
         }).join("");
         const score = $("#c2sb-score");
-        if (score) score.textContent = results ? `${results.filter(r => r.passed).length} / ${results.length} ${t.passed}` : "";
+        if (score) {
+            const allNotRun = results && results.length > 0 && results.every(r => r.status === "not_run");
+            score.textContent = results ? (allNotRun ? t.not_run : `${results.filter(r => r.passed).length} / ${results.length} ${t.passed}`) : "";
+        }
     };
 
     const celebrate = () => {
@@ -380,7 +384,13 @@ export function openSandbox(opts = {}) {
             const res = await ErrorAPI.runTests({ question_id: opts.questionId, code: editor.value });
             renderTests(res.tests);
             if (!res.compiled) {
-                output.innerHTML = compileErrorsHtml(res.compile_errors || []);
+                const errs = res.compile_errors || [];
+                const primaryMsg = errs[0]?.message || "Your code did not compile.";
+                const lineInfo = errs[0]?.line ? ` (line ${errs[0].line})` : "";
+                output.innerHTML = `<div style="padding:0.7rem 0.9rem;background:var(--danger-soft);border:1px solid var(--danger);border-radius:var(--radius-sm);margin-bottom:0.5rem;">
+                    <div style="font-weight:700;font-size:0.9rem;color:var(--danger);">Fix the compile error first — tests were not run yet</div>
+                    <div style="font-size:0.82rem;color:var(--text-primary);margin-top:0.3rem;font-family:${MONO};">${escapeHtml(primaryMsg)}${escapeHtml(lineInfo)}</div>
+                </div>` + compileErrorsHtml(errs);
                 wireGoto();
             } else {
                 output.innerHTML = `<div style="font-weight:700;font-size:0.9rem;color:${res.all_passed ? "var(--success)" : "var(--danger)"};">${res.all_passed ? "✅" : "❌"} ${res.passed_count} / ${res.total} tests passed</div>
@@ -422,7 +432,7 @@ export function openSandbox(opts = {}) {
                 llmFinal: e?.label_source === "llm_verified" ? e.final_reason_group : null,
             });
             const explanation = e?.explanation
-                ? whyHeadingHtml(e.source, lang) + explanationBodyHtml(e.explanation, lang, !!e.is_correct)
+                ? whyHeadingHtml(e, lang) + explanationBodyHtml(e.explanation, lang, !!e.is_correct)
                 : `<div style="font-size:0.85rem;color:var(--danger);">Could not get an explanation. Try again.</div>`;
             panel.innerHTML = `${card}${explanation}
                 <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem;">Live analysis of this exact code · nothing is saved to your history.</div>`;

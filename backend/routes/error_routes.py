@@ -228,6 +228,9 @@ def explain_answer():
     the response's "source" is "cache" | "llm" | "template".
     Free sandbox code: {mode: "free", code, reason_group?, prediction_confidence?} — always
     a live LLM call (template fallback), never cached.
+    {mode: "live", question_id, chosen_option, ...}: regenerate that answer's explanation now —
+    the cache is not read or written; source "llm" or (on failure) "template".
+    Every response carries "generated_at" and "model" (null for a template).
     """
     from services.explanation_service import ExplanationService
     data = request.get_json(silent=True) or {}

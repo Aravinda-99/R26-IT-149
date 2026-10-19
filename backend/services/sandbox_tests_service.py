@@ -130,9 +130,7 @@ def run_tests(question_id, code, spec=None, run_timeout=None):
                 results.append(_test_result(t, passed, r["stdout"], err, r["time_ms"]))
         else:
             for t in tests:
-                results.append(_test_result(t, False, None, {"type": "CompileError", "category": "compile_error",
-                                                              "message": "Your code did not compile.", "line": None,
-                                                              "hint": "Fix the compile errors first."}, None))
+                results.append(_test_result_not_run(t))
         passed = sum(r["passed"] for r in results)
         return {
             "success": True,
@@ -164,6 +162,22 @@ def _test_result(t, passed, actual, error, time_ms):
         "description_si": t.get("description_si"),
         "description_singlish": t.get("description_singlish"),
         "time_ms": time_ms,
+    }
+
+
+def _test_result_not_run(t):
+    return {
+        "name": t["name"],
+        "passed": False,
+        "status": "not_run",
+        "stdin": t.get("stdin", ""),
+        "expected": t["expected_stdout"],
+        "actual": None,
+        "error": None,
+        "description_en": t.get("description_en"),
+        "description_si": t.get("description_si"),
+        "description_singlish": t.get("description_singlish"),
+        "time_ms": None,
     }
 
 

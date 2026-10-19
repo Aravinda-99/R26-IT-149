@@ -202,6 +202,26 @@ TEXT_QUESTION_TEXT = {
 WRONG_PREFIX = {"si": "'{opt}' මෙහි නිවැරදි නැත. ", "singlish": "'{opt}' meke hari na. "}
 FIX_PREFIX = {"si": "'{correct}' භාවිතා කරන්න. ", "singlish": "'{correct}' use karanna. "}
 
+_COMPILE_SI = {
+    "summary": "'{opt}' compile වන්නේ නැත: {ce}.",
+    "why": "Java compiler කියන්නේ: {ce}.",
+    "fix": "{fix_prefix}compile error eka fix karanna.",
+    "tip": "Compiler message eka බලන්න — ඒකේ exact problem eka කියා ඇත.",
+}
+_COMPILE_SINGLISH = {
+    "summary": "'{opt}' compile wenne na: {ce}.",
+    "why": "Java compiler kiyanawa: {ce}.",
+    "fix": "{fix_prefix}Compile error eka fix karanna.",
+    "tip": "Compiler message eka balanna — eke exact problem eka kiyala thiyenawa.",
+}
+
+
+def compile_template(lang, compile_error, opt="", correct=""):
+    """Template when the student's code fails to compile. Uses the real compiler message."""
+    src = _COMPILE_SI if lang == "si" else _COMPILE_SINGLISH
+    fix_prefix = (FIX_PREFIX[lang].format(opt=opt, correct=correct) if correct else "")
+    return {k: v.format(opt=opt, ce=compile_error, fix_prefix=fix_prefix) for k, v in src.items()}
+
 
 def localised_template(lang, kind, reason_group=None, opt="", correct=""):
     """

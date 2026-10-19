@@ -889,6 +889,10 @@ class ErrorService:
         # ------------------------------------------------------------------
         # Step 1 — ML predictions (v2 + Model 3 when enabled, else original models)
         # ------------------------------------------------------------------
+        # Live proof: when this analysis ran and how long the pipeline took. The clock starts
+        # after the (one-off) model loading above, so it measures this answer's inference only.
+        computed_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds")
+        infer_started = time.perf_counter()
         decision_scores_raw = None  # raw decision_function output, used for XAI confidence %
         v2_result = None
         if v2:
@@ -1285,10 +1289,13 @@ class ErrorService:
             decision_scores=decision_scores_raw,
             recalibrated_confidence_pct=final_confidence_pct,
         )
+        inference_ms = round((time.perf_counter() - infer_started) * 1000, 1)
 
         response = {
             "success": True,
             "student_id": student_id,
+            "computed_at": computed_at,
+            "inference_ms": inference_ms,
             "predicted_label": final_label,
             "reason_group": reason_group_final,
             "confidence_score": final_confidence_pct,

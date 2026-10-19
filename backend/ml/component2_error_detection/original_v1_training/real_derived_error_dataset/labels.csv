@@ -1,0 +1,251 @@
+filename,source,base_file,label,concept,error_description,error_type,label_status,notes
+correct_001.java,RealCodeDerived,s005809339.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s005809339.java
+correct_002.java,RealCodeDerived,s007434844.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s007434844.java
+correct_003.java,RealCodeDerived,s023834937.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s023834937.java
+correct_004.java,RealCodeDerived,s032005630.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s032005630.java
+correct_005.java,RealCodeDerived,s034898493.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s034898493.java
+correct_006.java,RealCodeDerived,s038375942.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s038375942.java
+correct_007.java,RealCodeDerived,s041364221.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s041364221.java
+correct_008.java,RealCodeDerived,s042881780.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s042881780.java
+correct_009.java,RealCodeDerived,s045914957.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s045914957.java
+correct_010.java,RealCodeDerived,s046565065.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s046565065.java
+correct_011.java,RealCodeDerived,s049337443.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s049337443.java
+correct_012.java,RealCodeDerived,s049361390.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s049361390.java
+correct_013.java,RealCodeDerived,s064538114.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s064538114.java
+correct_014.java,RealCodeDerived,s065413205.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s065413205.java
+correct_015.java,RealCodeDerived,s066107063.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s066107063.java
+correct_016.java,RealCodeDerived,s066726005.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s066726005.java
+correct_017.java,RealCodeDerived,s067793589.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s067793589.java
+correct_018.java,RealCodeDerived,s068211976.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s068211976.java
+correct_019.java,RealCodeDerived,s068958240.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s068958240.java
+correct_020.java,RealCodeDerived,s074526361.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s074526361.java
+correct_021.java,RealCodeDerived,s080963909.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s080963909.java
+correct_022.java,RealCodeDerived,s081739903.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s081739903.java
+correct_023.java,RealCodeDerived,s083782185.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s083782185.java
+correct_024.java,RealCodeDerived,s086197101.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s086197101.java
+correct_025.java,RealCodeDerived,s090649302.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s090649302.java
+correct_026.java,RealCodeDerived,s091102571.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s091102571.java
+correct_027.java,RealCodeDerived,s092827623.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s092827623.java
+correct_028.java,RealCodeDerived,s097755850.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s097755850.java
+correct_029.java,RealCodeDerived,s098361543.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s098361543.java
+correct_030.java,RealCodeDerived,s108878270.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s108878270.java
+correct_031.java,RealCodeDerived,s112345794.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s112345794.java
+correct_032.java,RealCodeDerived,s117409505.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s117409505.java
+correct_033.java,RealCodeDerived,s121827541.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s121827541.java
+correct_034.java,RealCodeDerived,s127751617.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s127751617.java
+correct_035.java,RealCodeDerived,s129049708.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s129049708.java
+correct_036.java,RealCodeDerived,s131738740.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s131738740.java
+correct_037.java,RealCodeDerived,s136240204.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s136240204.java
+correct_038.java,RealCodeDerived,s136793165.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s136793165.java
+correct_039.java,RealCodeDerived,s140558542.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s140558542.java
+correct_040.java,RealCodeDerived,s145768224.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s145768224.java
+correct_041.java,RealCodeDerived,s145991794.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s145991794.java
+correct_042.java,RealCodeDerived,s146838656.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s146838656.java
+correct_043.java,RealCodeDerived,s147776932.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s147776932.java
+correct_044.java,RealCodeDerived,s148007689.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s148007689.java
+correct_045.java,RealCodeDerived,s148569818.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s148569818.java
+correct_046.java,RealCodeDerived,s149413693.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s149413693.java
+correct_047.java,RealCodeDerived,s154324990.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s154324990.java
+correct_048.java,RealCodeDerived,s159258090.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s159258090.java
+correct_049.java,RealCodeDerived,s159451905.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s159451905.java
+correct_050.java,RealCodeDerived,s161827795.java,CORRECT,NONE,Original correct file,NONE,controlled_injection,Derived from s161827795.java
+loop_error_001.java,RealCodeDerived,s005809339.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s005809339.java
+loop_error_002.java,RealCodeDerived,s007434844.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s007434844.java
+loop_error_003.java,RealCodeDerived,s023834937.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s023834937.java
+loop_error_004.java,RealCodeDerived,s032005630.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s032005630.java
+loop_error_005.java,RealCodeDerived,s034898493.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s034898493.java
+loop_error_006.java,RealCodeDerived,s038375942.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s038375942.java
+loop_error_007.java,RealCodeDerived,s041364221.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s041364221.java
+loop_error_008.java,RealCodeDerived,s042881780.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s042881780.java
+loop_error_009.java,RealCodeDerived,s045914957.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s045914957.java
+loop_error_010.java,RealCodeDerived,s046565065.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s046565065.java
+loop_error_011.java,RealCodeDerived,s049337443.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s049337443.java
+loop_error_012.java,RealCodeDerived,s049361390.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s049361390.java
+loop_error_013.java,RealCodeDerived,s064538114.java,LOOP_ERROR,LOOP,Loop uses <= instead of < causing off-by-one,CONCEPTUAL,controlled_injection,Derived from s064538114.java
+loop_error_014.java,RealCodeDerived,s065413205.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s065413205.java
+loop_error_015.java,RealCodeDerived,s066107063.java,LOOP_ERROR,LOOP,"Loop starts at 1 instead of 0, skipping first element",CONCEPTUAL,controlled_injection,Derived from s066107063.java
+loop_error_016.java,RealCodeDerived,s066726005.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s066726005.java
+loop_error_017.java,RealCodeDerived,s067793589.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s067793589.java
+loop_error_018.java,RealCodeDerived,s068211976.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s068211976.java
+loop_error_019.java,RealCodeDerived,s068958240.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s068958240.java
+loop_error_020.java,RealCodeDerived,s074526361.java,LOOP_ERROR,LOOP,Hardcoded loop limit used instead of dynamic variable,LOGIC,controlled_injection,Derived from s074526361.java
+loop_error_021.java,RealCodeDerived,s080963909.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s080963909.java
+loop_error_022.java,RealCodeDerived,s081739903.java,LOOP_ERROR,LOOP,Hardcoded loop limit used instead of dynamic variable,LOGIC,controlled_injection,Derived from s081739903.java
+loop_error_023.java,RealCodeDerived,s083782185.java,LOOP_ERROR,LOOP,Hardcoded loop limit used instead of dynamic variable,LOGIC,controlled_injection,Derived from s083782185.java
+loop_error_024.java,RealCodeDerived,s086197101.java,LOOP_ERROR,LOOP,Hardcoded loop limit used instead of dynamic variable,LOGIC,controlled_injection,Derived from s086197101.java
+loop_error_025.java,RealCodeDerived,s090649302.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s090649302.java
+loop_error_026.java,RealCodeDerived,s091102571.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s091102571.java
+loop_error_027.java,RealCodeDerived,s092827623.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s092827623.java
+loop_error_028.java,RealCodeDerived,s097755850.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s097755850.java
+loop_error_029.java,RealCodeDerived,s098361543.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s098361543.java
+loop_error_030.java,RealCodeDerived,s108878270.java,LOOP_ERROR,LOOP,Hardcoded loop limit used instead of dynamic variable,LOGIC,controlled_injection,Derived from s108878270.java
+loop_error_031.java,RealCodeDerived,s112345794.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s112345794.java
+loop_error_032.java,RealCodeDerived,s117409505.java,LOOP_ERROR,LOOP,Loop increments by 2 instead of 1,LOGIC,controlled_injection,Derived from s117409505.java
+loop_error_033.java,RealCodeDerived,s121827541.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s121827541.java
+loop_error_034.java,RealCodeDerived,s127751617.java,LOOP_ERROR,LOOP,Loop decrements instead of increments causing infinite loop,RUNTIME,controlled_injection,Derived from s127751617.java
+loop_error_035.java,RealCodeDerived,s129049708.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s129049708.java
+loop_error_036.java,RealCodeDerived,s131738740.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s131738740.java
+loop_error_037.java,RealCodeDerived,s136240204.java,LOOP_ERROR,LOOP,Loop decrements instead of increments causing infinite loop,RUNTIME,controlled_injection,Derived from s136240204.java
+loop_error_038.java,RealCodeDerived,s136793165.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s136793165.java
+loop_error_039.java,RealCodeDerived,s140558542.java,LOOP_ERROR,LOOP,Loop decrements instead of increments causing infinite loop,RUNTIME,controlled_injection,Derived from s140558542.java
+loop_error_040.java,RealCodeDerived,s145768224.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s145768224.java
+loop_error_041.java,RealCodeDerived,s145991794.java,LOOP_ERROR,LOOP,Loop decrements instead of increments causing infinite loop,RUNTIME,controlled_injection,Derived from s145991794.java
+loop_error_042.java,RealCodeDerived,s146838656.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s146838656.java
+loop_error_043.java,RealCodeDerived,s147776932.java,LOOP_ERROR,LOOP,Loop goes beyond boundary causing potential crash,RUNTIME,controlled_injection,Derived from s147776932.java
+loop_error_044.java,RealCodeDerived,s148007689.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s148007689.java
+loop_error_045.java,RealCodeDerived,s148569818.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s148569818.java
+loop_error_046.java,RealCodeDerived,s149413693.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s149413693.java
+loop_error_047.java,RealCodeDerived,s154324990.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s154324990.java
+loop_error_048.java,RealCodeDerived,s159258090.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s159258090.java
+loop_error_049.java,RealCodeDerived,s159451905.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s159451905.java
+loop_error_050.java,RealCodeDerived,s161827795.java,LOOP_ERROR,LOOP,Missing parenthesis in for loop definition,SYNTAX,controlled_injection,Derived from s161827795.java
+variable_error_001.java,RealCodeDerived,s005809339.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s005809339.java
+variable_error_002.java,RealCodeDerived,s007434844.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s007434844.java
+variable_error_003.java,RealCodeDerived,s023834937.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s023834937.java
+variable_error_004.java,RealCodeDerived,s032005630.java,VARIABLE_ERROR,VARIABLE,"Accumulator uses = instead of +=, overwriting values",CONCEPTUAL,controlled_injection,Derived from s032005630.java
+variable_error_005.java,RealCodeDerived,s034898493.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s034898493.java
+variable_error_006.java,RealCodeDerived,s038375942.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s038375942.java
+variable_error_007.java,RealCodeDerived,s041364221.java,VARIABLE_ERROR,VARIABLE,"Accumulator uses = instead of +=, overwriting values",CONCEPTUAL,controlled_injection,Derived from s041364221.java
+variable_error_008.java,RealCodeDerived,s042881780.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s042881780.java
+variable_error_009.java,RealCodeDerived,s045914957.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s045914957.java
+variable_error_010.java,RealCodeDerived,s046565065.java,VARIABLE_ERROR,VARIABLE,"Accumulator uses = instead of +=, overwriting values",CONCEPTUAL,controlled_injection,Derived from s046565065.java
+variable_error_011.java,RealCodeDerived,s049337443.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s049337443.java
+variable_error_012.java,RealCodeDerived,s049361390.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s049361390.java
+variable_error_013.java,RealCodeDerived,s064538114.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s064538114.java
+variable_error_014.java,RealCodeDerived,s065413205.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s065413205.java
+variable_error_015.java,RealCodeDerived,s066107063.java,VARIABLE_ERROR,VARIABLE,Wrong data type used for integer calculation,CONCEPTUAL,controlled_injection,Derived from s066107063.java
+variable_error_016.java,RealCodeDerived,s066726005.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s066726005.java
+variable_error_017.java,RealCodeDerived,s067793589.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s067793589.java
+variable_error_018.java,RealCodeDerived,s068211976.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s068211976.java
+variable_error_019.java,RealCodeDerived,s068958240.java,VARIABLE_ERROR,VARIABLE,Subtraction used instead of addition in calculation,LOGIC,controlled_injection,Derived from s068958240.java
+variable_error_020.java,RealCodeDerived,s074526361.java,VARIABLE_ERROR,VARIABLE,Subtraction used instead of addition in calculation,LOGIC,controlled_injection,Derived from s074526361.java
+variable_error_021.java,RealCodeDerived,s080963909.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s080963909.java
+variable_error_022.java,RealCodeDerived,s081739903.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s081739903.java
+variable_error_023.java,RealCodeDerived,s083782185.java,VARIABLE_ERROR,VARIABLE,Subtraction used instead of addition in calculation,LOGIC,controlled_injection,Derived from s083782185.java
+variable_error_024.java,RealCodeDerived,s086197101.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s086197101.java
+variable_error_025.java,RealCodeDerived,s090649302.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s090649302.java
+variable_error_026.java,RealCodeDerived,s091102571.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s091102571.java
+variable_error_027.java,RealCodeDerived,s092827623.java,VARIABLE_ERROR,VARIABLE,Subtraction used instead of addition in calculation,LOGIC,controlled_injection,Derived from s092827623.java
+variable_error_028.java,RealCodeDerived,s097755850.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s097755850.java
+variable_error_029.java,RealCodeDerived,s098361543.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s098361543.java
+variable_error_030.java,RealCodeDerived,s108878270.java,VARIABLE_ERROR,VARIABLE,Subtraction used instead of addition in calculation,LOGIC,controlled_injection,Derived from s108878270.java
+variable_error_031.java,RealCodeDerived,s112345794.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s112345794.java
+variable_error_032.java,RealCodeDerived,s117409505.java,VARIABLE_ERROR,VARIABLE,Variable initialized to 1 instead of 0,LOGIC,controlled_injection,Derived from s117409505.java
+variable_error_033.java,RealCodeDerived,s121827541.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s121827541.java
+variable_error_034.java,RealCodeDerived,s127751617.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s127751617.java
+variable_error_035.java,RealCodeDerived,s129049708.java,VARIABLE_ERROR,VARIABLE,Injected division by zero,RUNTIME,controlled_injection,Derived from s129049708.java
+variable_error_036.java,RealCodeDerived,s131738740.java,VARIABLE_ERROR,VARIABLE,Injected division by zero,RUNTIME,controlled_injection,Derived from s131738740.java
+variable_error_037.java,RealCodeDerived,s136240204.java,VARIABLE_ERROR,VARIABLE,Injected division by zero,RUNTIME,controlled_injection,Derived from s136240204.java
+variable_error_038.java,RealCodeDerived,s136793165.java,VARIABLE_ERROR,VARIABLE,Injected division by zero,RUNTIME,controlled_injection,Derived from s136793165.java
+variable_error_039.java,RealCodeDerived,s140558542.java,VARIABLE_ERROR,VARIABLE,Injected division by zero,RUNTIME,controlled_injection,Derived from s140558542.java
+variable_error_040.java,RealCodeDerived,s145768224.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s145768224.java
+variable_error_041.java,RealCodeDerived,s145991794.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s145991794.java
+variable_error_042.java,RealCodeDerived,s146838656.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s146838656.java
+variable_error_043.java,RealCodeDerived,s147776932.java,VARIABLE_ERROR,VARIABLE,Initialization with 0 instead of MAX_VALUE causing logic crash,RUNTIME,controlled_injection,Derived from s147776932.java
+variable_error_044.java,RealCodeDerived,s148007689.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s148007689.java
+variable_error_045.java,RealCodeDerived,s148569818.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s148569818.java
+variable_error_046.java,RealCodeDerived,s149413693.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s149413693.java
+variable_error_047.java,RealCodeDerived,s154324990.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s154324990.java
+variable_error_048.java,RealCodeDerived,s159258090.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s159258090.java
+variable_error_049.java,RealCodeDerived,s159451905.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s159451905.java
+variable_error_050.java,RealCodeDerived,s161827795.java,VARIABLE_ERROR,VARIABLE,Missing space after int keyword,SYNTAX,controlled_injection,Derived from s161827795.java
+array_error_001.java,RealCodeDerived,s005809339.java,ARRAY_ERROR,ARRAY,Loop skips last element of array,CONCEPTUAL,controlled_injection,Derived from s005809339.java
+array_error_002.java,RealCodeDerived,s007434844.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s007434844.java
+array_error_003.java,RealCodeDerived,s023834937.java,ARRAY_ERROR,ARRAY,Loop skips last element of array,CONCEPTUAL,controlled_injection,Derived from s023834937.java
+array_error_004.java,RealCodeDerived,s032005630.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s032005630.java
+array_error_005.java,RealCodeDerived,s034898493.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s034898493.java
+array_error_006.java,RealCodeDerived,s038375942.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s038375942.java
+array_error_007.java,RealCodeDerived,s041364221.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s041364221.java
+array_error_008.java,RealCodeDerived,s042881780.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s042881780.java
+array_error_009.java,RealCodeDerived,s045914957.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s045914957.java
+array_error_010.java,RealCodeDerived,s046565065.java,ARRAY_ERROR,ARRAY,Loop skips last element of array,CONCEPTUAL,controlled_injection,Derived from s046565065.java
+array_error_011.java,RealCodeDerived,s049337443.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s049337443.java
+array_error_012.java,RealCodeDerived,s049361390.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s049361390.java
+array_error_013.java,RealCodeDerived,s064538114.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s064538114.java
+array_error_014.java,RealCodeDerived,s065413205.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s065413205.java
+array_error_015.java,RealCodeDerived,s066107063.java,ARRAY_ERROR,ARRAY,Array access starts at index 1 instead of 0,CONCEPTUAL,controlled_injection,Derived from s066107063.java
+array_error_016.java,RealCodeDerived,s066726005.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s066726005.java
+array_error_017.java,RealCodeDerived,s067793589.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s067793589.java
+array_error_018.java,RealCodeDerived,s068211976.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s068211976.java
+array_error_019.java,RealCodeDerived,s068958240.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s068958240.java
+array_error_020.java,RealCodeDerived,s074526361.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s074526361.java
+array_error_021.java,RealCodeDerived,s080963909.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s080963909.java
+array_error_022.java,RealCodeDerived,s081739903.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s081739903.java
+array_error_023.java,RealCodeDerived,s083782185.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s083782185.java
+array_error_024.java,RealCodeDerived,s086197101.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s086197101.java
+array_error_025.java,RealCodeDerived,s090649302.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s090649302.java
+array_error_026.java,RealCodeDerived,s091102571.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s091102571.java
+array_error_027.java,RealCodeDerived,s092827623.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s092827623.java
+array_error_028.java,RealCodeDerived,s097755850.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s097755850.java
+array_error_029.java,RealCodeDerived,s098361543.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s098361543.java
+array_error_030.java,RealCodeDerived,s108878270.java,ARRAY_ERROR,ARRAY,Accesses previous element instead of current,LOGIC,controlled_injection,Derived from s108878270.java
+array_error_031.java,RealCodeDerived,s112345794.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s112345794.java
+array_error_032.java,RealCodeDerived,s117409505.java,ARRAY_ERROR,ARRAY,Always accesses first element instead of current index,LOGIC,controlled_injection,Derived from s117409505.java
+array_error_033.java,RealCodeDerived,s121827541.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s121827541.java
+array_error_034.java,RealCodeDerived,s127751617.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s127751617.java
+array_error_035.java,RealCodeDerived,s129049708.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s129049708.java
+array_error_036.java,RealCodeDerived,s131738740.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s131738740.java
+array_error_037.java,RealCodeDerived,s136240204.java,ARRAY_ERROR,ARRAY,Index out of bounds due to <= comparison,RUNTIME,controlled_injection,Derived from s136240204.java
+array_error_038.java,RealCodeDerived,s136793165.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s136793165.java
+array_error_039.java,RealCodeDerived,s140558542.java,ARRAY_ERROR,ARRAY,Index out of bounds due to <= comparison,RUNTIME,controlled_injection,Derived from s140558542.java
+array_error_040.java,RealCodeDerived,s145768224.java,ARRAY_ERROR,ARRAY,Index out of bounds due to <= comparison,RUNTIME,controlled_injection,Derived from s145768224.java
+array_error_041.java,RealCodeDerived,s145991794.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s145991794.java
+array_error_042.java,RealCodeDerived,s146838656.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s146838656.java
+array_error_043.java,RealCodeDerived,s147776932.java,ARRAY_ERROR,ARRAY,Index out of bounds due to i+1 access,RUNTIME,controlled_injection,Derived from s147776932.java
+array_error_044.java,RealCodeDerived,s148007689.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s148007689.java
+array_error_045.java,RealCodeDerived,s148569818.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s148569818.java
+array_error_046.java,RealCodeDerived,s149413693.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s149413693.java
+array_error_047.java,RealCodeDerived,s154324990.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s154324990.java
+array_error_048.java,RealCodeDerived,s159258090.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s159258090.java
+array_error_049.java,RealCodeDerived,s159451905.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s159451905.java
+array_error_050.java,RealCodeDerived,s161827795.java,ARRAY_ERROR,ARRAY,Malformed array declaration,SYNTAX,controlled_injection,Derived from s161827795.java
+method_error_001.java,RealCodeDerived,s005809339.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s005809339.java
+method_error_002.java,RealCodeDerived,s007434844.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s007434844.java
+method_error_003.java,RealCodeDerived,s023834937.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s023834937.java
+method_error_004.java,RealCodeDerived,s032005630.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s032005630.java
+method_error_005.java,RealCodeDerived,s034898493.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s034898493.java
+method_error_006.java,RealCodeDerived,s038375942.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s038375942.java
+method_error_007.java,RealCodeDerived,s041364221.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s041364221.java
+method_error_008.java,RealCodeDerived,s042881780.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s042881780.java
+method_error_009.java,RealCodeDerived,s045914957.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s045914957.java
+method_error_010.java,RealCodeDerived,s046565065.java,METHOD_ERROR,METHOD,Method returns hardcoded 0 instead of result,CONCEPTUAL,controlled_injection,Derived from s046565065.java
+method_error_011.java,RealCodeDerived,s049337443.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s049337443.java
+method_error_012.java,RealCodeDerived,s049361390.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s049361390.java
+method_error_013.java,RealCodeDerived,s064538114.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s064538114.java
+method_error_014.java,RealCodeDerived,s065413205.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s065413205.java
+method_error_015.java,RealCodeDerived,s066107063.java,METHOD_ERROR,METHOD,Removed static keyword causing non-static access error,CONCEPTUAL,controlled_injection,Derived from s066107063.java
+method_error_016.java,RealCodeDerived,s066726005.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s066726005.java
+method_error_017.java,RealCodeDerived,s067793589.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s067793589.java
+method_error_018.java,RealCodeDerived,s068211976.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s068211976.java
+method_error_019.java,RealCodeDerived,s068958240.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s068958240.java
+method_error_020.java,RealCodeDerived,s074526361.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s074526361.java
+method_error_021.java,RealCodeDerived,s080963909.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s080963909.java
+method_error_022.java,RealCodeDerived,s081739903.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s081739903.java
+method_error_023.java,RealCodeDerived,s083782185.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s083782185.java
+method_error_024.java,RealCodeDerived,s086197101.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s086197101.java
+method_error_025.java,RealCodeDerived,s090649302.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s090649302.java
+method_error_026.java,RealCodeDerived,s091102571.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s091102571.java
+method_error_027.java,RealCodeDerived,s092827623.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s092827623.java
+method_error_028.java,RealCodeDerived,s097755850.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s097755850.java
+method_error_029.java,RealCodeDerived,s098361543.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s098361543.java
+method_error_030.java,RealCodeDerived,s108878270.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s108878270.java
+method_error_031.java,RealCodeDerived,s112345794.java,METHOD_ERROR,METHOD,Negated return value,LOGIC,controlled_injection,Derived from s112345794.java
+method_error_032.java,RealCodeDerived,s117409505.java,METHOD_ERROR,METHOD,Swapped parameter order in method call,LOGIC,controlled_injection,Derived from s117409505.java
+method_error_033.java,RealCodeDerived,s121827541.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s121827541.java
+method_error_034.java,RealCodeDerived,s127751617.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s127751617.java
+method_error_035.java,RealCodeDerived,s129049708.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s129049708.java
+method_error_036.java,RealCodeDerived,s131738740.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s131738740.java
+method_error_037.java,RealCodeDerived,s136240204.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s136240204.java
+method_error_038.java,RealCodeDerived,s136793165.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s136793165.java
+method_error_039.java,RealCodeDerived,s140558542.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s140558542.java
+method_error_040.java,RealCodeDerived,s145768224.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s145768224.java
+method_error_041.java,RealCodeDerived,s145991794.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s145991794.java
+method_error_042.java,RealCodeDerived,s146838656.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s146838656.java
+method_error_043.java,RealCodeDerived,s147776932.java,METHOD_ERROR,METHOD,Method throws exception instead of returning,RUNTIME,controlled_injection,Derived from s147776932.java
+method_error_044.java,RealCodeDerived,s148007689.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s148007689.java
+method_error_045.java,RealCodeDerived,s148569818.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s148569818.java
+method_error_046.java,RealCodeDerived,s149413693.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s149413693.java
+method_error_047.java,RealCodeDerived,s154324990.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s154324990.java
+method_error_048.java,RealCodeDerived,s159258090.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s159258090.java
+method_error_049.java,RealCodeDerived,s159451905.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s159451905.java
+method_error_050.java,RealCodeDerived,s161827795.java,METHOD_ERROR,METHOD,Missing return type space,SYNTAX,controlled_injection,Derived from s161827795.java

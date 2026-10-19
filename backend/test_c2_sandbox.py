@@ -150,6 +150,7 @@ class TestRunTests(unittest.TestCase):
         self.assertFalse(r["compiled"])
         self.assertEqual(r["compile_errors"][0]["line"], 3)
         self.assertTrue(all(not t["passed"] for t in r["tests"]))
+        self.assertTrue(all(t.get("status") == "not_run" for t in r["tests"]))
 
     def test_output_comparison_ignores_line_endings_and_trailing_spaces(self):
         self.assertEqual(st.normalise_output("0 1 2 \r\n"), st.normalise_output("0 1 2"))
@@ -245,6 +246,20 @@ class TestRoutes(unittest.TestCase):
         with mock.patch.object(st, "get_spec", return_value=None):
             r = self.client.post("/api/errors/run-tests", json={"question_id": 12345, "code": "int x = 1;"})
         self.assertEqual(r.status_code, 400)
+
+    def test_run_tests_compile_error(self):
+        with mock.patch.object(st, "get_spec", return_value=SPEC):
+            code = "static int mystery(int n) {\n    if (n == 1) { return 1; }\n    return n + mystery(n - 1)\n}"
+            r = self.client.post("/api/errors/run-tests", json={"question_id": 999, "code": code})
+        self.assertEqual(r.status_code, 200)
+        j = r.get_json()
+        self.assertFalse(j["compiled"])
+        self.assertFalse(j["all_passed"])
+        self.assertEqual(j["compile_errors"][0]["line"], 3)
+        self.assertTrue(len(j["tests"]) > 0)
+        for t in j["tests"]:
+            self.assertEqual(t["status"], "not_run")
+            self.assertFalse(t["passed"])
 
 
 if __name__ == "__main__":

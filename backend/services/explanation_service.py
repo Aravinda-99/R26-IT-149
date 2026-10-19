@@ -153,6 +153,7 @@ def _sentence_count(text):
     return len([s for s in re.split(r"(?<=[.!?।])\s+", text.strip()) if s])
 
 
+
 def _to_bool(value):
     if isinstance(value, bool):
         return value
@@ -846,6 +847,7 @@ class ExplanationService:
             "final_reason_group": final_rg,
             "label_source": label_source,
             "model": (meta or {}).get("model"),
+            "generated_at": now_iso() if source == "llm" else None,
             "retrieved_chunk_ids": (meta or {}).get("retrieved_chunk_ids", []),
             "warnings": ctx["warnings"] + (meta or {}).get("warnings", []),
             "llm_error": error,
@@ -894,9 +896,16 @@ class ExplanationService:
         POST /api/errors/explain: cache hit, else ONE live LLM attempt (15 s), else template.
         Any internal failure still returns a template explanation (success=True).
         mode "free": explain free sandbox code (no question) live — see explain_free.
+        mode "live": regenerate THIS question + option now: the cache and the in-process memo
+            are neither read nor written; the circuit breaker, timeout and template fallback
+            are the same as a normal live request. The response says where it came from
+            ("source": "llm" | "template", "mode": "live", "generated_at", "model").
+        A cache hit reports the entry's "generated_at" and "model".
         """
-        if data.get("mode") == "free":
+        mode = data.get("mode")
+        if mode == "free":
             return cls.explain_free(data)
+        live_only = mode == "live"
         question_id = data.get("question_id")
         chosen_option = data.get("chosen_option")
         if question_id is None or chosen_option is None:
@@ -909,23 +918,26 @@ class ExplanationService:
         student_id = data.get("student_id")
         code = data.get("code") or ""
 
-        try:
-            entry = cls.lookup_cache(question_id, chosen_option, code)
-        except Exception as e:  # unreadable cache file: carry on without it
-            print(f"[WARN] explanation cache unavailable: {e}")
-            entry = None
-        if entry and entry.get("response"):
-            resp = copy.deepcopy(entry["response"])
-            resp.update({"source": "cache", "student_id": student_id})
-            return cls._reapply_policy(resp)
-
         memo_key = (cache_key(question_id, chosen_option), _norm_code(code))
-        with cls._lock:
-            memo = cls._memo.get(memo_key)
-        if memo:
-            resp = copy.deepcopy(memo)
-            resp.update({"source": "cache", "student_id": student_id})
-            return cls._reapply_policy(resp)
+        if not live_only:
+            try:
+                entry = cls.lookup_cache(question_id, chosen_option, code)
+            except Exception as e:  # unreadable cache file: carry on without it
+                print(f"[WARN] explanation cache unavailable: {e}")
+                entry = None
+            if entry and entry.get("response"):
+                resp = copy.deepcopy(entry["response"])
+                resp.update({"source": "cache", "student_id": student_id,
+                             "generated_at": entry.get("generated_at"),
+                             "model": entry.get("model") or resp.get("model")})
+                return cls._reapply_policy(resp)
+
+            with cls._lock:
+                memo = cls._memo.get(memo_key)
+            if memo:
+                resp = copy.deepcopy(memo)
+                resp.update({"source": "cache", "student_id": student_id})
+                return cls._reapply_policy(resp)
 
         c2_result = data.get("c2_result") or {
             k: data.get(k) for k in ("reason_group", "prediction_confidence", "error_pattern_score") if k in data}
@@ -936,9 +948,32 @@ class ExplanationService:
             print(f"[WARN] explanation context failed ({type(e).__name__}: {e}); continuing without the C2 label")
             ctx = cls.minimal_context(question_id, chosen_option, code, data.get("is_correct"), runner)
         _, _, configured = llm_status()
-        resp = cls.generate(ctx, use_llm=configured and EXPLANATION_USE_LLM, timeout=LIVE_TIMEOUT_SECONDS,
+        use_llm = configured and EXPLANATION_USE_LLM
+        resp = cls.generate(ctx, use_llm=use_llm, timeout=LIVE_TIMEOUT_SECONDS,
                             student_id=student_id, max_attempts=1, live=True)
-        if resp["source"] == "llm":
+        if live_only:
+            resp["mode"] = "live"
+            if not use_llm and not resp.get("llm_error"):
+                resp["llm_error"] = "The explanation LLM is not configured or is switched off"
+            # LLM failed → keep the cached explanation instead of showing the template.
+            if resp.get("source") == "template":
+                try:
+                    entry = cls.lookup_cache(question_id, chosen_option, code)
+                except Exception:
+                    entry = None
+                if entry and entry.get("response"):
+                    cached = copy.deepcopy(entry["response"])
+                    cached.update({
+                        "source": "cache",
+                        "student_id": student_id,
+                        "generated_at": entry.get("generated_at"),
+                        "model": entry.get("model") or cached.get("model"),
+                        "mode": "live",
+                        "live_failed": True,
+                        "llm_error": resp.get("llm_error"),
+                    })
+                    return cls._reapply_policy(cached)
+        elif resp["source"] == "llm":
             with cls._lock:
                 cls._memo[memo_key] = copy.deepcopy(resp)
         return resp
