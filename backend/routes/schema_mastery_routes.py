@@ -9,6 +9,7 @@ Endpoints for:
   - Direct ML schema mastery prediction API
 """
 
+import json
 from flask import Blueprint, jsonify, request
 from services.schema_mastery_service import predict_schema_mastery
 from services.schema_question_bank_service import SchemaQuestionBankService
@@ -16,8 +17,35 @@ from services.schema_llm_question_service import SchemaLLMQuestionService
 from services.schema_post_test_service import SchemaPostTestService
 from services.schema_post_test_result_service import SchemaPostTestResultService
 from services.schema_session_service import SchemaSessionService
+from services.student_roster_service import StudentRosterService
 
 schema_mastery_bp = Blueprint("schema_mastery", __name__)
+
+
+@schema_mastery_bp.route("/roster/archived", methods=["GET"])
+@schema_mastery_bp.route("/roster/<student_id>/archive", methods=["POST"])
+@schema_mastery_bp.route("/roster/<student_id>/restore", methods=["POST"])
+def manage_student_roster(student_id=None):
+    header = request.headers.get("Authorization", "")
+    if not header.startswith("Bearer "):
+        return jsonify({"success": False, "error": "Please sign in to the Faculty Portal again."}), 401
+    try:
+        actor = StudentRosterService.verify_teacher(header[7:])
+    except PermissionError as error:
+        return jsonify({"success": False, "error": str(error)}), 403
+    try:
+        if request.method == "GET":
+            students = StudentRosterService.archived_students()
+            return jsonify({"success": True, "students": students, "count": len(students)})
+        archived = request.path.endswith("/archive")
+        student = StudentRosterService.set_archived(student_id, archived, actor)
+        return jsonify({"success": True, "student": student})
+    except LookupError as error:
+        return jsonify({"success": False, "error": str(error)}), 404
+    except ValueError as error:
+        return jsonify({"success": False, "error": str(error)}), 400
+    except (OSError, json.JSONDecodeError):
+        return jsonify({"success": False, "error": "Could not save or read student archive state. Please try again."}), 503
 
 
 # ─────────────────────────────────────────────────────────────────────────────

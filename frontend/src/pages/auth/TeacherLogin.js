@@ -119,6 +119,7 @@ export function renderTeacherLogin(container) {
                 // Backend authentication succeeded
             }
 
+            if (res.roster_token) sessionStorage.setItem("codequest_roster_session", JSON.stringify({ uid: user.uid || user.id, token: res.roster_token }));
             setCurrentUser(user);
             window.location.hash = "#/teacher/dashboard";
 

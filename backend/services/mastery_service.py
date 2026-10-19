@@ -71,6 +71,37 @@ _STUDENTS_CACHE_TTL = 60  # seconds
 
 class MasteryService:
     @staticmethod
+    def _students_with_latest_results(students):
+        roster = {str(s["studentId"]): dict(s) for s in students if s.get("studentId")}
+        seen = set()
+        for result in SchemaPostTestResultService.list_results():
+            uid = str(result.get("student_id") or "").strip()
+            if not uid or uid in seen:
+                continue
+            seen.add(uid)
+            student = roster.setdefault(uid, {"studentId": uid})
+            score = MasteryService._clamp01(result.get("post_test_score", 0))
+            state = MasteryService._state_from_mastery_level(result.get("mastery_level"))
+            student.update({
+                "studentName": student.get("studentName") or result.get("student_name") or uid,
+                "name": student.get("name") or student.get("studentName") or result.get("student_name") or uid,
+                "email": student.get("email") or result.get("student_email", ""),
+                "overall_mastery": score,
+                "overall_state": result.get("learning_status") or state,
+                "overall_color": get_state_color(state),
+                "total_concepts": max(student.get("total_concepts", 0), 1),
+                "conceptName": result.get("concept_name", ""),
+                "postTestCompleted": True, "postTestScore": score,
+                "preTestScore": result.get("pre_test_score"),
+                "masteryLevel": result.get("mastery_level", ""),
+                "masteryProbability": result.get("mastery_probability"),
+                "nextAction": result.get("next_action", ""),
+                "latestResultId": result.get("result_id"),
+                "postTestCompletedAt": result.get("created_at"),
+            })
+        return list(roster.values())
+
+    @staticmethod
     def _concept_key(concept_name):
         normalized = str(concept_name or "loops").strip().lower()
         aliases = {
@@ -545,17 +576,15 @@ class MasteryService:
         """Fetch all real registered students from persistent storage and compute mastery for each."""
         now = time.time()
         if _students_cache["data"] is not None and (now - _students_cache["timestamp"] < _STUDENTS_CACHE_TTL):
-            return _students_cache["data"]
+            return MasteryService._students_with_latest_results(_students_cache["data"])
 
         from services.user_storage_service import UserStorageService
         registered_students = UserStorageService.get_all_students()
 
         students = []
-        seen_ids = set()
 
         for u in registered_students:
             uid = str(u.get("uid") or u.get("id") or u.get("user_id"))
-            seen_ids.add(uid)
             student_name = u.get("display_name") or u.get("name") or u.get("email", "").split("@")[0] or uid
             
             # Check if student has behavior data in Firestore
@@ -594,32 +623,9 @@ class MasteryService:
                     "created_at": u.get("created_at") or u.get("joinedAt", ""),
                 })
 
-        for result in SchemaPostTestResultService.list_results():
-            uid = str(result.get("student_id") or "").strip()
-            if not uid or uid in seen_ids:
-                continue
-            seen_ids.add(uid)
-            post_score = MasteryService._clamp01(result.get("post_test_score", 0))
-            students.append({
-                "studentId": uid,
-                "studentName": result.get("student_name") or uid,
-                "name": result.get("student_name") or uid,
-                "email": result.get("student_email", ""),
-                "overall_mastery": post_score,
-                "overall_state": result.get("learning_status") or "Post-Test Submitted",
-                "overall_color": "#3b82f6",
-                "total_concepts": 1,
-                "conceptName": result.get("concept_name", ""),
-                "postTestCompleted": True,
-                "postTestScore": post_score,
-                "masteryLevel": result.get("mastery_level", ""),
-                "nextAction": result.get("next_action", ""),
-                "created_at": result.get("created_at", ""),
-            })
-
         _students_cache["data"] = students
         _students_cache["timestamp"] = now
-        return students
+        return MasteryService._students_with_latest_results(students)
 
     # -----------------------------------------------------------------
     # UPDATE MASTERY — Re-calculate after new activity data
