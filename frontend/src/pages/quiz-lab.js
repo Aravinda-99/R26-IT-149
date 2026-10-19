@@ -1,4 +1,5 @@
 import { setupQuizUI } from "../learningPathGen/quizLab.js";
+import { QUIZ_BANK } from "../learningPathGen/data.js";
 
 export async function renderQuizLab(container) {
     container.innerHTML = `
@@ -14,10 +15,10 @@ export async function renderQuizLab(container) {
             <div class="card quiz-lab-main" style="background: #F8FAFC; border-color: #E2E8F0;">
                 <div class="lp-quiz-progress-wrap">
                     <div class="lp-quiz-progress-head">
-                        <span id="quiz-counter">Question 1 of 20</span>
+                        <span id="quiz-counter">Question 1 of ${QUIZ_BANK.length}</span>
                     </div>
                     <div class="lp-progress-track">
-                        <div id="quiz-progress-bar" class="lp-progress-bar" style="width: 5%;"></div>
+                        <div id="quiz-progress-bar" class="lp-progress-bar" style="width: ${100 / QUIZ_BANK.length}%;"></div>
                     </div>
                 </div>
 

@@ -222,5 +222,51 @@
     "error_type": "METHOD_RETURN_ISSUE",
     "error_pattern_score": 0.48,
     "error_pattern_score_source": "component2_confidence"
+  },
+  "VYOdumtUHxNlwubHtcZq4OtpvHD3": {
+    "session_id": "SESS_8E7C5DAD",
+    "student_id": "VYOdumtUHxNlwubHtcZq4OtpvHD3",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.63,
+      "attempt_count": 1,
+      "time_taken_seconds": 49.0,
+      "completed_at": "2026-10-19T11:21:27.284415+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "VARIABLE_CALCULATION_ISSUE",
+      "error_pattern_score": 0.39,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Confusion with operators or misunderstanding the semantic meaning of the variables (e.g., discounts reduce total).",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-19T12:33:46.748659+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-10-18T08:56:31.937149+00:00",
+    "updated_at": "2026-10-19T12:33:46.748659+00:00",
+    "error_type": "VARIABLE_CALCULATION_ISSUE",
+    "error_pattern_score": 0.39,
+    "error_pattern_score_source": "component2_confidence"
   }
 }
