@@ -6,7 +6,7 @@
     "concept_note": "backend/ml/component2_error_detection/rag/concept_notes.py"
   },
   "counts": {
-    "question": 25,
+    "question": 40,
     "reason_group": 12,
     "concept_note": 40
   },
@@ -122,6 +122,28 @@
       }
     },
     {
+      "id": "question:26",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 26,
+      "text": "Pre-test question 26 (Variables, hard): Fill in the blank so the program prints 3.5 (not 3.0):\nCode template: int a = 7; int b = 2; double result = {BLANK}; System.out.println(result);\nCorrect code: int a = 7; int b = 2; double result = (double) a / b; System.out.println(result);\nOptions: (double) a / b | (double) (a / b) | a / b | (int) a / b\nCorrect option: (double) a / b\nExplanation: (double) a / b casts a to 7.0 first, so the division is done in double: 7.0 / 2 = 3.5. In (double) (a / b), the integer division 7 / 2 = 3 happens first, giving 3.0.",
+      "meta": {
+        "id": 26,
+        "topic": "Variables",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 3.5 (not 3.0):",
+        "codeTemplate": "int a = 7; int b = 2; double result = {BLANK}; System.out.println(result);",
+        "options": [
+          "(double) a / b",
+          "(double) (a / b)",
+          "a / b",
+          "(int) a / b"
+        ],
+        "correct_option": "(double) a / b",
+        "explanation": "(double) a / b casts a to 7.0 first, so the division is done in double: 7.0 / 2 = 3.5. In (double) (a / b), the integer division 7 / 2 = 3 happens first, giving 3.0."
+      }
+    },
+    {
       "id": "question:6",
       "type": "question",
       "concept": "Operators",
@@ -229,6 +251,28 @@
         ],
         "correct_option": "big",
         "explanation": "This is the ternary operator. Since 5 > 3 is true, the result is \"big\"."
+      }
+    },
+    {
+      "id": "question:27",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 27,
+      "text": "Pre-test question 27 (Operators, hard): What is the output of: int x = 5; int y = x++ + ++x; System.out.println(y);\nOptions: 12 | 11 | 10 | 13\nCorrect option: 12\nExplanation: x++ returns 5 and then x becomes 6. ++x makes x 7 and returns 7. So y = 5 + 7 = 12.",
+      "meta": {
+        "id": 27,
+        "topic": "Operators",
+        "difficulty": "hard",
+        "question": "What is the output of: int x = 5; int y = x++ + ++x; System.out.println(y);",
+        "codeTemplate": null,
+        "options": [
+          "12",
+          "11",
+          "10",
+          "13"
+        ],
+        "correct_option": "12",
+        "explanation": "x++ returns 5 and then x becomes 6. ++x makes x 7 and returns 7. So y = 5 + 7 = 12."
       }
     },
     {
@@ -342,6 +386,28 @@
       }
     },
     {
+      "id": "question:28",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 28,
+      "text": "Pre-test question 28 (Loops, hard): Fill in the blank so the program prints 6:\nCode template: int count = 0; for (int i = 0; i < 3; i++) { for (int j = {BLANK}; j < 3; j++) { count++; } } System.out.println(count);\nCorrect code: int count = 0; for (int i = 0; i < 3; i++) { for (int j = i; j < 3; j++) { count++; } } System.out.println(count);\nOptions: i | 0 | i + 1 | 3\nCorrect option: i\nExplanation: With j starting at i, the inner loop runs 3 + 2 + 1 = 6 times. Starting at 0 gives 9, i + 1 gives 3, and 3 gives 0.",
+      "meta": {
+        "id": 28,
+        "topic": "Loops",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 6:",
+        "codeTemplate": "int count = 0; for (int i = 0; i < 3; i++) { for (int j = {BLANK}; j < 3; j++) { count++; } } System.out.println(count);",
+        "options": [
+          "i",
+          "0",
+          "i + 1",
+          "3"
+        ],
+        "correct_option": "i",
+        "explanation": "With j starting at i, the inner loop runs 3 + 2 + 1 = 6 times. Starting at 0 gives 9, i + 1 gives 3, and 3 gives 0."
+      }
+    },
+    {
       "id": "question:16",
       "type": "question",
       "concept": "Arrays",
@@ -452,6 +518,28 @@
       }
     },
     {
+      "id": "question:29",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 29,
+      "text": "Pre-test question 29 (Arrays, hard): Fill in the blank so changing b does NOT change a (the program should print 1):\nCode template: int[] a = {1, 2, 3}; int[] b = {BLANK}; b[0] = 99; System.out.println(a[0]);\nCorrect code: int[] a = {1, 2, 3}; int[] b = a.clone(); b[0] = 99; System.out.println(a[0]);\nOptions: a.clone() | a | (int[]) a | b\nCorrect option: a.clone()\nExplanation: a.clone() creates a new array with the same values. Using a or (int[]) a copies only the reference, so both variables point to the same array and a[0] becomes 99.",
+      "meta": {
+        "id": 29,
+        "topic": "Arrays",
+        "difficulty": "hard",
+        "question": "Fill in the blank so changing b does NOT change a (the program should print 1):",
+        "codeTemplate": "int[] a = {1, 2, 3}; int[] b = {BLANK}; b[0] = 99; System.out.println(a[0]);",
+        "options": [
+          "a.clone()",
+          "a",
+          "(int[]) a",
+          "b"
+        ],
+        "correct_option": "a.clone()",
+        "explanation": "a.clone() creates a new array with the same values. Using a or (int[]) a copies only the reference, so both variables point to the same array and a[0] becomes 99."
+      }
+    },
+    {
       "id": "question:21",
       "type": "question",
       "concept": "Methods",
@@ -559,6 +647,248 @@
         ],
         "correct_option": "n - 1",
         "explanation": "Each call must decrease n so it eventually reaches the base case. Calling mystery(n) again would recurse forever."
+      }
+    },
+    {
+      "id": "question:30",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 30,
+      "text": "Pre-test question 30 (Methods, hard): Fill in the blank so the program prints 50:\nCode template: static int change(int x) { x = 50; return x; } int n = 10; {BLANK}; System.out.println(n);\nCorrect code: static int change(int x) { x = 50; return x; } int n = 10; n = change(n); System.out.println(n);\nOptions: n = change(n) | change(n) | change(n) = n | int n = change(n)\nCorrect option: n = change(n)\nExplanation: Java passes primitives by value, so change(n) alone only changes the method's copy and n stays 10. The returned value must be assigned back: n = change(n).",
+      "meta": {
+        "id": 30,
+        "topic": "Methods",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 50:",
+        "codeTemplate": "static int change(int x) { x = 50; return x; } int n = 10; {BLANK}; System.out.println(n);",
+        "options": [
+          "n = change(n)",
+          "change(n)",
+          "change(n) = n",
+          "int n = change(n)"
+        ],
+        "correct_option": "n = change(n)",
+        "explanation": "Java passes primitives by value, so change(n) alone only changes the method's copy and n stays 10. The returned value must be assigned back: n = change(n)."
+      }
+    },
+    {
+      "id": "question:31",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 31,
+      "text": "Pre-test question 31 (Variables, medium): A delivery application stores a package's weight as a decimal number. Which declaration correctly creates a variable that can later be updated?\nCode template: public class DeliveryApp {\n    public static void main(String[] args) {\n        {BLANK}\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}\nCorrect code: public class DeliveryApp {\n    public static void main(String[] args) {\n        double packageWeight = 2.5;\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}\nOptions: double packageWeight = 2.5; | final double packageWeight = 2.5; | int packageWeight = 2.5; | String packageWeight = 2.5;\nCorrect option: double packageWeight = 2.5;\nExplanation: A double stores decimal values and can be reassigned. A final variable cannot be reassigned after initialization.",
+      "meta": {
+        "id": 31,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "A delivery application stores a package's weight as a decimal number. Which declaration correctly creates a variable that can later be updated?",
+        "codeTemplate": "public class DeliveryApp {\n    public static void main(String[] args) {\n        {BLANK}\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}",
+        "options": [
+          "double packageWeight = 2.5;",
+          "final double packageWeight = 2.5;",
+          "int packageWeight = 2.5;",
+          "String packageWeight = 2.5;"
+        ],
+        "correct_option": "double packageWeight = 2.5;",
+        "explanation": "A double stores decimal values and can be reassigned. A final variable cannot be reassigned after initialization."
+      }
+    },
+    {
+      "id": "question:32",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 32,
+      "text": "Pre-test question 32 (Variables, medium): A weather application needs to display a temperature reading with its decimal precision preserved. Which declaration correctly stores the calculated reading?\nCode template: public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        {BLANK}\n        System.out.println(averageTemp);\n    }\n}\nCorrect code: public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        double averageTemp = (morningTemp + eveningTemp) / 2;\n        System.out.println(averageTemp);\n    }\n}\nOptions: double averageTemp = (morningTemp + eveningTemp) / 2; | int averageTemp = (morningTemp + eveningTemp) / 2; | boolean averageTemp = morningTemp > eveningTemp; | char averageTemp = 'A';\nCorrect option: double averageTemp = (morningTemp + eveningTemp) / 2;\nExplanation: The double type preserves the fractional part of the calculated average. The expression evaluates to a double because both temperature variables are doubles.",
+      "meta": {
+        "id": 32,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "A weather application needs to display a temperature reading with its decimal precision preserved. Which declaration correctly stores the calculated reading?",
+        "codeTemplate": "public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        {BLANK}\n        System.out.println(averageTemp);\n    }\n}",
+        "options": [
+          "double averageTemp = (morningTemp + eveningTemp) / 2;",
+          "int averageTemp = (morningTemp + eveningTemp) / 2;",
+          "boolean averageTemp = morningTemp > eveningTemp;",
+          "char averageTemp = 'A';"
+        ],
+        "correct_option": "double averageTemp = (morningTemp + eveningTemp) / 2;",
+        "explanation": "The double type preserves the fractional part of the calculated average. The expression evaluates to a double because both temperature variables are doubles."
+      }
+    },
+    {
+      "id": "question:33",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 33,
+      "text": "Pre-test question 33 (Operators, medium): A game awards 12 points for each completed mission and a fixed bonus of 8 points. A player completes 3 missions. Which expression correctly calculates the total points using Java's operator precedence?\nOptions: 12 * 3 + 8 | 12 * (3 + 8) | (12 + 8) * 3 | 12 + 3 * 8\nCorrect option: 12 * 3 + 8\nExplanation: Multiplication has higher precedence than addition, so 12 * 3 is evaluated first. Adding the bonus gives 44 points.",
+      "meta": {
+        "id": 33,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "A game awards 12 points for each completed mission and a fixed bonus of 8 points. A player completes 3 missions. Which expression correctly calculates the total points using Java's operator precedence?",
+        "codeTemplate": null,
+        "options": [
+          "12 * 3 + 8",
+          "12 * (3 + 8)",
+          "(12 + 8) * 3",
+          "12 + 3 * 8"
+        ],
+        "correct_option": "12 * 3 + 8",
+        "explanation": "Multiplication has higher precedence than addition, so 12 * 3 is evaluated first. Adding the bonus gives 44 points."
+      }
+    },
+    {
+      "id": "question:34",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 34,
+      "text": "Pre-test question 34 (Operators, medium): A digital library allows access when a member has a valid subscription OR possesses a temporary access pass. Which Java expression correctly represents this requirement?\nOptions: hasSubscription || hasTemporaryPass | hasSubscription && hasTemporaryPass | hasSubscription & hasTemporaryPass | !hasSubscription && !hasTemporaryPass\nCorrect option: hasSubscription || hasTemporaryPass\nExplanation: The || operator evaluates to true when at least one condition is true. It also short-circuits when the first condition is true.",
+      "meta": {
+        "id": 34,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "A digital library allows access when a member has a valid subscription OR possesses a temporary access pass. Which Java expression correctly represents this requirement?",
+        "codeTemplate": null,
+        "options": [
+          "hasSubscription || hasTemporaryPass",
+          "hasSubscription && hasTemporaryPass",
+          "hasSubscription & hasTemporaryPass",
+          "!hasSubscription && !hasTemporaryPass"
+        ],
+        "correct_option": "hasSubscription || hasTemporaryPass",
+        "explanation": "The || operator evaluates to true when at least one condition is true. It also short-circuits when the first condition is true."
+      }
+    },
+    {
+      "id": "question:35",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 35,
+      "text": "Pre-test question 35 (Loops, medium): A fitness application displays a countdown from 5 to 1. Which loop condition correctly includes 1 but stops before displaying 0?\nCode template: public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; {BLANK}; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}\nCorrect code: public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; secondsLeft >= 1; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}\nOptions: secondsLeft >= 1 | secondsLeft > 1 | secondsLeft >= 0 | secondsLeft == 1\nCorrect option: secondsLeft >= 1\nExplanation: The condition secondsLeft >= 1 keeps the loop running from 5 through 1. Once secondsLeft becomes 0, the loop terminates.",
+      "meta": {
+        "id": 35,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "A fitness application displays a countdown from 5 to 1. Which loop condition correctly includes 1 but stops before displaying 0?",
+        "codeTemplate": "public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; {BLANK}; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}",
+        "options": [
+          "secondsLeft >= 1",
+          "secondsLeft > 1",
+          "secondsLeft >= 0",
+          "secondsLeft == 1"
+        ],
+        "correct_option": "secondsLeft >= 1",
+        "explanation": "The condition secondsLeft >= 1 keeps the loop running from 5 through 1. Once secondsLeft becomes 0, the loop terminates."
+      }
+    },
+    {
+      "id": "question:36",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 36,
+      "text": "Pre-test question 36 (Loops, medium): A warehouse system processes shipment batches numbered 2, 4, 6, and 8. Which update expression correctly visits only these batch numbers?\nCode template: public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; {BLANK}) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}\nCorrect code: public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; batchNumber += 2) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}\nOptions: batchNumber += 2 | batchNumber *= 2 | batchNumber += 3 | batchNumber -= 2\nCorrect option: batchNumber += 2\nExplanation: Increasing batchNumber by 2 produces the sequence 2, 4, 6, and 8. The loop ends when the next value exceeds 8.",
+      "meta": {
+        "id": 36,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "A warehouse system processes shipment batches numbered 2, 4, 6, and 8. Which update expression correctly visits only these batch numbers?",
+        "codeTemplate": "public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; {BLANK}) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}",
+        "options": [
+          "batchNumber += 2",
+          "batchNumber *= 2",
+          "batchNumber += 3",
+          "batchNumber -= 2"
+        ],
+        "correct_option": "batchNumber += 2",
+        "explanation": "Increasing batchNumber by 2 produces the sequence 2, 4, 6, and 8. The loop ends when the next value exceeds 8."
+      }
+    },
+    {
+      "id": "question:37",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 37,
+      "text": "Pre-test question 37 (Arrays, medium): A cinema application stores seat availability as boolean values. Which expression correctly checks whether the third seat is available?\nCode template: public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if ({BLANK}) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}\nCorrect code: public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if (availableSeats[2]) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}\nOptions: availableSeats[2] | availableSeats[3] | availableSeats[1] | availableSeats[4]\nCorrect option: availableSeats[2]\nExplanation: Java arrays use zero-based indexing, so the third element is accessed using index 2. Its value is true, meaning the seat is available.",
+      "meta": {
+        "id": 37,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "A cinema application stores seat availability as boolean values. Which expression correctly checks whether the third seat is available?",
+        "codeTemplate": "public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if ({BLANK}) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}",
+        "options": [
+          "availableSeats[2]",
+          "availableSeats[3]",
+          "availableSeats[1]",
+          "availableSeats[4]"
+        ],
+        "correct_option": "availableSeats[2]",
+        "explanation": "Java arrays use zero-based indexing, so the third element is accessed using index 2. Its value is true, meaning the seat is available."
+      }
+    },
+    {
+      "id": "question:38",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 38,
+      "text": "Pre-test question 38 (Arrays, medium): A sensor system stores five readings in an array. Which statement correctly prints every reading on a separate line using an enhanced for-loop?\nCode template: int[] readings = {45, 32, 67, 12, 89};\nfor ({BLANK}) {\n    System.out.println(val);\n}\nCorrect code: int[] readings = {45, 32, 67, 12, 89};\nfor (int val : readings) {\n    System.out.println(val);\n}\nOptions: int val : readings | int val = readings | readings : int val | int val; readings\nCorrect option: int val : readings\nExplanation: The enhanced for-loop syntax is for (type variable : array). Each iteration assigns the next element to val automatically.",
+      "meta": {
+        "id": 38,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "A sensor system stores five readings in an array. Which statement correctly prints every reading on a separate line using an enhanced for-loop?",
+        "codeTemplate": "int[] readings = {45, 32, 67, 12, 89};\nfor ({BLANK}) {\n    System.out.println(val);\n}",
+        "options": [
+          "int val : readings",
+          "int val = readings",
+          "readings : int val",
+          "int val; readings"
+        ],
+        "correct_option": "int val : readings",
+        "explanation": "The enhanced for-loop syntax is for (type variable : array). Each iteration assigns the next element to val automatically."
+      }
+    },
+    {
+      "id": "question:39",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 39,
+      "text": "Pre-test question 39 (Methods, medium): A shopping application needs a reusable method that calculates the discounted price of an item. Which method declaration correctly accepts two double arguments and produces a double result?\nCode template: public class ShoppingCart {\n    {BLANK}\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}\nCorrect code: public class ShoppingCart {\n    public static double calculateDiscount(double price, double discountRate) {\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}\nOptions: public static double calculateDiscount(double price, double discountRate) { | public static int calculateDiscount(double price, double discountRate) { | public static double calculateDiscount(int price, int discountRate) { | public double calculateDiscount(double price, double discountRate) {\nCorrect option: public static double calculateDiscount(double price, double discountRate) {\nExplanation: The method must be static to be called directly from main and must accept two double parameters. Its double result preserves decimal precision.",
+      "meta": {
+        "id": 39,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "A shopping application needs a reusable method that calculates the discounted price of an item. Which method declaration correctly accepts two double arguments and produces a double result?",
+        "codeTemplate": "public class ShoppingCart {\n    {BLANK}\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}",
+        "options": [
+          "public static double calculateDiscount(double price, double discountRate) {",
+          "public static int calculateDiscount(double price, double discountRate) {",
+          "public static double calculateDiscount(int price, int discountRate) {",
+          "public double calculateDiscount(double price, double discountRate) {"
+        ],
+        "correct_option": "public static double calculateDiscount(double price, double discountRate) {",
+        "explanation": "The method must be static to be called directly from main and must accept two double parameters. Its double result preserves decimal precision."
+      }
+    },
+    {
+      "id": "question:40",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 40,
+      "text": "Pre-test question 40 (Methods, medium): A ticketing system has two methods named formatTicket, one accepting a String and another accepting an int. Which method call selects the version that accepts a String?\nCode template: public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = {BLANK};\n        System.out.println(ticketLabel);\n    }\n}\nCorrect code: public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = formatTicket(\"VIP-202\");\n        System.out.println(ticketLabel);\n    }\n}\nOptions: formatTicket(\"VIP-202\") | formatTicket(202) | formatTicket(Integer.valueOf(202)) | formatTicket((int) 202.5)\nCorrect option: formatTicket(\"VIP-202\")\nExplanation: Java selects overloaded methods based on the argument types. Passing a String selects formatTicket(String), while the other options select formatTicket(int).",
+      "meta": {
+        "id": 40,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "A ticketing system has two methods named formatTicket, one accepting a String and another accepting an int. Which method call selects the version that accepts a String?",
+        "codeTemplate": "public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = {BLANK};\n        System.out.println(ticketLabel);\n    }\n}",
+        "options": [
+          "formatTicket(\"VIP-202\")",
+          "formatTicket(202)",
+          "formatTicket(Integer.valueOf(202))",
+          "formatTicket((int) 202.5)"
+        ],
+        "correct_option": "formatTicket(\"VIP-202\")",
+        "explanation": "Java selects overloaded methods based on the argument types. Passing a String selects formatTicket(String), while the other options select formatTicket(int)."
       }
     },
     {

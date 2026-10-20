@@ -612,11 +612,23 @@ class ExplanationService:
 
     @classmethod
     def build_context(cls, question_id, chosen_option, code=None, is_correct=None, c2_result=None, runner_output=None,
-                      run_ml=True):
-        question = cls.get_question(question_id)
+                      run_ml=True, question=None):
+        q = question or cls.get_question(question_id)
+        if not q and isinstance(question, dict):
+            q = question
+        if q:
+            normalized_q = dict(q)
+            if "correct_option" not in normalized_q and "correctOption" in normalized_q:
+                normalized_q["correct_option"] = normalized_q["correctOption"]
+            if "codeTemplate" not in normalized_q and "code_template" in normalized_q:
+                normalized_q["codeTemplate"] = normalized_q["code_template"]
+            if "question" not in normalized_q and "text" in normalized_q:
+                normalized_q["question"] = normalized_q["text"]
+            q = normalized_q
+        question = q
         warnings = []
-        if question:
-            key_correct = str(chosen_option) == question["correct_option"]
+        if question and question.get("correct_option"):
+            key_correct = str(chosen_option) == str(question["correct_option"])
             if is_correct is not None and bool(is_correct) != key_correct:
                 warnings.append("is_correct from the client disagrees with the answer key; using the answer key")
             is_correct = key_correct
@@ -680,13 +692,14 @@ class ExplanationService:
         }
 
     @classmethod
-    def minimal_context(cls, question_id, chosen_option, code=None, is_correct=None, runner_output=None):
+    def minimal_context(cls, question_id, chosen_option, code=None, is_correct=None, runner_output=None, question=None):
         """Context without the C2 label (ML skipped); without the question too if even that lookup fails."""
         try:
             return cls.build_context(question_id, chosen_option, code, is_correct,
-                                     {"reason_group": None, "source": "unavailable"}, runner_output, run_ml=False)
+                                     {"reason_group": None, "source": "unavailable"}, runner_output, run_ml=False,
+                                     question=question)
         except Exception:
-            return {"question_id": question_id, "question": None, "chosen_option": chosen_option, "code": code or "",
+            return {"question_id": question_id, "question": question, "chosen_option": chosen_option, "code": code or "",
                     "is_correct": bool(is_correct), "c2": {}, "c2_reason_group": None, "c2_reason_text": "",
                     "prediction_confidence": None, "runner_output": runner_output, "warnings": []}
 
@@ -877,6 +890,12 @@ class ExplanationService:
             return cls._response(ctx, cls.template_explanation(ctx), "template",
                                  error=f"LLM paused (circuit breaker) after: {cls._llm_block_reason}",
                                  student_id=student_id)
+        if use_llm and not ctx.get("free"):
+            q = ctx.get("question") or {}
+            if not (q.get("question") and q.get("correct_option")):
+                return cls._response(ctx, cls.template_explanation(ctx), "template",
+                                     error="Question metadata missing or incomplete; fell back to template",
+                                     student_id=student_id)
         if use_llm:
             try:
                 expl, meta = cls.generate_llm(ctx, timeout=timeout, deadline=deadline, model=model,
@@ -942,11 +961,14 @@ class ExplanationService:
         c2_result = data.get("c2_result") or {
             k: data.get(k) for k in ("reason_group", "prediction_confidence", "error_pattern_score") if k in data}
         runner = data.get("runner_output") or data.get("compiler_output")
+        question_payload = data.get("question")
         try:
-            ctx = cls.build_context(question_id, chosen_option, code, data.get("is_correct"), c2_result, runner)
+            ctx = cls.build_context(question_id, chosen_option, code, data.get("is_correct"), c2_result, runner,
+                                    question=question_payload)
         except Exception as e:  # e.g. C2 models failed: explain without a label
             print(f"[WARN] explanation context failed ({type(e).__name__}: {e}); continuing without the C2 label")
-            ctx = cls.minimal_context(question_id, chosen_option, code, data.get("is_correct"), runner)
+            ctx = cls.minimal_context(question_id, chosen_option, code, data.get("is_correct"), runner,
+                                      question=question_payload)
         _, _, configured = llm_status()
         use_llm = configured and EXPLANATION_USE_LLM
         resp = cls.generate(ctx, use_llm=use_llm, timeout=LIVE_TIMEOUT_SECONDS,

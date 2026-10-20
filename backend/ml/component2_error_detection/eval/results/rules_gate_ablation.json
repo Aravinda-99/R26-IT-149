@@ -1,0 +1,148 @@
+{
+  "n_rows": 80,
+  "systems": {
+    "a_model3_only": {
+      "description": "(a) Model 3 only",
+      "scores": {
+        "n": 80,
+        "broad_accuracy": 0.875,
+        "broad_macro_f1": 0.8841,
+        "reason_accuracy": 0.8625,
+        "reason_macro_f1": 0.8393,
+        "correct_recall": 0.7273,
+        "error_recall": 0.931
+      }
+    },
+    "b_model3_rules_no_gate": {
+      "description": "(b) Model 3 + rule layer (no gate)",
+      "scores": {
+        "n": 80,
+        "broad_accuracy": 0.875,
+        "broad_macro_f1": 0.8841,
+        "reason_accuracy": 0.8625,
+        "reason_macro_f1": 0.8393,
+        "correct_recall": 0.7273,
+        "error_recall": 0.931
+      }
+    },
+    "c_model3_gate_no_rules": {
+      "description": "(c) Model 3 + gate (no rule layer)",
+      "scores": {
+        "n": 80,
+        "broad_accuracy": 0.925,
+        "broad_macro_f1": 0.9288,
+        "reason_accuracy": 0.9125,
+        "reason_macro_f1": 0.8568,
+        "correct_recall": 0.9091,
+        "error_recall": 0.931
+      }
+    },
+    "d_model3_rules_gate_v2_full_gate": {
+      "description": "(d) Model 3 + rule layer + gate (= v2_full_gate)",
+      "scores": {
+        "n": 80,
+        "broad_accuracy": 0.925,
+        "broad_macro_f1": 0.9288,
+        "reason_accuracy": 0.9125,
+        "reason_macro_f1": 0.8568,
+        "correct_recall": 0.9091,
+        "error_recall": 0.931
+      }
+    },
+    "e_model3_rules_gate_ablated_3rules": {
+      "description": "(e) (d) with 3 rules disabled",
+      "scores": {
+        "n": 80,
+        "broad_accuracy": 0.925,
+        "broad_macro_f1": 0.9288,
+        "reason_accuracy": 0.9125,
+        "reason_macro_f1": 0.8568,
+        "correct_recall": 0.9091,
+        "error_recall": 0.931
+      }
+    }
+  },
+  "decomposition": {
+    "model3_baseline_reason_acc": 0.8625,
+    "rule_layer_delta_no_gate": 0.0,
+    "gate_delta_no_rules": 0.05,
+    "full_system_reason_acc": 0.9125,
+    "full_gain_over_model3": 0.05,
+    "ablated_system_reason_acc": 0.9125,
+    "three_rules_delta": 0.0,
+    "reproduced_0_9125": true
+  },
+  "three_rules_analysis": {
+    "discount_wrong_operator": {
+      "triggered_count": 0,
+      "triggered_rows": [],
+      "any_label_changed": false
+    },
+    "add_returns_subtraction": {
+      "triggered_count": 0,
+      "triggered_rows": [],
+      "any_label_changed": false
+    },
+    "safe_patterns_post_increment": {
+      "triggered_count": 1,
+      "triggered_rows": [
+        {
+          "sample_id": "PT05_0",
+          "question_id": 5,
+          "is_correct_option": 1,
+          "code": "int a = 10; int b = a++; System.out.println(a + \" \" + b);",
+          "true_label": "CORRECT",
+          "true_reason": "CORRECT_NO_ERROR",
+          "with_rules": "CORRECT / CORRECT_NO_ERROR",
+          "without_rules": "CORRECT / CORRECT_NO_ERROR",
+          "label_changed": false
+        }
+      ],
+      "any_label_changed": false
+    }
+  },
+  "three_rules_effect": "no effect on the 80 rows",
+  "gate_flips": [
+    {
+      "sample_id": "PT01_0",
+      "question_id": 1,
+      "option": "int",
+      "code": "int age = 25;",
+      "model3_predicted": "VARIABLE_ERROR / VARIABLE_ASSIGNMENT_ISSUE",
+      "gate_predicted": "CORRECT / CORRECT_NO_ERROR",
+      "true_label": "CORRECT / CORRECT_NO_ERROR"
+    },
+    {
+      "sample_id": "PT03_0",
+      "question_id": 3,
+      "option": "boolean",
+      "code": "boolean isActive = true;",
+      "model3_predicted": "VARIABLE_ERROR / VARIABLE_ASSIGNMENT_ISSUE",
+      "gate_predicted": "CORRECT / CORRECT_NO_ERROR",
+      "true_label": "CORRECT / CORRECT_NO_ERROR"
+    },
+    {
+      "sample_id": "PT05_0",
+      "question_id": 5,
+      "option": "a++",
+      "code": "int a = 10; int b = a++; System.out.println(a + \" \" + b);",
+      "model3_predicted": "VARIABLE_ERROR / VARIABLE_ASSIGNMENT_ISSUE",
+      "gate_predicted": "CORRECT / CORRECT_NO_ERROR",
+      "true_label": "CORRECT / CORRECT_NO_ERROR"
+    },
+    {
+      "sample_id": "PT17_0",
+      "question_id": 17,
+      "option": "0",
+      "code": "int[] arr = {10, 20, 30}; System.out.println(arr[0]);",
+      "model3_predicted": "ARRAY_ERROR / ARRAY_TRAVERSAL_ISSUE",
+      "gate_predicted": "CORRECT / CORRECT_NO_ERROR",
+      "true_label": "CORRECT / CORRECT_NO_ERROR"
+    }
+  ],
+  "recommendation": {
+    "discount_wrong_operator": "generalise (or remove from pre-test rule layer if unused; valid concept but zero pre-test triggers)",
+    "add_returns_subtraction": "generalise (heuristic is too narrow and specific to a single problem name; zero pre-test triggers)",
+    "safe_patterns_post_increment": "generalise (pattern is an exact match for PT05_0; suppressed in v2 mode and superseded by gate; zero impact)"
+  }
+}

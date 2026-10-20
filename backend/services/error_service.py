@@ -364,7 +364,6 @@ class ErrorService:
             (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*$', "simple valid integer declaration"),
             (r'^\s*boolean\s+[a-zA-Z_$][\w$]*\s*=\s*(true|false)\s*;\s*$', "simple valid boolean declaration"),
             (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*if\s*\(\s*[a-zA-Z_$][\w$]*\s*==\s*\d+\s*\)\s*\{\s*System\.out\.println\([^)]*\)\s*;\s*\}\s*$', "valid if-condition equality check"),
-            (r'^\s*int\s+a\s*=\s*10\s*;\s*int\s+b\s*=\s*a\+\+\s*;\s*System\.out\.println\([^)]*\)\s*;\s*$', "valid post-increment logic"),
             (r'^\s*\w+\s*=\s*\w+\s*[-+*/]\s*\w+\s*;\s*$', "simple variable calculation with normal arithmetic"),
             (r'^\s*\w+\s*\([^)]*\)\s*;\s*$', "simple method call"),
             (r'^\s*\w+\s*\[\s*\d+\s*\]\s*;\s*$', "simple array access with valid constant index"),

@@ -1153,6 +1153,113 @@ export function setupQuizUI(root = document, options = {}) {
     function handleLevelCheckSubmit(score, percent, topicBreakdown, sessionMetrics) {
         const level = state.level;
 
+        // 1. Build wrongCodeQuestions and questionResults for Level Check (Test 2)
+        const topicLabelMap = {
+            "Variables": "VARIABLE_ERROR",
+            "Operators": "OPERATOR_ERROR",
+            "Loops": "LOOP_ERROR",
+            "Arrays": "ARRAY_ERROR",
+            "Methods": "METHOD_ERROR"
+        };
+
+        const wrongCodeQuestions = [];
+        state.quizBank.forEach((q, idx) => {
+            const ans = state.selectedAnswers[idx];
+            if (ans !== null && ans !== q.correctIndex) {
+                const hasBlank = Boolean(q.codeTemplate && q.codeTemplate.includes("{BLANK}"));
+                const codeSnippet = hasBlank && typeof ans === "number" ? buildFullCodeFromTemplate(q, ans) : "";
+                wrongCodeQuestions.push({
+                    question_id: q.id,
+                    chosenOption: typeof ans === "number" ? q.options[ans] : null,
+                    questionText: q.question,
+                    topic: q.topic,
+                    topic_label: topicLabelMap[q.topic] || `${(q.topic || "Core").toUpperCase()}_ERROR`,
+                    label: null,
+                    code: codeSnippet,
+                    analysis_status: hasBlank ? "pending" : "no_code",
+                    timestamp: new Date().toISOString()
+                });
+            }
+        });
+
+        const questionResults = state.quizBank.map((q, idx) => {
+            const ans = state.selectedAnswers[idx];
+            const answered = ans !== null && typeof ans === "number";
+            const hasBlank = Boolean(q.codeTemplate && q.codeTemplate.includes("{BLANK}"));
+            return {
+                question_id: q.id,
+                topic: q.topic,
+                questionText: q.question,
+                codeTemplate: q.codeTemplate || null,
+                chosenOption: answered ? q.options[ans] : null,
+                correctOption: q.options[q.correctIndex],
+                isCorrect: answered && ans === q.correctIndex,
+                answered,
+                code: answered && hasBlank ? buildFullCodeFromTemplate(q, ans) : "",
+                expression: q.codeTemplate ? null : (parseQuestion(q.question).code || null)
+            };
+        });
+
+        // 2. Persist level-check results under "level-check-results" (and mirror)
+        const user = getCurrentUser();
+        const studentId = user?.uid || user?.id;
+
+        const resultsPayload = {
+            score,
+            percent,
+            topicBreakdown,
+            answeredCount: state.selectedAnswers.filter(a => a !== null).length,
+            sessionMetrics,
+            mlResult: null,
+            levelApplied: false,
+            wrongCodeQuestions,
+            questionResults,
+            completedAt: new Date().toISOString()
+        };
+
+        const persistLevelCheckResults = () => {
+            const serialized = JSON.stringify(resultsPayload);
+            sessionStorage.setItem("level-check-results", serialized);
+            localStorage.setItem("latest_level_check_results", serialized);
+        };
+        persistLevelCheckResults();
+
+        // 3. Analyze wrong code questions asynchronously (persist: false)
+        const analysablePretest = {
+            variables: topicBreakdown?.Variables?.correct ?? 0,
+            loops: topicBreakdown?.Loops?.correct ?? 0,
+            arrays: topicBreakdown?.Arrays?.correct ?? 0,
+            methods: topicBreakdown?.Methods?.correct ?? 0
+        };
+        const analysable = wrongCodeQuestions.filter(wq => {
+            const q = state.quizBank.find(item => item.id === wq.question_id);
+            return q && q.codeTemplate && q.codeTemplate.includes("{BLANK}") && wq.code;
+        });
+
+        if (analysable.length > 0) {
+            Promise.allSettled(analysable.map(wq => ErrorAPI.analyze({
+                student_id: studentId || "anonymous",
+                code: wq.code,
+                pretest_results: analysablePretest,
+                persist: false
+            }))).then(settled => {
+                settled.forEach((result, i) => {
+                    const wq = analysable[i];
+                    const res = result.status === "fulfilled" ? result.value : null;
+                    if (res && res.prediction && res.prediction.label) {
+                        wq.full_response = res;
+                        wq.label = res.prediction.label;
+                        wq.concept = res.prediction.concept || wq.topic;
+                        wq.analysis_status = res.prediction.label === "CORRECT" ? "analyzed_correct" : "analyzed";
+                    } else {
+                        wq.analysis_status = "unanalyzed";
+                        console.warn("Level check error analysis failed for wrong answer:", wq.topic, result?.reason);
+                    }
+                });
+                persistLevelCheckResults();
+            }).catch(err => console.warn("Level check wrong-answer analysis batch failed:", err));
+        }
+
         // Error Feedback shows the PLACEMENT wrong answers only. Fall back to the
         // stored placement results (what Component 2 reads) if this quiz
         // instance has not run a placement itself.
@@ -1166,7 +1273,7 @@ export function setupQuizUI(root = document, options = {}) {
                 placementWrong = [];
             }
         }
-        const showErrorFeedback = placementWrong.length > 0;
+        const showErrorFeedback = (placementWrong && placementWrong.length > 0) || wrongCodeQuestions.length > 0;
 
         quizBox.innerHTML = `
             <article class="lp-result-card">
@@ -1239,11 +1346,9 @@ export function setupQuizUI(root = document, options = {}) {
                     accuracy: sessionMetrics.accuracy
                 });
             }
-            sessionStorage.setItem("level-check-results", JSON.stringify({
-                score, percent, topicBreakdown, sessionMetrics, mlResult,
-                levelApplied,
-                completedAt: new Date().toISOString()
-            }));
+            resultsPayload.mlResult = mlResult;
+            resultsPayload.levelApplied = levelApplied;
+            persistLevelCheckResults();
 
             mlLoading.outerHTML = (levelApplied ? "" : `
                 <div id="lc-not-applied" style="
