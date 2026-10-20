@@ -378,55 +378,55 @@
   "user_1792509662465": {
     "session_id": "SESS_7FC178CF",
     "student_id": "user_1792509662465",
-    "student_name": "Learner",
-    "student_email": "",
+    "student_name": "Janith Wijesinha",
+    "student_email": "janith@gmail.com",
     "component_1": {
-      "completed": false,
-      "concept_name": null,
-      "weak_concept": null,
-      "pre_test_score": null,
-      "attempt_count": 0,
-      "time_taken_seconds": 0,
-      "completed_at": null
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.17,
+      "attempt_count": 1,
+      "time_taken_seconds": 23.0,
+      "completed_at": "2026-10-20T15:53:02.818805+00:00"
     },
     "component_2": {
       "completed": true,
-      "error_type": "METHOD_SIGNATURE_ISSUE",
+      "error_type": "METHOD_RETURN_ISSUE",
       "error_pattern_score": 0.66,
       "error_pattern_score_source": "component2_confidence",
-      "error_reason": "The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-10-20T15:44:57.205599+00:00"
+      "completed_at": "2026-10-20T15:58:59.530799+00:00"
     },
     "component_3": {
-      "completed": false,
-      "recommended_game_id": null,
-      "recommended_game_name": null,
-      "completed_at": null
+      "completed": true,
+      "recommended_game_id": "whileloops",
+      "recommended_game_name": "Condition Guard",
+      "completed_at": "2026-10-20T15:51:52.180763+00:00"
     },
     "component_4": {
-      "unlocked": false,
-      "post_test_started": false,
-      "post_test_completed": false,
-      "post_test_score": null,
-      "mastery_level": null,
-      "next_action": null,
-      "completed_at": null
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.3667,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-10-20T15:56:22.178112+00:00"
     },
-    "current_stage": "GAME_LESSON_READY",
+    "current_stage": "MASTERY_EVALUATED",
     "created_at": "2026-10-20T15:41:13.962746+00:00",
-    "updated_at": "2026-10-20T15:44:57.205599+00:00",
+    "updated_at": "2026-10-20T15:58:59.530799+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.66,
+    "error_pattern_score_source": "component2_confidence",
     "assessment_target": {
       "concept_name": "Methods",
-      "error_type": "METHOD_SIGNATURE_ISSUE",
+      "error_type": "METHOD_RETURN_ISSUE",
       "error_pattern_score": 0.66,
-      "error_reason": "The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.",
-      "pre_test_completed_at": null
-    },
-    "error_type": "METHOD_SIGNATURE_ISSUE",
-    "error_pattern_score": 0.66,
-    "error_pattern_score_source": "component2_confidence"
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "pre_test_completed_at": "2026-10-20T15:53:02.818805+00:00"
+    }
   },
   "user_1788166926551": {
     "session_id": "SESS_7B1680C1",
