@@ -1,33 +1,3 @@
-/**
- * Level 63 — "The Formula Works" (Math Methods: Restructuring Phase —
- * pow() trilogy finale + MATH WING SEAL)
- * ===========================================================================
- * The learner CONSTRUCTS complete exponentiation programs — no multiple
- * choice. Reuses the L27→L60 code-canvas/parts-bin/RUN architecture. The
- * rig hosts ALL THREE wing instruments simultaneously: the mini Cascade
- * Engine (pow, from L61/L62), the mini Measuring Rail (abs, from L58/L60),
- * and the mini Comparator (max/min, from L55/L57/L60) — cross-wired so any
- * combination of pow/abs/max/min nesting resolves honestly, inner-first.
- *
- * A genuine unified mini-interpreter executes the assembled program: pow
- * (cascade, zero-exponent bypass, fractional-exponent reverse, always-
- * double, int-division-in-exponent trap), abs (difference-distance), max/
- * min (cradle choreography), (int) casting, Math.PI, printf("%.2f%n", …),
- * Scanner, ArrayList.get() + 0-indexed for-loop with an accumulator.
- * Wrong builds yield REAL outcomes — M1's shape-wrong build genuinely
- * squares (πr) producing π²r²; M2's castless build genuinely stamps
- * COMPILE ERROR; M3's swapped build genuinely cascades years^rate; M6's
- * int-division-trap build genuinely bypasses to 1.0 on every test.
- *
- * NOTE ON MISSION 6 TEST DATA: the spec's own worked example claims
- * "Std Dev: 2.45" for [48, 53, 47, 52] against mean 50, but the honest
- * formula (deviations 2,3,3,2 → squares 4,9,9,4 → sum 26 → /4 = 6.5 →
- * √6.5 ≈ 2.5495) rounds to 2.55, not 2.45 — verified independently via
- * direct computation. Using the spec's stated 2.45 would fail the
- * CORRECT block combination against its own test, so the corrected,
- * genuinely-computed 2.55 is used here instead.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -54,8 +24,6 @@ const RX = 760, RY = 345, RW = 460, RH = 125;
 const BX = 760, BY = 490, BW = 460, BH = 130;
 const TUTORIAL_KEY = "level63_tutorial_done";
 
-// Rig internal layout — cascade (left), rail (center-top), comparator
-// (right), sharing one window at 40-45% scale.
 const MCE_CX = OX + 70, MCE_ENTRY_Y = OY + 190, MCE_STAGE_Y0 = OY + 160, MCE_STAGE_DY = 26, MCE_STAGE_COUNT = 3;
 const RAIL_X0 = OX + 190, RAIL_X1 = OX + 340, RAIL_Y = OY + 70;
 const MC_BEAM_CX = OX + 380, MC_BEAM_Y = OY + 130;
@@ -68,9 +36,6 @@ const TRK_X = OX + 330, TRK_W = 120, TRK_Y0 = OY + 160;
 const TICKER_Y = OY + 236;
 const SHELF_Y = OY + 205;
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Area Table",
     brief: "Publish the area of a CIRCLE given its radius. Use Math.pow for the squaring. For radius=5:\nArea: 78.54\n(Use Math.PI and round to 2 decimal places with printf)",
@@ -367,10 +332,6 @@ export class Level63Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — THE FORMULA WORKS INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l63_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -611,10 +572,6 @@ export class Level63Scene extends Phaser.Scene {
     this.time.delayedCall(1100, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -769,10 +726,6 @@ export class Level63Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE + DRAG
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -938,10 +891,6 @@ export class Level63Scene extends Phaser.Scene {
     return placed ? placed.container.getData("code") : "";
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -981,10 +930,6 @@ export class Level63Scene extends Phaser.Scene {
     this.runButton.c.disableInteractive();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW
-  // ══════════════════════════════════════════════════════════════
-
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x04060c, 1);
@@ -1001,10 +946,6 @@ export class Level63Scene extends Phaser.Scene {
 
     this.verdictLamp = this.add.circle(OX + OW - 18, OY + 14, 6, C_GRAY).setDepth(20);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI CASCADE ENGINE (40%-scale L61 engine, restructuring tempo)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniCascade() {
     const g = this.add.graphics();
@@ -1199,9 +1140,6 @@ export class Level63Scene extends Phaser.Scene {
     return { value: result, type: "double" };
   }
 
-  /** exp === 0 bypasses; non-integer exp runs the reverse-hum; integer
-   * exp ≥ 0 runs a REAL repeated-multiplication loop — never a shortcut
-   * Math.pow call for the visual/value. */
   async runCascade(base, exp, type) {
     if (exp === 0) return await this.mceBypassZero(base, type);
     if (!Number.isInteger(exp)) return await this.mceFractionalCascade(base, exp, type);
@@ -1243,10 +1181,6 @@ export class Level63Scene extends Phaser.Scene {
     this.showCompileErrorStamp();
     await this.delay(400);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI MEASURING RAIL (abs, compact scale)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniRail() {
     this.railGfx = this.add.graphics();
@@ -1501,10 +1435,6 @@ export class Level63Scene extends Phaser.Scene {
     this.time.delayedCall(1100, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI GREAT COMPARATOR (max/min, compact scale)
-  // ══════════════════════════════════════════════════════════════
-
   createMiniComparator() {
     const g = this.add.graphics();
     g.fillStyle(0x1a1408, 1);
@@ -1691,10 +1621,6 @@ export class Level63Scene extends Phaser.Scene {
     return { ok: true, value: winner, type: winnerType, winnerStarObj: winStar };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI TYPED CONTAINERS
-  // ══════════════════════════════════════════════════════════════
-
   createMiniContainers() {
     const hdr = this.add.text(CONT_X, CONT_Y0 - 12, "VARIABLES", { font: "bold 9px Georgia", color: HEX_BRASS }).setAlpha(0.7);
     this.containerLayer = this.add.container(0, 0);
@@ -1728,10 +1654,6 @@ export class Level63Scene extends Phaser.Scene {
     this._containerOrder = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ACCUMULATION TRACKER (per-iteration rows + running-sum column)
-  // ══════════════════════════════════════════════════════════════
-
   createMiniAccumulationTracker() {
     const hdr = this.add.text(TRK_X, TRK_Y0 - 12, "ACCUMULATION TRACKER", { font: "bold 9px Georgia", color: HEX_BRASS }).setAlpha(0.7);
     this.trackerContainer = this.add.container(0, 0);
@@ -1763,10 +1685,6 @@ export class Level63Scene extends Phaser.Scene {
     if (!this._trackerDash) { this._trackerDash = this.add.text(TRK_X + TRK_W / 2, TRK_Y0 + 50, "—", { font: "bold 12px Courier New", color: "#3a2618" }).setOrigin(0.5); this.rigLayer.add(this._trackerDash); }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OUTPUT TICKER
-  // ══════════════════════════════════════════════════════════════
-
   createMiniOutputTicker() {
     const tg = this.add.graphics();
     tg.fillStyle(0x050914, 0.9);
@@ -1791,10 +1709,6 @@ export class Level63Scene extends Phaser.Scene {
     this._tickerLines = [];
     if (this.tickerText) this.tickerText.setText("").setFontSize(9);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CROSS-WING CAMEOS — Scanner tape (M5) + mini bookshelf (M6)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniCrossWingCameos() {
     this.tapeContainer = this.add.container(0, 0).setVisible(false);
@@ -1911,10 +1825,6 @@ export class Level63Scene extends Phaser.Scene {
     return entry;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MANIFEST STRIP / TEST REPORT / MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
-
   createManifestStrip() {
     const g = this.add.graphics().setDepth(16);
     g.fillStyle(0x0f0a06, 0.92);
@@ -1997,10 +1907,6 @@ export class Level63Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0704, 0.93);
@@ -2055,10 +1961,6 @@ export class Level63Scene extends Phaser.Scene {
       this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — MASTER FORMULIST VARIANT (compass, set square)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -2156,10 +2058,6 @@ export class Level63Scene extends Phaser.Scene {
     return t;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -2195,10 +2093,6 @@ export class Level63Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -2295,10 +2189,6 @@ export class Level63Scene extends Phaser.Scene {
     return out;
   }
 
-  /** Substitutes EVERY "<type> <name> = /* test value * /;" placeholder
-   * found in a line — mission 4's skeleton packs two declarations onto
-   * one line ("int x1 = ...;  int y1 = ...;"), so a single-match ^...$
-   * anchor (as used in prior levels) would miss the second. */
   _substituteTestLine(line, test) {
     if (!test.substitutions) return line;
     return line.replace(/(int|double)\s+(\w+)\s*=\s*\/\*\s*test value\s*\*\/;/g, (match, type, name) => {
@@ -2306,10 +2196,6 @@ export class Level63Scene extends Phaser.Scene {
       return match;
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // COMPILE CHECK
-  // ══════════════════════════════════════════════════════════════
 
   compileCheckProgram(mission, items, assembled) {
     const failFor = (slotId, fallbackTag) => {
@@ -2336,10 +2222,6 @@ export class Level63Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PROACTIVE-METRIC DETECTION
-  // ══════════════════════════════════════════════════════════════
-
   _recordFirstRunMetrics(mission, passed) {
     const key = `mission${mission.mission}`;
     if (this._firstRunMetricsRecorded[key]) return;
@@ -2365,14 +2247,6 @@ export class Level63Scene extends Phaser.Scene {
     if (mission.isCrossWing) this.crossWingCleanFirstRun[key] = passed;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // UNIFIED INTERPRETER — Math.pow (cascade, zero-bypass, fractional-
-  // reverse, always-double, int/int-division-in-exponent), cross-nested
-  // with Math.abs (difference-distance) and Math.max/min (cradle
-  // choreography), (int) casting, Math.PI, printf, Scanner, ArrayList
-  // .get() + 0-indexed for-loop accumulator. Never scripted.
-  // ══════════════════════════════════════════════════════════════
-
   _splitTopArgs(argsStr) {
     const parts = [];
     let cur = "", depth = 0;
@@ -2388,9 +2262,6 @@ export class Level63Scene extends Phaser.Scene {
     return parts.filter((p) => p !== "");
   }
 
-  /** Splits on top-level (paren-depth 0) binary +/- only — a LEADING
-   * sign (empty accumulator so far) is never treated as an operator,
-   * so "-3" stays one literal term, not an operator with no left side. */
   _splitTopPM(expr) {
     const parts = [];
     let cur = "", depth = 0, opForNext = "+";
@@ -2466,8 +2337,6 @@ export class Level63Scene extends Phaser.Scene {
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 160, onComplete: () => stamp.destroy() });
   }
 
-  /** Resolves a value that is NOT itself a Math call: data.get(i), a
-   * variable (or its negation), or a literal. */
   async _resolveValueOnly(expr, vars) {
     const t = expr.trim();
     const getMatch = t.match(/^(\w+)\.get\((.*)\)$/);
@@ -2490,10 +2359,6 @@ export class Level63Scene extends Phaser.Scene {
     return depth === 0;
   }
 
-  /** A single top-level factor: Math.PI, (int) cast, Math.abs/max/min/
-   * pow(...), get(), a balanced parenthesized sub-expression, or a
-   * plain value. Guaranteed paren-balanced (came from a depth-aware
-   * split), so `.` never gets mistaken for a decimal point mid-call. */
   async _resolveSingleTerm(t, vars) {
     const tt = t.trim();
     if (tt === "Math.PI") return { ok: true, value: Math.PI, type: "double" };
@@ -2515,8 +2380,6 @@ export class Level63Scene extends Phaser.Scene {
     return await this._resolveValueOnly(tt, vars);
   }
 
-  /** * and / at the level directly above single terms — Java's int/int
-   * division floors toward zero (the pow_int_division_trap: 1/2 = 0). */
   async _resolveProduct(expr, vars) {
     const t = expr.trim();
     const md = this._splitTopMulDiv(t);
@@ -2543,11 +2406,6 @@ export class Level63Scene extends Phaser.Scene {
     return await this._resolveSingleTerm(t, vars);
   }
 
-  /** Top-level value resolution for declaration/reassignment RHS,
-   * printf/println parts, and pow/abs/max-min call arguments. Always
-   * splits on +/- FIRST (paren-aware) so "Math.abs(a) - Math.abs(b)"
-   * is never mistaken for a single call, THEN * / (Java precedence),
-   * THEN single terms (Math calls, casts, literals). */
   async resolveTopLevelValue(expr, vars) {
     const t = expr.trim();
     const parts = this._splitTopPM(t);
@@ -2580,8 +2438,6 @@ export class Level63Scene extends Phaser.Scene {
     return { ok: true, value: finalValue, type: finalType };
   }
 
-  /** Math.abs(argExpr) — difference-distance choreography for a genuine
-   * "a - b", the cross-nested Math.max/min case, or a plain measurement. */
   async evalAbsCall(argExpr, vars) {
     const t = argExpr.trim();
     const parts = this._splitTopPM(t);
@@ -2604,8 +2460,6 @@ export class Level63Scene extends Phaser.Scene {
     return await this.runMeasurement(r.value, r.type, isVar ? { varName: t } : {});
   }
 
-  /** Math.max/min(argsStr) — each argument may itself be a nested
-   * Math.abs(...) call (cross-nesting the other direction). */
   async evalMaxMinCall(method, argsStr, vars) {
     const args = this._splitTopArgs(argsStr);
     if (args.length !== 2) return { ok: false, crash: "wrong_arity" };
@@ -2655,8 +2509,6 @@ export class Level63Scene extends Phaser.Scene {
     const result = await this.runCascade(baseRes.value, expRes.value, baseRes.type);
     return { ok: true, value: result.value, type: result.type };
   }
-
-  // ── statements ──
 
   async execStatement(line, vars) {
     const instanceMatch = line.match(/(\w+)\.(abs|max|min|pow)\(/);
@@ -2880,10 +2732,6 @@ export class Level63Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN PIPELINE
-  // ══════════════════════════════════════════════════════════════
-
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -2979,23 +2827,6 @@ export class Level63Scene extends Phaser.Scene {
     return scenicOnly.some((c) => Object.keys(this.slotDefs).some((id) => this._slotCode(id) === c.code));
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -3036,8 +2867,6 @@ export class Level63Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
     const feedbackTag = compileTag || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag);
 
@@ -3150,10 +2979,6 @@ export class Level63Scene extends Phaser.Scene {
       this.lives++;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

@@ -1,18 +1,3 @@
-/**
- * Level3Scene — "Integer Escape Facility" (Restructuring Phase)
- * ==============================================================
- * Perspective: Top-down 2D puzzle room
- * Environment: High-tech facility with 3 locked gates + security terminals
- * Mechanic: Arrow-key robot movement, interact with terminals to solve
- *           int-based logic puzzles. Strictly int-only — no loops/arrays.
- *
- * Terminal 1: Direct Assignment (type a valid integer)
- * Terminal 2: Arithmetic Application (calculate int result)
- * Terminal 3: Validation & Constraint (pick the safe int load)
- *
- * Schema Theory: Restructuring — applying int knowledge in context
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -21,7 +6,6 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TILE = 40;
@@ -70,9 +54,6 @@ export class Level3Scene extends Phaser.Scene {
     GameManager.interventionInFlight = false;
   }
 
-  /* ═══════════════════════════════════════════════
-   *  CREATE
-   * ═══════════════════════════════════════════════ */
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -87,7 +68,6 @@ export class Level3Scene extends Phaser.Scene {
     cam.setBackgroundColor("#060b18");
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.gatesOpen = [false, false, false];
     this.isComplete = false;
     this.overlayActive = false;
@@ -95,36 +75,21 @@ export class Level3Scene extends Phaser.Scene {
     this.wrongAttempts = 0;
     this.lives = MAX_LIVES;
     this.levelStartTime = this.time.now;
-    // Tracks the currently-open terminal's Phaser DOM Element GameObject (the
-    // <input> wrapper), so submit handlers always read from the live, active
-    // node rather than risking a stale document.getElementById() hit against
-    // a leftover element from a previous terminal open/close cycle.
     this.currentTerminalDom = null;
-    // Tracks the currently-open terminal's background/border/text elements
-    // (the local `els` array each _terminalN() builds), so _closeTerminal()
-    // can tear the whole overlay down from anywhere — including right before
-    // the ML struggle check may trigger the Bit intervention menu.
     this.overlayEls = null;
 
-    /* ── Textures ── */
     this._genTex();
 
-    /* ── Particles ── */
     this._createParticles();
 
-    /* ── Draw facility ── */
     this._drawFacility();
 
-    /* ── Create physics bodies ── */
     this._createPhysicsBodies();
 
-    /* ── Player robot ── */
     this._createRobot();
 
-    /* ── HUD ── */
     this._createHUD();
 
-    /* ── Controls ── */
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -134,20 +99,15 @@ export class Level3Scene extends Phaser.Scene {
     });
     this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
-    /* ── UIScene label ── */
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 3: Restructuring — Integer Escape Facility!");
     }
     if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
-    /* ── Instruction overlay ── */
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════ */
   _genTex() {
     const mk = (key, color) => {
       if (this.textures.exists(key)) return;
@@ -179,9 +139,6 @@ export class Level3Scene extends Phaser.Scene {
     }).setDepth(80);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  DRAW FACILITY
-   * ═══════════════════════════════════════════════ */
   _drawFacility() {
     const gfx = this.add.graphics().setDepth(1);
 
@@ -219,7 +176,6 @@ export class Level3Scene extends Phaser.Scene {
       color: "#a78bfa", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── Draw the 3 gate walls (vertical barriers) ──
     this.gateGraphics = [];
     this.gateLabels = [];
     GATES.forEach((g, i) => {
@@ -247,7 +203,6 @@ export class Level3Scene extends Phaser.Scene {
       this.gateLabels.push(lbl);
     });
 
-    // ── Draw terminals ──
     this.terminalSprites = [];
     TERMINALS.forEach((t, i) => {
       // Terminal box
@@ -268,7 +223,6 @@ export class Level3Scene extends Phaser.Scene {
       });
     });
 
-    // ── EXIT zone ──
     this.exitRect = this.add.rectangle(
       EXIT_ZONE.x, EXIT_ZONE.y, EXIT_ZONE.w, EXIT_ZONE.h, COL_EXIT, 0.25
     ).setDepth(2);
@@ -280,22 +234,17 @@ export class Level3Scene extends Phaser.Scene {
       fontSize: "20px", color: "#a78bfa",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── START label ──
     this.add.text(340, 370, "START\n  ↓", {
       fontFamily: "monospace", fontSize: "10px", color: "#475569",
       align: "center",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── Prompt text ──
     this.promptText = this.add.text(W / 2, 580, "Walk to a 💻 Terminal and press [E] to interact", {
       fontFamily: "Arial", fontSize: "13px", color: "#64748b",
       fontStyle: "italic",
     }).setOrigin(0.5).setDepth(10);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  PHYSICS BODIES — walls + gates
-   * ═══════════════════════════════════════════════ */
   _createPhysicsBodies() {
     this.wallGroup = this.physics.add.staticGroup();
 
@@ -330,9 +279,6 @@ export class Level3Scene extends Phaser.Scene {
     this.wallGroup.add(wall);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  PLAYER ROBOT
-   * ═══════════════════════════════════════════════ */
   _createRobot() {
     const startX = 340;
     const startY = 400;
@@ -377,13 +323,9 @@ export class Level3Scene extends Phaser.Scene {
       .setDepth(21);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
-    // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 40 - i * 35, 78, "❤️", {
@@ -414,9 +356,6 @@ export class Level3Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     this.overlayActive = true;
@@ -484,9 +423,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  UPDATE — robot movement + terminal detection
-   * ═══════════════════════════════════════════════ */
   update() {
     if (this.isComplete || this.overlayActive || GameManager.interventionInFlight) {
       if (this.robot && this.robot.body) {
@@ -495,7 +431,6 @@ export class Level3Scene extends Phaser.Scene {
       return;
     }
 
-    /* ── Movement ── */
     const left = this.cursors.left.isDown || this.wasd.left.isDown;
     const right = this.cursors.right.isDown || this.wasd.right.isDown;
     const up = this.cursors.up.isDown || this.wasd.up.isDown;
@@ -518,7 +453,6 @@ export class Level3Scene extends Phaser.Scene {
       else if (vy > 0) this.robotDir.setAngle(180);
     }
 
-    /* ── Detect proximity to terminals ── */
     let nearTerminal = -1;
     TERMINALS.forEach((t, i) => {
       const dist = Phaser.Math.Distance.Between(this.robot.x, this.robot.y, t.x, t.y);
@@ -539,7 +473,6 @@ export class Level3Scene extends Phaser.Scene {
       this.interactPrompt.setAlpha(0);
     }
 
-    /* ── Check EXIT zone ── */
     if (this.gatesOpen[0] && this.gatesOpen[1] && this.gatesOpen[2]) {
       const dx = Math.abs(this.robot.x - EXIT_ZONE.x);
       const dy = Math.abs(this.robot.y - EXIT_ZONE.y);
@@ -549,13 +482,8 @@ export class Level3Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════
-   *  TERMINAL OVERLAY — puzzle UI
-   * ═══════════════════════════════════════════════ */
   _openTerminalOverlay(index) {
     if (this.overlayActive || this.gatesOpen[index]) return;
-    // Defensive: make sure no stale overlay/DOM input survives from a
-    // previous terminal session before opening a new one.
     this._closeTerminal();
     this.overlayActive = true;
     this.robot.body.setVelocity(0, 0);
@@ -567,16 +495,6 @@ export class Level3Scene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Fully tears down whichever terminal overlay is currently open — every
-   * Phaser background/border/text element it created (this.overlayEls) AND
-   * its DOM <input> (this.currentTerminalDom) — and resets overlayActive.
-   * This is the single source of truth for "close the terminal": used by
-   * every terminal's Cancel button, the correct-answer path (_gateOpen),
-   * the game-over path, AND — critically — forced at the very top of
-   * runBehavioralCheck(), so the Bit intervention menu never has to render
-   * on top of a still-open terminal.
-   */
   _closeTerminal() {
     if (this.overlayEls) {
       this.overlayEls.forEach(e => { if (e) e.destroy(); });
@@ -589,7 +507,6 @@ export class Level3Scene extends Phaser.Scene {
     this.overlayActive = false;
   }
 
-  /* ── Terminal 1: Direct Assignment ── */
   _terminal1() {
     const els = [];
     this.overlayEls = els;
@@ -693,7 +610,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Terminal 2: Arithmetic Application ── */
   _terminal2() {
     const els = [];
     this.overlayEls = els;
@@ -797,7 +713,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Terminal 3: Validation & Constraint ── */
   _terminal3() {
     const els = [];
     this.overlayEls = els;
@@ -905,13 +820,7 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  GATE OPEN
-   * ═══════════════════════════════════════════════ */
   _gateOpen(index, codeStr) {
-    // Correct-answer path — whichever terminal called this owns the
-    // currently-open overlay (background/border/text + DOM input, if any);
-    // tear it all down here so nothing lingers for the next interaction.
     this._closeTerminal();
     this.gatesOpen[index] = true;
 
@@ -983,9 +892,6 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   addLife() {
-    // BitMenu already calls GameManager.addLife() for the global count before
-    // calling this — only touch local state here, or the global count would
-    // be incremented twice per bonus life (matches Level1Scene's convention).
     if (this.lives < MAX_LIVES) {
       this.lives++;
       this._updateLives();
@@ -1026,13 +932,7 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
   async runBehavioralCheck() {
-    // Force-close any open terminal overlay BEFORE the ML check even starts
-    // (synchronous — runs immediately, before the first `await` below), so
-    // the Bit intervention menu — which may appear once checkBehavioral()
-    // resolves, asynchronously, elsewhere — never has to render on top of a
-    // still-open terminal.
     this._closeTerminal();
 
     const attempts_count = this.wrongAttempts;
@@ -1079,9 +979,6 @@ export class Level3Scene extends Phaser.Scene {
     this.promptText.setAlpha(1);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  ESCAPE — level complete!
-   * ═══════════════════════════════════════════════ */
   _escape() {
     if (this.isComplete) return;
     this.isComplete = true;
@@ -1165,9 +1062,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════ */
   shutdown() {
     this.gatesOpen = [false, false, false];
     // Restore lives visibility for other levels

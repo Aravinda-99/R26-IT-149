@@ -1,8 +1,3 @@
-/**
- * Level14Scene — "Calculation Arena" (Tuning Phase)
- * Combat arena where correct answers deal damage to enemies.
- * 5 waves × 6 enemies = 30 battles covering all operator types.
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -88,8 +83,6 @@ export class Level14Scene extends Phaser.Scene {
 
   _drawArena() {
     const gfx = this.add.graphics().setDepth(0);
-    // Stretched width: start at -W*2, span W*5 (Y span untouched — it
-    // already correctly tiles 0..H)
     for (let i = 0; i < 60; i++) { const t = i / 60; gfx.fillStyle(lerpColor(0x1a0a0a, 0x0a0a1a, t), 1); gfx.fillRect(-W * 2, Math.floor(H * i / 60), W * 5, Math.ceil(H / 60) + 1); }
     // Floor (Stretched)
     const fg = this.add.graphics().setDepth(1);

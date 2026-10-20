@@ -1,29 +1,3 @@
-/**
- * Level 45 — "The Print Floor" (Output Methods: Restructuring Phase —
- * printf() trilogy finale, OUTPUT WING SEAL — 9 levels, 3 methods complete)
- * ===========================================================================
- * The learner CONSTRUCTS complete printf()-producing programs — no multiple
- * choice. Reuses the Level 27/30/33/36/39/42 code-canvas/parts-bin/RUN-button
- * construction architecture. A masked rig window hosts a compact composing
- * bed + type case rail (Level 43/44 lineage) feeding a cursor-tracked log
- * (Level 40+ lineage). A genuine per-mission interpreter (never scripted)
- * executes exactly what the player assembled — real half-up precision
- * rounding, real type-mismatch/missing-argument crashes, real Scanner tape
- * consumption (Missions 5/6), real String case-method evaluation (Mission 6).
- *
- * DESIGN NOTE — grading rule (resolved before writing any code): some
- * missions' correct answers end with a real trailing %n (Missions 4/5/6);
- * Mission 1 explicitly accepts both a trailing-%n form and a no-trailing-%n
- * form as equally correct ("bonus" cartridge, alsoAccepted). A blanket
- * closedProperly flag (as L42 used, where every mission happened to end in
- * println()) would break one side or the other here. Resolved with a
- * single direct-join rule: match = logText === expected || logText ===
- * expected + "⏎" — a trailing newline is always optional-but-consistent,
- * which satisfies every mission's test data without special-casing, and
- * still catches Mission 4's "missing final %n" distractor (which changes
- * row COUNT, not just trailing-newline state) as a genuine text mismatch.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -43,16 +17,14 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-// Code-editor rows (same approach as Levels 36 / 39): one 18px line of code per row, rows up to 42px apart so a 34px
-// drop slot never touches the row above/below. The pitch shrinks automatically when a mission needs more rows.
 const LINE_H = 42;
-const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;   // 18 logical px = ~16px on screen (canvas is shown at ~0.9)
-const SLOT_PAD = 8, SLOT_HINT_PAD = 8;               // inner padding (each side) for a dropped part / for the placeholder text
-const ROW_TEXT_H = 28, ROW_SLOT_PAD = 8, ROW_BLANK_H = 20;   // row heights: text only / slot row = slot height + pad / empty line
-const HEX_HINT = "#7d8c9a";                          // placeholder text: was #3d4450 (≈1.8:1 on the slot fill), now ≈5:1
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;
+const SLOT_PAD = 8, SLOT_HINT_PAD = 8;
+const ROW_TEXT_H = 28, ROW_SLOT_PAD = 8, ROW_BLANK_H = 20;
+const HEX_HINT = "#7d8c9a";
 const HEX_COMMENT = "#7d8c9a";                       // "/* test value */" comments: ≈5:1
-const HEX_BOILER = "#6f7f8f";                        // fixed boilerplate lines (Scanner setup, prompts): dim but readable
-const WRAP_INDENT = 22;                              // continuation row of a soft-wrapped line is indented 2 characters
+const HEX_BOILER = "#6f7f8f";
+const WRAP_INDENT = 22;
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 250;
 const BED_Y = OY + 40, RAIL_Y = OY + 72, TAPE_Y = OY + 92;
@@ -63,9 +35,6 @@ const RX = 760, RY = 345, RW = 460, RH = 125;
 const BX = 760, BY = 490, BW = 460, BH = 130;
 const TUTORIAL_KEY = "level45_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Score Report",
     brief: "The scoreboard prints one line per player: '<name> scored <points> points!'",
@@ -259,10 +228,6 @@ export class Level45Scene extends Phaser.Scene {
     this._proactiveRecorded = {};
     this.tapeState = [];
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level43Scene";
   }
 
@@ -306,11 +271,6 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -327,10 +287,6 @@ export class Level45Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — print floor
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l45_dot")) {
@@ -461,10 +417,6 @@ export class Level45Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (L27/L30/L33/L36/L39/L42 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -502,9 +454,6 @@ export class Level45Scene extends Phaser.Scene {
           else if (/^\\[nt]$/.test(p)) tokens.push({ t: p, c: HEX_MAGENTA });
           else if (p) tokens.push({ t: p, c: HEX_CYAN });
         });
-      // group numbers follow the regex above (1 spec, 2 escape, 3 string, 4 keyword, 5 System.out, 6 method name,
-      // 7 System.in, 8 operator, 9 punctuation). The handlers used to be numbered for an older, shorter regex, so
-      // punctuation (group 9: "." "(" ")" ";" ...) was matched but never emitted — "System.out.printf(" lost its "." and "(".
       } else if (m[4]) tokens.push({ t: m[4], c: "#4fc3f7" });
       else if (m[5]) tokens.push({ t: m[5], c: "#4caf50" });
       else if (m[6]) tokens.push({ t: m[6], c: "#ffd740" });
@@ -534,10 +483,6 @@ export class Level45Scene extends Phaser.Scene {
     return w;
   }
 
-  /**
-   * Size of a slot RIGHT NOW, from measured text. Empty: wide enough for its placeholder. Filled: the measured width of the
-   * dropped part's label + padding; a label wider than a full editor row wraps inside the slot (the slot gets taller).
-   */
   _slotDims(slotId) {
     const def = this.slotDefs[slotId];
     const placed = this.slotContents[slotId] || [];
@@ -546,7 +491,7 @@ export class Level45Scene extends Phaser.Scene {
       if (def._emptyW === undefined) def._emptyW = Math.ceil(this._measureText(def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2);
       return { w: def._emptyW, h: SLOT_H, wrap: 0 };
     }
-    const label = placed[0].container.list[1].text;      // the parts-bin chip's own label (hidden while the part sits in a slot)
+    const label = placed[0].container.list[1].text;
     const maxW = (CX + CW - 14) - (CODE_X + WRAP_INDENT);  // a full continuation row
     const natural = Math.ceil(this._measureText(label, code({})));
     if (natural + SLOT_PAD * 2 <= maxW) return { w: natural + SLOT_PAD * 2, h: SLOT_H, wrap: 0 };
@@ -564,8 +509,6 @@ export class Level45Scene extends Phaser.Scene {
 
     const textStyle = (color, fontStyle) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle, color });
 
-    // Every skeleton line becomes a list of consecutive segments: text pieces (objects created once) and slots.
-    // Positions are NOT fixed here: _layoutCode() measures and places everything, and runs again whenever a slot changes.
     this._codeLines = mission.skeleton.map((rawLine, li) => {
       const segs = [];
       const addText = (t, c, st) => {
@@ -574,7 +517,7 @@ export class Level45Scene extends Phaser.Scene {
         segs.push({ k: "t", obj, w: obj.width });
       };
       if (/^Scanner sc = new Scanner/.test(rawLine) || /^System\.out\.printf\("Enter/.test(rawLine) || /^String \w+ = sc\.nextLine/.test(rawLine) || /^int qty = sc\.nextInt/.test(rawLine)) {
-        addText(rawLine, HEX_BOILER, "normal");   // fixed boilerplate line: one dim piece
+        addText(rawLine, HEX_BOILER, "normal");
       } else {
         rawLine.split(/<slot:(\w+)>/).forEach((part, pi) => {
           if (pi % 2 === 0) {
@@ -596,13 +539,6 @@ export class Level45Scene extends Phaser.Scene {
     this._layoutCode();
   }
 
-  /**
-   * Flow layout of the whole editor from MEASURED sizes, re-run after every drop / replace / removal:
-   *  - consecutive text pieces follow each other with no gap ("System.out.printf(" reads as one string);
-   *  - a slot sits SLOT_GAP after the text before it, the text after it starts SLOT_GAP after the slot;
-   *  - a line that does not fit the editor wraps onto an indented continuation row, always BEFORE a slot
-   *    (never below 18px, never over another line); row heights follow their content.
-   */
   _layoutCode() {
     if (!this._codeLines) return;
     const limit = CX + CW - 14;
@@ -619,7 +555,7 @@ export class Level45Scene extends Phaser.Scene {
       while (i < segs.length) {
         const seg = segs[i];
         if (seg.k === "t") {
-          let j = i, runW = 0;   // a run of consecutive text pieces stays together
+          let j = i, runW = 0;
           while (j < segs.length && segs[j].k === "t") { runW += segs[j].w; j++; }
           if (x > rowStart && x + runW > limit) wrap();
           for (let q = i; q < j; q++) { row.items.push({ seg: segs[q], x }); x += segs[q].w; }
@@ -627,7 +563,7 @@ export class Level45Scene extends Phaser.Scene {
         } else {
           const d = this._slotDims(seg.id);
           seg.dims = d;
-          let tail = 0;   // text that must stay on the slot's row (up to the next slot)
+          let tail = 0;
           for (let j = i + 1; j < segs.length && segs[j].k === "t"; j++) tail += segs[j].w;
           if (x > rowStart && x + SLOT_GAP + d.w + SLOT_GAP + tail > limit) wrap();
           if (x > rowStart) x += SLOT_GAP;
@@ -641,7 +577,6 @@ export class Level45Scene extends Phaser.Scene {
       lineInfo.push({ first, n: rows.length - first });
     });
 
-    // row heights follow their content; if the editor would overflow, tighten spacing only (font stays 18px)
     const avail = (CY + CH - 8) - CODE_Y0;
     const heights = (t, sp, bl) => rows.map((r) => (r.items.length === 0 ? bl : r.hasSlot ? r.slotH + sp : t));
     let hs = heights(ROW_TEXT_H, ROW_SLOT_PAD, ROW_BLANK_H);
@@ -664,7 +599,6 @@ export class Level45Scene extends Phaser.Scene {
         if (placed[0]) {
           const c = placed[0].container;
           this._fitBlockToSlot(c, def.rect);
-          // replace only OUR previous move tween (killing all of the part's tweens would also cancel the drop's scale-back to 1)
           const prevTw = c.getData("slotTw");
           if (prevTw) prevTw.stop();
           c.setData("slotTw", this.tweens.add({ targets: c, x: x + def.rect.w / 2, y: cy, duration: 150, ease: "Cubic.easeOut" }));
@@ -705,11 +639,9 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   _relayoutSlot(slotId) {
-    // any change to a slot (drop / replace / removal) can move everything after it: re-measure and re-flow the whole editor
     this._layoutCode();
   }
 
-  /** A part sitting in a slot is ONE label, centred in a slot sized to it (the parts-bin chip's own label is hidden meanwhile). */
   _fitBlockToSlot(c, rect) {
     let v = c.getData("slotView");
     if (!v) {
@@ -731,7 +663,6 @@ export class Level45Scene extends Phaser.Scene {
     if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
   }
 
-  /** Back to the parts-bin chip when a part is picked up out of a slot. */
   _releaseBlockFromSlot(c) {
     const v = c.getData("slotView");
     if (!v) return;
@@ -750,10 +681,6 @@ export class Level45Scene extends Phaser.Scene {
     let h = 0; for (let r = lr.row; r < lr.row + lr.n; r++) h += this._rowHs[r];
     this.lineHighlight.setSize(CW - 4, h).setPosition(CX + CW / 2, top + h / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (drag system, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -913,10 +840,6 @@ export class Level45Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -955,10 +878,6 @@ export class Level45Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — mini composing bed + type case rail + tape + log
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -1012,10 +931,6 @@ export class Level45Scene extends Phaser.Scene {
       default: return C_GRAY;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI SCANNER TAPE (cross-wing cameo, M5/M6)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniTape() {
     this.tapeContainer = this.add.container(0, 0);
@@ -1088,10 +1003,6 @@ export class Level45Scene extends Phaser.Scene {
     this.renderMiniTape();
     await this.delay(70);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI LOG + CURSOR
-  // ══════════════════════════════════════════════════════════════
 
   createMiniLog() {
     this.logContainer = this.add.container(0, 0);
@@ -1184,9 +1095,6 @@ export class Level45Scene extends Phaser.Scene {
     await this.delay(24);
   }
 
-  /** Scanner-echo resolution (L42 rule, reused verbatim): echoes onto the
-   * SAME row only when the cursor is mid-row from a preceding printf
-   * prompt — a genuine "interactive prompt" condition, never scripted. */
   async echoScannerInput(text) {
     if (this.cursorOnFreshLine) return;
     await this.typeAtCursor(text, "echo");
@@ -1202,10 +1110,6 @@ export class Level45Scene extends Phaser.Scene {
     this.renderLogFromScratch();
     this.updateCursorVisualPosition();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — printf (ported from L43/L44) + Scanner + case methods
-  // ══════════════════════════════════════════════════════════════
 
   parseFormatString(fmt) {
     const segments = [];
@@ -1291,11 +1195,6 @@ export class Level45Scene extends Phaser.Scene {
     return { ok: false };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSITION REVEAL — simplified mini bed/rail (honest evaluator,
-  // lighter-weight choreography appropriate for a compact rig window)
-  // ══════════════════════════════════════════════════════════════
-
   async animateComposingBed(fmtDisplaySource, argVals, evalResult) {
     this.clearBed();
     this.clearRail();
@@ -1370,9 +1269,6 @@ export class Level45Scene extends Phaser.Scene {
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 180, onComplete: () => stamp.destroy() });
   }
 
-  /** Runs one printf call: real parser/evaluator, then a lighter-weight
-   * (but still trace-driven, never scripted) visual reveal appropriate
-   * for the compact rig window. */
   async runComposition(fmtSource, argVals) {
     const evalResult = this.evaluatePrintf(fmtSource, argVals);
     if (evalResult.compileError) { await this.showCompileErrorOnBed(); return evalResult; }
@@ -1413,10 +1309,6 @@ export class Level45Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
@@ -1487,10 +1379,6 @@ export class Level45Scene extends Phaser.Scene {
   }
   updateManifestStrip(text) { this.manifestStripText.setText(text); }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0f0a06, 0.93);
@@ -1534,10 +1422,6 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   _drawHexes() {
-    // Kill any leftover pulse tween on EVERY hex first — otherwise a
-    // previous mission's infinite alpha-yoyo tween keeps running silently
-    // on its (now completed) graphics object forever once the current
-    // mission advances past it.
     this.missionHexes.forEach(({ g }) => { this.tweens.killTweensOf(g); g.setAlpha(1); });
     this.missionHexes.forEach(({ g, x, y }, i) => {
       g.clear();
@@ -1550,10 +1434,6 @@ export class Level45Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — Print Floor Manager variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1654,10 +1534,6 @@ export class Level45Scene extends Phaser.Scene {
     return t;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1693,10 +1569,6 @@ export class Level45Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1767,10 +1639,6 @@ export class Level45Scene extends Phaser.Scene {
     this.missionElements = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SUBSTITUTION HELPERS
-  // ══════════════════════════════════════════════════════════════
-
   _substitute(mission, test) {
     const decls = {};
     mission.skeleton.forEach((line) => {
@@ -1792,10 +1660,6 @@ export class Level45Scene extends Phaser.Scene {
     if (/\.toUpperCase$/.test((code || "").trim()) || /\.toLowerCase$/.test((code || "").trim())) return { ok: false, tag: "property_vs_method_syntax" };
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest sequential execution
-  // ══════════════════════════════════════════════════════════════
 
   async runProgram(mission, assembled, test) {
     const decls = this._substitute(mission, test);
@@ -1886,10 +1750,6 @@ export class Level45Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
-
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -1973,23 +1833,6 @@ export class Level45Scene extends Phaser.Scene {
     return { match };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -2012,8 +1855,6 @@ export class Level45Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level45Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -2035,8 +1876,6 @@ export class Level45Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.setProduction(false);
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
     const feedbackTag = wrongBlocksUsed[0] && wrongBlocksUsed[0].tag;
 
@@ -2092,16 +1931,12 @@ export class Level45Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2190,10 +2025,6 @@ export class Level45Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
     PanelFit.arm(this);
     if (this.gameEnded) return;
@@ -2240,10 +2071,6 @@ export class Level45Scene extends Phaser.Scene {
 
     this.triggerWingFinaleCeremony();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WING FINALE CEREMONY (5 phases)
-  // ══════════════════════════════════════════════════════════════
 
   async triggerWingFinaleCeremony() {
     await this.ceremonyPhase1_MissionFanfare();

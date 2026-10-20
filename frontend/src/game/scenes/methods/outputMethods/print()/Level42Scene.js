@@ -1,30 +1,3 @@
-/**
- * Level 42 — "The Newsroom" (Output Methods: Restructuring Phase —
- * print() trilogy finale, Output Wing 2/3 complete)
- * ===========================================================================
- * The learner CONSTRUCTS complete output-producing programs — no multiple
- * choice. Reuses the Level 27/30/33/36/39 code-canvas/parts-bin/RUN-button
- * construction architecture, with a masked rig window compacting the
- * Level 40/41 whisper-desk + cursor-tracked log into a live observation
- * pane. A genuine per-mission interpreter (never scripted) executes exactly
- * what the player assembled — including cursor position, \n/\t escapes,
- * and (for cross-wing missions) real Scanner tape consumption.
- *
- * DESIGN NOTE — the Scanner-echo resolution: Mission 4's expected output
- * requires a nextLine() read's text to appear merged onto the SAME row as
- * a preceding prompt (the classic "Enter your name: <cursor blinks, user
- * types>" terminal pattern); Mission 6's expected output has no such echo
- * at all for its two back-to-back reads. Rather than special-casing per
- * mission, the interpreter ties the echo to a genuine condition: a
- * nextLine() read echoes its text onto the log ONLY when the cursor is
- * NOT already at the start of a fresh row (i.e., a print() prompt just
- * left it hanging mid-line) — modeling literally what "echo" means on a
- * real terminal. Mission 6's reads always land on a fresh row (nothing
- * printed before them), so the condition naturally never fires there,
- * and Mission 4's genuinely does. One rule, both missions' data satisfied
- * — not two special cases.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -61,9 +34,6 @@ const ROW_H = 17;
 const TAPE_X0 = OX + 20, TAPE_X1 = OX + 130, TAPE_Y = OY + 200;
 const TUTORIAL_KEY = "level42_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Same-Line Score",
     brief: "The scoreboard shows one line: 'Score: <points> / <max>'. Build it across two output calls — the whole line stays together.",
@@ -246,10 +216,6 @@ export class Level42Scene extends Phaser.Scene {
     this._dragHoverSlotKey = null;
     this._proactiveRecorded = {};
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level40Scene";
   }
 
@@ -292,11 +258,6 @@ export class Level42Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -313,10 +274,6 @@ export class Level42Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — newsroom
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l42_dot")) {
@@ -439,10 +396,6 @@ export class Level42Scene extends Phaser.Scene {
     side(x, y, x + w, y); side(x + w, y, x + w, y + h);
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27/30/33/36/39 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
@@ -576,10 +529,6 @@ export class Level42Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (Level 27/30/33/36/39 drag system, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -741,10 +690,6 @@ export class Level42Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -783,10 +728,6 @@ export class Level42Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — whisper desk + cursor-tracked log + Scanner tape
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -867,10 +808,6 @@ export class Level42Scene extends Phaser.Scene {
     await this.delay(120);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI LOG + CURSOR
-  // ══════════════════════════════════════════════════════════════
-
   createMiniLog() {
     this.logContainer = this.add.container(0, 0);
     this.rigLayer.add(this.logContainer);
@@ -929,9 +866,6 @@ export class Level42Scene extends Phaser.Scene {
     this.time.delayedCall(240, () => p.destroy());
   }
 
-  /** Types text at the cursor, honestly handling \n (row break) and \t
-   * (pad to next multiple-of-8 column) — the single ground truth used for
-   * both the visual reveal and mission grading. */
   async typeAtCursor(text, styleType) {
     const color = this._typeColor(styleType);
     for (const ch of text) {
@@ -975,10 +909,6 @@ export class Level42Scene extends Phaser.Scene {
     await this.delay(30);
   }
 
-  /** Scanner-echo resolution (see file header): echoes onto the SAME row
-   * only when the cursor is mid-row from a preceding print() — a genuine
-   * "interactive prompt" condition, never a scripted per-mission special
-   * case. */
   async echoScannerInput(text) {
     if (this.cursorOnFreshLine) return; // silent read — no active prompt
     if (!this._echoAnnotationShown) {
@@ -998,10 +928,6 @@ export class Level42Scene extends Phaser.Scene {
     this.renderLogFromScratch();
     this.updateCursorVisualPosition();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI SCANNER TAPE (cross-wing cameo, M4/M6)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniTape() {
     this.tapeContainer = this.add.container(0, 0);
@@ -1066,10 +992,6 @@ export class Level42Scene extends Phaser.Scene {
     this.renderMiniTape();
     await this.delay(80);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
@@ -1141,10 +1063,6 @@ export class Level42Scene extends Phaser.Scene {
   }
   updateManifestStrip(text) { this.manifestStripText.setText(text); }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -1200,10 +1118,6 @@ export class Level42Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — news editor variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1290,10 +1204,6 @@ export class Level42Scene extends Phaser.Scene {
     return t;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1335,10 +1245,6 @@ export class Level42Scene extends Phaser.Scene {
     this.tweens.add({ targets: t, alpha: 1, duration: 300 });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1407,13 +1313,7 @@ export class Level42Scene extends Phaser.Scene {
     this.missionElements = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SUBSTITUTION + PARSING HELPERS
-  // ══════════════════════════════════════════════════════════════
-
   _substitute(mission, test, blocks) {
-    // Resolves "/* test value */" placeholders in the skeleton's fixed decl
-    // lines and returns a decls map for the evaluator.
     const decls = {};
     mission.skeleton.forEach((line) => {
       const m = line.match(/^(int|double|String)\s+(\w+)\s*=\s*\/\* test value \*\/;$/);
@@ -1429,10 +1329,6 @@ export class Level42Scene extends Phaser.Scene {
     });
     return decls;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest, left-to-right, sticky-String, \n/\t aware
-  // ══════════════════════════════════════════════════════════════
 
   _tokenizeExpr(expr) {
     const tokens = [];
@@ -1459,7 +1355,6 @@ export class Level42Scene extends Phaser.Scene {
     if (/^-?\d+$/.test(tok)) return { value: parseInt(tok, 10), type: "int", ok: true };
     if (tok === "true" || tok === "false") return { value: tok === "true", type: "boolean", ok: true };
     if (/^[A-Za-z_]\w*\(\)$/.test(tok)) {
-      // method call with no receiver text captured here — not used in this level
       return { ok: false };
     }
     const methodCall = tok.match(/^([A-Za-z_]\w*)\.(toUpperCase|toLowerCase)\(\)$/);
@@ -1546,10 +1441,6 @@ export class Level42Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TRANSMISSION — reveal, shared by all missions
-  // ══════════════════════════════════════════════════════════════
-
   async fireCall(method, argExpr, decls) {
     const check = this.compileCheck(argExpr, decls);
     if (!check.ok) { this.showCompileErrorStamp(); return { ok: false, tag: check.tag }; }
@@ -1621,13 +1512,6 @@ export class Level42Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest sequential execution
-  // ══════════════════════════════════════════════════════════════
-
-  /** Runs the fully-assembled program's statements in order, honestly
-   * computing text + cursor state. Returns {ok, crash, compileError,
-   * printProactive, splitChoice, singleCallForm}. */
   async runProgram(mission, assembled, test) {
     const decls = this._substitute(mission, test, assembled);
     const tapeCells = () => this.tapeState;
@@ -1702,8 +1586,6 @@ export class Level42Scene extends Phaser.Scene {
       if (!rp.ok) return { ok: false };
       await this.delay(80);
       if (!this._alive) return { ok: false };
-      // Scanner read: sc.nextLine() consumes the tape and (honestly)
-      // echoes onto the log only if the cursor is mid-row.
       const readResult = this.evaluateNextLine(this.tapeState);
       await this.tapeConsumeVisual(readResult.consumedCount);
       await this.echoScannerInput(readResult.rawValue);
@@ -1765,12 +1647,8 @@ export class Level42Scene extends Phaser.Scene {
     if (code === "(nothing)") return "";
     const m = code.match(/print(?:ln)?\(([^)]*)\)/);
     if (m) return m[1];
-    return code; // bare expression cartridge (M2/M5/M6 slots supply bare args)
+    return code;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
 
   _collectWrongBlocksUsed() {
     const used = [];
@@ -1854,23 +1732,6 @@ export class Level42Scene extends Phaser.Scene {
     return { match };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1890,8 +1751,6 @@ export class Level42Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level42Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1913,8 +1772,6 @@ export class Level42Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.setOnAir(false);
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = wrongBlocksUsed[0] && wrongBlocksUsed[0].tag;
@@ -1971,16 +1828,12 @@ export class Level42Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2059,10 +1912,6 @@ export class Level42Scene extends Phaser.Scene {
       this.lives++;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

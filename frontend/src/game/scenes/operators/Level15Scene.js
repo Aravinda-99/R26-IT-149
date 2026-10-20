@@ -1,9 +1,3 @@
-/**
- * Level15Scene — "Code Builder Pro" (Restructuring Phase)
- * ========================================================
- * IDE-style fill-in-the-blank code editor. 8 real-world projects
- * where player selects correct operators to complete Java code.
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -87,9 +81,6 @@ export class Level15Scene extends Phaser.Scene {
   }
 
   _drawIDE() {
-    // BG (Stretched — centered on W/2 so widening the width alone spans
-    // -W*2..W*3, matching the fillRect(-W*2,...,W*5,...) convention used
-    // elsewhere)
     this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x1e1e1e).setDepth(0);
     // Menu bar (Stretched — Y/height unchanged)
     this.add.rectangle(W / 2, 71, W * 5, 30, 0x2d2d30).setDepth(1);
@@ -134,7 +125,6 @@ export class Level15Scene extends Phaser.Scene {
     bb.on("pointerup", () => { [ov, pg, t1, t2, t3, bb, bt].forEach(e => e.destroy()); this._loadProject(); });
   }
 
-  /** Width of a string in the code font, measured (not guessed). */
   _measure(str, fontSize, bold) {
     const m = this.add.text(0, 0, str, { fontFamily: "Courier New", fontSize: `${fontSize}px`, fontStyle: bold ? "bold" : "normal" });
     const w = m.width, h = m.height;
@@ -150,9 +140,8 @@ export class Level15Scene extends Phaser.Scene {
     this.statusTxt.setText(`${p.icon} ${p.title}.java`);
 
     const PAD = 14, CODE_FONT = 20, LINE_H = 28, GAP = 8;
-    const CODE_X = 76, NUM_RIGHT = 62;              // one left edge for every code line; line numbers right-aligned in their own column
+    const CODE_X = 76, NUM_RIGHT = 62;
 
-    // Client panel — header and hint stacked from their measured heights
     const hdr = this.add.text(40, 98, `${p.icon} Client: ${p.client}   •   Task: ${p.title}`, { fontFamily: "Arial", fontSize: "20px", color: "#4fc3f7", fontStyle: "bold" }).setDepth(11);
     const hint = this.add.text(40, hdr.y + hdr.height + 4, p.reqs.map(r => "• " + r).join("  |  "), { fontFamily: "Arial", fontSize: "20px", color: "#81c784" }).setDepth(11);
     const cTop = 90, cH = (hint.y + hint.height + 8) - cTop;
@@ -161,7 +150,6 @@ export class Level15Scene extends Phaser.Scene {
     cpg.lineStyle(2, 0x007acc, 0.5); cpg.strokeRoundedRect(20, cTop, W - 40, cH, 8);
     this._addEl(cpg, hdr, hint);
 
-    // Code editor area — tall enough for the longest project, so every project has the same frame
     const maxLines = Math.max(...PROJECTS.map(pr => pr.code.length));
     const eTop = cTop + cH + 8, eH = maxLines * LINE_H + 2 * PAD;
     const eg = this.add.graphics().setDepth(10);
@@ -169,7 +157,6 @@ export class Level15Scene extends Phaser.Scene {
     eg.lineStyle(1, 0x3e3e42); eg.strokeRoundedRect(20, eTop, W - 40, eH, 8);
     this._addEl(eg);
 
-    // Blank width: the widest thing a blank ever shows, plus padding
     const widest = Math.max(this._measure("___", CODE_FONT, true).w, ...p.blanks.flatMap(bl => bl.opts.map(o => this._measure(o, CODE_FONT, true).w)));
     const bw = Math.max(60, Math.ceil(widest) + 24);
     const th = this._measure("Mg", CODE_FONT, false).h;       // text height of one code line
@@ -185,7 +172,6 @@ export class Level15Scene extends Phaser.Scene {
       let cx = CODE_X;
       parts.forEach((rawPart, pi) => {
         if (pi > 0) {
-          // The blank sits in the gap after the text measured so far; the next token starts after it.
           const bi = blankCounter++;
           const blank = p.blanks[bi];
           const bx = cx;
@@ -248,11 +234,10 @@ export class Level15Scene extends Phaser.Scene {
               dropContainer.add([optHit, optTxt]);
             });
 
-            this._addEl(dropContainer); // Add to elements array for scene cleanup
+            this._addEl(dropContainer);
           });
           cx += bw + GAP;
         }
-        // Text between blanks: edge spaces are dropped because the gap around the blank already separates tokens
         let part = rawPart;
         if (pi > 0) part = part.replace(/^\s+/, "");
         if (pi < parts.length - 1) part = part.replace(/\s+$/, "");
@@ -265,7 +250,6 @@ export class Level15Scene extends Phaser.Scene {
       });
     });
 
-    // Output panel — fills the space between the editor and the Run button
     const RUN_Y = 546;
     const oTop = eTop + eH + 8, oBottom = RUN_Y - 26;
     const og = this.add.graphics().setDepth(10);
@@ -286,7 +270,7 @@ export class Level15Scene extends Phaser.Scene {
     runBg.on("pointerup", () => this._runCode());
   }
 
-  _highlight(text) { return text; }// simplified — color handled by Phaser text
+  _highlight(text) { return text; }
 
   _runCode() {
     const p = PROJECTS[this.projIdx];

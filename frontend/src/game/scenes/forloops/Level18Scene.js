@@ -1,14 +1,8 @@
-/**
- * Level18Scene — Loop Architect  (Restructuring Phase)
- * Canvas: 800×600 | All Phaser 3 graphics primitives
- * Click-to-select + click-to-place block system
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ── Layout ─────────────────────────────────────────────────────── */
 const W = 800, H = 600;
 const ED_X = 6, ED_Y = 52, ED_W = 370, ED_H = 290;   // editor panel
 const VIS_X = 382, VIS_Y = 52, VIS_W = 412, VIS_H = 290; // visual panel
@@ -21,7 +15,6 @@ const CLH = 18;                  // code line height
 const TRAY_X = 6, TRAY_Y = 348, TRAY_W = 788, TRAY_H = 158;
 const RUN_X = 105, RUN_Y = 514, RUN_W = 160, RUN_H = 34;
 
-/* ── Syntax token colours ───────────────────────────────────────── */
 const TC = {
   keyword:'#ff4081', number:'#ffd740', operator:'#ff8a65',
   string:'#00e676', method:'#4fc3f7', comment:'#546e7a',
@@ -30,10 +23,8 @@ const TC = {
 const KW = new Set(['public','class','static','void','int','for','if','else',
   'while','return','System','String','true','false','println','print']);
 
-/* ── Category colours ───────────────────────────────────────────── */
 const CC = { init:'#00e5ff', condition:'#ffd740', update:'#00e676', body:'#b0bec5' };
 
-/* ── 8 Projects ─────────────────────────────────────────────────── */
 const PROJECTS = [
   { id:1, title:'Hello Repeater', filename:'HelloRepeater.java',
     briefing:'Print "Hello World" exactly 5 times.',
@@ -175,9 +166,6 @@ const BIT_FB = {
   generic:       'Something is off with your loop. Check init, condition, update, and body carefully.',
 };
 
-/* ═══════════════════════════════════════════════════════════════════
-   Scene
-═══════════════════════════════════════════════════════════════════ */
 export class Level18Scene extends Phaser.Scene {
   constructor() { super({ key: 'Level18Scene' }); }
 
@@ -191,9 +179,9 @@ export class Level18Scene extends Phaser.Scene {
     this._placed = {};       // slotKey → block text
     this._running = false;
     this._interactionDisabled = false;
-    this._selectedBlock = null; // { text, category, trayEl }
-    this._trayBlocks = [];      // { el, text, category, trayX, trayY, used }
-    this._slotEls = {};         // slotKey → { bg, txt, zone }
+    this._selectedBlock = null;
+    this._trayBlocks = [];
+    this._slotEls = {};
     this._editorObjs = [];      // text/graphic objects in editor code area
     this._visualEls = [];       // objects in visual zone
     this._consoleText = null;
@@ -254,7 +242,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Background ─────────────────────────────────────────────── */
   _createBackground() {
     this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x0b0f14);
     // Ambient strips
@@ -277,7 +264,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── HUD ─────────────────────────────────────────────────────── */
   _createHUD() {
     const bg = this.add.graphics();
     bg.fillStyle(0x0a0e13, 0.96); bg.fillRect(-W * 2, 0, W * 5, 50);
@@ -319,7 +305,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Editor frame ───────────────────────────────────────────── */
   _createEditorFrame() {
     const g = this.add.graphics();
     g.fillStyle(0x0d1117); g.fillRoundedRect(ED_X, ED_Y, ED_W, ED_H, 8);
@@ -339,7 +324,6 @@ export class Level18Scene extends Phaser.Scene {
     this.tweens.add({ targets: this._cursor, alpha: 1, duration: 600, yoyo: true, repeat: -1 });
   }
 
-  /* ── Visual frame ───────────────────────────────────────────── */
   _createVisualFrame() {
     const g = this.add.graphics();
     g.fillStyle(0x0d1117); g.fillRoundedRect(VIS_X, VIS_Y, VIS_W, VIS_H, 8);
@@ -361,7 +345,6 @@ export class Level18Scene extends Phaser.Scene {
     }).setOrigin(0.5);
   }
 
-  /* ── Block Tray ─────────────────────────────────────────────── */
   _createBlockTray() {
     const g = this.add.graphics();
     g.fillStyle(0x0a0e13); g.fillRoundedRect(TRAY_X, TRAY_Y, TRAY_W, TRAY_H, 6);
@@ -371,7 +354,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Run Button ─────────────────────────────────────────────── */
   _createRunButton() {
     const glowG = this.add.graphics();
     glowG.fillStyle(0x00e676, 0.12); glowG.fillRoundedRect(RUN_X-3, RUN_Y-3, RUN_W+6, RUN_H+6, 18);
@@ -407,7 +389,6 @@ export class Level18Scene extends Phaser.Scene {
     this._runBtnTxt.setAlpha(0.3);
   }
 
-  /* ── Bit Mascot ─────────────────────────────────────────────── */
   _createBit() {
     this._bitCont = this.add.container(W+80, 490);
     const g = this.add.graphics();
@@ -419,7 +400,6 @@ export class Level18Scene extends Phaser.Scene {
     this._bitCont.add(g);
   }
 
-  /* ── Project Briefing ───────────────────────────────────────── */
   _showBriefing(idx) {
     const cfg = PROJECTS[idx];
     this._briefEls = [];
@@ -490,7 +470,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Load Project ───────────────────────────────────────────── */
   _loadProject(cfg) {
     this._currentCfg = cfg;
     this._clearProject();
@@ -535,7 +514,6 @@ export class Level18Scene extends Phaser.Scene {
   _ve(el) { if (el) this._visualEls.push(el); return el; }
   _ee(el) { if (el) this._editorObjs.push(el); return el; }
 
-  /* ── Editor Code Rendering ──────────────────────────────────── */
   _renderEditor(cfg) {
     const slotKeys = Object.keys(cfg.slots);
     const bodySlots = slotKeys.filter(k => k.startsWith('body'));
@@ -636,13 +614,6 @@ export class Level18Scene extends Phaser.Scene {
       this._ee(sfx);
     }
 
-    // Interactive zone — drop target for dragged blocks
-    // Padded slightly beyond the visual bounds for a more forgiving hit area.
-    // Kept small (not the full +16 sometimes suggested) because slot lines
-    // here are only CLH=18px apart — a larger pad would overlap the
-    // neighboring line's zone by half its height and make adjacent slots
-    // (e.g. init/condition/update, or FizzBuzz's body1..body4) ambiguous
-    // to target.
     const zone = this.add.zone(slotX, sy - 4, slotW, slotH + 6)
       .setOrigin(0)
       .setInteractive({ dropZone: true });
@@ -725,7 +696,6 @@ export class Level18Scene extends Phaser.Scene {
     return tokens;
   }
 
-  /* ── Block Tray Rendering ───────────────────────────────────── */
   _renderBlocks(cfg) {
     this._trayBlocks = [];
     const shuffled = [...cfg.blocks];
@@ -756,7 +726,6 @@ export class Level18Scene extends Phaser.Scene {
       container.add([bg, accent, txt]);
       container.setSize(bw, bh).setInteractive({ draggable: true, useHandCursor: true });
 
-      // Home position — where the block snaps back to if dropped outside a valid slot
       container.homeX = bx;
       container.homeY = by;
       container.currentSlot = null;
@@ -772,9 +741,6 @@ export class Level18Scene extends Phaser.Scene {
     this._setupDragEvents();
   }
 
-  /* ── Drag and Drop ─────────────────────────────────────────────
-   * Registered once per scene lifetime (guarded below) since
-   * _renderBlocks() runs again for every new project. */
   _setupDragEvents() {
     if (this._dragEventsBound) return;
     this._dragEventsBound = true;
@@ -785,7 +751,6 @@ export class Level18Scene extends Phaser.Scene {
       gameObject.setAlpha(0.85);
       gameObject.__wasDropped = false;
 
-      // Picking the block back up out of a slot empties that slot again
       const prevSlot = gameObject.currentSlot;
       if (prevSlot) {
         const el = this._slotEls[prevSlot];
@@ -858,7 +823,6 @@ export class Level18Scene extends Phaser.Scene {
       const tb = gameObject.__tbEntry;
       const cat = cfg.slots[slotKey].label;
 
-      // Check if occupied, category mismatch, or specific slot mismatch (for FizzBuzz)
       if ((this._placed[slotKey] && gameObject.currentSlot !== slotKey) ||
           tb.category !== cat ||
           (tb.slot && tb.slot !== slotKey)) {
@@ -886,8 +850,6 @@ export class Level18Scene extends Phaser.Scene {
     this.input.on('dragend', (pointer, gameObject) => {
       gameObject.setAlpha(1);
       if (!gameObject.__wasDropped) {
-        // Only failed drops return to depth 0 — a successful drop keeps the
-        // depth(15) set in 'drop' so it sits cleanly above the editor bounds.
         gameObject.setDepth(0);
         this.tweens.add({ targets: gameObject, x: gameObject.homeX, y: gameObject.homeY, duration: 220, ease: 'Back.easeOut' });
       }
@@ -895,7 +857,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Simulation Engine ──────────────────────────────────────── */
   _simulateProject(cfg) {
     const placed = this._placed;
     const initText = placed['init'] || '';
@@ -1020,7 +981,6 @@ export class Level18Scene extends Phaser.Scene {
     return 'generic';
   }
 
-  /* ── Compile & Run Flow ─────────────────────────────────────── */
   async _onCompileRun() {
     if (this._running || this._interactionDisabled) return;
     this._running = true;
@@ -1079,7 +1039,6 @@ export class Level18Scene extends Phaser.Scene {
 
     const preLines = cfg.preCode.length;
     const bodySlotCount = Object.keys(cfg.slots).filter(k=>k.startsWith('body')).length;
-    // for loop structure: "for (", init, cond, update, ") {", body(s), "}"
     const forLoopLines = 1 + 3 + 1 + bodySlotCount + 1; // 7+ lines
 
     // Pre-code highlight
@@ -1160,7 +1119,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Visual: Greeting Cards ─────────────────────────────────── */
   _setupGreetingCards() {}
 
   _iterGreeting(iter) {
@@ -1170,13 +1128,11 @@ export class Level18Scene extends Phaser.Scene {
       g.fillStyle(0x1a1a2e); g.fillRoundedRect(0, 0, 56, 78, 6);
       g.lineStyle(1.5, 0x00e5ff); g.strokeRoundedRect(0, 0, 56, 78, 6);
 
-      // FIX 1: Replace invalid fillStar with a simple fillCircle (a dot)
       g.fillStyle(0xffd740);
       g.fillCircle(28, 16, 6);
 
       g.setPosition(VZ_X - 60, cy);
 
-      // FIX 2: Properly track the card so _completeGreeting can animate it later
       this._vizCards.push(g);
 
       const lbl = this._ve(this.add.text(cx + 4, cy + 30, 'Hello\nWorld', {
@@ -1196,7 +1152,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Visual: Rocket Launch ──────────────────────────────────── */
   _setupRocketLaunch() {
     const bx = VZ_X + 60, by = VZ_Y + VZ_H - 30;
     const pad = this._ve(this.add.rectangle(bx, by, 70, 8, 0x546e7a));
@@ -1242,7 +1197,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Visual: Balance Scale ──────────────────────────────────── */
   _setupBalanceScale() {
     const cx = VZ_X + 100, cy = VZ_Y + 160;
     // Base triangle
@@ -1302,7 +1256,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Visual: Number Line ────────────────────────────────────── */
   _setupNumberLine() {
     const ly = VZ_Y + 130;
     const g = this._ve(this.add.graphics());
@@ -1346,7 +1299,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Visual: Pyramid Crane ──────────────────────────────────── */
   _setupPyramidCrane() {
     const craneX = VZ_X + VZ_W - 50, craneBaseY = VZ_Y + 40;
     // Tower
@@ -1392,7 +1344,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Visual: Chalkboard ─────────────────────────────────────── */
   _setupChalkboard() {
     const bx = VZ_X + 10, by = VZ_Y + 10;
     const g = this._ve(this.add.graphics());
@@ -1432,7 +1383,6 @@ export class Level18Scene extends Phaser.Scene {
     this.cameras.main.shake(150, 0.004);
   }
 
-  /* ── Visual: Scoreboard ─────────────────────────────────────── */
   _setupScoreboard() {
     const scores = [85,92,78,95,88];
     const cy = VZ_Y + 60;
@@ -1501,7 +1451,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Visual: Conveyor Belt ──────────────────────────────────── */
   _setupConveyor() {
     const bly = VZ_Y + 110;
     // Belt
@@ -1586,7 +1535,6 @@ export class Level18Scene extends Phaser.Scene {
     this.tweens.add({ targets: this._visualEls[this._visualEls.length-1], scaleX:1, scaleY:1, duration:300, ease:'Back.easeOut' });
   }
 
-  /* ── Setup Visual Router ────────────────────────────────────── */
   _setupVisual(type) {
     this._clearVisual();
     switch(type) {
@@ -1614,7 +1562,6 @@ export class Level18Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Correct / Wrong ────────────────────────────────────────── */
   async _onCorrect(cfg) {
     if (this._loopMonitor && this._loopMonitor.active) this._loopMonitor.destroy();
     if (this._loopMonTxt && this._loopMonTxt.active) this._loopMonTxt.destroy();
@@ -1674,8 +1621,6 @@ export class Level18Scene extends Phaser.Scene {
     await this._showBitFeedback(BIT_FB[errType] || BIT_FB.generic);
     if (cBg.active) cBg.destroy();
 
-    // Reset all placed blocks — return each dragged container to its tray
-    // home position, since blocks now physically move into slots.
     Object.keys(this._placed).forEach(k => {
       if (this._placed[k]) {
         const el = this._slotEls[k];
@@ -1696,17 +1641,9 @@ export class Level18Scene extends Phaser.Scene {
   }
 
   _showDiff(expected, actual) {
-    // Clear the visual elements so they don't overlap with the diff text —
-    // rebuilt via _setupVisual (not just _clearVisual) because several visual
-    // types (e.g. rocket_launch) keep persistent objects like this._vizRocket
-    // across iterations rather than recreating them each run. _onCompileRun()
-    // never re-calls _setupVisual before a retry, so a bare _clearVisual()
-    // here would permanently null those out after the first wrong answer.
-    // _setupVisual() itself calls _clearVisual() first, then rebuilds.
     if (this._currentCfg) this._setupVisual(this._currentCfg.visual);
 
     const dg = this.add.graphics().setDepth(100);
-    // Make the background box larger and give it a solid, darker fill
     dg.fillStyle(0x0a0a1a, 0.98);
     dg.fillRoundedRect(VIS_X + 4, VIS_Y + 70, VIS_W - 8, 210, 8);
     dg.lineStyle(2, 0xf44336);
@@ -1770,7 +1707,6 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Level Complete ─────────────────────────────────────────── */
   _levelComplete() {
     PanelFit.arm(this);
     // Save
@@ -1888,6 +1824,5 @@ export class Level18Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Utilities ──────────────────────────────────────────────── */
   _delay(ms) { return new Promise(r => this.time.delayedCall(ms, r)); }
 }

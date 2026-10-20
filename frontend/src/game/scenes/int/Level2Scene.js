@@ -1,19 +1,3 @@
-/**
- * Level2Scene — "Cyber Variable Arena" (Tuning Phase)
- * =====================================================
- * Learning: Reinforce the exact definition of the `int` data type
- *           by distinguishing it from floats/doubles/strings.
- *
- * Mechanic: Data Validation Combat System
- *   - Player = "The Compiler" (left)
- *   - Enemies = "Data Packets" showing values (right)
- *   - Two actions: 📥 ASSIGN (it's a valid int) or 🚫 REJECT (it's not)
- *   - Code panel shows real-time `int memorySlot = …;`
- *   - 15 enemies, combo system, time bonus, power-ups
- *
- * Schema Theory: Tuning — refining the learner's int schema
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -22,16 +6,13 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TOTAL_ENEMIES = 15;
 const ENEMY_BASE_SPEED = 1800; // ms for approach tween (gets faster)
 const MAX_LIVES = 5;
 
-/* Values pool — each has a raw value, display string, and whether it's a valid int */
 const DATA_VALUES = [
-  // ── Valid ints ──
   { display: "7",    isInt: true,  raw: 7 },
   { display: "-15",  isInt: true,  raw: -15 },
   { display: "0",    isInt: true,  raw: 0 },
@@ -42,7 +23,6 @@ const DATA_VALUES = [
   { display: "25",   isInt: true,  raw: 25 },
   { display: "-50",  isInt: true,  raw: -50 },
   { display: "1",    isInt: true,  raw: 1 },
-  // ── Invalid: decimals / doubles ──
   { display: "3.14",   isInt: false, raw: 3.14,    reason: "double" },
   { display: "-0.5",   isInt: false, raw: -0.5,    reason: "double" },
   { display: "9.99",   isInt: false, raw: 9.99,    reason: "double" },
@@ -50,7 +30,6 @@ const DATA_VALUES = [
   { display: "2.718",  isInt: false, raw: 2.718,   reason: "double" },
   { display: "-7.5",   isInt: false, raw: -7.5,    reason: "double" },
   { display: "1.0",    isInt: false, raw: 1.0,     reason: "double" },
-  // ── Invalid: strings ──
   { display: '"Hello"',   isInt: false, raw: "Hello",   reason: "String" },
   { display: '"true"',    isInt: false, raw: "true",    reason: "String" },
   { display: '"int"',     isInt: false, raw: "int",     reason: "String" },
@@ -58,7 +37,6 @@ const DATA_VALUES = [
   { display: '"null"',    isInt: false, raw: "null",    reason: "String" },
 ];
 
-/* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -100,9 +78,6 @@ export class Level2Scene extends Phaser.Scene {
     GameManager.interventionInFlight = false;
   }
 
-  /* ═══════════════════════════════════════════
-   *  CREATE
-   * ═══════════════════════════════════════════ */
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -116,7 +91,6 @@ export class Level2Scene extends Phaser.Scene {
 
     cam.setBackgroundColor("#060b18");
 
-    /* ── State ── */
     this.currentIndex = 0;
     this.combo = 0;
     this.score = 0;
@@ -135,38 +109,27 @@ export class Level2Scene extends Phaser.Scene {
     this.powerTimeFreeze = 1;
     this.enemySpeedMult = 1;    // 1 = normal, 0.3 = slowed
 
-    /* ── Generate textures ── */
     this._genTex();
 
-    /* ── Draw arena ── */
     this._drawArena();
 
-    /* ── Particles ── */
     this._createParticles();
 
-    /* ── Player sprite ── */
     this._drawPlayer();
 
-    /* ── HUD ── */
     this._createHUD();
 
-    /* ── Code panel ── */
     this._createCodePanel();
 
-    /* ── UIScene label ── */
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 2: Tuning — Cyber Variable Arena!");
     }
     if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
-    /* ── Instruction overlay ── */
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════ */
   _genTex() {
     const make = (key, color) => {
       if (this.textures.exists(key)) return;
@@ -205,9 +168,6 @@ export class Level2Scene extends Phaser.Scene {
     }).setDepth(80);
   }
 
-  /* ═══════════════════════════════════════════
-   *  ARENA BACKGROUND
-   * ═══════════════════════════════════════════ */
   _drawArena() {
     const gfx = this.add.graphics().setDepth(0);
 
@@ -258,9 +218,6 @@ export class Level2Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════
-   *  PLAYER — "The Compiler"
-   * ═══════════════════════════════════════════ */
   _drawPlayer() {
     this.playerGroup = this.add.container(370, 270).setDepth(10);
 
@@ -316,9 +273,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  ENEMY — "Data Packet"
-   * ═══════════════════════════════════════════ */
   _spawnEnemy(data, index) {
     if (this.enemyContainer) {
       this.tweens.killTweensOf(this.enemyContainer);
@@ -329,7 +283,7 @@ export class Level2Scene extends Phaser.Scene {
     this.enemyContainer = this.add.container(startX, 270).setDepth(10);
 
     // Outer shell
-    const borderColor = 0x4ade80; // Always green so players must evaluate the value
+    const borderColor = 0x4ade80;
     const shell = this.add.rectangle(0, 0, 80, 90, 0x1e293b, 0.95);
     shell.setStrokeStyle(2, borderColor);
     this.enemyContainer.add(shell);
@@ -368,7 +322,6 @@ export class Level2Scene extends Phaser.Scene {
       }).setOrigin(0.5)
     );
 
-    // ── Approach tween (enemy moves toward the player) ──
     const speed = Math.max(600, ENEMY_BASE_SPEED - this.currentIndex * 70);
     const actualSpeed = speed / this.enemySpeedMult;
     this.enemyApproachTween = this.tweens.add({
@@ -386,9 +339,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -425,7 +375,6 @@ export class Level2Scene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "11px", color: "#94a3b8",
     }).setOrigin(1, 0).setDepth(dp);
 
-    // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 40 - i * 35, 78, "❤️", {
@@ -442,9 +391,6 @@ export class Level2Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
   }
 
-  /* ═══════════════════════════════════════════
-   *  CODE SIMULATION PANEL
-   * ═══════════════════════════════════════════ */
   _createCodePanel() {
     this.codePanelBg = this.add.rectangle(W / 2, 650, W - 20, 80, 0x0a1628, 0.96)
       .setStrokeStyle(1, 0x1e293b).setDepth(90);
@@ -464,9 +410,6 @@ export class Level2Scene extends Phaser.Scene {
     }).setDepth(91);
   }
 
-  /* ═══════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const els = [];
@@ -540,17 +483,11 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  START COMBAT
-   * ═══════════════════════════════════════════ */
   _startCombat() {
     GameManager.set("lives", MAX_LIVES);
     this._nextEnemy();
   }
 
-  /* ═══════════════════════════════════════════
-   *  NEXT ENEMY
-   * ═══════════════════════════════════════════ */
   _nextEnemy() {
     this.roundElements.forEach(e => { if (e && e.active) e.destroy(); });
     this.roundElements = [];
@@ -591,11 +528,7 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  ACTION BUTTONS — ASSIGN / REJECT
-   * ═══════════════════════════════════════════ */
   _showActionButtons() {
-    // ── ASSIGN button ──
     const assignBg = this.add.rectangle(W / 2 - 180, 520, 220, 55, 0x0e4429, 1).setDepth(50);
     assignBg.setStrokeStyle(2, 0x4ade80);
     const assignTxt = this.add.text(W / 2 - 180, 510, "📥  ASSIGN", {
@@ -619,7 +552,6 @@ export class Level2Scene extends Phaser.Scene {
 
     this.roundElements.push(assignBg, assignTxt, assignSub);
 
-    // ── REJECT button ──
     const rejectBg = this.add.rectangle(W / 2 + 180, 520, 220, 55, 0x4a1525, 1).setDepth(50);
     rejectBg.setStrokeStyle(2, 0xef4444);
     const rejectTxt = this.add.text(W / 2 + 180, 510, "🚫 can not assign", {
@@ -643,7 +575,6 @@ export class Level2Scene extends Phaser.Scene {
 
     this.roundElements.push(rejectBg, rejectTxt, rejectSub);
 
-    // ── Power-up buttons (after 5 enemies) ──
     if (this.currentIndex > 5) {
       this._showPowerUps();
     }
@@ -654,9 +585,6 @@ export class Level2Scene extends Phaser.Scene {
     this.codeLine3.setText("");
   }
 
-  /* ═══════════════════════════════════════════
-   *  HANDLE PLAYER CHOICE
-   * ═══════════════════════════════════════════ */
   _handleChoice(choice) {
     if (!this.roundActive || this.isComplete || GameManager.interventionInFlight) return;
     this.roundActive = false;
@@ -682,9 +610,6 @@ export class Level2Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════
-   *  CORRECT
-   * ═══════════════════════════════════════════ */
   _onCorrect(choice, data, elapsed) {
     this.correctCount++;
     this.combo++;
@@ -705,7 +630,6 @@ export class Level2Scene extends Phaser.Scene {
     GameManager.addScore(total);
     GameManager.addCombo();
 
-    // ── Code panel ──
     if (choice === "ASSIGN") {
       this.codeLine1.setText(`int memorySlot = ${data.display};`);
       this.codeLine2.setColor("#4ade80");
@@ -744,16 +668,12 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  WRONG
-   * ═══════════════════════════════════════════ */
   _onWrong(choice, data) {
     this.combo = 0;
     GameManager.resetCombo();
     this.lives = GameManager.loseLife();
     this._updateLives();
 
-    // ── Code panel ──
     if (choice === "ASSIGN" && !data.isInt) {
       const typeStr = data.reason === "String" ? "String" : "double";
       this.codeLine1.setText(`int memorySlot = ${data.display};`);
@@ -797,9 +717,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  ANIMATIONS
-   * ═══════════════════════════════════════════ */
   _animateAllocationBeam(total, timeBonus, comboMult) {
     // Cyan laser from player to enemy
     const laser = this.add.rectangle(620, 270, 350, 5, 0x22d3ee, 0.9).setDepth(70);
@@ -932,9 +849,6 @@ export class Level2Scene extends Phaser.Scene {
     this.tweens.add({ targets: dp, y: 170, alpha: 0, duration: 800, onComplete: () => dp.destroy() });
   }
 
-  /* ═══════════════════════════════════════════
-   *  POWER-UPS
-   * ═══════════════════════════════════════════ */
   _showPowerUps() {
     const py = 580;
     const powers = [
@@ -977,9 +891,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════ */
   _updateProgress() {
     const pct = Math.min(1, this.correctCount / TOTAL_ENEMIES);
     this.tweens.add({ targets: this.playerHPFill, scaleX: pct, duration: 300 });
@@ -1034,16 +945,12 @@ export class Level2Scene extends Phaser.Scene {
   }
 
   addLife() {
-    // BitMenu already calls GameManager.addLife() for the global count before
-    // calling this — only touch local state here, or the global count would
-    // be incremented twice per bonus life (matches Level1Scene's convention).
     if (this.lives < MAX_LIVES) {
       this.lives++;
       this._updateLives();
     }
   }
 
-  /** ML struggle check — reports real per-round accuracy/timing stats (rapid-fire rules apply). */
   async runBehavioralCheck() {
     const attempts_count = this.currentIndex;
     const time_taken_seconds = (this.time.now - this.roundStartTime) / 1000;
@@ -1056,9 +963,6 @@ export class Level2Scene extends Phaser.Scene {
       });
       if (this.isComplete) return;
       const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
-      // BehavioralRules' own Rule 1 already forces "struggling" whenever
-      // isRapidFire && misconception_repeat_count >= 3 — which is always true
-      // here, since this method is only ever called at wrongCatches === 3.
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
     } catch (e) {
@@ -1070,9 +974,6 @@ export class Level2Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════ */
   update() {
     if (GameManager.interventionInFlight) return;
 
@@ -1097,9 +998,6 @@ export class Level2Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════
-   *  LEVEL COMPLETE
-   * ═══════════════════════════════════════════ */
   _levelComplete() {
     PanelFit.arm(this);
     this.isComplete = true;
@@ -1162,9 +1060,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  GAME OVER
-   * ═══════════════════════════════════════════ */
   _gameOver() {
     PanelFit.arm(this);
     this.isComplete = true;
@@ -1200,9 +1095,6 @@ export class Level2Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════
-   *  REUSABLE END BUTTON
-   * ═══════════════════════════════════════════ */
   _createEndBtn(x, y, text, color, cb) {
     const bg = this.add.rectangle(x, y, 170, 42, color, 1).setDepth(202);
     bg.setStrokeStyle(2, 0xffffff);
@@ -1216,9 +1108,6 @@ export class Level2Scene extends Phaser.Scene {
     bg.on("pointerup", cb);
   }
 
-  /* ═══════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════ */
   shutdown() {
     this.roundElements = [];
     if (this.enemyContainer) this.enemyContainer.destroy();

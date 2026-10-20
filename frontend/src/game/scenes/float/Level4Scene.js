@@ -1,16 +1,3 @@
-/**
- * Level4Scene — "Float Discovery: Decimal Ocean Dive" (Accretion Phase)
- * =====================================================================
- * Mechanic: Underwater Collection Adventure
- * - Player controls a submarine through an ocean environment
- * - Float numbers (decimals) drift in bubbles — COLLECT them!
- * - Integer numbers also drift — AVOID them!
- * - Collect 25 valid floats with ≥85% accuracy to pass
- * - Oxygen system depletes over time; gain/lose on correct/wrong
- *
- * Schema Theory: Accretion — introducing float/decimal concepts
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -19,7 +6,6 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TARGET_COLLECT = 25;
@@ -36,7 +22,6 @@ const OXYGEN_REWARD = 5;
 const SPAWN_INTERVAL = 2500;
 const BUBBLE_RISE_SPEED = 50;
 
-/* ───────── Number Pools ───────── */
 const SIMPLE_FLOATS = [
   3.5, -2.7, 0.5, 1.25, -4.8, 6.1, -7.3, 8.9, -1.5, 2.4,
   -3.6, 5.2, -0.8, 4.7, -9.1, 0.3, -6.5, 7.8, -2.1, 1.6,
@@ -59,7 +44,6 @@ const FLOAT_CATEGORIES = [
   { pool: SCIENTIFIC_FLOATS, color: 0x1abc9c, label: "Scientific", difficulty: 2 },
 ];
 
-/* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -107,9 +91,6 @@ function getIntegerTip(value) {
   return tips[Math.floor(Math.random() * tips.length)];
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 4 SCENE
- * ═══════════════════════════════════════════════════════════════ */
 export class Level4Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level4Scene" });
@@ -134,7 +115,6 @@ export class Level4Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.floatsCollected = 0;
     this.totalAttempts = 0;
     this.wrongAttempts = 0;
@@ -177,9 +157,6 @@ export class Level4Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  OCEAN BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawOceanBackground() {
     const gfx = this.add.graphics().setDepth(0);
     const topColor = 0x006994;
@@ -197,7 +174,7 @@ export class Level4Scene extends Phaser.Scene {
     const rayGfx = this.add.graphics().setDepth(1).setAlpha(0.08);
     let rayIndex = 0;
     for (let x = -W; x < W * 2; x += 160) {
-      const spread = rayIndex % 5; // keep the same width variation cadence as the original 5-ray set
+      const spread = rayIndex % 5;
       rayGfx.fillStyle(0xffffff, 1);
       rayGfx.beginPath();
       rayGfx.moveTo(x - 5, 0);
@@ -228,9 +205,6 @@ export class Level4Scene extends Phaser.Scene {
     lineGfx.strokePath();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     // Submarine body
     if (!this.textures.exists("subBody")) {
@@ -304,9 +278,6 @@ export class Level4Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
     this.splashParticles = this.add.particles(0, 0, "blueSpark", {
       speed: { min: 80, max: 250 },
@@ -337,9 +308,6 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  AMBIENT BUBBLES (decorative)
-   * ═══════════════════════════════════════════════════════════════ */
   _createAmbientBubbles() {
     this.ambientBubbles = [];
     for (let i = 0; i < 25; i++) {
@@ -357,9 +325,6 @@ export class Level4Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PLAYER (SUBMARINE)
-   * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
     this.player = this.physics.add.sprite(W / 2, H / 2, "subBody");
     this.player.setCollideWorldBounds(true);
@@ -387,9 +352,6 @@ export class Level4Scene extends Phaser.Scene {
     this.headlight.fill();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -475,9 +437,6 @@ export class Level4Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
@@ -494,13 +453,6 @@ export class Level4Scene extends Phaser.Scene {
       color: "#00d4ff",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(202);
-
-    // const sub = this.add.text(W / 2, 110, "Decimal Ocean Dive", {
-    //   fontFamily: "Arial",
-    //   fontSize: "18px",
-    //   color: "#5dade2",
-    //   fontStyle: "italic",
-    // }).setOrigin(0.5).setDepth(202);
 
     const desc = this.add.text(W / 2, 280,
       "Floats are numbers with DECIMAL POINTS!\n" +
@@ -554,9 +506,6 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -565,9 +514,6 @@ export class Level4Scene extends Phaser.Scene {
     this.boostText.setAlpha(0.6);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWNING
-   * ═══════════════════════════════════════════════════════════════ */
   _getIntegerChance() {
     if (this.floatsCollected < 10) return 0.20;
     if (this.floatsCollected < 20) return 0.28;
@@ -689,9 +635,6 @@ export class Level4Scene extends Phaser.Scene {
     this.bubbles.push(container);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  BUBBLE COLLECTION
-   * ═══════════════════════════════════════════════════════════════ */
   _onCollectBubble(container) {
     if (this.isComplete || !container.active) return;
     container.active = false;
@@ -776,7 +719,6 @@ export class Level4Scene extends Phaser.Scene {
     }
   }
 
-  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
   async runBehavioralCheck() {
     const attempts_count = this.totalAttempts;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -796,9 +738,6 @@ export class Level4Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════════════════════════ */
   _updateHUD() {
     // Score
     if (this.scoreText && this.scoreText.active) {
@@ -859,9 +798,6 @@ export class Level4Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUPS & TOOLTIPS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Arial",
@@ -898,9 +834,6 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL END
-   * ═══════════════════════════════════════════════════════════════ */
   _checkLevelEnd() {
     const accuracy = this.totalAttempts > 0
       ? Math.round(((this.totalAttempts - this.wrongAttempts) / this.totalAttempts) * 100)
@@ -1093,9 +1026,6 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
     if (GameManager.interventionInFlight) {
       if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
@@ -1114,7 +1044,6 @@ export class Level4Scene extends Phaser.Scene {
 
     const dt = delta / 1000;
 
-    /* ── Player movement (8-directional) ── */
     const speed = this.isBoosting ? BOOST_SPEED : PLAYER_SPEED;
     let vx = 0;
     let vy = 0;
@@ -1161,19 +1090,16 @@ export class Level4Scene extends Phaser.Scene {
       });
     }
 
-    /* ── Headlight follows sub ── */
     if (this.headlight) {
       this._drawHeadlight();
     }
 
-    /* ── Depth marker ── */
     if (this.depthMarker) {
       const depthPct = this.player.y / H;
       const markerY = 100 + depthPct * (H - 200);
       this.depthMarker.setY(markerY);
     }
 
-    /* ── Oxygen decay ── */
     this.oxygen = Math.max(0, this.oxygen - OXYGEN_DECAY_PER_SEC * dt);
     this._updateOxygenBar();
     if (this.oxygen <= 0) {
@@ -1181,7 +1107,6 @@ export class Level4Scene extends Phaser.Scene {
       return;
     }
 
-    /* ── Bubble wobble and cleanup ── */
     this.bubbles.forEach(b => {
       if (b && b.active) {
         // Sine wobble
@@ -1205,7 +1130,6 @@ export class Level4Scene extends Phaser.Scene {
       }
     });
 
-    /* ── Ambient ── */
     this._updateAmbient(time);
   }
 
@@ -1234,9 +1158,6 @@ export class Level4Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     this.bubbles = [];
     // Restore lives visibility for other levels

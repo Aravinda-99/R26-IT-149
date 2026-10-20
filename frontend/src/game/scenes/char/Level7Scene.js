@@ -1,17 +1,3 @@
-/**
- * Level7Scene — "Char Discovery: Alphabet Nebula Explorer" (Accretion Phase)
- * ===========================================================================
- * Mechanic: Space Exploration Collection Adventure
- * - Player controls a ship through a cosmic alphabet nebula
- * - Valid single-character values drift in orbs — COLLECT them!
- * - Invalid data (strings, numbers, empty, multi-char) also drift — AVOID them!
- * - Collect 30 valid chars with ≥85% accuracy to pass
- * - Must collect at least 5 from each of 5 categories
- * - Oxygen system depletes over time; gain/lose on correct/wrong
- *
- * Schema Theory: Accretion — introducing char/character concepts
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -20,7 +6,6 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TARGET_COLLECT = 30;
@@ -39,7 +24,6 @@ const SPAWN_INTERVAL = 2200;
 const VALID_CHANCE = 0.70;
 const CATEGORY_REQUIREMENT = 5;
 
-/* ───────── Char Pools ───────── */
 const UPPERCASE_CHARS = ["A", "B", "Z", "M", "K"];
 const LOWERCASE_CHARS = ["a", "z", "m", "k", "p"];
 const DIGIT_CHARS = ["0", "5", "9", "3", "7"];
@@ -66,7 +50,6 @@ const INVALID_CATEGORIES = [
   { pool: INVALID_MULTI, color: 0xff4444, label: "Multi-char", type: "multi" },
 ];
 
-/* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -135,9 +118,6 @@ function getInvalidTip(displayText, type) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 7 SCENE
- * ═══════════════════════════════════════════════════════════════ */
 export class Level7Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level7Scene" });
@@ -162,7 +142,6 @@ export class Level7Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.charsCollected = 0;
     this.totalAttempts = 0;
     this.wrongAttempts = 0;
@@ -212,9 +191,6 @@ export class Level7Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPACE BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawSpaceBackground() {
     /* Layer 0: Deep space gradient */
     const gfx = this.add.graphics().setDepth(0);
@@ -229,7 +205,6 @@ export class Level7Scene extends Phaser.Scene {
       gfx.fillRect(-W, Math.floor((H * i) / steps), W * 3, Math.ceil(H / steps) + 1);
     }
 
-    /* Layer 1: Far stars (small white dots, slow drift via tweens) */
     this.farStars = [];
     for (let i = 0; i < 60; i++) {
       const x = Phaser.Math.Between(-W, W * 2);
@@ -279,9 +254,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     if (!this.textures.exists("shipBody")) {
       const g = this.add.graphics();
@@ -313,7 +285,6 @@ export class Level7Scene extends Phaser.Scene {
       g.fillCircle(8, 28, 5);
       g.fillStyle(0x00ffff, 0.3);
       g.fillCircle(8, 28, 10);
-      // Wing details
       g.fillStyle(0x4040a0, 1);
       g.fillTriangle(30, 8, 45, 4, 40, 16);
       g.fillTriangle(30, 48, 45, 52, 40, 40);
@@ -365,9 +336,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
     this.collectParticles = this.add.particles(0, 0, "greenSpark", {
       speed: { min: 80, max: 250 },
@@ -407,9 +375,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  AMBIENT COSMIC DUST (Layer 3 — decorative)
-   * ═══════════════════════════════════════════════════════════════ */
   _createAmbientDust() {
     this.ambientDust = [];
     for (let i = 0; i < 30; i++) {
@@ -429,9 +394,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PLAYER (SPACESHIP)
-   * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
     this.player = this.physics.add.sprite(W / 2, H / 2, "shipBody");
     this.player.setCollideWorldBounds(true);
@@ -458,9 +420,6 @@ export class Level7Scene extends Phaser.Scene {
     this.shield.setStrokeStyle(1, 0x00ffff, 0.12);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -542,9 +501,6 @@ export class Level7Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CATEGORY TRACKER (bottom of screen)
-   * ═══════════════════════════════════════════════════════════════ */
   _createCategoryTracker() {
     const dp = 100;
     const baseY = H - 100;
@@ -602,9 +558,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
@@ -681,9 +634,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -692,9 +642,6 @@ export class Level7Scene extends Phaser.Scene {
     this.boostText.setAlpha(0.6);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWNING
-   * ═══════════════════════════════════════════════════════════════ */
   // _scheduleSpawn removed. Spawning moved to update()
 
   _spawnOrb() {
@@ -873,9 +820,6 @@ export class Level7Scene extends Phaser.Scene {
     this.orbs.push(container);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  ORB COLLECTION
-   * ═══════════════════════════════════════════════════════════════ */
   _onCollectOrb(container) {
     if (this.isComplete || !container.active) return;
     container.active = false;
@@ -969,7 +913,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
   async runBehavioralCheck() {
     const attempts_count = this.totalAttempts;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -989,9 +932,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  RIPPLE EFFECT
-   * ═══════════════════════════════════════════════════════════════ */
   _createRippleEffect(x, y, color, startAlpha) {
     const ripple = this.add.circle(x, y, 10, color, 0).setDepth(45);
     ripple.setStrokeStyle(2, color, startAlpha);
@@ -1027,9 +967,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════════════════════════ */
   _updateHUD() {
     // Score
     if (this.scoreText && this.scoreText.active) {
@@ -1089,9 +1026,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUPS & TOOLTIPS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Arial",
@@ -1128,9 +1062,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL END
-   * ═══════════════════════════════════════════════════════════════ */
   _checkLevelEnd() {
     const accuracy = this.totalAttempts > 0
       ? Math.round(((this.totalAttempts - this.wrongAttempts) / this.totalAttempts) * 100)
@@ -1369,9 +1300,6 @@ export class Level7Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
     if (GameManager.interventionInFlight) {
       if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
@@ -1390,7 +1318,6 @@ export class Level7Scene extends Phaser.Scene {
 
     const dt = delta / 1000;
 
-    /* ── Player movement (8-directional with acceleration) ── */
     const speed = this.isBoosting ? BOOST_SPEED : PLAYER_SPEED;
     let vx = 0;
     let vy = 0;
@@ -1467,14 +1394,12 @@ export class Level7Scene extends Phaser.Scene {
       });
     }
 
-    /* ── Depth marker ── */
     if (this.depthMarker) {
       const depthPct = this.player.y / H;
       const markerY = 100 + depthPct * (H - 200);
       this.depthMarker.setY(markerY);
     }
 
-    /* ── Oxygen decay ── */
     this.oxygen = Math.max(0, this.oxygen - OXYGEN_DECAY_PER_SEC * dt);
     this._updateOxygenBar();
     if (this.oxygen <= 0) {
@@ -1482,7 +1407,6 @@ export class Level7Scene extends Phaser.Scene {
       return;
     }
 
-    /* ── Orb wobble and cleanup ── */
     this.orbs.forEach(b => {
       if (b && b.active) {
         const t = b.getData("wobbleTime") + dt;
@@ -1505,7 +1429,6 @@ export class Level7Scene extends Phaser.Scene {
       }
     });
 
-    /* ── Ambient ── */
     this._updateAmbient(time);
   }
 
@@ -1547,9 +1470,6 @@ export class Level7Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     this.orbs = [];
 

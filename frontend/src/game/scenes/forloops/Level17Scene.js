@@ -1,7 +1,3 @@
-/**
- * Level17Scene — Iteration Arena  (Tuning Phase)
- * Canvas: 800×600 | All Phaser 3 graphics primitives
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -24,7 +20,6 @@ const TC = {
 const KW = new Set(['for','int','if','else','while','System','void','class','return',
   'true','false','println','print','length','out']);
 
-/* ── 15 Waves ─────────────────────────────────────────────────── */
 const WAVES = [
   { wave:1,  type:'predict_output',  timeLimit:12000,
     code:['for (int i = 0; i < 3; i++) {','    System.out.print(i + " ");','}'],
@@ -134,13 +129,9 @@ const BIT_FB = {
   multiples:        '3 → 6 → 9 → 12. Next 15 > 12, so the loop stops.',
 };
 
-/* ═══════════════════════════════════════════════════════════════════
-   Scene Class
-═══════════════════════════════════════════════════════════════════ */
 export class Level17Scene extends Phaser.Scene {
   constructor() { super({ key: 'Level17Scene' }); }
 
-  /* ── Lifecycle ─────────────────────────────────────────────── */
   init() {
     this.score = 0; this.combo = 0; this.maxCombo = 0; this.lives = 3;
     this.currentWave = 0; this.correctCount = 0;
@@ -214,7 +205,6 @@ export class Level17Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Setup ─────────────────────────────────────────────────── */
   _createArenaFloor() {
     const g = this.add.graphics();
     g.fillStyle(0x0a1628, 1);
@@ -359,7 +349,6 @@ export class Level17Scene extends Phaser.Scene {
     this._bitCont.add(g);
   }
 
-  /* ── Wave management ───────────────────────────────────────── */
   async startWave(idx) {
     if (idx >= WAVES.length) { this._levelComplete(); return; }
     this._clearWave();
@@ -450,7 +439,6 @@ export class Level17Scene extends Phaser.Scene {
 
   _we(el) { if (el) this._waveEls.push(el); return el; }
 
-  /* ── Challenge renderers ───────────────────────────────────── */
   _renderChallenge(cfg) {
     if (cfg.type === 'loop_compare') {
       this._displayLoopCompare(cfg);
@@ -559,7 +547,6 @@ export class Level17Scene extends Phaser.Scene {
     return tokens;
   }
 
-  /* ─ MCQ (predict_output) ────────────────────────────────── */
   _renderMCQ(cfg) {
     const BW = 148, BH = 46, gap = 8;
     cfg.options.forEach((opt, idx) => {
@@ -571,7 +558,6 @@ export class Level17Scene extends Phaser.Scene {
     });
   }
 
-  /* ─ fix_bug ─────────────────────────────────────────────── */
   _renderFixBug(cfg) {
     const BW = AZ_W - 24, BH = 44;
     cfg.fixes.forEach((fix, idx) => {
@@ -581,7 +567,6 @@ export class Level17Scene extends Phaser.Scene {
     });
   }
 
-  /* ─ iteration_count number pad ──────────────────────────── */
   _renderNumberPad(cfg) {
     const dispY = AZ_Y + 92;
     const dg = this._we(this.add.graphics());
@@ -615,7 +600,6 @@ export class Level17Scene extends Phaser.Scene {
     });
   }
 
-  /* ─ execution_order ─────────────────────────────────────── */
   _renderExecOrder(cfg) {
     const hasExclude = cfg.excludeCard !== undefined;
     const poolIndices = cfg.cards.map((_, i) => i).filter(i => !hasExclude || i !== cfg.excludeCard);
@@ -745,7 +729,6 @@ export class Level17Scene extends Phaser.Scene {
     }
   }
 
-  /* ─ loop_compare buttons ───────────────────────────────── */
   _renderCompareButtons(cfg) {
     const BW = 148, BH = 52;
     cfg.options.forEach((opt, idx) => {
@@ -758,7 +741,6 @@ export class Level17Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Button factory ─────────────────────────────────────── */
   _btn(x, y, w, h, label, textColor, bgColor, onClick) {
     const g = this._we(this.add.graphics());
     g.fillStyle(bgColor !== undefined ? bgColor : 0x0d1b30, 1);
@@ -787,7 +769,6 @@ export class Level17Scene extends Phaser.Scene {
     return zone;
   }
 
-  /* ── Answer handling ────────────────────────────────────── */
   async _onAnswer(isCorrect, cfg) {
     if (this._waveAnswered) return;
     this._waveAnswered = true;
@@ -840,7 +821,6 @@ export class Level17Scene extends Phaser.Scene {
     this.startWave(this.currentWave + 1);
   }
 
-  /* ── Animations ─────────────────────────────────────────── */
   _flashRect(x, y, w, h, color) {
     const fl = this.add.graphics().setDepth(80);
     fl.fillStyle(color, 0.15); fl.fillRoundedRect(x, y, w, h, 6);
@@ -918,7 +898,6 @@ export class Level17Scene extends Phaser.Scene {
       this._drawShield(g, 565 + i * 24, 16, 0xff4081, i < this.lives ? 1 : 0));
   }
 
-  /* ── Bit feedback ────────────────────────────────────────── */
   _showBitFeedback(concept) {
     return new Promise(resolve => {
       if (this._bitBubble && this._bitBubble.active) this._bitBubble.destroy();
@@ -959,7 +938,6 @@ export class Level17Scene extends Phaser.Scene {
     });
   }
 
-  /* ── End states ──────────────────────────────────────────── */
   _gameOver() {
     PanelFit.arm(this);
     this._clearWave();
@@ -1054,6 +1032,5 @@ export class Level17Scene extends Phaser.Scene {
       .on('pointerdown', () => this.scene.start('MenuScene'));
   }
 
-  /* ── Utilities ───────────────────────────────────────────── */
   _delay(ms) { return new Promise(r => this.time.delayedCall(ms, r)); }
 }

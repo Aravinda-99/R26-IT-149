@@ -1,16 +1,10 @@
-/**
- * Level19Scene — Power Core Charger (Accretion Phase — While Loops)
- * Canvas: 800×600
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ── Canvas ──────────────────────────────────────────────────────────────── */
 const W = 800, H = 600;
 
-/* ── Core geometry (scaled from spec 1280×720 → 800×600) ─────────────────── */
 const CORE_X = 355, CORE_Y = 265;
 const CORE_W = 128, CORE_H = 196;
 const CORE_L = CORE_X - CORE_W / 2;  // 291
@@ -25,31 +19,23 @@ const FILL_W = CHAM_W - 6;           // 98
 const FILL_BOTY = CHAM_B - 3;        // 342
 const FILL_MAXH = CHAM_H - 6;        // 150
 
-/* ── HUD & Monitor ───────────────────────────────────────────────────────── */
 const HUD_H = 55;
-// Loop monitor ("code box"): its own row under the HUD so a 20px code line fits without crowding the title/score
 const MON_W = 540, MON_H = 44, MON_FONT = 20;
 const MON_X = (W - MON_W) / 2;
 const MON_Y = 62;
 
-/* ── Round card (right of the core/variable panel, above the answer buttons) ── */
 const CARD_LEFT = 612, CARD_TOP = 114, CARD_MAX_W = 330, CARD_PAD = 16, CARD_GAP = 10;
 
-/* ── Answer buttons ──────────────────────────────────────────────────────── */
 const OPT_LABEL_Y = 436, OPT_Y = 500, OPT_H = 44, OPT_GAP = 18;
 
-/* ── Variable panel (right of core) ─────────────────────────────────────── */
 const VP_X = 448, VP_Y = 214, VP_W = 150, VP_H = 110;
 
-/* ── LED indicators (left of core) ──────────────────────────────────────── */
 const LED_X = CORE_L - 14;
 const LED_YS = [CORE_T + 32, CORE_T + 72, CORE_T + 112, CORE_T + 150];
 
-/* ── Floor / Bit ─────────────────────────────────────────────────────────── */
 const FLOOR_Y = 450;
 const BIT_HIDE_X = 820, BIT_SHOW_X = 700, BIT_Y = 370;
 
-/* ── Colour helpers ──────────────────────────────────────────────────────── */
 const C = {
   kw: '#ff4081', cond: '#ffd740', body: '#00e5ff',
   punct: '#78909c', pos: '#00e676', neg: '#f44336',
@@ -57,7 +43,6 @@ const C = {
   bg: 0x0a0e13, panel: 0x0d1117, panel2: 0x1a1a2e,
 };
 
-/* ── Rounds ─────────────────────────────────────────────────────────────── */
 const ROUNDS = [
   { round:1, mission:'Charge the core to full. Starts at 0%, gaining 25% per cycle.',
     startCharge:0, blanks:['condition_value'],
@@ -137,9 +122,6 @@ const FEEDBACK = {
   predict_wrong:'Trace: 10+17=27, 27+17=44, 44+17=61, 61+17=78, 78+17=95, 95+17=112. Loop exits at 112.',
 };
 
-/* ══════════════════════════════════════════════════════════════════════════
-   Scene
-══════════════════════════════════════════════════════════════════════════ */
 export class Level19Scene extends Phaser.Scene {
   constructor() { super({ key: 'Level19Scene' }); }
 
@@ -166,7 +148,7 @@ export class Level19Scene extends Phaser.Scene {
   preload() {}
 
   create() {
-    console.log('CREATE START'); // TEMP DIAGNOSTIC
+    console.log('CREATE START');
     const cam = this.cameras.main;
     const updateCamera = () => {
       const zoom = Math.min(this.scale.width / W, this.scale.height / H);
@@ -203,7 +185,6 @@ export class Level19Scene extends Phaser.Scene {
     this._updateWave(time);
   }
 
-  /* ── Background ─────────────────────────────────────────────────────── */
   _createBg() {
     this.add.rectangle(W/2, H/2, W * 5, H * 3, 0x07090d);
   }
@@ -230,11 +211,9 @@ export class Level19Scene extends Phaser.Scene {
       g.fillStyle(0x1a2a3a); g.fillRoundedRect(-W * 2, py, W * 5, h, 4);
       g.lineStyle(1, 0x0f1520); g.strokeRoundedRect(-W * 2, py, W * 5, h, 4);
     });
-    // Energy glow pipe (second) — stretched to match the pipe underneath it
     const glowPipe = this.add.graphics();
     glowPipe.fillStyle(0xff8f00, 0.04); glowPipe.fillRoundedRect(-W * 2, 77, W * 5 - 4, 5, 2);
     this.tweens.add({ targets: glowPipe, alpha: 0.12, duration: 3000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
-    // Vertical connectors — fixed structural joints, left at their original X
     g.fillStyle(0x1a2a3a);
     [215, 600].forEach(vx => g.fillRect(vx, 76, 5, 38));
   }
@@ -271,7 +250,6 @@ export class Level19Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Power Core ──────────────────────────────────────────────────────── */
   _createCore() {
     // Housing bg
     const g = this.add.graphics();
@@ -500,7 +478,6 @@ export class Level19Scene extends Phaser.Scene {
     this.tweens.add({ targets: warn, alpha: 0, duration: 300, yoyo:true, repeat:4, onComplete: () => warn.destroy() });
   }
 
-  /* ── HUD ─────────────────────────────────────────────────────────────── */
   _createHUD() {
     const g = this.add.graphics().setDepth(30);
     g.fillStyle(0x0a0e13, 0.92); g.fillRect(-W * 2, 0, W * 5, HUD_H);
@@ -509,7 +486,6 @@ export class Level19Scene extends Phaser.Scene {
     this.add.text(14, 6, 'POWER CORE CHARGER', { fontFamily:'Arial', fontSize:'16px', color:'#b0bec5', fontStyle:'bold' }).setDepth(31);
     this.add.text(14, 28, 'Accretion Phase — While Loops', { fontFamily:'Arial', fontSize:'16px', color:'#78909c' }).setDepth(31);
 
-    // Score: label over value on the left of the block, combo multiplier to its right
     this.add.text(W-150, 5, 'SCORE', { fontFamily:'Arial', fontSize:'16px', color:'#78909c' }).setDepth(31);
     this._scoreTxt = this.add.text(W-150, 26, '0', { fontFamily:'Arial', fontSize:'22px', color:'#ffffff', fontStyle:'bold' }).setDepth(31);
     this.add.text(W-80, 28, '×1', { fontFamily:'Arial', fontSize:'16px', color:'#ffd740' }).setDepth(31);
@@ -547,9 +523,6 @@ export class Level19Scene extends Phaser.Scene {
     this._updateComboDisplay();
   }
 
-  /* ── Loop Monitor (code box under the HUD) ───────────────────────────── */
-  // One line of code laid out left-to-right from MEASURED text widths, so no segment can overlap the next.
-  // `null` for the condition/body = an empty dashed slot; any "[?]" inside a text is drawn as a dashed placeholder.
   _createMonitor() {
     const g = this.add.graphics().setDepth(31);
     g.fillStyle(0x1a1a2e); g.fillRoundedRect(MON_X, MON_Y, MON_W, MON_H, 8);
@@ -558,7 +531,7 @@ export class Level19Scene extends Phaser.Scene {
     this._monCY = MON_Y + MON_H / 2;
     this._monX0 = MON_X + 16;
     this._monWhile = this.add.text(this._monX0, this._monCY, 'while', { fontFamily:'Courier New', fontSize: MON_FONT + 'px', color: C.kw, fontStyle:'bold' }).setOrigin(0, 0.5).setDepth(32);
-    this._monSlotW = Math.ceil(this._monWhile.width / 5 * 12) + 8;   // an empty slot is as wide as a 12-character condition/body
+    this._monSlotW = Math.ceil(this._monWhile.width / 5 * 12) + 8;
     this._monSegs = [];
     this._monState = { cond: null, body: null };
     this._monDash = this.add.graphics().setDepth(33);
@@ -620,7 +593,6 @@ export class Level19Scene extends Phaser.Scene {
     this.tweens.add({ targets: target, alpha: 1, duration: 200, yoyo:true, hold:150, onComplete: () => target.setAlpha(0) });
   }
 
-  /* ── Variable Panel ──────────────────────────────────────────────────── */
   _createVarPanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(C.panel); g.fillRoundedRect(VP_X, VP_Y, VP_W, VP_H, 8);
@@ -649,7 +621,6 @@ export class Level19Scene extends Phaser.Scene {
     this.tweens.add({ targets: this._condCheckResult, scaleX:1, scaleY:1, duration:200, ease:'Back.easeOut' });
   }
 
-  /* ── Bit Mascot ──────────────────────────────────────────────────────── */
   _createBit() {
     this._bitCont = this.add.container(BIT_HIDE_X, BIT_Y).setDepth(50);
     const g = this.add.graphics();
@@ -666,7 +637,6 @@ export class Level19Scene extends Phaser.Scene {
     this.tweens.add({ targets: this._bitCont, y: BIT_Y - 4, duration: 2000, yoyo:true, repeat:-1, ease:'Sine.easeInOut' });
   }
 
-  /** Free area to the right of the variable panel (card + speech bubble share it): left edge and width, kept inside the visible world. */
   _cardRegion() {
     const cam = this.cameras.main;
     const visRight = W / 2 + (this.scale.width / (cam.zoom || 1)) / 2;
@@ -674,7 +644,6 @@ export class Level19Scene extends Phaser.Scene {
     return { left: CARD_LEFT, width: Math.max(220, Math.round(right - CARD_LEFT)) };
   }
 
-  /** The round card and Bit's speech bubble use the same spot, so the card steps aside while Bit talks. */
   _setCardHidden(hide) {
     const c = this._missionCard;
     if (!c || !c.active) return;
@@ -688,14 +657,10 @@ export class Level19Scene extends Phaser.Scene {
       if (this._bubbleCont && this._bubbleCont.active) this._bubbleCont.destroy();
       if (this._bubbleZone && this._bubbleZone.active) this._bubbleZone.destroy();
       if (this._bubbleTimer) { this._bubbleTimer.remove(); this._bubbleTimer = null; }
-      // Stop any typewriter still ticking from a bubble we just destroyed above —
-      // without this, its next tick calls txt.setText() on a destroyed Text object
-      // (the exact crash the prior diagnostic pass traced and fixed).
       if (this._bubbleTypewriter) { this._bubbleTypewriter.remove(); this._bubbleTypewriter = null; }
 
       this._setCardHidden(true);
 
-      // Bubble sits above the robot, in the free area right of the variable panel; its height comes from the measured text
       const region = this._cardRegion();
       const bw = region.width, bx = region.left;
       const txt = this.add.text(bx + 12, 0, msg, {
@@ -752,14 +717,12 @@ export class Level19Scene extends Phaser.Scene {
     if (this._bubbleTypewriter) { this._bubbleTypewriter.remove(); this._bubbleTypewriter = null; }
   }
 
-  /* ── Tutorial ────────────────────────────────────────────────────────── */
   _checkTutorial() {
-    // Force bypass the tutorial to prevent hanging and jump straight to gameplay
     this._startRound(0);
   }
 
   async _runTutorial() {
-    console.log('TUTORIAL START'); // TEMP DIAGNOSTIC
+    console.log('TUTORIAL START');
     // Fade in
     const ov = this.add.rectangle(W/2, H/2, W, H, 0x000000, 1).setDepth(100);
     this.tweens.add({ targets: ov, alpha: 0, duration: 800 });
@@ -771,16 +734,16 @@ export class Level19Scene extends Phaser.Scene {
     this._setMonitorBody(null);
 
     // Step 1
-    console.log('STEP 1 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 1 BEFORE');
     await this._showBit("Welcome, Technician! These Power Cores need charging. We use while loops to keep charging UNTIL they're full!");
-    console.log('STEP 1 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 1 AFTER');
 
     // Step 2 — while keyword
     this._monWhile.setScale(0);
     this.tweens.add({ targets: this._monWhile, scaleX:1, scaleY:1, duration:200, ease:'Back.easeOut' });
-    console.log('STEP 2 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 2 BEFORE');
     await this._showBit("A while loop starts with 'while'. It means: KEEP DOING something as long as a condition is true.");
-    console.log('STEP 2 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 2 AFTER');
 
     // Step 3 — condition
     this._setMonitorCond('charge < 100');
@@ -788,36 +751,36 @@ export class Level19Scene extends Phaser.Scene {
     this._updateCondCheck('0 < 100', true);
     this._condCheckTxt.setVisible(true);
     this._condCheckResult.setVisible(true);
-    console.log('STEP 3 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 3 BEFORE');
     await this._showBit("This is the CONDITION — checked FIRST, before every cycle. Is charge less than 100? If YES → run the body. If NO → STOP!");
-    console.log('STEP 3 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 3 AFTER');
 
     // Step 4 — body
     this._setMonitorBody('charge += 15;');
     this._floatNum(15, true);
-    console.log('STEP 4 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 4 BEFORE');
     await this._showBit("This is the BODY — the action that repeats. Each cycle adds 15 to charge. Something in the body MUST eventually make the condition false, or the loop runs FOREVER!");
-    console.log('STEP 4 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 4 AFTER');
 
     // Step 5 — auto-run
-    console.log('STEP 5 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 5 BEFORE');
     await this._showBit("Unlike for loops, while loops have NO built-in counter. You don't know exactly how many times it runs — just keep going until the condition fails. Watch!");
-    console.log('STEP 5 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 5 AFTER');
 
     // Auto-run 7 iterations (charge 0→105 by +15)
     await this._tutorialAutoRun();
 
     // Step 6
-    console.log('STEP 6 BEFORE'); // TEMP DIAGNOSTIC
+    console.log('STEP 6 BEFORE');
     await this._showBit("See? We didn't know it would take 7 cycles. The while loop figured it out! YOUR turn, Technician!");
-    console.log('STEP 6 AFTER'); // TEMP DIAGNOSTIC
+    console.log('STEP 6 AFTER');
     this._hideBit();
     this._condCheckTxt.setVisible(false);
     this._condCheckResult.setVisible(false);
     try { localStorage.setItem('level19_tutorial_done', 'true'); } catch(e) {}
     await this._delay(300);
     this._startRound(0);
-    console.log('TUTORIAL END'); // TEMP DIAGNOSTIC
+    console.log('TUTORIAL END');
   }
 
   async _tutorialAutoRun() {
@@ -875,7 +838,6 @@ export class Level19Scene extends Phaser.Scene {
     await this._resetCore(0);
   }
 
-  /* ── Round management ────────────────────────────────────────────────── */
   _clearRound() {
     this._roundEls.forEach(el => { if (el && el.active) el.destroy(); });
     this._roundEls = [];
@@ -992,7 +954,6 @@ export class Level19Scene extends Phaser.Scene {
     }).setOrigin(0.5).setDepth(20);
     this._re(label);
 
-    // button width from the label's measured width (monospace: one character = monoW), so 20px text always fits
     const monoW = this._monWhile.width / 5;
     const widths = options.map(o => Math.ceil(String(o).length * monoW) + 44);
     const totalW = widths.reduce((a, b) => a + b, 0) + (options.length-1)*OPT_GAP;
@@ -1037,7 +998,6 @@ export class Level19Scene extends Phaser.Scene {
             this.tweens.add({ targets:el, alpha:0, duration:200, onComplete:() => el.destroy() });
           }
         });
-        // the "SELECT: ..." label belongs to this set of options; the next blank draws its own
         this.tweens.add({ targets:label, alpha:0, duration:200, onComplete:() => label.destroy() });
         this.time.delayedCall(300, () => callback(opt));
       });
@@ -1045,9 +1005,8 @@ export class Level19Scene extends Phaser.Scene {
   }
 
   _showMissionCard(cfg) {
-    // Right of the variable panel, above the answer buttons. Height comes from the measured text; lines are stacked from measured heights.
     const region = this._cardRegion();
-    const cw = region.width, left = CARD_PAD + 5;           // 5px yellow accent bar on the left edge
+    const cw = region.width, left = CARD_PAD + 5;
     const tw = cw - left - CARD_PAD;
     const rnd = this.add.text(left, CARD_PAD, 'ROUND ' + cfg.round + '/10', {
       fontFamily:'Arial', fontSize:'18px', color:'#90a4ae', fontStyle:'bold'
@@ -1100,7 +1059,6 @@ export class Level19Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Loop Execution ─────────────────────────────────────────────────── */
   async _onCharge() {
     this._interactLocked = true;
     const cfg = ROUNDS[this.currentRound];
@@ -1295,7 +1253,6 @@ export class Level19Scene extends Phaser.Scene {
     await this._startRound(this.currentRound);
   }
 
-  /* ── Special Round 7 — Infinite Loop Detection ───────────────────────── */
   _roundInfiniteDetect(cfg) {
     this._setMonitorCond('charge < 100');
     this._setMonitorBody('???');
@@ -1356,7 +1313,6 @@ export class Level19Scene extends Phaser.Scene {
     this._startRound(this.currentRound);
   }
 
-  /* ── Special Round 9 — Comparison ───────────────────────────────────── */
   _roundComparison(cfg) {
     const ax = 200, bx = 520, by = 260;
     const cw = 90, ch = 130;
@@ -1381,7 +1337,6 @@ export class Level19Scene extends Phaser.Scene {
   }
 
   _drawMiniCore(cx, cy, cw, ch, label, col, startPct) {
-    // redrawn every animation step: remove the previous drawing so labels/percentages don't stack up
     this._mini = this._mini || {};
     (this._mini[label] || []).forEach(e => { if (e && e.active) e.destroy(); });
     const g = this._re(this.add.graphics().setDepth(15));
@@ -1422,7 +1377,6 @@ export class Level19Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Special Round 10 — Predict Final ───────────────────────────────── */
   _roundPredictFinal(cfg) {
     this._setMonitorCond('charge < 100');
     this._setMonitorBody('charge += 17');
@@ -1480,7 +1434,6 @@ export class Level19Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Game Over ───────────────────────────────────────────────────────── */
   _gameOver() {
     PanelFit.arm(this);
     this._clearRound();
@@ -1507,7 +1460,6 @@ export class Level19Scene extends Phaser.Scene {
     });
   }
 
-  /* ── Level Complete ──────────────────────────────────────────────────── */
   _levelComplete() {
     PanelFit.arm(this);
     try { GameManager.completeLevel(18, Math.round((this.correctFirstTry/10)*100)); } catch(e) {}
@@ -1608,7 +1560,6 @@ export class Level19Scene extends Phaser.Scene {
     console.log('Level 19 Complete:', saveData);
   }
 
-  /* ── Utilities ───────────────────────────────────────────────────────── */
   _delay(ms) { return new Promise(r => this.time.delayedCall(ms, r)); }
 
   _floatText(x, y, text, color) {

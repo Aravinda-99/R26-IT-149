@@ -1,29 +1,9 @@
-/**
- * Level11Scene — String Operations (Tuning Phase)
- * ═══════════════════════════════════════════════════════════════════════════
- * v4 — Gamified mechanics upgrade: unique interactive mini-games per operation
- *
- * Operations & Mechanics:
- * 1. length()           → Ruler Measure (drag notch to cut point)
- * 2. charAt(i)          → Frog Hop (hop to the character charAt(i) returns, then Grab)
- * 3. toUpperCase/Lower  → Case Flipper (click letters to flip case)
- * 4. concat (+)         → Magnet Merge (drag two halves together)
- * 5. substring(a,b)     → Slice Cutter (drag two blades to mark range)
- * 6. trim()             → Space Sweeper (swipe to sweep leading/trailing spaces)
- *
- * Schema Theory: TUNING — mastery through guided repetitive practice
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  COLORS & CONSTANTS
- * ═══════════════════════════════════════════════════════════════════════════ */
 
 const COLORS = {
   primary_purple: "#7F77DD", purple_light: "#9B92E8", purple_dark: "#534AB7",
@@ -55,10 +35,6 @@ const C = {
 const W = 1280, H = 720;
 const BOX_W = 46, BOX_H = 56;
 const MAX_LIVES = 5;
-
-/* ═══════════════════════════════════════════════════════════════════════════
- *  OPERATIONS DATA — Each has tutorial + rounds
- * ═══════════════════════════════════════════════════════════════════════════ */
 
 const OPERATIONS = [
   {
@@ -207,17 +183,13 @@ const OPERATIONS = [
   }
 ];
 
-/* ═══════════════════════════════════════════════════════════════════════════
- *  SCENE CLASS
- * ═══════════════════════════════════════════════════════════════════════════ */
-
 export class Level11Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level11Scene" });
   }
 
   init() {
-    this.wrongAttempts = 0; // Use a dedicated property for ML tracking
+    this.wrongAttempts = 0;
     this.lives = MAX_LIVES;
     if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
     GameManager.interventionInFlight = false;
@@ -253,19 +225,11 @@ export class Level11Scene extends Phaser.Scene {
     this._startOperation();
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  BACKGROUND (persistent)
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _createBackground() {
     const bg = this.add.graphics().setDepth(0);
     bg.fillGradientStyle(C.bg_top, C.bg_top, C.bg_bottom, C.bg_bottom, 1);
-    // Massively oversized so the background covers the canvas regardless of
-    // camera position/zoom on any aspect ratio.
     bg.fillRect(-W * 2, -H, W * 5, H * 3);
 
-    // Scaled up so these accent blobs reach further into the pillarbox area
-    // without moving their anchor point.
     this.add.circle(100, 80, 180, C.primary_purple, 0.07).setDepth(1).setScale(3);
     this.add.circle(700, 520, 220, C.success_green, 0.05).setDepth(1).setScale(3);
 
@@ -289,10 +253,6 @@ export class Level11Scene extends Phaser.Scene {
     g.generateTexture("pt_circle", 8, 8);
     g.destroy();
   }
-
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  CLEAR & UTILITY
-   * ═══════════════════════════════════════════════════════════════════════ */
 
   _clear() {
     this.elements.forEach(el => { if (el && el.destroy) el.destroy(); });
@@ -486,10 +446,6 @@ export class Level11Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  HUD (persistent across rounds, rebuilt per operation)
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _createHUD(op) {
     const pill = this.add.graphics().setDepth(50);
     pill.fillStyle(C.white, 0.9);
@@ -517,7 +473,6 @@ export class Level11Scene extends Phaser.Scene {
       this._addEl(icon, txt);
     });
 
-    // ── Lives (hearts, top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 30 - i * 28, 85, "❤️", {
@@ -577,7 +532,6 @@ export class Level11Scene extends Phaser.Scene {
     this._updateHUD();
   }
 
-  /** ML struggle check — reports real per-round attempt/timing stats (not rapid-fire: guided puzzle level). */
   async runBehavioralCheck() {
     const attempts_count = this.totalAttempted;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -619,10 +573,6 @@ export class Level11Scene extends Phaser.Scene {
     if (this._timerTween) { this._timerTween.stop(); this._timerTween = null; }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION FLOW: Tutorial → Rounds → Next Operation
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _startOperation() {
     if (this.opIndex >= OPERATIONS.length) {
       this._showFinalResults();
@@ -654,7 +604,6 @@ export class Level11Scene extends Phaser.Scene {
     }
   }
 
-  /** True exactly once per round: the first commit (correct or wrong) or timeout wins; later clicks are ignored. */
   _tryResolve() {
     if (this._resolved) return false;
     this._resolved = true;
@@ -693,10 +642,6 @@ export class Level11Scene extends Phaser.Scene {
       this._startOperation();
     });
   }
-
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  TUTORIAL (generic for all operations)
-   * ═══════════════════════════════════════════════════════════════════════ */
 
   _showTutorial() {
     const op = OPERATIONS[this.opIndex];
@@ -756,7 +701,7 @@ export class Level11Scene extends Phaser.Scene {
     const tutId = ++this._tutSeq;
     const leave = () => {
       if (this._tutSeq !== tutId) return;
-      this._tutSeq++; // invalidates the other button and the delayed "Got it"
+      this._tutSeq++;
       this._clear();
       this._startRound();
     };
@@ -768,12 +713,7 @@ export class Level11Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 1: length() — RULER MEASURE
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _playLength() {
-    /* ── RULER DRAG: Drag the notch to the correct length position, then lock ── */
     const round = OPERATIONS[0].rounds[this.roundIndex];
     const str = round.str, correctLen = parseInt(round.answer);
     const step = BOX_W + 4, x0 = W / 2 - str.length * step / 2, ry = 256;
@@ -861,13 +801,7 @@ export class Level11Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 2: charAt(i) — INDEX JUMPER
-   * ═══════════════════════════════════════════════════════════════════════ */
-
-
   _playCharAt() {
-    /* ── FROG HOP: hop to the character charAt(idx) returns, then Grab. The target is never shown or hinted. ── */
     const round = OPERATIONS[1].rounds[this.roundIndex];
     const str = round.str, idx = round.idx, correctChar = str.charAt(idx);
     const show = (c) => (c === " " ? "␣" : c);
@@ -910,7 +844,6 @@ export class Level11Scene extends Phaser.Scene {
     this._btn(W / 2 - 130, 366, "◀  Left", false, () => hopTo(frogPos - 1));
     this._btn(W / 2 + 130, 366, "Right  ▶", false, () => hopTo(frogPos + 1));
 
-    // Grab always looks the same; it is evaluated only when clicked.
     this._btn(W / 2, 414, "🤚 Grab it!", true, () => {
       if (hopping) return;               // wait for the hop to land
       if (!this._tryResolve()) return;   // one commit per round
@@ -945,12 +878,7 @@ export class Level11Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 3: toUpperCase / toLowerCase — CASE FLIPPER
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _playCaseChange() {
-    /* ── SWEEP LINE: Click letters to flip before the sweep line passes over them ── */
     const round = OPERATIONS[2].rounds[this.roundIndex];
     const str = round.str, isUpper = round.op === "upper", correct = round.answer;
     const method = isUpper ? "toUpperCase()" : "toLowerCase()";
@@ -1026,12 +954,7 @@ export class Level11Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 4: concat (+) — MAGNET MERGE
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _playConcat() {
-    /* ── MAGNET MERGE: Drag the right string to snap onto the left string ── */
     const round = OPERATIONS[3].rounds[this.roundIndex];
     const a = round.a, b = round.b, correct = round.answer;
     const step = BOX_W + 4;
@@ -1113,12 +1036,7 @@ export class Level11Scene extends Phaser.Scene {
   }
 
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 5: substring(a,b) — SLICE CUTTER
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _playSubstring() {
-    /* ── LASER CUTTER: Drag two laser beams to slice out the correct substring ── */
     const round = OPERATIONS[4].rounds[this.roundIndex];
     const str = round.str, a = round.a, b = round.b, correct = round.answer;
 
@@ -1202,13 +1120,7 @@ export class Level11Scene extends Phaser.Scene {
   }
 
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  OPERATION 6: trim() — SPACE SWEEPER
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _playTrim() {
-    /* ── BROOM SWEEP: sweep the spaces you think trim() removes; a click on a swept space puts it back.
-     *    Nothing tells the player which spaces are right until Done is pressed. ── */
     const round = OPERATIONS[5].rounds[this.roundIndex];
     const str = round.str, correct = round.answer;
 
@@ -1222,7 +1134,7 @@ export class Level11Scene extends Phaser.Scene {
     while (s < str.length && str[s] === " ") { shouldSweep[s] = true; s++; }
     while (e >= 0 && str[e] === " ") { shouldSweep[e] = true; e--; }
     const swept = new Array(str.length).fill(false);
-    const blocked = new Array(str.length).fill(false);   // un-swept by click: don't re-sweep until the broom leaves
+    const blocked = new Array(str.length).fill(false);
     const sweptAt = new Array(str.length).fill(0);
 
     boxes.forEach((b, i) => {
@@ -1277,7 +1189,7 @@ export class Level11Scene extends Phaser.Scene {
       boxes.forEach((b, i) => {
         if (str[i] !== " " || !near(b, ptr.x, ptr.y)) return;
         if (!swept[i]) { setSwept(i, true); return; }
-        if (this.time.now - sweptAt[i] < 300) return;   // the same gesture that just swept it
+        if (this.time.now - sweptAt[i] < 300) return;
         setSwept(i, false); blocked[i] = true;
       });
     });
@@ -1315,15 +1227,10 @@ export class Level11Scene extends Phaser.Scene {
 
 
 
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  FINAL RESULTS
-   * ═══════════════════════════════════════════════════════════════════════ */
-
   _showFinalResults() {
     PanelFit.arm(this);
     this._clear();
 
-    // Dark overlay with stars (Stretched to cover the pillarbox area too)
     const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x1a1a3e, 0.65).setDepth(200);
     this._addEl(overlay);
 
@@ -1364,10 +1271,6 @@ export class Level11Scene extends Phaser.Scene {
     const accuracy = this.totalAttempted > 0
       ? Math.round((this.totalCorrect / this.totalAttempted) * 100) : 0;
 
-    // Progression was previously never recorded here — the panel claimed the
-    // badge above but neither the level nor the badge was ever actually
-    // persisted to GameManager, so it never showed up in the trophy case and
-    // Level 11 could never be marked complete. Level 11 is index 10.
     try { GameManager.completeLevel(10, accuracy); } catch (_) {}
     try { BadgeSystem.unlock("assembly_master"); } catch (_) {}
 
@@ -1435,10 +1338,6 @@ export class Level11Scene extends Phaser.Scene {
       repeat: 20
     });
   }
-
-  /* ═══════════════════════════════════════════════════════════════════════
-   *  UTILITIES
-   * ═══════════════════════════════════════════════════════════════════════ */
 
   _ordinal(n) {
     const s = ["th", "st", "nd", "rd"];

@@ -1,19 +1,3 @@
-/**
- * Level5Scene — "Float Tuning: Deep Type Dive" (Tuning Phase)
- * =============================================================
- * ENGINE: Duplicated from Level4Scene (Decimal Ocean Dive)
- *
- * Tuning modifications:
- *  - Darker ocean gradient (deeper danger zone)
- *  - 3 bubble types: FLOAT (cyan), INT (orange), CHAR (toxic green)
- *  - Live Code Panel at bottom showing assignment results
- *  - Distinct collision feedback per type (bounce, shake, penalties)
- *  - Dynamic difficulty: CHAR/INT spawn rate increases as score rises
- *  - Collect 25 valid floats to complete
- *
- * Schema Theory: Tuning — refining understanding of type precision
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -22,7 +6,6 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TARGET_COLLECT = 25;
@@ -40,7 +23,6 @@ const OXYGEN_REWARD = 5;
 const SPAWN_INTERVAL = 2200;
 const BUBBLE_RISE_SPEED = 55;
 
-/* ───────── Type Pools ───────── */
 const FLOAT_VALUES = [3.14, -0.5, 9.99, 1.25, 0.75, -2.5, 6.28, 0.01, -1.75, 4.50, 2.718, 0.333, -3.14, 7.77, 0.125];
 const INT_VALUES = [5, 100, -42, 0, 7, -3, 12, -8, 25, -15, 1, 50];
 const CHAR_VALUES = ["'s'", "'k'", "'A'", "'#'", "'Z'", "'9'", "'!'", "'m'"];
@@ -49,7 +31,6 @@ const TYPE_FLOAT = "float";
 const TYPE_INT = "int";
 const TYPE_CHAR = "char";
 
-/* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -75,9 +56,6 @@ function getCharTip(value) {
   return `float currentData = ${value}; // TYPE ERROR: Cannot assign char to float!`;
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 5 SCENE
- * ═══════════════════════════════════════════════════════════════ */
 export class Level5Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level5Scene" });
@@ -102,7 +80,6 @@ export class Level5Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.floatsCollected = 0;
     this.totalAttempts = 0;
     this.wrongAttempts = 0;
@@ -144,9 +121,6 @@ export class Level5Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  OCEAN BACKGROUND — darker danger-zone gradient
-   * ═══════════════════════════════════════════════════════════════ */
   _drawOceanBackground() {
     const gfx = this.add.graphics().setDepth(0);
     const topColor = 0x002244;
@@ -163,7 +137,7 @@ export class Level5Scene extends Phaser.Scene {
     const rayGfx = this.add.graphics().setDepth(1).setAlpha(0.04);
     let rayIndex = 0;
     for (let x = -W; x < W * 2; x += 160) {
-      const spread = rayIndex % 5; // keep the same width variation cadence as the original 5-ray set
+      const spread = rayIndex % 5;
       rayGfx.fillStyle(0x3388aa, 1);
       rayGfx.beginPath();
       rayGfx.moveTo(x - 5, 0);
@@ -186,9 +160,6 @@ export class Level5Scene extends Phaser.Scene {
     lineGfx.beginPath(); lineGfx.moveTo(0, 420); lineGfx.lineTo(W, 420); lineGfx.strokePath();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     const make = (key, color) => {
       if (this.textures.exists(key)) return;
@@ -228,9 +199,6 @@ export class Level5Scene extends Phaser.Scene {
     make("tinyBubble", 0xffffff);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
     this.splashParticles = this.add.particles(0, 0, "cyanSpark", {
       speed: { min: 80, max: 250 }, scale: { start: 1.2, end: 0 },
@@ -251,9 +219,6 @@ export class Level5Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  AMBIENT BUBBLES (decorative)
-   * ═══════════════════════════════════════════════════════════════ */
   _createAmbientBubbles() {
     this.ambientBubbles = [];
     for (let i = 0; i < 25; i++) {
@@ -271,9 +236,6 @@ export class Level5Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PLAYER (SUBMARINE)
-   * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
     this.player = this.physics.add.sprite(W / 2, H / 2, "subBody");
     this.player.setCollideWorldBounds(true);
@@ -297,9 +259,6 @@ export class Level5Scene extends Phaser.Scene {
     this.headlight.fill();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -352,9 +311,6 @@ export class Level5Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LIVE CODE PANEL — bottom bar showing assignment result
-   * ═══════════════════════════════════════════════════════════════ */
   _createCodePanel() {
     const dp = 105;
     const panelY = H - 38;
@@ -382,9 +338,6 @@ export class Level5Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.codePanelText, scaleX: 1, scaleY: 1, duration: 200 });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
@@ -445,9 +398,6 @@ export class Level5Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -456,9 +406,6 @@ export class Level5Scene extends Phaser.Scene {
     this._scheduleSpawn();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWNING — 3 types: FLOAT / INT / CHAR with dynamic difficulty
-   * ═══════════════════════════════════════════════════════════════ */
   _getSpawnProbabilities() {
     const progress = this.floatsCollected / TARGET_COLLECT;
     if (progress < 0.3) return { float: 0.70, int: 0.20, char: 0.10 };
@@ -549,9 +496,6 @@ export class Level5Scene extends Phaser.Scene {
     this.bubbles.push(container);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  BUBBLE COLLISION — type-specific feedback
-   * ═══════════════════════════════════════════════════════════════ */
   _onCollectBubble(container) {
     if (this.isComplete || !container.active) return;
     container.active = false;
@@ -662,7 +606,6 @@ export class Level5Scene extends Phaser.Scene {
     if (this.oxygen <= 0) this._gameOver();
   }
 
-  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
   async runBehavioralCheck() {
     const attempts_count = this.totalAttempts;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -682,9 +625,6 @@ export class Level5Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════════════════════════ */
   _updateHUD() {
     if (this.scoreText?.active) {
       this.scoreText.setText(`Score: ${this.score}`);
@@ -720,9 +660,6 @@ export class Level5Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUPS & TOOLTIPS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Arial", fontSize: "22px", color, fontStyle: "bold",
@@ -742,9 +679,6 @@ export class Level5Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.tooltip, alpha: 0, delay: 2200, duration: 500 });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL END
-   * ═══════════════════════════════════════════════════════════════ */
   _checkLevelEnd() {
     const accuracy = this.totalAttempts > 0
       ? Math.round(((this.totalAttempts - this.wrongAttempts) / this.totalAttempts) * 100)
@@ -919,9 +853,6 @@ export class Level5Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
     if (GameManager.interventionInFlight) {
       if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
@@ -935,7 +866,6 @@ export class Level5Scene extends Phaser.Scene {
 
     const dt = delta / 1000;
 
-    /* ── Player movement ── */
     const speed = this.isBoosting ? BOOST_SPEED : PLAYER_SPEED;
     let vx = 0, vy = 0;
 
@@ -972,21 +902,17 @@ export class Level5Scene extends Phaser.Scene {
       });
     }
 
-    /* ── Headlight ── */
     if (this.headlight) this._drawHeadlight();
 
-    /* ── Depth marker ── */
     if (this.depthMarker) {
       const depthPct = this.player.y / H;
       this.depthMarker.setY(100 + depthPct * (H - 200));
     }
 
-    /* ── Oxygen decay ── */
     this.oxygen = Math.max(0, this.oxygen - OXYGEN_DECAY_PER_SEC * dt);
     this._updateOxygenBar();
     if (this.oxygen <= 0) { this._gameOver(); return; }
 
-    /* ── Bubble wobble & cleanup ── */
     this.bubbles.forEach(b => {
       if (b?.active) {
         const t = b.getData("wobbleTime") + dt;
@@ -1002,7 +928,6 @@ export class Level5Scene extends Phaser.Scene {
       }
     });
 
-    /* ── Ambient ── */
     this._updateAmbient(time);
   }
 
@@ -1030,9 +955,6 @@ export class Level5Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.bubbles = [];

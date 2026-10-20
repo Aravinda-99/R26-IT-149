@@ -1,23 +1,3 @@
-/**
- * Level 50 — "The Stacks" (ArrayList Methods: Tuning Phase — get())
- * ===========================================================================
- * Tunes the Level 49 get() schema under time pressure. The hourglass IS
- * the timer — one drain tween drives the top bulb's falling sand surface,
- * the bottom pile's rise, the stream, the hue shifts, wobbles and the
- * critical vignette; timeout fires from its onComplete after the dramatic
- * last-grain beat. No parallel clock.
- *
- * The level's central fluency skill is the TRAVERSAL:
- *   for (int i = 0; i < list.size(); i++) { ... list.get(i) ... }
- * The evaluator extends L49's with honest for-loop semantics — init/cond/
- * step, per-iteration quickened ghost retrievals, a live Traversal
- * Tracker row per iteration, running accumulators, and honest mid-loop
- * crashes (prior iterations' console output and accumulator state remain;
- * execution halts at the crashing get — the L48 partial-trace rule).
- * The off-by-one family (i <= size()) makes its third curriculum
- * appearance here, after the charAt walkers and the add() insertions.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -36,7 +16,6 @@ const HEX_GREEN_BRIGHT = "#00e676", HEX_RED = "#f44336", HEX_GRAY = "#78909c", H
 const DESK_X0 = 250, DESK_X1 = 760, DESK_Y0 = 100, DESK_Y1 = 460;
 const SLIP_X0 = 270, SLIP_X1 = 640, SLIP_Y0 = 120, SLIP_Y1 = 400;
 const SLIP_CX = (SLIP_X0 + SLIP_X1) / 2, SLIP_CY = (SLIP_Y0 + SLIP_Y1) / 2;
-// Hourglass (all sand geometry local to a container at HG_X, HG_CY)
 const HG_X = 700, HG_CY = 285;
 const HG_BULB_TOP = -93, HG_WAIST = -2, HG_BULB_BOT = 103, HG_HALF_WIDE = 28, HG_HALF_NECK = 4;
 // Compact reference bookshelf
@@ -51,11 +30,7 @@ const CON_X = 250, CON_Y = 470, CON_W = 510;
 const TUTORIAL_KEY = "level50_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ══ WAVE 1 — Rapid Paging (12s) ══
   { round: 1, wave: 1, type: "predict",
     initialList: ["Iliad", "Odyssey", "Aeneid"], listType: "String", listName: "list",
     source: ["list.get(1)"],
@@ -118,7 +93,6 @@ const ROUNDS = [
     ],
     concept: "fluent_boundary_crash" },
 
-  // ══ WAVE 2 — The Traversal (10s) ══
   { round: 6, wave: 2, type: "predict",
     initialList: ["A", "B", "C"], listType: "String", listName: "list",
     source: ["for (int i = 0; i < list.size(); i++) {", "    System.out.println(list.get(i));", "}"],
@@ -184,7 +158,6 @@ const ROUNDS = [
     revealNote: "size() − 1 as the BOUND stops one early — i runs 0, 1 only. Useful when comparing neighbors or skipping the last element. Contrast with size() − 1 as an INDEX (which targets the last element). Same expression, two roles.",
     concept: "bound_vs_index_discrimination" },
 
-  // ══ WAVE 3 — Deep Traces & Bug Hunt ══
   { round: 11, wave: 3, type: "trace",
     initialList: ["Ada", "Grace", "Alan"], listType: "String", listName: "list",
     source: ["String first = list.get(0);", "String last = list.get(list.size() - 1);", 'System.out.println(first + " & " + last);'],
@@ -244,7 +217,6 @@ const ROUNDS = [
 ];
 
 const MISCONCEPTION_FEEDBACK = {
-  // carried from Level 49
   get_removes_element_belief: "Watch the shelf — the original never moved! get() lifts a GHOST, not the book. Reading and removing are different tools.",
   get_removes_element_belief_both: "Watch the shelf — the original never moved! get() lifts a GHOST, not the book. Reading and removing are different tools.",
   get_removes_element_belief_partial: "Watch the shelf — the original never moved! get() lifts a GHOST, not the book. Reading and removing are different tools.",
@@ -312,9 +284,6 @@ export class Level50Scene extends Phaser.Scene {
     this._lastStreamDot = 0;
     this._waveSquares = [];
     this._trackerRows = [];
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level49Scene";
     this._consoleLines = [];
   }
@@ -355,15 +324,13 @@ export class Level50Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this._drainTween && this._drainTween.isPlaying()) {
         this._drainTween.pause();
         this._sandFrozen = true;
       }
-      return; // Return early to stop particles, lantern, and sand from animating
+      return;
     } else {
-      // Resume the hourglass timer tween if the menu was just dismissed
       if (this._drainTween && this._drainTween.isPaused()) {
         this._drainTween.resume();
         this._sandFrozen = false;
@@ -378,10 +345,6 @@ export class Level50Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — the stacks
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l50_dot")) {
@@ -505,10 +468,6 @@ export class Level50Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUNNER'S STATION + PAGING SLIP
-  // ══════════════════════════════════════════════════════════════
-
   createRunnersStation() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x1a0e05, 1);
@@ -539,7 +498,6 @@ export class Level50Scene extends Phaser.Scene {
 
   clearSlip() { this.slipContainer.removeAll(true); this.slipQuestionText.setText(""); }
 
-  /** Dark-on-cream syntax tokenizer for the paging slip. */
   _slipTokenize(line) {
     const tokens = [];
     const re = /("(?:[^"\\]|\\.)*")|(\w+\.size\(\))|(\bfor\b|\bint\b|\bString\b)|(\bSystem\.out\b)|(\.get\b|\bprintln\b)|(<=|>=|==|\+\+|<|>)|(-?\d+)|([(){};,=+\-])/g;
@@ -600,10 +558,6 @@ export class Level50Scene extends Phaser.Scene {
     await this.delay(hold);
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 200, onComplete: () => stamp.destroy() });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE HOURGLASS (THE TIMER)
-  // ══════════════════════════════════════════════════════════════
 
   createHourglass() {
     this.hourglass = this.add.container(HG_X, HG_CY).setDepth(7);
@@ -712,7 +666,6 @@ export class Level50Scene extends Phaser.Scene {
     this.hgTicks.forEach((t) => t.g.setAlpha(p >= t.frac ? 0.2 : 0.8));
   }
 
-  /** Per-frame urgency side-effects, all derived from the drain progress. */
   updateSandVisuals(time) {
     if (!this.sandGfx) return;
     if (this._sandRunning && !this._sandFrozen) {
@@ -773,7 +726,6 @@ export class Level50Scene extends Phaser.Scene {
     return Phaser.Math.Clamp(elapsed / this.roundTimeLimit, 0, 1);
   }
 
-  /** The dramatic timeout beat: one final grain detaches and falls. */
   async lastGrainFalls() {
     this._killDrainTween();
     this._drainProgress = 1;
@@ -791,7 +743,6 @@ export class Level50Scene extends Phaser.Scene {
     this.time.delayedCall(800, () => { if (this._alive && !this.gameEnded) this._lanternState = "calm"; });
   }
 
-  /** Correct-answer flourish: the hourglass flips to reset. */
   async flipHourglass() {
     await new Promise((res) => { this.tweens.add({ targets: this.hourglass, angle: 180, duration: 500, ease: "Sine.easeInOut", onComplete: res }); });
     this._drainProgress = 0;
@@ -799,10 +750,6 @@ export class Level50Scene extends Phaser.Scene {
     this.hourglass.setAngle(0);
     this._drawSand();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI CONSOLE (println output)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniConsole() {
     const g = this.add.graphics().setDepth(5);
@@ -829,10 +776,6 @@ export class Level50Scene extends Phaser.Scene {
     this._consoleLines = [];
     if (this.consoleText) this.consoleText.setText("").setFontSize(12);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // COMPACT REFERENCE BOOKSHELF (L49 machinery, reduced)
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceBookshelf() {
     const g = this.add.graphics().setDepth(4);
@@ -943,10 +886,6 @@ export class Level50Scene extends Phaser.Scene {
     this.shelfIndexPlates.forEach((p) => { p.text.setColor(HEX_GRAY); p.text.setAlpha(1); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // LIST STATE PANEL + TRAVERSAL TRACKER
-  // ══════════════════════════════════════════════════════════════
-
   createReferenceListStatePanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d0805, 1);
@@ -1029,10 +968,6 @@ export class Level50Scene extends Phaser.Scene {
     this._trackerDash = this.add.text(TRK_X + TRK_W / 2, TRK_Y + 66, "—", { font: "bold 16px Courier New", color: "#3a2618" }).setOrigin(0.5).setDepth(11);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GHOST RETRIEVAL + CRASH (tuning tempo)
-  // ══════════════════════════════════════════════════════════════
-
   async retrieveGhost(index, quickened = false) {
     const entry = this.currentList[index];
     const shelfY = this._shelfY(index);
@@ -1089,10 +1024,6 @@ export class Level50Scene extends Phaser.Scene {
     this.time.delayedCall(420, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 120, onComplete: () => t.destroy() }); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — statements + for-loop traversal semantics
-  // ══════════════════════════════════════════════════════════════
-
   _evalIndexArg(argExpr, vars) {
     const t = argExpr.trim();
     if (/^-?\d+$/.test(t)) return { ok: true, index: parseInt(t, 10) };
@@ -1126,8 +1057,6 @@ export class Level50Scene extends Phaser.Scene {
     return parts;
   }
 
-  /** Async expression evaluator — every get() plays its ghost (or crash)
-   * as encountered. vars carries locals (loop counter, accumulators). */
   async evalExpr(expr, vars, quickened = false) {
     const parts = this._splitTopPlus(expr);
     if (parts.length > 1) {
@@ -1175,7 +1104,6 @@ export class Level50Scene extends Phaser.Scene {
     return m[2] === "<" ? lhs < rhs : lhs <= rhs;
   }
 
-  /** Executes one statement. Returns {ok} or {ok:false, crash}. */
   async execStatement(line, vars, opts = {}) {
     const t = line.trim();
     if (!t || t.startsWith("//") || t === "}") return { ok: true };
@@ -1208,8 +1136,6 @@ export class Level50Scene extends Phaser.Scene {
       await this.printToConsole(String(r.value));
       return { ok: true };
     }
-    // bare expression — with or without a trailing semicolon (Wave 1's
-    // slips show raw expressions like "nums.get(0) + nums.get(3)")
     const expr = t.endsWith(";") ? t.slice(0, -1) : t;
     if (expr) {
       const r = await this.evalExpr(expr, vars, opts.quickened);
@@ -1218,8 +1144,6 @@ export class Level50Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  /** Runs the round's source honestly, including for-loops with live
-   * Traversal Tracker rows and honest mid-loop crash halts. */
   async runReveal(lines) {
     const vars = {};
     for (let li = 0; li < lines.length; li++) {
@@ -1267,10 +1191,6 @@ export class Level50Scene extends Phaser.Scene {
     }
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — page runner variant (cape, gloves, satchel)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1384,10 +1304,6 @@ export class Level50Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x080503, 0.93);
@@ -1433,10 +1349,6 @@ export class Level50Scene extends Phaser.Scene {
     return this.currentRound - 10;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1473,10 +1385,6 @@ export class Level50Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.startWave(1);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WAVE / ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
@@ -1569,10 +1477,6 @@ export class Level50Scene extends Phaser.Scene {
     this.advanceRound();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT / TRACE
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(config) {
     this.showTrialOnSlip(config.source, config.question);
     this.showOptionBubbles(config.options, config);
@@ -1654,10 +1558,6 @@ export class Level50Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(config) {
     this.clearSlip();
@@ -1756,8 +1656,6 @@ export class Level50Scene extends Phaser.Scene {
     }
   }
 
-  /** Bug-hunt reveals run the ACTUAL buggy code through the real
-   * evaluator. Round 15 plays BOTH futures: buggy crash, then the fix. */
   async runBugHuntReveal(config) {
     if (config.round === 14) {
       await this.runReveal(config.lines);
@@ -1775,10 +1673,6 @@ export class Level50Scene extends Phaser.Scene {
       return;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -1836,15 +1730,6 @@ export class Level50Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1865,7 +1750,6 @@ export class Level50Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level50Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1876,16 +1760,12 @@ export class Level50Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1899,10 +1779,6 @@ export class Level50Scene extends Phaser.Scene {
     if (nextConfig.wave !== this.currentWave) { this.startWave(nextConfig.wave); return; }
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

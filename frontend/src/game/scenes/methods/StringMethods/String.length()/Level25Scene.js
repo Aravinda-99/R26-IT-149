@@ -1,31 +1,3 @@
-/**
- * Level 25 — "The Scan Chamber" (String Methods: Accretion Phase)
- * ==================================================================
- * Teaches the Java String method `length()` through a forensic string
- * analysis lab metaphor: strings are "specimens" placed under a scanning
- * beam that counts characters one by one.
- *
- * Core teaching points:
- *  - length() returns a total CHARACTER COUNT (1-based counting, not indices)
- *  - EVERY character counts — spaces, digits, symbols included
- *  - an empty string has length 0 (not an error, not undefined)
- *  - length() is a METHOD (parentheses required) — unlike array .length
- *    (a property, no parentheses), which the learner already knows from
- *    Levels 22-24. This deliberate reuse of the "indexed slot" visual
- *    language anchors the new String schema onto the existing array schema.
- *
- * 12 rounds across 4 challenge types:
- *  A. Scan Prediction   (rounds 1-3)  — predict length() of a simple string
- *  B. Hidden Characters (rounds 4-6)  — spaces/symbols/empty-string traps
- *  C. Syntax Judgment   (rounds 7-9)  — valid/invalid code, method vs property
- *  D. Feed the Scanner  (rounds 10-12) — drag the specimen with the right length
- *
- * Every answer (right or wrong) is followed by the scan animation — the
- * machine always shows the true count. Misconception tags on wrong answers
- * feed Bit's targeted feedback and are logged for the research framework's
- * error-pattern detector.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -44,20 +16,14 @@ const HEX_ORANGE = "#ff9800";
 
 const CHAMBER_X = 640, CHAMBER_Y = 330, CHAMBER_W = 820, CHAMBER_H = 190;
 const TILE_H = 72;
-// CHAR COUNT box sits fully OUTSIDE the scanner frame (frame right edge = 1050): 16px gap, then the box
 const COUNTER_W = 160, COUNTER_H = 120;
 const COUNTER_X = CHAMBER_X + CHAMBER_W / 2 + 16 + COUNTER_W / 2, COUNTER_Y = 330;
-// HUD: top-left text block, centre code pill, score/hearts on the right
 const HUD_H = 64;
 const PILL_X = 424, PILL_Y = 4, PILL_W = 432, PILL_H = 56;
-// Bit's speech bubble: below Bit, right-aligned, clear of the question card / options / chamber / counter box
 const BUBBLE_MAX_W = 300, BUBBLE_RIGHT = W - 20;
 
 const TUTORIAL_KEY = "level25_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, type: "predict", varName: "word", str: "java",
     question: "What will word.length() return?", correct: 4,
@@ -225,11 +191,6 @@ export class Level25Scene extends Phaser.Scene {
     this.createChamber();
     this.createCounterDisplay();
     this.createHUD();
-    // These 3 files draw hearts as a "❤️" emoji text glyph (font-substituted,
-    // since Arial has no emoji glyphs), which commonly renders its visual ink
-    // a few px below its nominal text-box center -- unlike our vector-drawn
-    // icon, which sits exactly at its given y. Compensating +3px so the two
-    // line up visually; adjust further if still off once you can see it live.
     addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y + 3);
     this.createExpressionMonitor();
     this.createBit();
@@ -245,10 +206,6 @@ export class Level25Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l25_dot")) {
@@ -344,10 +301,6 @@ export class Level25Scene extends Phaser.Scene {
     for (let y = 240; y <= 430; y += 40) g.lineBetween(240, y, 1040, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CHAMBER
-  // ══════════════════════════════════════════════════════════════
-
   createChamber() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0b0f16, 1);
@@ -427,10 +380,6 @@ export class Level25Scene extends Phaser.Scene {
     this.literalQuotes = [q1, q2];
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CHARACTER TILES
-  // ══════════════════════════════════════════════════════════════
 
   _charMeta(ch) {
     if (ch === " ") return { display: "␣", color: HEX_MAGENTA, isSpace: true };
@@ -529,10 +478,6 @@ export class Level25Scene extends Phaser.Scene {
     this.emptyPlaceholder.setVisible(false);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCANNER ANIMATION
-  // ══════════════════════════════════════════════════════════════
-
   resetCounter() {
     this.counterValue = 0;
     this.counterText.setText("0").setColor(HEX_CYAN).setScale(1);
@@ -612,12 +557,7 @@ export class Level25Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COUNTER DISPLAY
-  // ══════════════════════════════════════════════════════════════
-
   createCounterDisplay() {
-    // Box geometry is explicit so the frame/HUD/tiles can be checked against it: x/y/w/h of the visible box
     const bx = COUNTER_X - COUNTER_W / 2, by = COUNTER_Y - COUNTER_H / 2;
     this.counterBox = { x: bx, y: by, w: COUNTER_W, h: COUNTER_H };
     const g = this.add.graphics().setDepth(14);
@@ -627,7 +567,6 @@ export class Level25Scene extends Phaser.Scene {
     g.strokeRoundedRect(bx, by, COUNTER_W, COUNTER_H, 8);
     this.counterPanelGlow = this.add.rectangle(COUNTER_X, COUNTER_Y, COUNTER_W, COUNTER_H, C_GREEN, 0).setDepth(14);
 
-    // label / number / method name stacked from their measured heights (10px padding, 6px gaps)
     const label = this.add.text(COUNTER_X, by + 10, "CHAR COUNT", {
       font: "bold 18px Arial", color: "#78909c",
     }).setOrigin(0.5, 0).setDepth(15);
@@ -639,10 +578,6 @@ export class Level25Scene extends Phaser.Scene {
     }).setOrigin(0.5, 1).setDepth(15).setAlpha(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -650,12 +585,7 @@ export class Level25Scene extends Phaser.Scene {
     g.lineStyle(1, 0x1a2535, 1);
     g.lineBetween(0, HUD_H, W, HUD_H);
 
-    // Top-left block laid out from measured sizes: title and the round counter share the first row
-    // (16px apart), the subtitle sits on its own row under them (4px gap). Nothing can reach the centre pill.
     const title = this.add.text(20, 8, "THE SCAN CHAMBER", { font: "bold 20px Arial", color: "#b0bec5" }).setDepth(51);
-    // Persistent round counter, additional to (not a replacement for) the small numbered badge on each round's
-    // question card. Kept updated from startRound(); left as-is (frozen, dimmed under the end-screen overlay like
-    // the rest of this HUD bar) on gameOver()/levelComplete() so it still shows how far the player got.
     this.roundHudText = this.add.text(title.x + title.width + 16, title.y + 2, `ROUND 1 / ${ROUNDS.length}`, {
       font: "bold 18px Arial", color: "#4fc3f7",
     }).setDepth(51);
@@ -669,14 +599,10 @@ export class Level25Scene extends Phaser.Scene {
     this.monitorBox = { x: PILL_X, y: PILL_Y, w: PILL_W, h: PILL_H };
     this.monitorGroup = null;
 
-    // Score / combo moved left into the free strip between the code pill (ends x:856) and the hearts (start x:1130)
     this.add.text(930, 4, "SCORE", { font: "18px Arial", color: "#78909c" }).setDepth(51);
     this.scoreText = this.add.text(930, 26, "0", { font: "bold 22px Arial", color: "#ffffff" }).setDepth(51);
     this.comboText = this.add.text(1020, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
-    // 5 lives (was 3) so the round-3 behavioral checkpoint always survives even a worst-case 0-for-3 start.
-    // Hearts are spaced 27px apart (the 18px emoji glyph is ~25px wide, so 20px spacing made them overlap); last heart lands at x:1216, comfortably inside the replay-button module's own overlap-avoidance clamp
-    // ceiling (~1236) and canvas edge (1280); the TutorialReplayButton.js module is not touched here.
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
       const heart = this.add.text(1108 + i * 27, 30, "❤️", { font: "18px Arial" }).setOrigin(0.5).setDepth(51);
@@ -688,7 +614,6 @@ export class Level25Scene extends Phaser.Scene {
     // container populated per round via updateExpressionMonitor()
   }
 
-  /** mode: 'predict' | 'judge' | 'feed' */
   updateExpressionMonitor(mode, data) {
     if (this.monitorGroup) { this.monitorGroup.destroy(); this.monitorGroup = null; }
     const c = this.add.container(0, 32).setDepth(52);
@@ -730,7 +655,7 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   showCompileErrorStamp() {
-    const stamp = this.add.text(340, 112, "COMPILE ERROR", {   // left of centre so the "✓ CORRECT" banner (x:640) never lands on it
+    const stamp = this.add.text(340, 112, "COMPILE ERROR", {
       font: "bold 26px Arial", color: HEX_RED,
     }).setOrigin(0.5).setDepth(60).setScale(2).setAngle(-8).setAlpha(0);
     this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 250, ease: "Cubic.easeOut" });
@@ -754,10 +679,6 @@ export class Level25Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — mascot & speech
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(W + 80, 500).setDepth(60);
@@ -788,7 +709,6 @@ export class Level25Scene extends Phaser.Scene {
     });
     const bw = Math.min(inner.width, BUBBLE_MAX_W) + 30, bh = inner.height + 24;
     inner.setText("");
-    // Below Bit, right-aligned: that strip (x>=930, y>=540) is free of the question card, options, chamber and counter box
     const bx = BUBBLE_RIGHT - bw;
     const by = Phaser.Math.Clamp(this.bit.y + 42, 80, H - bh - 20);
     this._bubbleRect = { x: bx, y: by, w: bw, h: bh };
@@ -842,10 +762,6 @@ export class Level25Scene extends Phaser.Scene {
     this.hideBubble();
     await this.bitSlideTo(W + 80, 500, 250);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -988,10 +904,6 @@ export class Level25Scene extends Phaser.Scene {
     this.tweens.add({ targets: anno, alpha: 0, duration: 250, onComplete: () => anno.destroy() });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
@@ -1039,7 +951,6 @@ export class Level25Scene extends Phaser.Scene {
     this.roundElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.roundElements = [];
     if (this.questionCard) { this.questionCard.destroy(); this.questionCard = null; }
-    // the "String x = ..." line belongs to the previous predict round; judge/feed rounds have no such line
     if (this.literalGroup) { this.literalGroup.destroy(); this.literalGroup = null; }
   }
 
@@ -1051,7 +962,7 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   showQuestionCard(cfg) {
-    const card = this.add.container(640, 500).setDepth(20).setAlpha(0);   // slides up from 500 (was 540: it passed through the answer buttons)
+    const card = this.add.container(640, 500).setDepth(20).setAlpha(0);
     const g = this.add.graphics();
     g.fillStyle(0x1a1a2e, 1);
     g.fillRoundedRect(-260, -40, 520, 80, 10);
@@ -1068,10 +979,6 @@ export class Level25Scene extends Phaser.Scene {
     this.tweens.add({ targets: card, y: 480, alpha: 1, duration: 300, ease: "Back.easeOut" });
     this.questionCard = card;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES (predict rounds)
-  // ══════════════════════════════════════════════════════════════
 
   showOptionBubbles(options, onSelect) {
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
@@ -1120,10 +1027,6 @@ export class Level25Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, async (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1147,10 +1050,6 @@ export class Level25Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, opt.tag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color) => {
@@ -1208,7 +1107,6 @@ export class Level25Scene extends Phaser.Scene {
         this.buildTileRow(str);
         await this.runScanAnimation();
       } else {
-        // invalid snippet (missing parentheses) — show compile error, explain, then scan the FIXED version
         this.showCompileErrorStamp();
         await this.delay(300);
         if (!this._alive) return;
@@ -1236,10 +1134,6 @@ export class Level25Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, cfg.wrongTag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — FEED THE SCANNER
-  // ══════════════════════════════════════════════════════════════
 
   createSpecimenPool(pool) {
     const style = { font: "bold 20px Courier New", color: HEX_CYAN };
@@ -1342,7 +1236,7 @@ export class Level25Scene extends Phaser.Scene {
     const cfg = ROUNDS[this.currentRound];
     const item = obj.getData("item");
     obj.setVisible(false).disableInteractive();
-    this.tweens.add({ targets: obj, alpha: 1, scale: 1 }); // reset transient drag styling for potential restore
+    this.tweens.add({ targets: obj, alpha: 1, scale: 1 });
 
     this.emptyPlaceholder.setVisible(false);
     await this.tutorialDropTiles(item.str);
@@ -1392,19 +1286,6 @@ export class Level25Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1462,7 +1343,6 @@ export class Level25Scene extends Phaser.Scene {
 
     this.time.delayedCall(1300, () => {
       if (!this._alive || this.gameEnded) return;
-      // TEMPORARY DEBUG — remove after investigation
       console.log("[DEBUG] checking behavioral hook, currentRound===2?", this.currentRound === 2);
       if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
@@ -1484,7 +1364,6 @@ export class Level25Scene extends Phaser.Scene {
     if (!this._alive || this.gameEnded) return;
     this.time.delayedCall(300, () => {
       if (!this._alive || this.gameEnded) return;
-      // TEMPORARY DEBUG — remove after investigation
       console.log("[DEBUG] checking behavioral hook, currentRound===2?", this.currentRound === 2);
       if (this.currentRound === 2) this.runBehavioralCheck();
       if (this.currentRound + 1 >= ROUNDS.length) this.levelComplete();
@@ -1534,16 +1413,6 @@ export class Level25Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
-  /**
-   * Symmetric counterpart to loseLife() — this level tracks lives locally
-   * (this.lives / this.lifeIcons), independent of GameManager.state.lives,
-   * so the BitMenu "extra life" reward needs a scene-local hook to have any
-   * visible effect here. Capped at this.lifeIcons.length (5), matching the
-   * number of heart icons actually drawn in createHUD() — never restore
-   * past what's on screen. Mirrors loseLife()'s indexing exactly: that
-   * method dims lifeIcons[this.lives] *after* decrementing, so restoring
-   * uses lifeIcons[this.lives - 1] *after* incrementing.
-   */
   addLife(amount = 1) {
     const maxLives = this.lifeIcons.length;
     for (let i = 0; i < amount && this.lives < maxLives; i++) {
@@ -1553,10 +1422,6 @@ export class Level25Scene extends Phaser.Scene {
     }
     return this.lives;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // UTILITIES
-  // ══════════════════════════════════════════════════════════════
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
     font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
@@ -1598,10 +1463,6 @@ export class Level25Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 200) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   async celebrationSweep() {
     for (let s = 0; s < 3; s++) {
@@ -1753,10 +1614,6 @@ export class Level25Scene extends Phaser.Scene {
     bg.strokeCircle(-2, -8, 6);
     bg.lineBetween(2, -4, 8, 2);
     badge.add(bg);
-    // Fade the badge in immediately alongside the panel (was delay: 2100/2200,
-    // which meant the badge was still invisible when the RETRY/NEXT buttons —
-    // fully interactive with no delay — could already be clicked, so players
-    // routinely navigated away before it ever appeared).
     this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 508, "length() SCHEMA ACQUIRED", {
       font: "bold 18px Arial", color: HEX_AMBER,

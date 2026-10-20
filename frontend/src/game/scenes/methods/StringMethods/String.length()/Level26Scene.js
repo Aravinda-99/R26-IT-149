@@ -1,21 +1,3 @@
-/**
- * Level 26 — "The Inspection Line" (String Methods: Tuning Phase)
- * ==================================================================
- * Tunes and corrects the length() schema acquired in Level 25 through
- * rapid-fire quality-control challenges in an industrial string-processing
- * factory. String specimens arrive in crates on a moving conveyor belt —
- * the crate's position on the belt IS the visual timer. The player must
- * inspect each crate before it reaches the rejection pit.
- *
- * 15 rounds in 3 waves of 5:
- *  Wave 1 (1-5)   — Rapid Prediction
- *  Wave 2 (6-10)  — Syntax Judgment (method vs property discrimination)
- *  Wave 3 (11-15) — Expression Evaluation + Bug Hunt (clickable tokens)
- *
- * The crate's tween progress is the single source of truth for the timer
- * bar, urgency states, and timeout — never a separate clock.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -37,9 +19,6 @@ const TIMER_Y = 396;
 
 const TUTORIAL_KEY = "level26_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, wave: 1, type: "predict", timeLimit: 12000,
     decl: [{ kind: "string", name: "s", value: "sensor" }],
@@ -235,9 +214,6 @@ export class Level26Scene extends Phaser.Scene {
     this._alive = true;
     this._bubble = null;
     this._keyHandler = null;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level25Scene";
   }
 
@@ -273,12 +249,11 @@ export class Level26Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this.crateTween && this.crateTween.isPlaying()) {
         this.crateTween.pause();
       }
-      return; // Return early to stop belt, rollers, and dust from animating
+      return;
     } else {
       // Resume crate tween if the menu was just dismissed
       if (this.crateTween && this.crateTween.isPaused()) {
@@ -293,10 +268,6 @@ export class Level26Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l26_dot")) {
@@ -383,10 +354,6 @@ export class Level26Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CONVEYOR BELT
-  // ══════════════════════════════════════════════════════════════
-
   createConveyor() {
     const g = this.add.graphics().setDepth(5);
     g.fillStyle(0x12160e, 1);
@@ -464,10 +431,6 @@ export class Level26Scene extends Phaser.Scene {
     this.timerFill.fillStyle(color, 1);
     this.timerFill.fillRect(CRATE_ONBELT_X, TIMER_Y, w, 5);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE PANEL
-  // ══════════════════════════════════════════════════════════════
 
   createReferencePanel() {
     const g = this.add.graphics().setDepth(10);
@@ -572,10 +535,6 @@ export class Level26Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e0a, 0.93);
@@ -615,10 +574,6 @@ export class Level26Scene extends Phaser.Scene {
     sq.setFillStyle(result ? C_GREEN : C_RED, 1);
     sq.setStrokeStyle(1, result ? C_GREEN : C_RED);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — mascot (foreman variant, fixed position)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -699,10 +654,6 @@ export class Level26Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -743,10 +694,6 @@ export class Level26Scene extends Phaser.Scene {
     this.startWave(1);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WAVE MANAGEMENT
-  // ══════════════════════════════════════════════════════════════
-
   async startWave(waveNumber) {
     if (!this._alive || this.gameEnded) return;
     this.currentWave = waveNumber;
@@ -783,10 +730,6 @@ export class Level26Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CRATE — visual & timer
-  // ══════════════════════════════════════════════════════════════
 
   _buildCrateVisual(width, contentLine, roundNum, contentLines = null) {
     const height = 150;
@@ -912,7 +855,6 @@ export class Level26Scene extends Phaser.Scene {
         this.crate.drawBody(C_RED);
         this.crate.glow.setFillStyle(C_RED, 0);
         this.tweens.add({ targets: this.crate.glow, fillAlpha: 0.15, duration: 250, yoyo: true, repeat: -1 });
-        // vibrate via rotation, not x — x is already driven by the main position tween
         this.tweens.add({ targets: this.crate.container, angle: 1.2, duration: 40, yoyo: true, repeat: -1 });
       }
     }
@@ -969,10 +911,6 @@ export class Level26Scene extends Phaser.Scene {
     this.time.delayedCall(500, () => debris.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
@@ -1012,10 +950,6 @@ export class Level26Scene extends Phaser.Scene {
       case "bughunt": this.setupBugHunt(cfg); break;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES (predict / expression)
-  // ══════════════════════════════════════════════════════════════
 
   showOptionBubbles(options, onSelect) {
     this.optionBubbles = [];
@@ -1062,10 +996,6 @@ export class Level26Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1079,10 +1009,6 @@ export class Level26Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE B — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color, key) => {
@@ -1161,10 +1087,6 @@ export class Level26Scene extends Phaser.Scene {
     this.tweens.add({ targets: line, alpha: 1, duration: 200 });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — EXPRESSION
-  // ══════════════════════════════════════════════════════════════
-
   setupExpression(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1192,10 +1114,6 @@ export class Level26Scene extends Phaser.Scene {
       await this.delay(400);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(cfg) {
     const strip = this.add.text(640, 265, "CLICK THE BUG", {
@@ -1243,10 +1161,6 @@ export class Level26Scene extends Phaser.Scene {
       }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ANSWER RESOLUTION
-  // ══════════════════════════════════════════════════════════════
 
   async _resolveAnswer(cfg, correct, selected, tag, revealFn) {
     this.stopCrate();
@@ -1334,15 +1248,6 @@ export class Level26Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1363,7 +1268,6 @@ export class Level26Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
       
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level26Scene: /api/wellbeing/predict-struggle unreachable:", e);
@@ -1374,16 +1278,12 @@ export class Level26Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
       
-      // CRITICAL FIX: The FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // We must wait up to 1.5 seconds to give it a chance to process the new behavioral flag
-      // and open the menu BEFORE we mistakenly decide to advance to Round 4.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
       
-      // Now, if the menu DID open, wait indefinitely until the user closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1444,7 +1344,6 @@ export class Level26Scene extends Phaser.Scene {
 
   addLife() {
     if (this.lives < 5) {
-      // Find the icon that corresponds to the currently lost life (which is at index: this.lives)
       const icon = this.lifeIcons[this.lives];
       if (icon) {
         this.tweens.add({ targets: icon, alpha: 1, duration: 400 });
@@ -1452,10 +1351,6 @@ export class Level26Scene extends Phaser.Scene {
       this.lives++;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // UTILITIES
-  // ══════════════════════════════════════════════════════════════
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
     font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
@@ -1494,10 +1389,6 @@ export class Level26Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 200) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   async lineCelebration() {
     this.beltSpeed = 120;

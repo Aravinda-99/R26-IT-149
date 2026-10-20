@@ -1,26 +1,3 @@
-/**
- * Level 52 — "The Deaccession Office" (ArrayList Methods: Accretion Phase
- * — remove(), opening the wing's final trilogy)
- * ===========================================================================
- * Teaches ArrayList.remove(): the method that TAKES. A withdrawal order
- * names an index; the book itself — fully opaque, no ghost — lifts off
- * the shelf, receives the red WITHDRAWN stamp, and lands in the
- * deaccession crate. Then THE GAP CLOSES: every book above slides DOWN
- * one shelf (the exact mirror of L47's insertion shift-up), the index
- * labels renumber on landing, and the size ticks down.
- *
- * The level's crowning event is the get-vs-remove discrimination — the
- * three-level payoff of the get_removes_element_belief tag seeded at the
- * Consultation Desk (L49): the tutorial plays the L49 ghost retrieval
- * and the first withdrawal back to back on the same index, and rounds
- * 5/9/10/11 keep both behaviors honestly coexisting in one evaluator
- * (get() reads and never mutates; remove() splices and returns).
- * Remove-by-value sweeps from index 0 for the FIRST match and returns
- * false (no crash) when nothing matches; invalid indices crash with the
- * same IOOBE choreography get() taught. The Integer remove(2) overload
- * ambiguity is deliberately reserved for L53.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -50,11 +27,7 @@ const CONSOLE_POS = { x: 492, y: 341 };
 const PANEL_X = 810, PANEL_Y = 130, PANEL_W = 420, PANEL_H = 250;
 const TUTORIAL_KEY = "level52_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ── Type A: Withdrawal Prediction ──
   { round: 1, type: "predict",
     initialList: ["Dune", "Emma", "Ivanhoe"], listType: "String", listName: "list",
     source: ["list.remove(1);"],
@@ -93,7 +66,6 @@ const ROUNDS = [
     revealNote: "The value pops off the departing book and lands in the chute — remove() returns WHAT IT TOOK. The list is [Grace]; taken is 'Ada'.",
     concept: "remove_returns_element" },
 
-  // ── Type B: The Gap Close & Shifting Indices ──
   { round: 4, type: "predict",
     initialList: ["A", "B", "C", "D"], listType: "String", listName: "list",
     source: ["list.remove(1);"],
@@ -133,7 +105,6 @@ const ROUNDS = [
     revealNote: "Two withdrawals at the SAME index: the first takes A (B, C, D slide down); the second remove(0) takes... B, who just arrived at index 0! The gap-close means repeated remove(0) eats the list front-to-back.",
     concept: "repeated_remove_same_index" },
 
-  // ── Type C: By-Value & Boundaries ──
   { round: 7, type: "predict",
     initialList: ["Ada", "Grace", "Ada"], listType: "String", listName: "list",
     source: ['list.remove("Ada");'],
@@ -173,7 +144,6 @@ const ROUNDS = [
     revealNote: "THE DISCRIMINATION ROUND — the wing's arc resolves here. The ghost lifts for get (A stays); the solid book leaves for remove (A departs, B and C slide down). Both x and y hold 'A' — but only ONE of the calls changed the shelf. Look, then take: two different verbs.",
     concept: "get_vs_remove_discrimination" },
 
-  // ── Type D: Deaccession Command ──
   { round: 10, type: "command",
     initialList: ["Iliad", "Odyssey", "Aeneid"], listType: "String", listName: "list",
     skeleton: ["<slot:call>"],
@@ -221,9 +191,6 @@ const ROUNDS = [
       { code: 'list.remove("draft");', correct: true },
       { code: 'list.remove("draft");', correct: true },
       { code: 'list.remove("final");', tag: "wrong_target_value" },
-      // Tagged per the spec's inline correction: after the first by-value
-      // removal the list is ["final","draft"], so remove(0) takes "final"
-      // — a failing, demonstrated outcome. NOT alsoCorrect.
       { code: "list.remove(0);", tag: "index_after_shift_unplanned" },
     ],
     tests: [
@@ -351,10 +318,6 @@ export class Level52Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / OFFICE DRESSING
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l52_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -399,7 +362,6 @@ export class Level52Scene extends Phaser.Scene {
   }
 
   createWithdrawalLedger() {
-    // small lectern with the open ledger, tucked on the floor line
     const g = this.add.graphics().setDepth(3);
     g.fillStyle(0x241a0e, 1);
     g.lineStyle(1, C_BRASS, 0.5);
@@ -474,10 +436,6 @@ export class Level52Scene extends Phaser.Scene {
       if (p.y > 630) { p.y = 150; p.x = Phaser.Math.Between(0, W); }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BOOKSHELF (L46/L49 construction + waiting-dash)
-  // ══════════════════════════════════════════════════════════════
 
   createBookshelf() {
     const g = this.add.graphics().setDepth(4);
@@ -603,10 +561,6 @@ export class Level52Scene extends Phaser.Scene {
     if (this.topDashGfx) this._drawTopDash();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // DEACCESSION CRATE + CHUTE + STAMP + ORDER + CONSOLE
-  // ══════════════════════════════════════════════════════════════
-
   createDeaccessionCrate() {
     this.crateLayer = this.add.container(0, 0).setDepth(7);
     const g = this.add.graphics().setDepth(8);
@@ -683,10 +637,6 @@ export class Level52Scene extends Phaser.Scene {
     this._consoleText = null;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE WITHDRAWAL (signature choreography — the ANTI-ghost)
-  // ══════════════════════════════════════════════════════════════
-
   async markBook(index) {
     const book = this.shelfBookSprites[index];
     if (!book) return;
@@ -724,8 +674,6 @@ export class Level52Scene extends Phaser.Scene {
     this.crateContents.push(book.container);
   }
 
-  /** Full §3.3 withdrawal for a VALID remove(index). Splices ground truth
-   * and returns the removed entry. */
   async withdrawBook(index, opts = {}) {
     const entry = this.currentList[index];
     const book = this.shelfBookSprites[index];
@@ -746,7 +694,6 @@ export class Level52Scene extends Phaser.Scene {
     await this.markBook(index);
     if (!this._alive) return entry;
 
-    // the taking: the SOLID book lifts; the vacated shelf shows its dash
     book.container.setDepth(10);
     await new Promise((res) => { this.tweens.add({ targets: book.container, y: shelfY - 24, duration: 250, ease: "Sine.easeOut", onComplete: res }); });
     const tempDash = this.add.graphics().setDepth(5);
@@ -754,7 +701,6 @@ export class Level52Scene extends Phaser.Scene {
     for (let x = SHELF_CX - 40; x < SHELF_CX + 40; x += 10) tempDash.lineBetween(x, shelfY + 18, x + 5, shelfY + 18);
     if (!this._alive) return entry;
 
-    // the stamp thump (+ value capture pops off at this moment)
     await this.stampThump(book.container);
     if (opts.capture) this._popReturnValue(entry, book.container.x, book.container.y);
     if (!this._alive) return entry;
@@ -767,7 +713,6 @@ export class Level52Scene extends Phaser.Scene {
     this.currentList.splice(index, 1);
     this.shelfBookSprites.splice(index, 1);
 
-    // THE GAP CLOSES — 300ms conspicuous beat, then the mirror of L47
     await this.delay(300);
     tempDash.destroy();
     await this.closeGap(index);
@@ -846,10 +791,6 @@ export class Level52Scene extends Phaser.Scene {
     this.crateContents = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REMOVE-BY-VALUE — search sweep + not-found fizzle
-  // ══════════════════════════════════════════════════════════════
-
   async searchSweep(value) {
     for (let i = 0; i < this.currentList.length; i++) {
       if (!this._alive) return -1;
@@ -879,10 +820,6 @@ export class Level52Scene extends Phaser.Scene {
     this.updateRemovedRow("false", "boolean");
     await this.delay(1100);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GHOST RETRIEVAL (L49-faithful — for the contrast rounds)
-  // ══════════════════════════════════════════════════════════════
 
   async retrieveGhost(index) {
     const entry = this.currentList[index];
@@ -927,10 +864,6 @@ export class Level52Scene extends Phaser.Scene {
     return entry;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CRASH REJECTION
-  // ══════════════════════════════════════════════════════════════
-
   async crashWithdrawal(index) {
     const topIdx = this.currentList.length - 1;
     const startY = topIdx >= 0 ? this._shelfY(topIdx) : SHELF_BASE_Y;
@@ -951,10 +884,6 @@ export class Level52Scene extends Phaser.Scene {
     this.updateRemovedRow("", "crash");
     await this.delay(1200);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // LIST STATE PANEL (+ removed row + before/after strip)
-  // ══════════════════════════════════════════════════════════════
 
   createListStatePanel() {
     const g = this.add.graphics().setDepth(10);
@@ -1018,10 +947,6 @@ export class Level52Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.afterRowText, scale: 1.08, duration: 120, yoyo: true });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
-
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
   }
@@ -1079,10 +1004,6 @@ export class Level52Scene extends Phaser.Scene {
     this.monitorText.setFontSize(this.monitorText.width > 380 ? 10 : 12);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — remove (both overloads) + get + println
-  // ══════════════════════════════════════════════════════════════
-
   _evalIndexArg(argExpr) {
     const t = argExpr.trim();
     if (/^-?\d+$/.test(t)) return { ok: true, index: parseInt(t, 10) };
@@ -1115,8 +1036,6 @@ export class Level52Scene extends Phaser.Scene {
     return parts;
   }
 
-  /** Async expression evaluator — remove() plays the withdrawal, get()
-   * plays the ghost, both mutating (or not) honestly. */
   async evalExpr(expr, vars, opts = {}) {
     const parts = this._splitTopPlus(expr);
     if (parts.length > 1) {
@@ -1182,8 +1101,6 @@ export class Level52Scene extends Phaser.Scene {
     return { ok: false, crash: "eval" };
   }
 
-  /** Runs statements honestly — one withdrawal order slip per statement;
-   * crashes halt (later statements never run). */
   async runStatements(lines) {
     const vars = this.lastVars || {};
     this.lastVars = vars;
@@ -1219,10 +1136,6 @@ export class Level52Scene extends Phaser.Scene {
     }
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — deaccession officer (monocle, stamp, formal hover)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -1339,10 +1252,6 @@ export class Level52Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a0704, 0.93);
@@ -1367,10 +1276,6 @@ export class Level52Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL (the 6-step contrast arc)
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1446,10 +1351,6 @@ export class Level52Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1497,10 +1398,6 @@ export class Level52Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1598,18 +1495,12 @@ export class Level52Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — DEACCESSION COMMAND
-  // ══════════════════════════════════════════════════════════════
-
   setupCommand(config) {
     this.renderCommandSkeleton(config);
     this.updateExpressionMonitor(config.mission);
     this.showQuestionCard(config.mission);
     this.createCartridgeTray(config);
     this._commandFirstFail = true;
-    // unlock — input is still locked from the previous round's answer
-    // click (the L30–L49 soft-lock bug class).
     this.inputLocked = false;
   }
 
@@ -1937,10 +1828,6 @@ export class Level52Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1987,15 +1874,6 @@ export class Level52Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -2016,7 +1894,6 @@ export class Level52Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level52Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -2027,16 +1904,12 @@ export class Level52Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2048,10 +1921,6 @@ export class Level52Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);
@@ -2117,7 +1986,6 @@ export class Level52Scene extends Phaser.Scene {
     // the crate label glows gold
     this.crateLabel.setColor(HEX_GOLD).setAlpha(1);
     this.time.delayedCall(1600, () => { if (this.crateLabel.active) this.crateLabel.setColor(HEX_STAMP_RED).setAlpha(0.5); });
-    // the office's paradoxical toast — books file BACK onto the shelf
     this.clearCrate();
     await this.populateShelf("APPROVED".split(""), "String");
     this.createConfetti(SHELF_CX, SHELF_Y0 + 40, 36);

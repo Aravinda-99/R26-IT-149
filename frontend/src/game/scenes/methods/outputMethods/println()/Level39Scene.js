@@ -1,22 +1,3 @@
-/**
- * Level 39 — "The Studio" (Output Methods: Restructuring Phase —
- * println() Trilogy Finale)
- * ===========================================================================
- * The learner CONSTRUCTS complete output-producing programs — no multiple
- * choice. Reuses the Level 27/30/33/36 code-canvas/parts-bin/RUN-button
- * construction architecture, with a masked rig window compacting the
- * Level 37 tower/marquee/log into a live observation pane, plus cross-wing
- * cameo stations (Scanner tape + containers from L34-36, case-method press
- * from L31-33) that light up only when a mission's code actually invokes
- * them — the rig's visual footprint IS the code's execution footprint.
- *
- * Six genuine per-mission interpreters (never scripted) compute real
- * results from whatever blocks the player placed, reusing the honest
- * left-to-right String-sticky '+' fold from L37/L38 and the corrected
- * (space-and-newline-skipping) Scanner tokenizer from L36. Mission 4 adds
- * a genuine for-loop simulator with an infinite-loop watchdog.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -36,13 +17,11 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-// Code-editor rows (same approach as Level 36): one 18px line of code per row, rows up to 42px apart so a 34px
-// drop slot never touches the row above/below. The pitch shrinks automatically when a mission needs more rows.
 const LINE_H = 42;
-const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;   // 18 logical px = ~16px on screen (canvas is shown at ~0.9)
-const SLOT_PAD = 5, SLOT_HINT_PAD = 8;               // inner padding for a dropped part / for the placeholder text
-const HEX_HINT = "#7d8c9a";                          // placeholder text: was #3d4450 (≈1.8:1 on the slot fill), now ≈5:1
-const WRAP_INDENT = 22;                              // continuation row of a soft-wrapped line is indented 2 characters
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;
+const SLOT_PAD = 5, SLOT_HINT_PAD = 8;
+const HEX_HINT = "#7d8c9a";
+const WRAP_INDENT = 22;
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const STRIP_Y = OY + OH + 15;
@@ -58,9 +37,6 @@ const LOG_X0 = OX + 280, LOG_Y0 = OY + 35, LOG_W0 = 170;
 const PRESS_X = OX + 400, PRESS_Y = OY + 185;
 const TUTORIAL_KEY = "level39_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Announcer Line",
     brief: "The show intro reads a title from a variable and announces it. Print exactly: Now broadcasting: <show title>",
@@ -237,10 +213,6 @@ export class Level39Scene extends Phaser.Scene {
     this._dragHoverSlotKey = null;
     this._firstRunRecorded = false;
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level37Scene";
   }
 
@@ -284,11 +256,6 @@ export class Level39Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -305,10 +272,6 @@ export class Level39Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — studio
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l39_dot")) {
@@ -444,10 +407,6 @@ export class Level39Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27/30/33/36 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -498,7 +457,6 @@ export class Level39Scene extends Phaser.Scene {
     return w;
   }
 
-  /** Width of a slot, from measured text: wide enough for its placeholder AND for the longest part that can be dropped into it. */
   _slotWidth(mission, def) {
     const hintW = this._measureText(def.id, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2;
     const partStyle = { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold" };
@@ -515,7 +473,6 @@ export class Level39Scene extends Phaser.Scene {
 
     const codeStyle = (color) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color });
 
-    // 1) every skeleton line becomes a list of segments (text pieces / slots) with MEASURED widths
     const lines = mission.skeleton.map((rawLine) => {
       const segs = [];
       const parts = rawLine.split(/[§]?<slot:(\w+)>|§(\w+)/);
@@ -537,8 +494,6 @@ export class Level39Scene extends Phaser.Scene {
       return segs;
     });
 
-    // 2) lay out left to right: a slot sits SLOT_GAP after the text before it, the text after it starts SLOT_GAP after the slot.
-    //    A line too wide for the editor wraps BEFORE its slot (like `println("..." +` / `    (a + b));`) instead of running off the panel.
     const limit = CX + CW - 14;
     const placed = [], lineRows = [];
     let rows = 0;
@@ -546,7 +501,7 @@ export class Level39Scene extends Phaser.Scene {
       let row = rows, x = CODE_X, rowStartX = CODE_X;
       segs.forEach((seg, si) => {
         if (seg.k === "s") {
-          let tail = 0;   // text that must stay on the slot's row (up to the next slot)
+          let tail = 0;
           for (let j = si + 1; j < segs.length && segs[j].k !== "s"; j++) tail += segs[j].w;
           if (x > rowStartX && x + SLOT_GAP + seg.w + SLOT_GAP + tail > limit) { row++; x = CODE_X + WRAP_INDENT; rowStartX = x; }
           if (x > rowStartX) x += SLOT_GAP;
@@ -561,7 +516,6 @@ export class Level39Scene extends Phaser.Scene {
       rows = row + 1;
     });
 
-    // 3) rows share the editor height; every object of a row is vertically centred on the row, so slots and text share one baseline
     const rowH = Math.min(LINE_H, Math.floor((CY + CH - 8 - CODE_Y0) / Math.max(rows, 1)));
     this._rowH = rowH;
     this._lineRows = lineRows;
@@ -629,7 +583,6 @@ export class Level39Scene extends Phaser.Scene {
     this._drawSlotPlaceholder(slotId);
   }
 
-  /** A part sitting in a slot is drawn slot-sized with 18px text (the parts-bin chip stays as it was, just hidden meanwhile). */
   _fitBlockToSlot(c, rect) {
     let v = c.getData("slotView");
     if (!v) {
@@ -650,7 +603,6 @@ export class Level39Scene extends Phaser.Scene {
     if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
   }
 
-  /** Back to the parts-bin chip when a part is picked up out of a slot. */
   _releaseBlockFromSlot(c) {
     const v = c.getData("slotView");
     if (!v) return;
@@ -667,10 +619,6 @@ export class Level39Scene extends Phaser.Scene {
     const rowH = this._rowH || LINE_H;
     this.lineHighlight.setSize(CW - 4, lr.n * rowH).setPosition(CX + CW / 2, CODE_Y0 + (lr.row + lr.n / 2) * rowH).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (drag system, reused verbatim from L33/L36)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -833,10 +781,6 @@ export class Level39Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN, 0.06).setDepth(29);
@@ -875,10 +819,6 @@ export class Level39Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — mini tower/marquee/log + cross-wing cameos
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -1057,9 +997,6 @@ export class Level39Scene extends Phaser.Scene {
     })));
   }
 
-  /** Corrected tokenizer (from L36): nextInt/nextDouble skip BOTH spaces
-   * and leftover newlines when hunting their token; nextLine keeps its own
-   * "consume to next newline" rule. */
   evaluateCall(cells, method) {
     let i = 0;
     const skipped = [];
@@ -1085,10 +1022,6 @@ export class Level39Scene extends Phaser.Scene {
     }
     return { error: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MANIFEST STRIP / TEST REPORT / MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createManifestStrip() {
     const g = this.add.graphics().setDepth(14);
@@ -1157,10 +1090,6 @@ export class Level39Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -1216,10 +1145,6 @@ export class Level39Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — studio producer variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1306,10 +1231,6 @@ export class Level39Scene extends Phaser.Scene {
     return t;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1352,10 +1273,6 @@ export class Level39Scene extends Phaser.Scene {
     this.tweens.add({ targets: t, alpha: 1, duration: 300 });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1424,10 +1341,6 @@ export class Level39Scene extends Phaser.Scene {
     this.missionElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.missionElements = [];
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest computation
-  // ══════════════════════════════════════════════════════════════
 
   interpretMission(mission, blocks, test) {
     switch (mission.mission) {
@@ -1570,10 +1483,6 @@ export class Level39Scene extends Phaser.Scene {
     return { value: lines.join("⏎"), lines: lines.map((t) => ({ text: t, type: "string" })) };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REVEAL — trace-driven, shared by all missions
-  // ══════════════════════════════════════════════════════════════
-
   async playReveal(mission, test, result) {
     this.clearMiniLog();
     this.clearMarquee();
@@ -1644,10 +1553,6 @@ export class Level39Scene extends Phaser.Scene {
     this.screenShake(0.005, 180);
     this.time.delayedCall(1200, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 250, onComplete: () => stamp.destroy() }); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
 
   _collectWrongBlocksUsed() {
     const used = [];
@@ -1724,23 +1629,6 @@ export class Level39Scene extends Phaser.Scene {
     return match;
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1760,8 +1648,6 @@ export class Level39Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level39Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1782,8 +1668,6 @@ export class Level39Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = (compileErr && compileErr.tag) || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || null;
@@ -1840,16 +1724,12 @@ export class Level39Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1931,10 +1811,6 @@ export class Level39Scene extends Phaser.Scene {
   screenShake(intensity = 0.005, duration = 180) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

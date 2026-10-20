@@ -1,16 +1,3 @@
-/**
- * Level12Scene — "String Restructuring: Advanced String Master" (Restructuring Phase)
- * ===================================================================================
- * Mechanic: Real-world string manipulation challenges
- * - Advanced operations: split, join, trim, slice
- * - Escape sequences & special characters
- * - String matching & pattern analysis
- * - Complex real-world scenarios (email validation, text processing, etc.)
- * - Score multipliers for consecutive correct answers
- *
- * Schema Theory: Restructuring — mastery through real-world application & complex scenarios
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -19,14 +6,12 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const ACCURACY_THRESHOLD = 85;
 const MAX_LIVES = 5;
 const TARGET_CHALLENGES = 50;
 
-/* ───────── Advanced Challenge Pools ───────── */
 const SPLIT_CHALLENGES = [
   { string: '"Hello,World"', delimiter: '","', expected: '2', explanation: 'Splitting on comma creates 2 pieces' },
   { string: '"One Two Three"', delimiter: '" "', expected: '3', explanation: 'Splitting on space creates 3 parts' },
@@ -96,9 +81,6 @@ function lerpColor(a, b, t) {
           Math.round(ab + (bb - ab) * t);
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 12 SCENE — Advanced String Master
- * ═══════════════════════════════════════════════════════════════ */
 export class Level12Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level12Scene" });
@@ -124,7 +106,6 @@ export class Level12Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.score = 0;
     this.lives = MAX_LIVES;
     this.combo = 0;
@@ -152,9 +133,6 @@ export class Level12Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  ADVANCED BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawAdvancedBackground() {
     const gfx = this.add.graphics().setDepth(0);
     const top = 0x2a1a4e;
@@ -162,9 +140,6 @@ export class Level12Scene extends Phaser.Scene {
     for (let i = 0; i < 60; i++) {
       const t = i / 60;
       gfx.fillStyle(lerpColor(top, bot, t), 1);
-      // Stretched width: start at -W*2, span W*5 (Y span untouched — it
-      // already correctly tiles 0..H, and this level's pillarboxing is
-      // horizontal only)
       gfx.fillRect(-W * 2, Math.floor((H * i) / 60), W * 5, Math.ceil(H / 60) + 1);
     }
 
@@ -193,9 +168,6 @@ export class Level12Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES & PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     const make = (name, color, r) => {
       if (this.textures.exists(name)) return;
@@ -236,14 +208,9 @@ export class Level12Scene extends Phaser.Scene {
     }).setDepth(160);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
-    // Shifted down 50px so this internal HUD sits below the global HTML
-    // header ("Level 12: Restructuring...") instead of overlapping it.
     this.add.rectangle(W / 2, 78, W, 50, 0x0a0a1a, 0.88).setDepth(dp - 1);
     this.add.rectangle(W / 2, 105, W, 1, 0xff00ff, 0.15).setDepth(dp - 1);
 
@@ -265,7 +232,6 @@ export class Level12Scene extends Phaser.Scene {
       color: "#ffffff", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(dp + 2);
 
-    // ── Lives (hearts, top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 30 - i * 30, 72, "❤️", {
@@ -274,7 +240,6 @@ export class Level12Scene extends Phaser.Scene {
       this.livesIcons.push(heart);
     }
 
-    // Left of the hearts (they occupy the right ~150px), vertically centred in the HUD band.
     this.accText = this.add.text(W - 170, 78, "ACC: 100%", {
       fontFamily: "Courier New, monospace", fontSize: "18px", color: "#888888",
     }).setOrigin(1, 0.5).setDepth(dp);
@@ -287,15 +252,13 @@ export class Level12Scene extends Phaser.Scene {
       align: "center",
       wordWrap: { width: 900 },
     }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
-    // Reserve room for a two-line explanation at the bottom of the play area; the question block is centred above it
-    // so a lingering explanation never overlaps the next question.
     this.tooltip.setText("Mg\nMg");
     this._tipH = this.tooltip.height;
     this.tooltip.setText("");
     this._tipY = H - 12 - this._tipH / 2;
     this.tooltip.setY(this._tipY);
 
-    this.timerBarBg = this.add.rectangle(W / 2, 160, 200, 8, 0x1a1a2e, 0.6).setDepth(dp); // y is set per question by _createChallengeButtons
+    this.timerBarBg = this.add.rectangle(W / 2, 160, 200, 8, 0x1a1a2e, 0.6).setDepth(dp);
     this.timerBarBg.setStrokeStyle(1, 0xff00ff, 0.2);
     this.timerBarFill = this.add.rectangle(W / 2 - 100, 160, 200, 6, 0xff00ff, 0.7)
       .setOrigin(0, 0.5).setDepth(dp + 1);
@@ -334,16 +297,10 @@ export class Level12Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
 
-    // Shifted down 40px (and trimmed 15px shorter) so this modal clears the
-    // global HTML header instead of overlapping it, while still fitting
-    // fully within the 600px-tall canvas.
     const panelG = this.add.graphics().setDepth(201);
     panelG.fillStyle(0x1a0a2a, 0.98);
     panelG.fillRoundedRect(W / 2 - 325, 55, 650, 540, 16);
@@ -408,9 +365,6 @@ export class Level12Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -418,9 +372,6 @@ export class Level12Scene extends Phaser.Scene {
     this._nextChallenge();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CHALLENGE SYSTEM
-   * ═══════════════════════════════════════════════════════════════ */
   _nextChallenge() {
     if (this.isComplete || this.totalProcessed >= TARGET_CHALLENGES) {
       this._levelComplete();
@@ -669,25 +620,14 @@ export class Level12Scene extends Phaser.Scene {
     this._createChallengeButtons(shuffled, shuffled.indexOf(q.meaning), q.explanation);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CHALLENGE BUTTONS
-   * ═══════════════════════════════════════════════════════════════ */
-  /**
-   * Builds the answer buttons and lays the whole question block out from measured sizes:
-   * timer bar, category label, question and the button grid are stacked and centred vertically in the free
-   * play area (below the HUD, above the explanation strip). The label and question were pushed to
-   * currentElements by the caller just before this runs.
-   */
   _createChallengeButtons(options, correctIndex, explanation) {
     const [title, problem] = this.currentElements;
     const FONT = 24, MIN_FONT = 20, PAD = 32, GAP_X = 24, GAP_Y = 20;
     const AREA_TOP = 135, AREA_BOTTOM = this._tipY - this._tipH / 2 - 14;
     const GAP_TIMER = 20, GAP_TITLE = 26, GAP_PROBLEM = 36, TIMER_H = 8;
 
-    // question text must stay inside the canvas, wrap rather than shrink
     if (problem.width > W - 80) problem.setWordWrapWidth(W - 80, true).setAlign("center");
 
-    // answer texts first, so the button size comes from the real text
     const txts = options.map((opt) => this.add.text(0, 0, opt, {
       fontFamily: "Courier New, monospace", fontSize: `${FONT}px`,
       color: "#00ffff", fontStyle: "bold", align: "center",
@@ -715,7 +655,7 @@ export class Level12Scene extends Phaser.Scene {
     problem.setY(y + problem.height / 2); y += problem.height + GAP_PROBLEM;
     const gridTop = y;
     this.timerBarBg.setY(timerY); this.timerBarFill.setY(timerY);
-    this._popupY = Math.max(AREA_TOP + 20, top - 6);   // score popups rise from just above the block
+    this._popupY = Math.max(AREA_TOP + 20, top - 6);
     this._fxY = problem.y;                              // particle burst on the question
 
     const startX = W / 2 - gridW / 2 + btnW / 2;
@@ -774,9 +714,6 @@ export class Level12Scene extends Phaser.Scene {
     this.time.delayedCall(correct ? 600 : 1200, () => this._nextChallenge());
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CORRECT / WRONG
-   * ═══════════════════════════════════════════════════════════════ */
   _onCorrect(message, basePoints) {
     this.correctAnswers++;
     this.combo++;
@@ -821,7 +758,6 @@ export class Level12Scene extends Phaser.Scene {
     }
   }
 
-  /** ML struggle check — reports real per-run processed/timing stats (not rapid-fire: quiz format). */
   async runBehavioralCheck() {
     const attempts_count = this.totalProcessed;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -847,9 +783,6 @@ export class Level12Scene extends Phaser.Scene {
     this.totalProcessed++;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TIMER MANAGEMENT
-   * ═══════════════════════════════════════════════════════════════ */
   _startTimer(duration, onExpire) {
     this.timerBarBg.setAlpha(1);
     this.timerBarFill.setAlpha(1);
@@ -879,9 +812,6 @@ export class Level12Scene extends Phaser.Scene {
     this.timerBarFill.setAlpha(0);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UI HELPERS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Courier New, monospace", fontSize: "20px",
@@ -914,9 +844,6 @@ export class Level12Scene extends Phaser.Scene {
     this.currentElements = [];
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL COMPLETE
-   * ═══════════════════════════════════════════════════════════════ */
   _levelComplete() {
     PanelFit.arm(this);
     this.isComplete = true;
@@ -954,8 +881,6 @@ export class Level12Scene extends Phaser.Scene {
   }
 
   _showEndScreen(passed, accuracy, timeStr) {
-    // Stretched to cover the pillarbox area on wide screens (same fix as
-    // the game-over overlay above).
     const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.9).setDepth(200);
 
     const panelG = this.add.graphics().setDepth(201);
@@ -1066,8 +991,6 @@ export class Level12Scene extends Phaser.Scene {
     this.cameras.main.flash(300, 255, 0, 0);
 
     this.time.delayedCall(600, () => {
-      // Stretched to cover the pillarbox area on wide screens; the modal
-      // panel/text/buttons below stay centered within the original 0..W.
       const overlay = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.9).setDepth(200);
 
       const panelG = this.add.graphics().setDepth(201);
@@ -1108,9 +1031,6 @@ export class Level12Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     this._stopTimer();
     this._clearCurrentElements();

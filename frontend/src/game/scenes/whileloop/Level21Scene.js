@@ -11,7 +11,7 @@ const TRAY_X = 11, TRAY_Y = 404, TRAY_W = 776, TRAY_H = 116;
 
 const GUTTER_W = 28;
 const CODE_X = ED_X + GUTTER_W;  // x where code text starts
-const CODE_Y = ED_Y + 30;         // y of first code line (after tab bar)
+const CODE_Y = ED_Y + 30;
 const LINE_H = 18;
 
 const CAT_COLOR = { init: 0x00e5ff, condition: 0xffd740, body: 0xb0bec5, update: 0x00e676 };
@@ -301,13 +301,9 @@ export class Level21Scene extends Phaser.Scene {
     }
   }
 
-  // ─── Background ──────────────────────────────────────────────────────────
-
   _buildBG() {
     this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x080c12);
 
-    // Data stream dots (bottom strip) — expanded loop range so the tiled
-    // dots cover the extended ultrawide width
     const speeds = [0.35, 0.4, 0.45, 0.5, 0.38];
     const ys = [530, 545, 558, 572, 586];
     for (let r = 0; r < 5; r++) {
@@ -322,14 +318,6 @@ export class Level21Scene extends Phaser.Scene {
       }
     }
 
-    // Ambient particles — X spawn widened for the ultrawide space, but Y
-    // kept at its original 0..H-10 range. These drift upward continuously
-    // and wrap via `if (p.obj.y < 0) p.obj.y = H - 10` in update() — that
-    // check fires on ANY y<0, not just "wrapped from the top", so spawning
-    // some particles pre-negative (from a -H..H*2 range) would make them
-    // teleport instantly to the bottom on the very first frame, while
-    // particles spawned past y:H would take minutes of upward drift before
-    // ever entering the visible 0..H band. Neither is the intended effect.
     for (let i = 0; i < 20; i++) {
       const obj = this.add.circle(
         Phaser.Math.Between(-W * 2, W * 3), Phaser.Math.Between(0, H - 10),
@@ -338,13 +326,10 @@ export class Level21Scene extends Phaser.Scene {
       this._ambientParts.push({ obj, phase: Math.random() * Math.PI * 2 });
     }
 
-    // Ambient side strips — moved out to the real ultrawide edges
     const ls = this.add.rectangle(-W * 2, H / 2, 3, H * 3, 0x1565c0, 0.06);
     const rs = this.add.rectangle(W * 3, H / 2, 3, H * 3, 0x1565c0, 0.06);
     this.tweens.add({ targets: [ls, rs], alpha: 0.1, duration: 4500, yoyo: true, repeat: -1 });
   }
-
-  // ─── HUD ─────────────────────────────────────────────────────────────────
 
   _buildHUD() {
     this.add.rectangle(W / 2, HUD_H / 2, W * 5, HUD_H, 0x0a0e13, 0.96).setDepth(10);
@@ -406,8 +391,6 @@ export class Level21Scene extends Phaser.Scene {
     }
   }
 
-  // ─── Editor Frame ─────────────────────────────────────────────────────────
-
   _buildEditorFrame() {
     const g = this.add.graphics().setDepth(3);
     g.fillStyle(0x0d1117, 1);
@@ -436,8 +419,6 @@ export class Level21Scene extends Phaser.Scene {
     g.strokePath();
   }
 
-  // ─── Visual Panel Frame ───────────────────────────────────────────────────
-
   _buildVisualFrame() {
     const g = this.add.graphics().setDepth(3);
     g.fillStyle(0x0d1117, 1);
@@ -461,8 +442,6 @@ export class Level21Scene extends Phaser.Scene {
       fontFamily: "Arial, sans-serif", fontSize: "12px", color: "#1a2a3a",
     }).setOrigin(0.5).setDepth(4);
   }
-
-  // ─── Block Tray ───────────────────────────────────────────────────────────
 
   _buildTray() {
     const g = this.add.graphics().setDepth(3);
@@ -542,8 +521,6 @@ export class Level21Scene extends Phaser.Scene {
     }
   }
 
-  // ─── Drag System ──────────────────────────────────────────────────────────
-
   _setupDrag() {
     // Remove previous listeners
     this.input.off("dragstart"); this.input.off("drag"); this.input.off("dragend");
@@ -578,10 +555,6 @@ export class Level21Scene extends Phaser.Scene {
       if (!obj.blockData) return;
       obj.setScale(1.0); obj.setAlpha(1.0);
 
-      // Find nearest valid slot. obj.x/obj.y is already this block's true
-      // center (the container is created at x + tw/2 with its background
-      // laid out symmetrically from -tw/2 to +tw/2), so no width offset is
-      // needed here — only the forgiveness radius is being widened.
       let best = null, bestDist = 65; // Slightly increased forgiveness radius
       for (const [key, slot] of Object.entries(this._slots)) {
         if (slot.filled) continue;
@@ -620,7 +593,6 @@ export class Level21Scene extends Phaser.Scene {
     }).setOrigin(0, 0.5).setDepth(6);
     this._waveEls.push(slot.placedText);
 
-    // Tween block off-screen (we use the placed text as the display)
     this.tweens.add({
       targets: blockCont, x: -100, alpha: 0, duration: 200,
     });
@@ -667,8 +639,6 @@ export class Level21Scene extends Phaser.Scene {
     if (allFilled) this._enableProcessBtn();
   }
 
-  // ─── Process Button ────────────────────────────────────────────────────────
-
   _buildProcessBtn() {
     if (this._processBtn) { this._processBtn.cont.destroy(); }
     const bx = ED_X + ED_W / 2, by = TRAY_Y - 12;
@@ -705,8 +675,6 @@ export class Level21Scene extends Phaser.Scene {
     this._processBtn.g.setAlpha(0.28);
     this._processBtn.t.setAlpha(0.28);
   }
-
-  // ─── Project Briefing ─────────────────────────────────────────────────────
 
   _showBriefing(index) {
     if (index >= PROJECTS.length) { this._levelComplete(); return; }
@@ -801,8 +769,6 @@ export class Level21Scene extends Phaser.Scene {
     this._projectStartTime = Date.now();
     this._currentProj = proj;
   }
-
-  // ─── Code Rendering ───────────────────────────────────────────────────────
 
   _renderCode(proj) {
     let lineNum = 1;
@@ -933,8 +899,6 @@ export class Level21Scene extends Phaser.Scene {
     }
     return result;
   }
-
-  // ─── Execution ────────────────────────────────────────────────────────────
 
   async _onProcess() {
     this._executing = true;
@@ -1082,8 +1046,6 @@ export class Level21Scene extends Phaser.Scene {
     }
   }
 
-  // ─── Visual Animations ────────────────────────────────────────────────────
-
   _setupVisual(type, proj) {
     this._clearVisEls();
     if (this._visIdle) this._visIdle.setVisible(false);
@@ -1116,7 +1078,6 @@ export class Level21Scene extends Phaser.Scene {
     }
   }
 
-  // DATA PIPE
   _setupDataPipe(cx, cy) {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x1a2a3a, 1);
@@ -1150,7 +1111,6 @@ export class Level21Scene extends Phaser.Scene {
     this._pipeOrbCount++;
   }
 
-  // RADIO TOWER
   _setupRadioTower(cx, cy) {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x37474f, 1);
@@ -1188,7 +1148,6 @@ export class Level21Scene extends Phaser.Scene {
     await this._tween({ targets: ring, scaleX: 12, scaleY: 12, alpha: 0, duration: 350 });
   }
 
-  // FUNNEL
   _setupFunnel(cx, cy) {
     const g = this.add.graphics().setDepth(4);
     g.lineStyle(2, 0x00e5ff, 1);
@@ -1228,7 +1187,6 @@ export class Level21Scene extends Phaser.Scene {
     this.tweens.add({ targets: [badge, bt], alpha: 0, duration: 150 });
   }
 
-  // LOCKED TERMINAL
   _setupLockedTerminal(cx, cy) {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x0a0a1a, 1); g.fillRoundedRect(cx - 120, cy - 80, 240, 160, 8);
@@ -1273,7 +1231,6 @@ export class Level21Scene extends Phaser.Scene {
     await this._delay(300);
   }
 
-  // SHRINKING BLOCK
   _setupShrinkingBlock(cx, cy) {
     this._shrinkSize = 160;
     const g = this.add.graphics().setDepth(4);
@@ -1317,7 +1274,6 @@ export class Level21Scene extends Phaser.Scene {
     this._shrinkText.setFontSize(Math.max(8, Math.min(28, newSize * 0.28)));
   }
 
-  // DIGIT STRIP
   _setupDigitStrip(cx, cy) {
     this._digitCards = [];
     const digits = [9, 8, 7, 6, 5, 4];
@@ -1361,7 +1317,6 @@ export class Level21Scene extends Phaser.Scene {
     await this._delay(320);
   }
 
-  // BAR CHART
   _setupBarChart(cx, cy) {
     const values = [34, 78, 12, 95, 43];
     this._barRects = [];
@@ -1426,7 +1381,6 @@ export class Level21Scene extends Phaser.Scene {
     await this._delay(350);
   }
 
-  // GOLDEN SPIRAL
   _setupGoldenSpiral(cx, cy) {
     this._spiralGfx = this.add.graphics().setDepth(4);
     this._visEls.push(this._spiralGfx);
@@ -1473,8 +1427,6 @@ export class Level21Scene extends Phaser.Scene {
     this.tweens.add({ targets: nt, scaleX: 1.4, scaleY: 1.4, duration: 200, yoyo: true });
     await this._delay(250);
   }
-
-  // ─── Result Handling ──────────────────────────────────────────────────────
 
   async _onCorrect() {
     const proj = this._currentProj;
@@ -1575,8 +1527,6 @@ export class Level21Scene extends Phaser.Scene {
     this._disableProcessBtn();
   }
 
-  // ─── Bit Mascot ───────────────────────────────────────────────────────────
-
   _buildBit() {
     this._bitCont = this.add.container(W * 2, H - 70).setDepth(28);
     const body = this.add.graphics();
@@ -1607,8 +1557,6 @@ export class Level21Scene extends Phaser.Scene {
     this.tweens.killTweensOf(this._bitCont);
     this.tweens.add({ targets: this._bitCont, x: W * 2, duration: 300, ease: "Quad.easeIn" });
   }
-
-  // ─── Level Complete ───────────────────────────────────────────────────────
 
   _levelComplete() {
     PanelFit.arm(this);
@@ -1656,8 +1604,6 @@ export class Level21Scene extends Phaser.Scene {
     this._makeButton(W / 2 - 80, statsY + 82, "RETRY", 130, 34, 0x1a1a2e, 0x546e7a, () => this.scene.restart(), 41);
     this._makeButton(W / 2 + 80, statsY + 82, "MENU", 130, 34, 0x003333, 0x00e5ff, () => this.scene.start("MenuScene"), 41);
   }
-
-  // ─── Utilities ────────────────────────────────────────────────────────────
 
   _clearWaveEls() {
     for (const el of this._waveEls) { if (el && el.active && el.destroy) el.destroy(); }

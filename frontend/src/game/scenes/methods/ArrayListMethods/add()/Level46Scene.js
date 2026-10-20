@@ -20,9 +20,6 @@ const PREP_X0 = 60, PREP_X1 = 440, PREP_Y0 = 620, PREP_Y1 = 715;
 const PANEL_X = 470, PANEL_Y = 130, PANEL_W = 300, PANEL_H = 250;
 const TUTORIAL_KEY = "level46_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", listType: "String",
     source: ['ArrayList<String> books = new ArrayList<>();', 'books.add("Hamlet");'],
@@ -275,10 +272,6 @@ export class Level46Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / ARCHIVE INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l46_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -408,10 +401,6 @@ export class Level46Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BOOKSHELF (the ArrayList)
-  // ══════════════════════════════════════════════════════════════
-
   createBookshelf() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x241a0e, 1);
@@ -516,10 +505,6 @@ export class Level46Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.sizeCounterText, scale: 1.3, duration: 120, yoyo: true });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BOOK PREPARATION AREA
-  // ══════════════════════════════════════════════════════════════
-
   createBookPreparationArea() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x241a0e, 1);
@@ -531,10 +516,6 @@ export class Level46Scene extends Phaser.Scene {
   }
 
   clearPrep() { this.prepContainer.removeAll(true); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BOOK CREATION + PLACEMENT ANIMATION
-  // ══════════════════════════════════════════════════════════════
 
   _makeBookVisual(entry, x, y) {
     const color = this._typeColorInt(entry.type);
@@ -557,9 +538,6 @@ export class Level46Scene extends Phaser.Scene {
   }
 
   async createBookInPrep(entry) {
-    // NOTE: the book lives directly on the scene, NOT inside
-    // prepContainer — earlier books that already settled on shelves
-    // must survive the next book's arrival.
     const x = PREP_X0 + 70, y = PREP_Y0 + 47;
     const book = this._makeBookVisual(entry, x, y);
     book.container.setAlpha(0).setScale(0.6).setDepth(6);
@@ -567,9 +545,6 @@ export class Level46Scene extends Phaser.Scene {
     return book;
   }
 
-  /** Flies a book from prep to its target shelf and settles it — or, on
-   * type mismatch, plays the rejection choreography. Ground truth (this
-   * .currentList) is only mutated on a genuine success. */
   async addBookToShelf(entry) {
     const book = await this.createBookInPrep(entry);
     if (!this._alive) return { ok: true };
@@ -654,10 +629,6 @@ export class Level46Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // LIST STATE PANEL
-  // ══════════════════════════════════════════════════════════════
-
   createListStatePanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d0805, 1);
@@ -695,10 +666,6 @@ export class Level46Scene extends Phaser.Scene {
     this.panelIndexText.setText(this.currentList.map((_, i) => `[${i}]`).join("  "));
     this.tweens.add({ targets: this.bracketText, scale: 1.08, duration: 120, yoyo: true });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -756,10 +723,6 @@ export class Level46Scene extends Phaser.Scene {
     this.monitorText.setFontSize(this.monitorText.width > 380 ? 10 : 12);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a0704, 0.93);
@@ -784,10 +747,6 @@ export class Level46Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — archivist variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -891,10 +850,6 @@ export class Level46Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest ArrayList<T>.add() interpreter
-  // ══════════════════════════════════════════════════════════════
-
   _splitArgs(argsStr) {
     const parts = [];
     let cur = "", inQuotes = false;
@@ -934,9 +889,6 @@ export class Level46Scene extends Phaser.Scene {
     return { ok: false, crash: "malformed" };
   }
 
-  /** Parses+executes an ArrayList<T> program line by line, honestly
-   * mutating this.currentList only on genuine successful adds. Returns
-   * {ok} — false on the first compile-time rejection or malformed call. */
   async runProgram(sourceLines) {
     for (const rawLine of sourceLines) {
       if (!this._alive) return { ok: true };
@@ -983,10 +935,6 @@ export class Level46Scene extends Phaser.Scene {
     if (trimmed === "true" || trimmed === "false") return trimmed === "true";
     return trimmed;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1057,10 +1005,6 @@ export class Level46Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1099,10 +1043,6 @@ export class Level46Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1193,19 +1133,12 @@ export class Level46Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — COMMAND (drag cartridges)
-  // ══════════════════════════════════════════════════════════════
-
   setupCommand(config) {
     this.renderCommandSkeleton(config);
     this.updateExpressionMonitor(config.mission);
     this.showQuestionCard(config.mission);
     this.createCartridgeTray(config);
     this._commandFirstFail = true;
-    // input is still locked from the previous round's answer click —
-    // without this unlock the command rounds' cartridges are undraggable
-    // (the same soft-lock bug class found in L30–L45's startMission).
     this.inputLocked = false;
   }
 
@@ -1223,10 +1156,6 @@ export class Level46Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  /** Renders a command-round skeleton with REAL dashed drop-target
-   * placeholders for each <slot:id> token (matching the established
-   * command-round pattern from L27 onward) instead of literal
-   * "<slot:call1>" text. */
   renderCommandSkeleton(config) {
     this.sourceContainer.removeAll(true);
     this.slotDefs = {};
@@ -1496,10 +1425,6 @@ export class Level46Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1546,15 +1471,6 @@ export class Level46Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1575,7 +1491,6 @@ export class Level46Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level46Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1586,16 +1501,12 @@ export class Level46Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1607,10 +1518,6 @@ export class Level46Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

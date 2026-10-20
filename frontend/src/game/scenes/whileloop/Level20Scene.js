@@ -215,16 +215,10 @@ export class Level20Scene extends Phaser.Scene {
     this._updateGlitchBlocks(time);
   }
 
-  // ─── Background ───────────────────────────────────────────────────────────
-
   _buildBG() {
     // Stretch main background
     this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x0a0014);
 
-    // Stretch grid — X only. This scene's camera height always fits 0..H
-    // exactly (zoom = min(w/W, h/H), and h/H is always the constraining
-    // factor on a wide screen), so there's no vertical letterboxing to
-    // fill — only the horizontal pillarboxing needs covering.
     const grid = this.add.graphics();
     grid.lineStyle(1, 0x1a0033, 0.4);
     for (let x = -W * 2; x <= W * 3; x += 40) { grid.moveTo(x, 0); grid.lineTo(x, H); }
@@ -233,10 +227,6 @@ export class Level20Scene extends Phaser.Scene {
 
     const frags = ["while", "{}", "!=", "++", "true", "break", "int", "<=", "print", "i++"];
     for (let i = 0; i < 10; i++) {
-      // Spawn text fragments across the ultrawide area — Y kept in the
-      // visible band. Spawning up to H*2 would leave roughly half of these
-      // permanently off-screen, since their drift tween only moves them up
-      // 30-80px before resetting back to the original (off-screen) Y.
       const fx = Phaser.Math.Between(-W * 2, W * 3);
       const fy = Phaser.Math.Between(HUD_H + 20, H - 40);
       const ft = this.add.text(fx, fy, frags[i], {
@@ -250,9 +240,6 @@ export class Level20Scene extends Phaser.Scene {
       });
     }
 
-    // Stretch edge accents — X only. The top/bottom lines must stay at
-    // y:0 / y:H-2 to actually mark the real top/bottom screen edges;
-    // pushing them to -H / H*2-2 would move them entirely off-screen.
     const edges = this.add.graphics();
     edges.fillStyle(0xff0000, 0.06); edges.fillRect(-W * 2, 0, 3, H);
     edges.fillStyle(0x0000ff, 0.06); edges.fillRect(W * 3 - 3, 0, 3, H);
@@ -261,9 +248,6 @@ export class Level20Scene extends Phaser.Scene {
   }
 
   _buildCRT() {
-    // X-only stretch — see _buildBG() note: Y always exactly fits 0..H, so
-    // stretching the vignette's Y bounds would push its border stroke
-    // entirely outside the visible area, making it invisible.
     const crt = this.add.graphics().setDepth(50);
     for (let y = 0; y < H; y += 4) {
       crt.fillStyle(0x000000, 0.12); crt.fillRect(-W * 2, y, W * 5, 2);
@@ -274,8 +258,6 @@ export class Level20Scene extends Phaser.Scene {
       vig.strokeRect(-W * 2, 0, W * 5, H);
     }
   }
-
-  // ─── Glitch Blocks ────────────────────────────────────────────────────────
 
   _buildGlitchBlocks() {
     const colors = [0xff00ff, 0x00ffff, 0xff0000, 0xffff00, 0x00ff88];
@@ -303,8 +285,6 @@ export class Level20Scene extends Phaser.Scene {
     }
   }
 
-  // ─── HUD ──────────────────────────────────────────────────────────────────
-
   _buildHUD() {
     this.add.rectangle(W / 2, HUD_H / 2, W * 5, HUD_H, 0x0d0020, 0.95).setDepth(10);
     this.add.rectangle(W / 2, HUD_H, W * 5, 2, 0x9900ff, 1).setDepth(10);
@@ -330,8 +310,6 @@ export class Level20Scene extends Phaser.Scene {
     this._timerBarFill = this.add.rectangle(W / 2, TIMER_Y, TIMER_W, TIMER_H, 0xff00ff, 1)
       .setOrigin(0.5).setDepth(11);
   }
-
-  // ─── Anomaly ──────────────────────────────────────────────────────────────
 
   _buildAnomaly() {
     this._anomCont = this.add.container(W - 55, ANOM_Y0).setDepth(20);
@@ -413,8 +391,6 @@ export class Level20Scene extends Phaser.Scene {
     this._anomCont.setY(ANOM_Y0);
   }
 
-  // ─── Stability Bar ────────────────────────────────────────────────────────
-
   _buildStabilityBar() {
     this.add.rectangle(STAB_CX, STAB_Y, STAB_W + 4, STAB_H + 4, 0x330033, 1).setDepth(10);
     this.add.rectangle(STAB_CX, STAB_Y, STAB_W, STAB_H, 0x1a0033, 1).setDepth(10);
@@ -436,8 +412,6 @@ export class Level20Scene extends Phaser.Scene {
     this._stabLabel.setText(`DIMENSION STABILITY: ${Math.round(this._stability)}%`).setColor(sc);
     if (this._stability <= 0) this._triggerGameOver();
   }
-
-  // ─── Bit Mascot ───────────────────────────────────────────────────────────
 
   _buildBit() {
     this._bitCont = this.add.container(W - 85, H - 85).setDepth(25);
@@ -467,8 +441,6 @@ export class Level20Scene extends Phaser.Scene {
     });
   }
 
-  // ─── Wave Flow ────────────────────────────────────────────────────────────
-
   _clearWave() {
     for (const el of this._waveEls) { if (el && el.destroy) el.destroy(); }
     this._waveEls = [];
@@ -491,8 +463,6 @@ export class Level20Scene extends Phaser.Scene {
     this._startTimer(duration);
     this._startAnomalyDescent(duration);
   }
-
-  // ─── Code Panel ───────────────────────────────────────────────────────────
 
   _buildCodePanel(waveData) {
     const bg = this.add.graphics().setDepth(4);
@@ -561,8 +531,6 @@ export class Level20Scene extends Phaser.Scene {
     }
     return result;
   }
-
-  // ─── Answer Panel ─────────────────────────────────────────────────────────
 
   _buildAnswerPanel(waveData) {
     const bg = this.add.graphics().setDepth(4);
@@ -635,8 +603,6 @@ export class Level20Scene extends Phaser.Scene {
     });
   }
 
-  // ─── Timer ────────────────────────────────────────────────────────────────
-
   _startTimer(duration) {
     this._timerVal = duration;
     this._timerBarFill.setDisplaySize(TIMER_W, TIMER_H);
@@ -652,8 +618,6 @@ export class Level20Scene extends Phaser.Scene {
       },
     });
   }
-
-  // ─── Answer Handling ──────────────────────────────────────────────────────
 
   _onAnswer(chosen, correct, optBg, ox, oy, ow, optH, concept) {
     this._locked = true;
@@ -715,8 +679,6 @@ export class Level20Scene extends Phaser.Scene {
     }
   }
 
-  // ─── Game Over ────────────────────────────────────────────────────────────
-
   _triggerGameOver() {
     PanelFit.arm(this);
     if (this._gameOver) return;
@@ -742,8 +704,6 @@ export class Level20Scene extends Phaser.Scene {
     this._makeButton(W / 2 - 85, H / 2 + 60, "TRY AGAIN", 155, 38, 0x550000, 0xff0044, () => this.scene.restart(), 41);
     this._makeButton(W / 2 + 85, H / 2 + 60, "MENU", 120, 38, 0x220044, 0x9944ff, () => this.scene.start("MenuScene"), 41);
   }
-
-  // ─── Level Complete ───────────────────────────────────────────────────────
 
   _levelComplete() {
     PanelFit.arm(this);
@@ -798,8 +758,6 @@ export class Level20Scene extends Phaser.Scene {
     this._makeButton(W / 2 - 85, H / 2 + 96, "PLAY AGAIN", 155, 38, 0x330066, 0xff00ff, () => this.scene.restart(), 41);
     this._makeButton(W / 2 + 85, H / 2 + 96, "MENU", 120, 38, 0x003333, 0x00ccff, () => this.scene.start("MenuScene"), 41);
   }
-
-  // ─── Utility ──────────────────────────────────────────────────────────────
 
   _makeButton(cx, cy, label, w, h, fill, stroke, onClick, depth = 10) {
     const g = this.add.graphics().setDepth(depth);

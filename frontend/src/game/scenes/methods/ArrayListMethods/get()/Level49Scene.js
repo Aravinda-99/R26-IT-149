@@ -1,26 +1,3 @@
-/**
- * Level 49 — "The Consultation Desk" (ArrayList Methods: Accretion Phase —
- * get(), opening the get() trilogy)
- * ===========================================================================
- * Teaches ArrayList.get(index): a NON-DESTRUCTIVE READ. A request slip
- * arrives at the consultation desk bearing an index; a translucent GHOST
- * COPY of the book lifts off its shelf and floats to the reading cradle —
- * while the original never moves. The ghost is the level's central
- * instrument: get() reads, it never removes (the deliberate visual
- * contrast with remove(), arriving in L52). Boundary crashes echo L29's
- * charAt(length()) cliff: valid indices are 0 to size − 1; get(size) and
- * any get() on an empty list throw IndexOutOfBoundsException.
- *
- * The evaluator is honest: get() bounds-checks against the live list,
- * size() evaluates inside get arguments (with the inner computation shown
- * as an annotation), retrieved Integers fuse arithmetically via the L37
- * gold-+ cameo, retrieved values concatenate and print, and charAt-on-a-
- * list / get-by-value are COMPILE errors (no bell, no scan — stamp only,
- * preserving the compile-vs-runtime distinction from L47). currentList is
- * NEVER mutated by a get — the shelf state after any run is bit-identical
- * to the round's initialList.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -46,11 +23,7 @@ const SLIP_POS = { x: 652, y: 400 };
 const PANEL_X = 810, PANEL_Y = 130, PANEL_W = 420, PANEL_H = 250;
 const TUTORIAL_KEY = "level49_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ── Type A: Retrieval Prediction ──
   { round: 1, type: "predict",
     initialList: ["Dune", "Emma", "Ivanhoe"], listType: "String", listName: "list",
     source: ["String b = list.get(0);"],
@@ -88,7 +61,6 @@ const ROUNDS = [
     revealNote: "size() is 3; 3 − 1 = 2; get(2) fetches 'C'. The size-minus-one pattern is THE way to reach the last element — the same trick charAt taught for Strings (length() - 1).",
     concept: "get_last_via_size_minus_one" },
 
-  // ── Type B: The Non-Destructive Read ──
   { round: 4, type: "predict",
     initialList: ["X", "Y", "Z"], listType: "String", listName: "list",
     source: ["String a = list.get(1);"],
@@ -128,7 +100,6 @@ const ROUNDS = [
     revealNote: "Two retrievals, one gold + fusion — the L37 arithmetic animation returns. Retrieved Integers auto-unbox to ints; the math is ordinary Java.",
     concept: "get_in_arithmetic" },
 
-  // ── Type C: Boundary Crashes ──
   { round: 7, type: "predict",
     initialList: ["A", "B", "C"], listType: "String", listName: "list",
     source: ["list.get(3);"],
@@ -168,7 +139,6 @@ const ROUNDS = [
     revealNote: "charAt belongs to STRINGS; get belongs to LISTS. The compiler refuses before anything runs — a COMPILE ERROR stamp on the source, no bell, no scan. Two tools, two owners: str.charAt(i) and list.get(i).",
     concept: "charat_vs_get_discrimination" },
 
-  // ── Type D: Consultation Command ──
   { round: 10, type: "command",
     initialList: ["Iliad", "Odyssey", "Aeneid"], listType: "String", listName: "list",
     skeleton: ["String pick = <slot:call>;"],
@@ -335,10 +305,6 @@ export class Level49Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / ARCHIVE INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l49_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -421,10 +387,6 @@ export class Level49Scene extends Phaser.Scene {
       if (p.y > 630) { p.y = 150; p.x = Phaser.Math.Between(0, W); }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BOOKSHELF (L46 construction)
-  // ══════════════════════════════════════════════════════════════
 
   createBookshelf() {
     const g = this.add.graphics().setDepth(4);
@@ -530,8 +492,6 @@ export class Level49Scene extends Phaser.Scene {
     return { container: c, text: txt, colorHex, entry };
   }
 
-  /** Pre-populates the shelf from a round's initialList — staggered
-   * fade-in, bottom-up. The learner's task here is READING, not building. */
   async populateShelf(initialList, listType) {
     this.clearShelf();
     this.setShelfType(listType);
@@ -562,10 +522,6 @@ export class Level49Scene extends Phaser.Scene {
     this.updateListStatePanel();
     this.shelfIndexPlates.forEach((p) => { p.text.setColor(HEX_GRAY); p.text.setAlpha(1); p.g.setAlpha(1); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CONSULTATION DESK
-  // ══════════════════════════════════════════════════════════════
 
   createConsultationDesk() {
     const g = this.add.graphics().setDepth(4);
@@ -641,7 +597,6 @@ export class Level49Scene extends Phaser.Scene {
     }
   }
 
-  /** Slides a request slip onto the desk bearing the call text. */
   async slideInRequestSlip(callText) {
     this.clearSlip();
     const c = this.add.container(W + 100, SLIP_POS.y);
@@ -666,10 +621,6 @@ export class Level49Scene extends Phaser.Scene {
     if (this._activeSlip) { this._activeSlip.container.destroy(); this._activeSlip = null; }
     this.slipLayer.removeAll(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // LIST STATE PANEL (+ retrieved-value row)
-  // ══════════════════════════════════════════════════════════════
 
   createListStatePanel() {
     const g = this.add.graphics().setDepth(10);
@@ -719,10 +670,6 @@ export class Level49Scene extends Phaser.Scene {
     this.retrievedValueText.setFontSize(14).setText(String(value)).setColor(this._typeColorHex(type));
     this.tweens.add({ targets: this.retrievedValueText, scale: 1.2, duration: 120, yoyo: true });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -781,10 +728,6 @@ export class Level49Scene extends Phaser.Scene {
     this.monitorText.setFontSize(this.monitorText.width > 380 ? 10 : 12);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a0704, 0.93);
@@ -809,10 +752,6 @@ export class Level49Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — consulting archivist variant (cape, gloves, magnifier)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -927,12 +866,6 @@ export class Level49Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GHOST RETRIEVAL (the signature choreography)
-  // ══════════════════════════════════════════════════════════════
-
-  /** Full §3.3 choreography for a VALID get(index). Returns the element.
-   * The original book NEVER moves — the ghost is a translucent copy. */
   async retrieveGhost(index) {
     const entry = this.currentList[index];
     const book = this.shelfBookSprites[index];
@@ -1010,8 +943,6 @@ export class Level49Scene extends Phaser.Scene {
     this._lastValueLabel = null;
   }
 
-  /** Delivers the last-retrieved value into a typed variable container
-   * beside the desk (L34 style). */
   async deliverToVariable(name, value, type) {
     const idx = this._varContainers.length;
     const x = 610 + (idx % 2) * 92, y = 320 - Math.floor(idx / 2) * 30;
@@ -1042,8 +973,6 @@ export class Level49Scene extends Phaser.Scene {
     this._varContainers = [];
   }
 
-  /** The L37 gold-+ fusion cameo: two retrieved ints fuse into their sum
-   * at the cradle. */
   async plusFusion(v1, v2) {
     const a = this.add.text(CRADLE.x - 50, CRADLE.y - 65, String(v1), { font: "bold 19px Courier New", color: HEX_GOLD }).setOrigin(0.5).setDepth(30);
     const plus = this.add.text(CRADLE.x, CRADLE.y - 65, "+", { font: "bold 21px Courier New", color: HEX_GOLD }).setOrigin(0.5).setDepth(30).setAlpha(0);
@@ -1068,7 +997,6 @@ export class Level49Scene extends Phaser.Scene {
     return sum;
   }
 
-  /** Types println output as a console line beneath the desk. */
   async printToConsole(text) {
     if (this._consoleText && this._consoleText.active) this._consoleText.destroy();
     const t = this.add.text(DESK_X0 + 10, DESK_Y1 + 16, "> ", { font: "bold 16px Courier New", color: HEX_GREEN_BRIGHT }).setOrigin(0, 0.5).setDepth(12);
@@ -1082,12 +1010,6 @@ export class Level49Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CRASH REJECTION + COMPILE STAMP
-  // ══════════════════════════════════════════════════════════════
-
-  /** §3.4 — red scan sweeps up past the top shelf, blinks at the phantom
-   * index, IOOBE stamp slams onto the slip. NOTHING is retrieved. */
   async crashRetrieval(index) {
     const topIdx = this.currentList.length - 1;
     const startY = topIdx >= 0 ? this._shelfY(topIdx) : SHELF_BASE_Y;
@@ -1115,8 +1037,6 @@ export class Level49Scene extends Phaser.Scene {
     await this.delay(1200);
   }
 
-  /** Compile errors are visually DISTINCT from runtime crashes: no bell,
-   * no scan, no slip — only the stamp on the source display. */
   async showCompileErrorStamp() {
     const stamp = this.add.text(620, 96, "COMPILE ERROR", { font: "bold 23px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(30).setScale(1.5).setAngle(-6).setAlpha(0);
     this.roundElements.push(stamp);
@@ -1125,10 +1045,6 @@ export class Level49Scene extends Phaser.Scene {
     await this.delay(1100);
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR
-  // ══════════════════════════════════════════════════════════════
 
   _splitTopPlus(expr) {
     const parts = [];
@@ -1148,8 +1064,6 @@ export class Level49Scene extends Phaser.Scene {
     return parts;
   }
 
-  /** Evaluates a get() argument expression: int literal, size(), or
-   * size() - 1. Shows the inner computation when size() participates. */
   _evalIndexArg(argExpr) {
     const t = argExpr.trim();
     if (/^-?\d+$/.test(t)) return { ok: true, index: parseInt(t, 10) };
@@ -1169,9 +1083,6 @@ export class Level49Scene extends Phaser.Scene {
     return { ok: false, compile: true };
   }
 
-  /** Async expression evaluator — get() calls play their full ghost (or
-   * crash) choreography as they are encountered. Returns
-   * {ok, value, type} | {ok:false, compile} | {ok:false, crash}. */
   async evalRetrievalExpr(expr) {
     const parts = this._splitTopPlus(expr);
     if (parts.length > 1) {
@@ -1213,8 +1124,6 @@ export class Level49Scene extends Phaser.Scene {
     return { ok: false, compile: true };
   }
 
-  /** Runs a full statement list honestly — each statement gets its own
-   * request slip; a crash halts execution (later statements never run). */
   async runStatements(lines) {
     for (const raw of lines) {
       if (!this._alive) return { ok: true };
@@ -1289,10 +1198,6 @@ export class Level49Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL (6 steps)
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1363,10 +1268,6 @@ export class Level49Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1410,10 +1311,6 @@ export class Level49Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1496,7 +1393,6 @@ export class Level49Scene extends Phaser.Scene {
       if (this.lives <= 0) { this.time.delayedCall(400, () => this.gameOver()); return; }
       await this.showBitFeedback(MISCONCEPTION_FEEDBACK[opt.tag] || "Not quite — watch the desk and try again.");
       if (!this._alive) return;
-      // retry the same round with a fresh setup (shelf back to initialList)
       this.clearRound();
       this.clearVarContainers();
       this.clearSlip();
@@ -1507,18 +1403,12 @@ export class Level49Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — CONSULTATION COMMAND
-  // ══════════════════════════════════════════════════════════════
-
   setupCommand(config) {
     this.renderCommandSkeleton(config);
     this.updateExpressionMonitor(config.mission);
     this.showQuestionCard(config.mission);
     this.createCartridgeTray(config);
     this._commandFirstFail = true;
-    // input stays locked from the previous round's answer click without
-    // this — the same soft-lock class of bug found in L30–L45/L46.
     this.inputLocked = false;
   }
 
@@ -1838,10 +1728,6 @@ export class Level49Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1888,15 +1774,6 @@ export class Level49Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1917,7 +1794,6 @@ export class Level49Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level49Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1928,16 +1804,12 @@ export class Level49Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1949,10 +1821,6 @@ export class Level49Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);
@@ -2014,7 +1882,6 @@ export class Level49Scene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) { this.dingBell(); await this.delay(220); }
     if (!this._alive) return;
 
-    // a wave of ghosts lifts off the shelf, bottom to top
     await this.populateShelf(["W", "E", "L", "L", "D", "O", "N", "E"], "String");
     if (!this._alive) return;
     for (let i = 0; i < this.shelfBookSprites.length; i++) {

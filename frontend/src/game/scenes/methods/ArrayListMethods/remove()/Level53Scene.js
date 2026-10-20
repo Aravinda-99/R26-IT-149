@@ -1,31 +1,3 @@
-/**
- * Level 53 — "The Clearing Sale" (ArrayList Methods: Tuning Phase —
- * remove())
- * ===========================================================================
- * Tunes the Level 52 remove() schema under time pressure. The pocket
- * watch IS the timer — one sweep tween drives the stepped hand, the
- * mainspring's loosening spiral, and the subdial gauge; timeout fires
- * from the tween's onComplete after a final loud tick + gavel strike.
- * No parallel clock.
- *
- * The level's two central fluency events:
- *  - THE INTEGER OVERLOAD AMBIGUITY: on ArrayList<Integer>, a bare int
- *    argument resolves to remove(int index) — always, silently, even
- *    when the value is sitting right there. A BOXED argument
- *    (Integer.valueOf(n)) resolves to remove(Object) — by-value search.
- *    The two overloads never fall back to each other. String lists have
- *    no such ambiguity (String args are always by-value).
- *  - THE REMOVE-IN-LOOP SKIP: `for (i=0; i<list.size(); i++) { ...
- *    remove(i) ... }` genuinely skips the element that slides into the
- *    just-visited index, because i++ advances past it. This must EMERGE
- *    from honest splice + live size() re-evaluation each iteration, not
- *    be scripted.
- * The evaluator reuses L52's withdrawal/sweep/crash machinery plus L50's
- * loop engine, extended with overload resolution and a size column in
- * the Mutation Tracker (the L50 Traversal Tracker's tuning-level name
- * here, since it now also logs mutations).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -60,11 +32,7 @@ const TRK_X = 1010, TRK_Y = 355, TRK_W = 230, TRK_H = 205;
 const TUTORIAL_KEY = "level53_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ══ WAVE 1 — Rapid Clearances (12s) ══
   { round: 1, wave: 1, type: "predict",
     initialList: ["A", "B", "C", "D"], listType: "String", listName: "list",
     source: ["list.remove(2);"],
@@ -126,7 +94,6 @@ const ROUNDS = [
     ],
     concept: "fluent_return_and_size" },
 
-  // ══ WAVE 2 — The Overload Auction (10s) ══
   { round: 6, wave: 2, type: "predict",
     initialList: [10, 20, 30], listType: "Integer", listName: "nums",
     source: ["nums.remove(2);"],
@@ -192,7 +159,6 @@ const ROUNDS = [
     revealNote: "Boxed = by-value, and by-value is the gentle overload: no 3 on the shelf, the sweep fizzles, returns false, no crash, no fallback. The two overloads never trade places — the argument's TYPE decides, permanently.",
     concept: "boxed_not_found_gentle" },
 
-  // ══ WAVE 3 — Deep Lots & Bug Hunt ══
   { round: 11, wave: 3, type: "trace",
     initialList: ["A", "B", "C"], listType: "String", listName: "list",
     source: ["String x = list.remove(0);", "list.remove(x);"],
@@ -326,9 +292,6 @@ export class Level53Scene extends Phaser.Scene {
     this._handStep = 0;
     this._waveSquares = [];
     this._trackerRows = [];
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level52Scene";
   }
 
@@ -369,15 +332,13 @@ export class Level53Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this._sweepTween && this._sweepTween.isPlaying()) {
         this._sweepTween.pause();
         this._watchFrozen = true;
       }
-      return; // Return early to stop particles and the watch from animating
+      return;
     } else {
-      // Resume the pocket watch timer tween if the menu was just dismissed
       if (this._sweepTween && this._sweepTween.isPaused()) {
         this._sweepTween.resume();
         this._watchFrozen = false;
@@ -391,10 +352,6 @@ export class Level53Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — the clearing sale hall
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l53_dot")) {
@@ -539,10 +496,6 @@ export class Level53Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE CLEARING DESK + LOT TICKET
-  // ══════════════════════════════════════════════════════════════
-
   createClearingDesk() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x1a0e05, 1);
@@ -571,7 +524,6 @@ export class Level53Scene extends Phaser.Scene {
 
   clearTicket() { this.ticketContainer.removeAll(true); this.ticketQuestionText.setText(""); }
 
-  /** Dark-on-cream syntax tokenizer for the lot ticket. */
   _ticketTokenize(line) {
     const tokens = [];
     const re = /("(?:[^"\\]|\\.)*")|(\bArrayList\b|\bnew\b|\bfor\b|\bint\b|\bif\b)|(<\w*>)|(Integer\.valueOf)|(\.remove\b|\.get\b|\.size\b|\.equals\b)|(-?\d+)|([(){};,=+\-!])/g;
@@ -641,10 +593,6 @@ export class Level53Scene extends Phaser.Scene {
     this.ticketContainer.setPosition(0, 0).setAlpha(1);
     this.tweens.add({ targets: stub, alpha: 0, duration: 300, delay: 150, onComplete: () => stub.destroy() });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE POCKET WATCH (THE TIMER)
-  // ══════════════════════════════════════════════════════════════
 
   createPocketWatch() {
     this.watch = this.add.container(WATCH_X, WATCH_Y).setDepth(7);
@@ -762,7 +710,6 @@ export class Level53Scene extends Phaser.Scene {
   _drawSubdial(progress) {
     const g = this.subNeedleG;
     g.clear();
-    // FULL to EMPTY across a 120deg arc, pointing down-ish at 6 o'clock subdial
     const startA = -Math.PI / 2 - Math.PI / 3, endA = -Math.PI / 2 + Math.PI / 3;
     const a = startA + (endA - startA) * progress;
     g.lineStyle(1.5, C_STAMP_RED, 0.8);
@@ -852,7 +799,6 @@ export class Level53Scene extends Phaser.Scene {
     return Phaser.Math.Clamp(elapsed / this.roundTimeLimit, 0, 1);
   }
 
-  /** Timeout: final loud tick + gavel strike, THEN the stamp. */
   async handStrikesTwelve() {
     this._killSweepTween();
     this._sweepProgress = 1;
@@ -875,10 +821,6 @@ export class Level53Scene extends Phaser.Scene {
     this.wedgeG.clear();
     this._drawDialRim(0x241a0e, 0.6);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // COMPACT REFERENCE BOOKSHELF + CRATE
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceBookshelf() {
     const g = this.add.graphics().setDepth(4);
@@ -1017,10 +959,6 @@ export class Level53Scene extends Phaser.Scene {
     this.crateContents.push(book.container);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // LIST STATE PANEL
-  // ══════════════════════════════════════════════════════════════
-
   createReferenceListStatePanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d0805, 1);
@@ -1082,10 +1020,6 @@ export class Level53Scene extends Phaser.Scene {
     this.afterRowText.setText(s.length > 30 ? s.slice(0, 30) : s);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MUTATION TRACKER (L50 tracker + size column)
-  // ══════════════════════════════════════════════════════════════
-
   createMutationTracker() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d0805, 1);
@@ -1120,10 +1054,6 @@ export class Level53Scene extends Phaser.Scene {
     this._trackerRows = [];
     if (!this._trackerDash) this._trackerDash = this.add.text(TRK_X + TRK_W / 2, TRK_Y + TRK_H / 2 + 6, "—", { font: "bold 16px Courier New", color: "#3a2618" }).setOrigin(0.5).setDepth(11);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE WITHDRAWAL (L52-faithful, 1.4× tempo) + OVERLOAD VISUALS
-  // ══════════════════════════════════════════════════════════════
 
   async markBook(index) {
     const book = this.shelfBookSprites[index];
@@ -1221,7 +1151,6 @@ export class Level53Scene extends Phaser.Scene {
     await this.delay(600);
   }
 
-  /** Golden "index" flag pop for bare-int args on Integer lists. */
   flagArgumentAsIndex(value) {
     const t = this.add.text(TICKET_CX + 30, TICKET_CY - 40, `index`, { font: "bold 10px Courier New", color: HEX_GOLD }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this.roundElements.push(t);
@@ -1229,7 +1158,6 @@ export class Level53Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 200, onComplete: () => t.destroy() }); });
   }
 
-  /** Boxed argument visual: cyan-boxed gold token + "Integer" flag. */
   renderBoxedArgument(value) {
     const c = this.add.container(TICKET_CX + 30, TICKET_CY - 40).setDepth(20).setAlpha(0);
     const g = this.add.graphics();
@@ -1261,8 +1189,6 @@ export class Level53Scene extends Phaser.Scene {
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 180, onComplete: () => stamp.destroy() });
   }
 
-  /** Fleeting "skipped!" ghost-flag when a loop's step advances past an
-   * index that just received a slid-down element (the remove-in-loop bug). */
   showSkippedFlag(index) {
     const y = this._shelfY(index);
     const t = this.add.text(SHELF_CX + 100, y, "skipped!", { font: "italic 11px Georgia", color: HEX_RED }).setOrigin(0.5).setDepth(20).setAlpha(0);
@@ -1274,10 +1200,6 @@ export class Level53Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — auctioneer's clerk (visor, ticket book)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1390,10 +1312,6 @@ export class Level53Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a0704, 0.93);
@@ -1439,10 +1357,6 @@ export class Level53Scene extends Phaser.Scene {
     return this.currentRound - 10;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1479,10 +1393,6 @@ export class Level53Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.startWave(1);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WAVE / ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
@@ -1577,10 +1487,6 @@ export class Level53Scene extends Phaser.Scene {
     this.advanceRound();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT / TRACE
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(config) {
     this.showTrialOnTicket(config.source, config.question);
     this.showOptionBubbles(config.options, config);
@@ -1661,10 +1567,6 @@ export class Level53Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(config) {
     this.clearTicket();
@@ -1763,8 +1665,6 @@ export class Level53Scene extends Phaser.Scene {
     }
   }
 
-  /** Bug-hunt reveals run the ACTUAL buggy code through the real
-   * evaluator, then the fixed version — both honestly derived. */
   async runBugHuntReveal(config) {
     this.clearTracker();
     await this.runReveal(config.lines);
@@ -1784,10 +1684,6 @@ export class Level53Scene extends Phaser.Scene {
       this.fillAfterRow();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — overload resolution + loop/skip semantics
-  // ══════════════════════════════════════════════════════════════
 
   _splitTopPlus(expr) {
     const parts = [];
@@ -1821,8 +1717,6 @@ export class Level53Scene extends Phaser.Scene {
     return { mode: "index", index: NaN, wasLiteral: true };
   }
 
-  /** Async expression evaluator. `ctx` (optional) collects loop-skip
-   * detection state; `capture` requests the return-value pop visual. */
   async evalExpr(expr, vars, ctx, capture = false) {
     const parts = this._splitTopPlus(expr);
     if (parts.length > 1) {
@@ -1958,8 +1852,6 @@ export class Level53Scene extends Phaser.Scene {
       if (ctx.removedThisIter !== null) this.appendTrackerRow(`${counter}=${iv} | size=${sizeBefore} → removed '${ctx.removedThisIter}'`);
       else this.appendTrackerRow(`${counter}=${iv} | size=${sizeBefore} → kept`);
 
-      // honest next-index computation — the body may have mutated the
-      // counter (e.g. i--, the fix); the loop's own ++ applies on top.
       const postBody = vars[counter];
       const nextIv = postBody + 1;
       if (ctx.removedAtIndex === iv && this.currentList.length > iv && nextIv !== iv) {
@@ -2008,10 +1900,6 @@ export class Level53Scene extends Phaser.Scene {
   async runReveal(lines) {
     return await this.runBlock(lines, 0, lines.length, {}, null);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO (tuning-weighted)
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -2069,15 +1957,6 @@ export class Level53Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -2098,7 +1977,6 @@ export class Level53Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level53Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -2109,16 +1987,12 @@ export class Level53Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2132,10 +2006,6 @@ export class Level53Scene extends Phaser.Scene {
     if (nextConfig.wave !== this.currentWave) { this.startWave(nextConfig.wave); return; }
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

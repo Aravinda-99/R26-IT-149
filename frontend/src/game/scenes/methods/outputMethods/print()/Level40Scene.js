@@ -1,21 +1,3 @@
-/**
- * Level 40 — "The Whisper Booth" (Output Methods: Accretion Phase —
- * print() joins println() in the Output Wing)
- * ===========================================================================
- * Teaches System.out.print(): the non-newline-appending sibling of
- * println(). Everything from the println() trilogy (L37-39) carries over —
- * the Broadcast Log, the type-honest marquee, the honest left-to-right
- * String-sticky '+' evaluator — except the log is now a genuine row/column
- * text buffer (not "one println = one line"), and a prominent cursor block
- * makes print()'s "rests at end of text" behavior impossible to miss
- * against println()'s "jumps to a fresh row" behavior.
- *
- * The evaluator extends L37-39's with: (a) '\n' escape-sequence processing
- * inside String literals (a literal backslash-n becomes one real newline
- * character), and (b) the genuine Java asymmetry that print() has NO
- * zero-argument overload (a compile error) while println() does.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -42,9 +24,6 @@ const ROW_H = 32;
 const LOG_TEXT_X = LOG_X + 40;
 const TUTORIAL_KEY = "level40_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", source: ['System.out.print("hello");'],
     question: "What appears on the log?", correct: "hello",
@@ -289,10 +268,6 @@ export class Level40Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / BOOTH
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l40_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -409,10 +384,6 @@ export class Level40Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WHISPER DESK
-  // ══════════════════════════════════════════════════════════════
-
   createWhisperDesk() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x0d1117, 1);
@@ -472,9 +443,6 @@ export class Level40Scene extends Phaser.Scene {
     }
   }
 
-  /** Renders text into the marquee char by char, rendering the literal
-   * two-char sequence backslash-n as one atomic magenta glyph (visual only
-   * — the underlying evaluated value already holds a real newline char). */
   async assembleArgumentDisplay(displayText, isString) {
     this.clearMarquee();
     this.startBulbChase();
@@ -513,10 +481,6 @@ export class Level40Scene extends Phaser.Scene {
     await this.delay(500);
     this.clearMarquee();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BROADCAST LOG + CURSOR
-  // ══════════════════════════════════════════════════════════════
 
   createBroadcastLog() {
     const g = this.add.graphics().setDepth(10);
@@ -610,8 +574,6 @@ export class Level40Scene extends Phaser.Scene {
     }
   }
 
-  /** Types `text` onto the log starting at the current cursor position,
-   * breaking rows at any real newline character. Ground truth: this.rows. */
   async typeAtCursor(text, styleType) {
     const color = this._typeColor(styleType);
     for (const ch of text) {
@@ -675,10 +637,6 @@ export class Level40Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -745,10 +703,6 @@ export class Level40Scene extends Phaser.Scene {
     this.time.delayedCall(1200, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a0817, 0.93);
@@ -772,10 +726,6 @@ export class Level40Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — whisper voice variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(140, 440).setDepth(60);
@@ -880,10 +830,6 @@ export class Level40Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest, extends L37-39 with \n escape + print()-no-arg
-  // ══════════════════════════════════════════════════════════════
-
   _parseDecls(declSource) {
     if (!declSource) return {};
     const decls = {};
@@ -963,10 +909,6 @@ export class Level40Scene extends Phaser.Scene {
     return { ok: true, value: acc.value, type: acc.type };
   }
 
-  /** Evaluates one print/println call's argument. Returns {ok, isEmpty,
-   * text, styleType, displayText} — displayText preserves the literal
-   * backslash-n (for marquee typing animation); text has it converted to
-   * a real newline character (ground truth for the log). */
   evaluateArg(method, argExpr, decls) {
     const trimmed = (argExpr || "").trim();
     if (trimmed === "") {
@@ -980,9 +922,6 @@ export class Level40Scene extends Phaser.Scene {
     return { ok: true, isEmpty: false, text, styleType: result.type, displayText };
   }
 
-  /** For the marquee's visual typing, we want to show the literal \n
-   * glyph rather than an actual line break inside the marquee widget —
-   * recompute a display-only version preserving the escape sequence. */
   _rawDisplayFor(expr, decls) {
     const tokens = this._tokenizeExpr(expr);
     const parts = tokens.map((tok) => {
@@ -998,10 +937,6 @@ export class Level40Scene extends Phaser.Scene {
     if (code.includes("print")) return "print";
     return null;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WHISPER TRANSMISSION — reveal, shared by all rounds
-  // ══════════════════════════════════════════════════════════════
 
   async fireCall(method, argExpr, decls) {
     const evalResult = this.evaluateArg(method, argExpr, decls);
@@ -1075,10 +1010,6 @@ export class Level40Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1147,10 +1078,6 @@ export class Level40Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1189,10 +1116,6 @@ export class Level40Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B — PREDICT / CURSOR
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config, decls) {
     this.updateSourceDisplay(config.source);
@@ -1277,10 +1200,6 @@ export class Level40Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — COMMAND (drag cartridges)
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config, decls) {
     this.updateSourceDisplay(config.sourceTemplate.map((l) => l.replace(/<slot:\w+>/g, "____")));
@@ -1498,10 +1417,6 @@ export class Level40Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1550,15 +1465,6 @@ export class Level40Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1584,16 +1490,12 @@ export class Level40Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1605,10 +1507,6 @@ export class Level40Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

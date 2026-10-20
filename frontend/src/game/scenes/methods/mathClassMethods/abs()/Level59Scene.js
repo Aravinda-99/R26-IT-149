@@ -1,27 +1,3 @@
-/**
- * Level 59 — "The Distance Trials" (Math Methods: Tuning Phase — abs())
- * ===========================================================================
- * Tunes the Level 58 abs() schema through rapid measuring trials. The
- * Measuring Tape across the top of the form IS the timer — one tween drives
- * its length down; timeout fires from the tween's onComplete. No parallel
- * clock. Structure, wave layout (5 + 5 + 5), timings (12s / 10s / 9s, 12s
- * for bug hunts), lives (5), scoring and completion rule all mirror the
- * sibling Tuning scenes (Level 56 / Level 62).
- *
- * Fluency material:
- *  - NEGATIVES, ZERO and the never-negative guarantee (abs(-12) → 12).
- *  - THE GAP: abs(a - b) is the distance between two values, in EITHER order.
- *  - INT vs DOUBLE: abs keeps the argument's type — abs(-6) is an int that
- *    widens into a double (6.0); abs(-3.5) cannot be stored in an int.
- *  - abs INSIDE A CONDITION: abs(temp - target) <= 10 compares a distance.
- *  - WHERE THE CALL CLOSES: abs(-3) + abs(4) is 7; abs(-3 + 4) is 1.
- *
- * The evaluator is honest: a small recursive-descent interpreter parses and
- * evaluates each line left to right (inner calls and arithmetic resolve
- * before the beam measures), so the reveal after every answer shows the REAL
- * outcome of the code, including genuine compile errors.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -52,11 +28,7 @@ const SLATE_X = 830, SLATE_Y = 80, SLATE_W = 400, SLATE_H = 190;
 const TUTORIAL_KEY = "level59_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ══ WAVE 1 — Rapid Verdicts (12s) ══
   { round: 1, wave: 1, type: "predict",
     source: "int d = Math.abs(-12);",
     question: "What is stored in d?", correct: "12",
@@ -115,7 +87,6 @@ const ROUNDS = [
     revealNote: "abs keeps its argument's type. A double goes in, a double comes out — and a double can't be squeezed into an int variable.",
     concept: "fluent_abs_double_to_int" },
 
-  // ══ WAVE 2 — Gaps & Distances (10s) ══
   { round: 6, wave: 2, type: "predict",
     source: "int a = 3;\nint b = 11;\nint gap = Math.abs(a - b);",
     question: "What is stored in gap?", correct: "8",
@@ -176,7 +147,6 @@ const ROUNDS = [
     revealNote: "2.5 - 6 is -3.5; the beam measures 3.5 — decimals intact, the double edition ran and returned the length whole.",
     concept: "gap_double" },
 
-  // ══ WAVE 3 — Deep Measurements & Bug Hunt ══
   { round: 11, wave: 3, type: "trace",
     source: 'int x = -9;\nint y = Math.abs(x);\nSystem.out.println(x + " " + y);',
     question: "What prints?", correct: "-9 9",
@@ -325,10 +295,6 @@ export class Level59Scene extends Phaser.Scene {
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — BACKGROUND & HALL DRESSING
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l59_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -410,10 +376,6 @@ export class Level59Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE MEASUREMENT FORM
-  // ══════════════════════════════════════════════════════════════
 
   createForm() {
     const g = this.add.graphics().setDepth(20);
@@ -497,10 +459,6 @@ export class Level59Scene extends Phaser.Scene {
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 200, onComplete: () => stamp.destroy() });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE MEASURING TAPE (the timer — hero mechanic)
-  // ══════════════════════════════════════════════════════════════
-
   createTape() {
     this.tapeGfx = this.add.graphics().setDepth(22);
     this.add.text(TAPE_X0, TAPE_Y - 14, "MEASURING TAPE", { font: "bold 9px Georgia", color: HEX_BRASS }).setAlpha(0.6).setDepth(22);
@@ -581,10 +539,6 @@ export class Level59Scene extends Phaser.Scene {
     await this.stampSlip("missed");
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE MEASURING RAIL (zero obelisk, marker, beam, distance bar)
-  // ══════════════════════════════════════════════════════════════
-
   createRail() {
     const g = this.add.graphics().setDepth(12);
     g.fillStyle(0x0a0d18, 1);
@@ -653,9 +607,6 @@ export class Level59Scene extends Phaser.Scene {
     });
   }
 
-  /** One measurement: the marker drops on the rail at its true position, the
-   * beam extends from the zero obelisk to it, and the beam's LENGTH — always
-   * positive — detaches as a gold bar and descends to the plinth. */
   async measure(arg) {
     const v = Number(arg.v), dist = Math.abs(v);
     this.clearRail();
@@ -743,10 +694,6 @@ export class Level59Scene extends Phaser.Scene {
     return Number.isInteger(r) ? r.toFixed(1) : String(r);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SLATE
-  // ══════════════════════════════════════════════════════════════
-
   createSlate() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0a0d18, 1);
@@ -800,10 +747,6 @@ export class Level59Scene extends Phaser.Scene {
     this.resultText.setFontSize(12).setText(this._fmtNum(value, type)).setColor(type === "double" ? HEX_ORANGE : HEX_GOLD);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x04060c, 0.93);
@@ -847,10 +790,6 @@ export class Level59Scene extends Phaser.Scene {
     if (this.currentWave === 2) return this.currentRound - 5;
     return this.currentRound - 10;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — SURVEYOR VARIANT
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -929,10 +868,6 @@ export class Level59Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -971,10 +906,6 @@ export class Level59Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.startWave(1);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WAVE SYSTEM
-  // ══════════════════════════════════════════════════════════════
 
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
@@ -1017,10 +948,6 @@ export class Level59Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   _sourceLines(config) {
     if (Array.isArray(config.source)) return config.source;
@@ -1075,10 +1002,6 @@ export class Level59Scene extends Phaser.Scene {
     if (!this._alive) return;
     this.advanceRound();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT / TRACE
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     const lines = this._sourceLines(config);
@@ -1160,10 +1083,6 @@ export class Level59Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(config) {
     this.clearSlipContent();
@@ -1288,9 +1207,6 @@ export class Level59Scene extends Phaser.Scene {
     }
   }
 
-  /** Dual-future reveal: the buggy code first (its honest outcome — here a
-   * wrong value or a real compile error), then reset and run the fixed
-   * version — both through the real evaluator, never scripted. */
   async runDualFutureReveal(config) {
     await this.runReveal(config);
     await this.delay(450);
@@ -1304,15 +1220,6 @@ export class Level59Scene extends Phaser.Scene {
       .filter((l) => !l.trim().startsWith("//"));
     await this.runReveal({ lines: fixedLines });
   }
-
-  // <<EVAL-BEGIN>>
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — a recursive-descent interpreter for the abs() subset:
-  // int / double / boolean / String values, + - * / %, comparisons, string
-  // concatenation, Math.abs(...), declarations, println, and single-line
-  // if / else. Evaluation order is left to right, so nested arithmetic
-  // always resolves BEFORE the beam measures it.
-  // ══════════════════════════════════════════════════════════════
 
   _lex(src) {
     const toks = [];
@@ -1558,10 +1465,6 @@ export class Level59Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  /** Runs a config's source (or a raw line array / string) through the
-   * honest evaluator. Like javac, the whole program is compile-checked
-   * FIRST (a silent dry pass): a compile error shows only the offending
-   * line and the stamp — nothing executes. Otherwise the program runs. */
   async runReveal(input) {
     const raw = input.lines ? input.lines : (input.source !== undefined ? input.source : input);
     const lines = (Array.isArray(raw) ? raw : String(raw).split("\n")).map((l) => l.trim()).filter((l) => l && !l.startsWith("//"));
@@ -1576,7 +1479,6 @@ export class Level59Scene extends Phaser.Scene {
     }
     return this._execAll(lines, false);
   }
-  // <<EVAL-END>>
 
   showCompileErrorStamp(label = "COMPILE ERROR") {
     const stamp = this.add.text(SLIP_CX, SLIP_Y0 - 22, label, { font: "bold 19px Arial", color: HEX_RED }).setOrigin(0.5).setDepth(30).setScale(1.4).setAngle(-6).setAlpha(0);
@@ -1585,10 +1487,6 @@ export class Level59Scene extends Phaser.Scene {
     this.screenShake(0.004, 130);
     this.time.delayedCall(900, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 200, onComplete: () => stamp.destroy() }); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING, LIVES, COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() { if (this.combo >= 5) return 3; if (this.combo >= 3) return 2; return 1; }
 
@@ -1640,15 +1538,6 @@ export class Level59Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1693,10 +1582,6 @@ export class Level59Scene extends Phaser.Scene {
     if (nextConfig.wave !== this.currentWave) { this.startWave(nextConfig.wave); return; }
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

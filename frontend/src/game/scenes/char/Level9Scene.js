@@ -1,10 +1,3 @@
-/**
- * Level9Scene — "Char Code Assessment Terminal" (Restructuring Phase)
- * ===================================================================
- * Complete 6 focused programming tasks about char declarations and
- * escape sequences using a lightweight DOM editor panel.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -20,7 +13,6 @@ const SKIP_PENALTY = 50;
 const ACCURACY_THRESHOLD = 75;
 const BONUS_FINAL = 500;
 
-/* ── Validators: full-line flexible (whitespace-tolerant) ── */
 function stripComments(s) {
   return s.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
 }
@@ -108,7 +100,6 @@ const QUESTIONS = [
   },
 ];
 
-/* ═══════════════════════════════════════════════════════════════ */
 export class Level9Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level9Scene" });
@@ -127,15 +118,6 @@ export class Level9Scene extends Phaser.Scene {
       cam.setZoom(zoom);
       cam.centerOn(W / 2, H / 2);
 
-      // domRoot (the DOM code-editor panel) runs setScrollFactor(0) so camera
-      // shake() doesn't jitter it — but that also makes it ignore the scroll
-      // recentering above, since DOM elements are positioned via
-      // camera.matrix (zoom + camera viewport) with scrollX/scrollY applied
-      // separately per-object, scaled by scrollFactor. A scrollFactor(0)
-      // object's local x therefore lands on-screen at
-      // scale.width/2 + zoom * (x - scale.width/2) — so setting its x to
-      // scale.width/2 is what actually re-centers it on a wide/pillarboxed
-      // screen, not a scrollX change.
       if (this.domRoot) this.domRoot.x = this.scale.width / 2;
     };
     updateCamera();
@@ -184,10 +166,6 @@ export class Level9Scene extends Phaser.Scene {
         i
       );
       g.fillStyle(Phaser.Display.Color.GetColor(c.r, c.g, c.b), 1);
-      // Oversized width so each gradient band covers the canvas regardless
-      // of camera position/zoom on any aspect ratio; the Y span is left
-      // untouched since it already correctly tiles 0..H (this level's
-      // pillarboxing is horizontal only — the height fits the zoom exactly).
       g.fillRect(-W * 2, (H * i) / 50, W * 5, H / 50 + 1);
     }
 
@@ -327,9 +305,6 @@ export class Level9Scene extends Phaser.Scene {
       </div>
     `;
 
-    // x uses the raw canvas center (not W / 2) because this element has
-    // scrollFactor(0) — see the domRoot correction in create()'s
-    // updateCamera() for why that matters on a wide/pillarboxed screen.
     this.domRoot = this.add.dom(this.scale.width / 2, 0, wrap);
     this.domRoot.setOrigin(0.5, 0);
     this.domRoot.setScrollFactor(0);
@@ -408,7 +383,6 @@ export class Level9Scene extends Phaser.Scene {
     }
   }
 
-  /** ML struggle check — reports real submission/timing stats (not rapid-fire: puzzle/coding task). */
   async runBehavioralCheck() {
     const attempts_count = this.correctSubs + this.wrongSubs;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -475,7 +449,7 @@ export class Level9Scene extends Phaser.Scene {
     const ss = String(elapsed % 60).padStart(2, "0");
 
     if (passed) {
-      GameManager.completeLevel(8, acc); // ID doesn't change, matches your progress tracker setup
+      GameManager.completeLevel(8, acc);
       BadgeSystem.unlock("char_wizard");
       /* saved by GameManager */
       this.cameras.main.flash(500, 255, 215, 100);

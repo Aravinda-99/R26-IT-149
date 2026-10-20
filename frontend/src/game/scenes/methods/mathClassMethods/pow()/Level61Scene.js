@@ -1,21 +1,3 @@
-/**
- * Level 61 — "The Power Tower" (Math Methods: Accretion Phase — pow())
- * ===========================================================================
- * Opens the pow() trilogy — the Math Wing's third and final method. The
- * Cascade Engine is a vertical stack of multiplication stages: the base
- * enters at the bottom as a star, each stage multiplies the running
- * product by the base, the exponent sets how many stages fire, and the
- * final product emerges from the summit — ALWAYS a double, even for
- * int arguments. Zero exponent bypasses the whole cascade (product of
- * nothing is 1); one exponent fires a single stage (passthrough);
- * fractional exponents run the cascade in reverse (a root).
- *
- * The evaluator is honest: Math.pow(base, exp) computes via genuine
- * repeated multiplication (never string-matched), the return type is
- * always double, and negative bases/fractional exponents behave exactly
- * as Java's Math.pow (identical to JS's Math.pow for every case here).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -36,16 +18,13 @@ const ENGINE_CX = 455;
 const BASE_PLATE_Y = 496;
 const ENTRY_PORT_Y = 522;
 const STAGE_COUNT = 6;
-const STAGE_Y0 = 430, STAGE_DY = 60; // stage i (0=lowest) at STAGE_Y0 - i*STAGE_DY
+const STAGE_Y0 = 430, STAGE_DY = 60;
 const SUMMIT_Y = 100;
 const PLINTH_X = 455, PLINTH_Y = 575;
 const DIAL_X = 280, DIAL_Y = 350, DIAL_R = 30;
 const SLATE_X = 680, SLATE_Y = 258, SLATE_W = 520, SLATE_H = 200;
 const TUTORIAL_KEY = "level61_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict",
     source: ["double r = Math.pow(3, 4);"],
@@ -313,10 +292,6 @@ export class Level61Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — BACKGROUND & TOWER INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l61_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -451,10 +426,6 @@ export class Level61Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE CASCADE ENGINE (hero visual)
-  // ══════════════════════════════════════════════════════════════
-
   createCascadeEngine() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x1a1408, 1);
@@ -535,10 +506,6 @@ export class Level61Scene extends Phaser.Scene {
     this.bypassGfx.lineBetween(x, this.summitY, ENGINE_CX, this.summitY);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE EXPONENT DIAL
-  // ══════════════════════════════════════════════════════════════
-
   _dialPoint(angleDeg, radius) {
     const rad = Phaser.Math.DegToRad(angleDeg);
     return { x: DIAL_X + Math.sin(rad) * radius, y: DIAL_Y - Math.cos(rad) * radius };
@@ -579,10 +546,6 @@ export class Level61Scene extends Phaser.Scene {
   resetDial() {
     this.dialNeedle.setAngle(-150);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // STARS & FORMATTING
-  // ══════════════════════════════════════════════════════════════
 
   _fmtDoubleForPrint(v) {
     const rounded = Math.round(v * 1e9) / 1e9;
@@ -634,10 +597,6 @@ export class Level61Scene extends Phaser.Scene {
     const ratio = Math.abs(product / base);
     return Math.min(2, Math.pow(Math.max(ratio, 0.001), 0.15));
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE CASCADE CHOREOGRAPHY
-  // ══════════════════════════════════════════════════════════════
 
   async spawnBaseStar(value, type) {
     const star = this._makeStar(value, type, ENGINE_CX, ENTRY_PORT_Y + 30);
@@ -739,11 +698,6 @@ export class Level61Scene extends Phaser.Scene {
     return { value: result, type: "double" };
   }
 
-  /** The full §2.5 choreography for a genuine Math.pow(base, exp) call.
-   * Integer exponents ≥ 0 run a REAL repeated-multiplication loop (the
-   * product must emerge from base *= base each stage, never from a
-   * single Math.pow shortcut). exp===0 bypasses; non-integer exp runs
-   * the reverse-hum teaser. */
   async runCascade(base, exp, type) {
     await this.setDialToExponent(exp);
     if (!this._alive) return { value: Math.pow(base, exp), type: "double" };
@@ -776,8 +730,6 @@ export class Level61Scene extends Phaser.Scene {
     if (this._plinthStar) { this._plinthStar.container.destroy(); this._plinthStar = null; }
     this.resetDial();
   }
-
-  // ── delivery ──
 
   async deliverToVariable(name, value, type) {
     const idx = this._varContainers.length;
@@ -822,8 +774,6 @@ export class Level61Scene extends Phaser.Scene {
     this._varContainers.forEach((c) => { if (c.active) c.destroy(); });
     this._varContainers = [];
   }
-
-  // ── rejections ──
 
   async entryPortShudder(value, type) {
     const star = await this.spawnBaseStar(value, type);
@@ -873,10 +823,6 @@ export class Level61Scene extends Phaser.Scene {
     this.time.delayedCall(1000, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RESULT PLINTH
-  // ══════════════════════════════════════════════════════════════
-
   createResultPlinth() {
     const chute = this.add.graphics().setDepth(6);
     chute.lineStyle(2, C_BRASS, 0.5);
@@ -887,10 +833,6 @@ export class Level61Scene extends Phaser.Scene {
     plinthG.fillCircle(PLINTH_X, PLINTH_Y, 24);
     plinthG.strokeCircle(PLINTH_X, PLINTH_Y, 24);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ENGINEER'S SLATE
-  // ══════════════════════════════════════════════════════════════
 
   createEngineersSlate() {
     const g = this.add.graphics().setDepth(10);
@@ -954,10 +896,6 @@ export class Level61Scene extends Phaser.Scene {
     this.resultText.setFontSize(14).setText(display).setColor(HEX_ORANGE);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY & EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
-
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
   }
@@ -1011,10 +949,6 @@ export class Level61Scene extends Phaser.Scene {
 
   updateExpressionMonitor(text) { this.exprMonitorText.setText(text); }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x060810, 0.93);
@@ -1038,10 +972,6 @@ export class Level61Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — TOWER ENGINEER VARIANT
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -1145,10 +1075,6 @@ export class Level61Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1222,10 +1148,6 @@ export class Level61Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1265,10 +1187,6 @@ export class Level61Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1351,10 +1269,6 @@ export class Level61Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — ENGINEER COMMAND
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.renderCommandSkeleton(config);
@@ -1686,13 +1600,6 @@ export class Level61Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — Math.pow (int+double args, real repeated
-  // multiplication, always-double return), zero/one/fractional
-  // exponents, negative bases, multiplication/cast composition,
-  // println. Never scripted; genuine outcomes only.
-  // ══════════════════════════════════════════════════════════════
-
   _splitTopArgs(argsStr) {
     const parts = [];
     let cur = "", depth = 0;
@@ -1763,9 +1670,6 @@ export class Level61Scene extends Phaser.Scene {
     return { ok: true, value: result.value, type: result.type };
   }
 
-  /** Top-level value resolution: Math.pow(...), (int) casts, top-level
-   * multiplication (each factor independently resolved — a factor that
-   * is itself a Math.pow(...) runs the real cascade), or a plain value. */
   async resolveTopLevelValue(expr, vars) {
     const t = expr.trim();
     const powMatch = t.match(/^Math\.pow\((.*)\)$/);
@@ -1903,10 +1807,6 @@ export class Level61Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING, LIVES, COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() { if (this.combo >= 5) return 3; if (this.combo >= 3) return 2; return 1; }
 
   scoreForAttempt(timeMs) {
@@ -1956,15 +1856,6 @@ export class Level61Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -2007,10 +1898,6 @@ export class Level61Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) { this.levelComplete(); return; }
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

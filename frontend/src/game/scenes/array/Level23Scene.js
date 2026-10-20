@@ -1,23 +1,3 @@
-/**
- * Level 23 — "Index Interceptor" (Arrays: Tuning Phase)
- * ========================================================
- * Rapid-fire cybersecurity command-center challenges that tune and correct
- * the learner's array understanding. Data Packets descend as visual timers;
- * the player must judge/predict/fix/interpret array operations before the
- * packet reaches the console desk.
- *
- * 15 waves across 5 challenge types:
- *  A. Valid or Invalid?     — judge whether an access is legal
- *  B. What's the Output?    — predict println() output
- *  C. Spot the Bug          — pick the correct fix for buggy code
- *  D. Index or Value?       — discriminate the meaning of a highlighted number
- *  E. Match the Expression  — do two expressions produce the same result?
- *
- * Authored in a 1280x720 world space; the shared game canvas is 800x600
- * (Scale.NONE), so the main camera is zoomed to letterbox-fit the command
- * center into whatever canvas size is active (same approach as Level22).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -27,7 +7,7 @@ const W = 1280, H = 720;
 
 // Mini cell geometry (array reference display)
 const MC_W = 72, MC_H = 60, MC_GAP = 6;
-const MC_Y = 165;             // vertical center of the mini cell row
+const MC_Y = 165;
 
 // Colors
 const C_CYAN = 0x00e5ff, C_AMBER = 0xffd740, C_GREEN = 0x00e676;
@@ -35,9 +15,6 @@ const C_RED = 0xf44336, C_GRAY = 0x78909c, C_MAGENTA = 0xff4081;
 const HEX_CYAN = "#00e5ff", HEX_AMBER = "#ffd740", HEX_GREEN = "#00e676";
 const HEX_RED = "#f44336", HEX_GRAY = "#78909c", HEX_MAGENTA = "#ff4081";
 
-// ─────────────────────────────────────────────────────────────────
-// Wave configuration
-// ─────────────────────────────────────────────────────────────────
 const WAVES = [
   { wave: 1, type: "valid_invalid", timeLimit: 12000,
     array: { name: "arr", type: "int[]", values: [10, 20, 30, 40, 50] },
@@ -214,10 +191,6 @@ export class Level23Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l23_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -329,10 +302,6 @@ export class Level23Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0a14, 0.94);
@@ -370,10 +339,6 @@ export class Level23Scene extends Phaser.Scene {
     this.timerFill.fillStyle(color, 1);
     this.timerFill.fillRoundedRect(492, 24, w, 10, 5);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ARRAY REFERENCE DISPLAY
-  // ══════════════════════════════════════════════════════════════
 
   createArrayReferenceDisplay() {
     const g = this.add.graphics().setDepth(15);
@@ -507,7 +472,6 @@ export class Level23Scene extends Phaser.Scene {
     this.miniBracket = { g, txt };
   }
 
-  /** state: 'cyan' | 'green' | 'red' | 'default' */
   highlightMiniCell(index, state) {
     const cell = this.miniCells[index];
     if (!cell) return;
@@ -530,7 +494,6 @@ export class Level23Scene extends Phaser.Scene {
     this.hideMiniOOB();
   }
 
-  /** Ghost cell for OOB reference: side='right' beyond last cell, side='left' before [0]. */
   showMiniOOB(side, index) {
     this.hideMiniOOB(false);
     const n = this.miniCells.length;
@@ -560,10 +523,6 @@ export class Level23Scene extends Phaser.Scene {
     if (fade) this.tweens.add({ targets: c, alpha: 0, duration: 200, onComplete: () => c.destroy() });
     else c.destroy();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SYSTEM INTEGRITY BAR
-  // ══════════════════════════════════════════════════════════════
 
   createIntegrityBar() {
     const g = this.add.graphics().setDepth(50);
@@ -622,10 +581,6 @@ export class Level23Scene extends Phaser.Scene {
     this.time.delayedCall(500, () => p.destroy());
     this.tweens.add({ targets: this.integrityPct, x: this.integrityPct.x + 3, duration: 33, yoyo: true, repeat: 5 });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — mascot & speech (same pattern as Level22)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(W + 80, 620).setDepth(60);
@@ -709,10 +664,6 @@ export class Level23Scene extends Phaser.Scene {
     await this.bitSlideTo(W + 80, 620, 250);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WAVE MANAGEMENT
-  // ══════════════════════════════════════════════════════════════
-
   async startWave(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentWave = index;
@@ -760,10 +711,6 @@ export class Level23Scene extends Phaser.Scene {
     this.waveElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.waveElements = [];
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // DATA PACKET
-  // ══════════════════════════════════════════════════════════════
 
   spawnPacket(cfg) {
     const expr = cfg.expression || (cfg.exprA ? `${cfg.exprA}  vs  ${cfg.exprB}` : cfg.code ? cfg.code[cfg.code.length - 1].trim() : "arr[?]");
@@ -914,10 +861,6 @@ export class Level23Scene extends Phaser.Scene {
     this.packet = null;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE PANEL (Types B, C)
-  // ══════════════════════════════════════════════════════════════
-
   _syntaxTokens(line) {
     // Simple tokenizer: strings, keywords, numbers, array access, punctuation
     const tokens = [];
@@ -1024,10 +967,6 @@ export class Level23Scene extends Phaser.Scene {
       this.waveElements.push({ destroy: () => ev.remove() });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CHALLENGE RENDERING
-  // ══════════════════════════════════════════════════════════════
 
   renderChallenge(cfg) {
     switch (cfg.type) {
@@ -1239,10 +1178,6 @@ export class Level23Scene extends Phaser.Scene {
     this._makeBigButton(700, 445, 200, 55, C_RED, null, "DIFFERENT", () => this.onMatchAnswer(false, cfg));
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ANSWER HANDLING
-  // ══════════════════════════════════════════════════════════════
-
   _timePercentRemaining() {
     const cfg = WAVES[this.currentWave];
     const elapsed = this.time.now - this.waveStart;
@@ -1360,7 +1295,6 @@ export class Level23Scene extends Phaser.Scene {
           : `Actually, ${cfg.highlightPart} is the VALUE — the data stored`);
     this.createFloatingText(640, 500, msg, color, "bold 15px Arial");
 
-    // demonstrate on the array reference (best-effort — highlight index part directly for standard waves)
     if (!isCustom) {
       const idx = parseInt(cfg.highlightPart, 10);
       if (Number.isFinite(idx) && idx >= 0 && idx < this.miniCells.length) {
@@ -1390,10 +1324,6 @@ export class Level23Scene extends Phaser.Scene {
     if (correct) this.onCorrectAnswer(timePct, cfg.concept, "match_expression");
     else this.onWrongAnswer(cfg.concept, false, "match_expression");
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // POST-ANSWER ANIMATIONS
-  // ══════════════════════════════════════════════════════════════
 
   async showValidAccessAnimation(index) {
     this.highlightMiniCell(index, "cyan");
@@ -1462,10 +1392,6 @@ export class Level23Scene extends Phaser.Scene {
     const outVal = cfg.array.values[cfg.array.values.length - 1];
     await this.showConsoleOutput(String(outVal));
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING
-  // ══════════════════════════════════════════════════════════════
 
   onCorrectAnswer(timePercent, concept, challengeType) {
     if (this.gameEnded) return;
@@ -1558,10 +1484,6 @@ export class Level23Scene extends Phaser.Scene {
     this.createFloatingText(640, 44, "QUICK!", HEX_AMBER, "bold 14px Arial");
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // UTILITIES
-  // ══════════════════════════════════════════════════════════════
-
   createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
     const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 700 } })
       .setOrigin(0.5).setDepth(65);
@@ -1585,10 +1507,6 @@ export class Level23Scene extends Phaser.Scene {
   screenShake(intensity = 0.005, duration = 250) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

@@ -1,28 +1,3 @@
-/**
- * Level 43 — "The Composing Room" (Output Methods: Accretion Phase —
- * printf() opens the third and final Output Wing trilogy)
- * ===========================================================================
- * Teaches System.out.printf(): a format-string template with typed
- * placeholder SLOTS (%s, %d, %f, %.Nf, %n) filled by arguments in order.
- * Reuses the Output Wing's Broadcast Log with its prominent cursor (L40
- * lineage) — printf shares print()'s no-auto-newline behavior exactly.
- *
- * parseFormatString()/evaluatePrintf() are an honest parser+evaluator:
- * the format string is scanned left-to-right into literal/slot segments;
- * each slot consumes the next argument in order and validates its type
- * (%d demands int, %f demands int/double, %s accepts anything via
- * toString); a mismatch is a genuine computed crash, not a scripted one.
- * Precision (%.Nf) uses real half-up rounding via toFixed() — verified by
- * hand against every test value in this level's rounds to confirm none
- * hit JS's floating-point toFixed() edge cases.
- *
- * DESIGN NOTE: a malformed specifier like %.2d (precision on a non-float
- * specifier) is a genuine Java runtime exception (IllegalFormatPrecision-
- * Exception) — the parser explicitly detects this and reports it as a
- * failure rather than silently falling back to printing "%.2d" as literal
- * text, which sequentially first draft would have masked test intent.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -49,9 +24,6 @@ const LOG_TEXT_X = LOG_X + 38;
 const SRC_Y = 108;
 const TUTORIAL_KEY = "level43_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", source: ['System.out.printf("Hi %s!", "Bit");'],
     question: "What appears on the log?", correct: "Hi Bit!",
@@ -296,10 +268,6 @@ export class Level43Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / ROOM
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l43_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -374,10 +342,6 @@ export class Level43Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSING TRAY
-  // ══════════════════════════════════════════════════════════════
-
   createComposingTray() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x241a10, 1);
@@ -395,10 +359,6 @@ export class Level43Scene extends Phaser.Scene {
   clearTray() { this.trayContainer.removeAll(true); }
 
   updateSlotPulse() {}
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE CASE
-  // ══════════════════════════════════════════════════════════════
 
   createTypeCase() {
     const g = this.add.graphics().setDepth(4);
@@ -430,10 +390,6 @@ export class Level43Scene extends Phaser.Scene {
       default: return C_GRAY;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BROADCAST LOG + CURSOR (L40 lineage)
-  // ══════════════════════════════════════════════════════════════
 
   createBroadcastLog() {
     const g = this.add.graphics().setDepth(10);
@@ -519,9 +475,6 @@ export class Level43Scene extends Phaser.Scene {
     this.time.delayedCall(280, () => p.destroy());
   }
 
-  /** Types text at the cursor (printf's ground truth), breaking rows at
-   * real newline chars (from \n or %n). printf never forces a trailing
-   * newline — identical to print()'s cursor semantics. */
   async typeAtCursor(text, styleType) {
     const color = styleType === "compose" ? HEX_PARCHMENT : this._slotColor(styleType);
     for (const ch of text) {
@@ -566,10 +519,6 @@ export class Level43Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -657,10 +606,6 @@ export class Level43Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0f0a06, 0.93);
@@ -684,10 +629,6 @@ export class Level43Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — compositor variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -788,13 +729,7 @@ export class Level43Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest format-string parser + printf semantics
-  // ══════════════════════════════════════════════════════════════
-
   _parseDecls(subs) {
-    // subs: { name: '"Anjana"' } or { price: '3.14159' } etc — raw source
-    // literal text substituted for the skeleton's test placeholders.
     const decls = {};
     if (!subs) return decls;
     Object.keys(subs).forEach((name) => {
@@ -806,9 +741,6 @@ export class Level43Scene extends Phaser.Scene {
     return decls;
   }
 
-  /** Scans a format string into literal/slot segments. Returns
-   * {ok:false} for a malformed specifier (e.g. %.2d) — a genuine Java
-   * runtime exception (IllegalFormatPrecisionException), not literal text. */
   parseFormatString(fmt) {
     const segments = [];
     let i = 0;
@@ -841,10 +773,6 @@ export class Level43Scene extends Phaser.Scene {
     return String(argVal.value);
   }
 
-  /** Runs a full printf call honestly: parses the format string, walks
-   * segments consuming arguments in order, validates types, applies real
-   * precision rounding. Returns {ok, crash, text, steps} where steps
-   * drives the tray/case animation. */
   evaluatePrintf(fmtSource, argVals) {
     if (!/^".*"$/.test(fmtSource.trim())) return { ok: false, compileError: true };
     const fmt = fmtSource.trim().slice(1, -1).replace(/\\n/g, "\n");
@@ -873,7 +801,6 @@ export class Level43Scene extends Phaser.Scene {
         resultText += text;
         steps.push({ type: "slot", specifier: "f", text, precision, rawText: String(argVal.value) });
       } else {
-        // %c / %b — not deeply exercised in this level's rounds
         const text = this._toStringForArg(argVal);
         resultText += text;
         steps.push({ type: "slot", specifier: seg.specifier, text });
@@ -881,10 +808,6 @@ export class Level43Scene extends Phaser.Scene {
     }
     return { ok: true, text: resultText, steps };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSITION ANIMATION — reveal, shared by all rounds
-  // ══════════════════════════════════════════════════════════════
 
   async renderFormatOnTray(fmtDisplaySource) {
     this.clearTray();
@@ -998,9 +921,6 @@ export class Level43Scene extends Phaser.Scene {
     }
   }
 
-  /** Flies a slug from the case to a tray slot; on type match, inserts;
-   * on mismatch, plays the L34-style rejection choreography. Returns
-   * {rejected:bool}. */
   async slugToSlot(slugEntry, slotInfo, matchOk) {
     const slug = slugEntry.container;
     await new Promise((res) => {
@@ -1040,7 +960,6 @@ export class Level43Scene extends Phaser.Scene {
     return { rejected: false };
   }
 
-  /** Full composition reveal for a single printf call. */
   async runComposition(fmtSource, argVals) {
     await this.renderFormatOnTray(fmtSource);
     if (!this._alive) return { ok: true, text: "" };
@@ -1056,9 +975,6 @@ export class Level43Scene extends Phaser.Scene {
     }
 
     if (!evalResult.ok && evalResult.crash === "type_mismatch") {
-      // Genuine rejection: fly the offending slug to the actual rendered
-      // tray slot it was rejected from (argument-consuming slots only —
-      // %n slots take no slug and are skipped in this lookup).
       const badIdx = evalResult.steps.filter((s) => s.type === "slot").length;
       const argSlots = this._traySlots.filter((s) => s.specifier !== "n");
       const slotInfo = argSlots[badIdx];
@@ -1074,8 +990,6 @@ export class Level43Scene extends Phaser.Scene {
       return evalResult;
     }
 
-    // Success: fly each consumed slug into its actual rendered tray slot,
-    // in argument order, before transferring the composed line to the log.
     const argSlotsOk = this._traySlots.filter((s) => s.specifier !== "n");
     let slugPos = 0;
     for (const step of evalResult.steps) {
@@ -1120,8 +1034,6 @@ export class Level43Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  /** Splits a printf(...) call's inner arguments on top-level commas
-   * (respecting quotes), returning {fmt, args:[...]}. */
   _parsePrintfCall(inner, decls) {
     const parts = [];
     let cur = "", inQuotes = false;
@@ -1143,10 +1055,6 @@ export class Level43Scene extends Phaser.Scene {
     if (decls && Object.prototype.hasOwnProperty.call(decls, tok)) return decls[tok];
     return { value: tok, type: "string" };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1213,10 +1121,6 @@ export class Level43Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1255,10 +1159,6 @@ export class Level43Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1342,10 +1242,6 @@ export class Level43Scene extends Phaser.Scene {
       this.setupPredict(config);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — COMMAND (drag cartridges)
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.updateSourceDisplay(config.sourceTemplate);
@@ -1561,10 +1457,6 @@ export class Level43Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1611,15 +1503,6 @@ export class Level43Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1640,7 +1523,6 @@ export class Level43Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level43Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1651,16 +1533,12 @@ export class Level43Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1672,10 +1550,6 @@ export class Level43Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

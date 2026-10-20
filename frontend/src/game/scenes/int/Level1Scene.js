@@ -1,16 +1,3 @@
-/**
- * Level1Scene — "Integer Discovery: Number Line Adventure" (Accretion Phase)
- * ===========================================================================
- * Mechanic: Number Line Adventure
- * - Player character moves along a number line (-10 to +10)
- * - Integers (whole numbers) fall from the top — COLLECT them!
- * - Non-integers (decimals, fractions) also fall — AVOID them!
- * - Collect 20 valid integers with ≥80% accuracy to pass
- *
- * Schema Theory: Accretion — introducing new integer concepts
- * (positive, negative, zero vs. decimals/fractions)
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
@@ -19,7 +6,6 @@ import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
 import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const GROUND_Y = 620;
@@ -42,7 +28,6 @@ const NON_INTEGERS = [
   "3/2", "-1/5",
 ];
 
-/* ───────── Helper — lerp a color ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -68,16 +53,10 @@ export class Level1Scene extends Phaser.Scene {
     GameManager.interventionInFlight = false;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PRELOAD
-   * ═══════════════════════════════════════════════════════════════ */
   preload() {
     this.load.image("foozleRobot", "/assets/images/Foozle_2DC0001_Cute_Robot/Assets/Idle/Armature_Idle_00.png");
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CREATE
-   * ═══════════════════════════════════════════════════════════════ */
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -89,10 +68,8 @@ export class Level1Scene extends Phaser.Scene {
     this.scale.on('resize', updateCamera, this);
     this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
 
-    /* ── Reset physics world gravity for this level ── */
     this.physics.world.gravity.y = 0; // we control fall speed manually
 
-    /* ── State ── */
     this.integersCollected = 0;
     this.totalCatches = 0;   // correct + wrong
     this.wrongCatches = 0;
@@ -106,13 +83,10 @@ export class Level1Scene extends Phaser.Scene {
     this.startTime = 0;
     this.combo = 0;
 
-    /* ── Draw background gradient ── */
     this._drawBackground();
 
-    /* ── Generate textures ── */
     this._generateTextures();
 
-    /* ── Particles ── */
     this.greenParticles = this.add.particles(0, 0, "greenSpark", {
       speed: { min: 80, max: 250 },
       scale: { start: 1.2, end: 0 },
@@ -139,29 +113,21 @@ export class Level1Scene extends Phaser.Scene {
       emitting: false,
     });
 
-    /* ── Number line ── */
     this._drawNumberLine();
 
-    /* ── Player ── */
     this._createPlayer();
 
-    /* ── HUD ── */
     this._createHUD();
 
-    /* ── UIScene label ── */
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 1: Accretion — Number Line Adventure!");
     }
     if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
-    /* ── Instruction overlay ── */
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawBackground() {
     const gfx = this.add.graphics().setDepth(0);
     const topColor = 0x87ceeb;
@@ -176,9 +142,6 @@ export class Level1Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES (programmatic)
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     /* Green spark */
     if (!this.textures.exists("greenSpark")) {
@@ -229,9 +192,6 @@ export class Level1Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  NUMBER LINE
-   * ═══════════════════════════════════════════════════════════════ */
   _drawNumberLine() {
     const gfx = this.add.graphics().setDepth(1);
     const lineY = GROUND_Y + 20;
@@ -259,9 +219,6 @@ export class Level1Scene extends Phaser.Scene {
     this.playerGlow = this.add.circle(W / 2, lineY, 20, 0x3498db, 0.25).setDepth(1);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PLAYER
-   * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
     // Create the player sprite from our loaded Foozle image
     this.player = this.physics.add.sprite(W / 2, GROUND_Y - PLAYER_H / 2 + 10, "foozleRobot");
@@ -317,13 +274,9 @@ export class Level1Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const hudDepth = 100;
 
-    // ── Score (top-left) ──
     this.scoreText = this.add.text(16, 68, "Score: 0", {
       fontFamily: "Arial",
       fontSize: "24px",
@@ -332,8 +285,6 @@ export class Level1Scene extends Phaser.Scene {
       stroke: "#ffffff",
       strokeThickness: 3,
     }).setDepth(hudDepth);
-
-    // ── Progress bar (top center) ──
 
     this.progressBarBg = this.add.rectangle(W / 2, 92, 400, 18, 0x34495e, 0.3)
       .setStrokeStyle(1, 0x34495e).setDepth(hudDepth);
@@ -347,7 +298,6 @@ export class Level1Scene extends Phaser.Scene {
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(hudDepth + 2);
 
-    // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 30 - i * 35, 80, "❤️", {
@@ -356,7 +306,6 @@ export class Level1Scene extends Phaser.Scene {
       this.livesIcons.push(heart);
     }
 
-    // ── Collected numbers (left sidebar) ──
     this.add.text(16, 110, "Collected:", {
       fontFamily: "Arial",
       fontSize: "11px",
@@ -370,7 +319,6 @@ export class Level1Scene extends Phaser.Scene {
       fontStyle: "bold",
     }).setDepth(hudDepth);
 
-    // ── Tooltip ──
     this.tooltip = this.add.text(W / 2, H - 80, "", {
       fontFamily: "Arial",
       fontSize: "18px",
@@ -381,13 +329,8 @@ export class Level1Scene extends Phaser.Scene {
       wordWrap: { width: 600 },
     }).setOrigin(0.5).setAlpha(0).setDepth(hudDepth + 10);
 
-    // ── Combo text (removed) ──
-    // Combo visual removed; update logic disabled in _updateCombo().
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
     PanelFit.arm(this);
     const panelTop = 85;
@@ -466,9 +409,6 @@ export class Level1Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -478,9 +418,6 @@ export class Level1Scene extends Phaser.Scene {
     this._scheduleSpawn();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWNING
-   * ═══════════════════════════════════════════════════════════════ */
   _getSpawnDelay() {
     if (this.integersCollected < 5) return 3000;
     if (this.integersCollected < 10) return 2000;
@@ -573,9 +510,6 @@ export class Level1Scene extends Phaser.Scene {
     this.fallingNumbers.push(container);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CATCH / COLLISION
-   * ═══════════════════════════════════════════════════════════════ */
   _onCatchNumber(container) {
     if (this.isComplete || !container.active) return;
     container.active = false;
@@ -591,7 +525,6 @@ export class Level1Scene extends Phaser.Scene {
     container.destroy();
 
     if (isInteger) {
-      /* ── Correct: caught an integer ── */
       this.integersCollected++;
       this.totalCatches++;
       this.combo++;
@@ -630,7 +563,6 @@ export class Level1Scene extends Phaser.Scene {
         this._checkLevelEnd();
       }
     } else {
-      /* ── Wrong: caught a non-integer ── */
       this.totalCatches++;
       this.wrongCatches++;
       this.combo = 0;
@@ -673,9 +605,6 @@ export class Level1Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════════════════════════ */
   _updateScore() {
     if (this.scoreText && this.scoreText.active) {
       this.scoreText.setText(`Score: ${this.score}`);
@@ -726,7 +655,6 @@ export class Level1Scene extends Phaser.Scene {
     }
   }
 
-  /** ML struggle check — reports real per-run catch/timing stats (rapid-fire rules apply). */
   async runBehavioralCheck() {
     const attempts_count = this.totalCatches;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -758,9 +686,6 @@ export class Level1Scene extends Phaser.Scene {
     return;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUPS & TOOLTIPS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Arial",
@@ -797,9 +722,6 @@ export class Level1Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL END
-   * ═══════════════════════════════════════════════════════════════ */
   _checkLevelEnd() {
     const accuracy = this.totalCatches > 0
       ? Math.round(((this.totalCatches - this.wrongCatches) / this.totalCatches) * 100)
@@ -1010,9 +932,6 @@ export class Level1Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update() {
     if (GameManager.interventionInFlight) {
       if (this.physics && this.physics.world) this.physics.world.pause();
@@ -1023,7 +942,6 @@ export class Level1Scene extends Phaser.Scene {
 
     if (!this.gameStarted || this.isComplete) return;
 
-    /* ── Player movement ── */
     const speed = 300;
     const jumpSpeed = -400;
 
@@ -1060,12 +978,10 @@ export class Level1Scene extends Phaser.Scene {
       }
     }
 
-    /* ── Player glow follows player ── */
     if (this.playerGlow && this.playerGlow.active) {
       this.playerGlow.setPosition(this.player.x, GROUND_Y + 20);
     }
 
-    /* ── Clean up numbers that fell off screen ── */
     this.fallingNumbers.forEach(n => {
       if (n && n.active && n.y > H + 50) {
         this.tweens.killTweensOf(n);
@@ -1075,9 +991,6 @@ export class Level1Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.fallingNumbers = [];

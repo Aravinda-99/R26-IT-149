@@ -1,24 +1,3 @@
-/**
- * Level 30 — "The Workshop" (String Methods: Restructuring Phase — Finale)
- * ===========================================================================
- * The learner restructures the charAt() schema by CONSTRUCTING complete
- * programs that automate the claw — no multiple choice. Blocks are dragged
- * into slots in a code skeleton; RUN genuinely interprets the assembled
- * program (loops, conditionals, counters, boolean flags) against live test
- * strings inside a masked "automation rig" window, where a mini claw rig
- * physically executes it: hopping tile to tile, printing to an output
- * ticker, ticking a counter dial, or crashing/looping forever exactly as
- * the player's actual code dictates.
- *
- * This closes the charAt() trilogy (Accretion L28 → Tuning L29 →
- * Restructuring L30) the same way Level 27 closed the length() trilogy:
- * a small hand-written interpreter (_interpretMissionN) computes genuine
- * results from whatever blocks were placed — never a correct/incorrect
- * lookup — so wrong builds produce their real wrong outcomes (reverse
- * traversal starting at length() crashes on hop one, a missing assignment
- * spins the watchdog, comparing a char to itself always "passes").
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -34,7 +13,6 @@ const HEX_CYAN = "#00e5ff", HEX_AMBER = "#ffd740", HEX_GREEN = "#00e676";
 const HEX_RED = "#f44336", HEX_GRAY = "#78909c", HEX_MAGENTA = "#ff4081";
 const HEX_PURPLE = "#8c7ae6";
 
-// Layout geometry (matches Level 27's construction layout)
 const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
@@ -48,9 +26,6 @@ const MINI_RAIL_Y = OY + 90, MINI_TILE_Y = OY + 150, TICKER_Y = OY + OH - 15;
 
 const TUTORIAL_KEY = "level30_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Mission configuration
-// ─────────────────────────────────────────────────────────────────
 const MISSIONS = [
   { mission: 1, title: "The Gatekeeper",
     brief: "Workshop access codes must begin with the letter 'X' — capital only! Build the door check.",
@@ -208,10 +183,6 @@ export class Level30Scene extends Phaser.Scene {
     this._dragHoverSlotKey = null;
     this.miniTiles = [];
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level28Scene";
   }
 
@@ -253,11 +224,6 @@ export class Level30Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -274,10 +240,6 @@ export class Level30Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l30_dot")) {
@@ -385,10 +347,6 @@ export class Level30Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h);
     side(x, y + h, x, y);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27 construction, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
@@ -518,10 +476,6 @@ export class Level30Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -695,10 +649,6 @@ export class Level30Scene extends Phaser.Scene {
     this.disableRunButton();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN, 0.06).setDepth(29);
@@ -737,10 +687,6 @@ export class Level30Scene extends Phaser.Scene {
     this.runButton.t.setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW (masked) + MINI CLAW + TICKER + DIAL
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -966,10 +912,6 @@ export class Level30Scene extends Phaser.Scene {
     this.watchdogText.setAlpha(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
-
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0a0e14, 1);
@@ -1028,10 +970,6 @@ export class Level30Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -1088,10 +1026,6 @@ export class Level30Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — master builder variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1168,10 +1102,6 @@ export class Level30Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1222,10 +1152,6 @@ export class Level30Scene extends Phaser.Scene {
     this.tweens.add({ targets: c, alpha: 1, duration: 300 });
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1293,10 +1219,6 @@ export class Level30Scene extends Phaser.Scene {
     this.missionElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.missionElements = [];
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission (reused arithmetic helpers)
-  // ══════════════════════════════════════════════════════════════
 
   _evalIndexExpr(expr, i, len) {
     expr = expr.trim();
@@ -1438,10 +1360,6 @@ export class Level30Scene extends Phaser.Scene {
     return used;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
-
   async onRunPressed() {
     if (this.inputLocked) return;
     this.inputLocked = true;
@@ -1452,7 +1370,6 @@ export class Level30Scene extends Phaser.Scene {
     const assembled = this.getAssembledCode();
     const wrongBlocksUsed = this._collectWrongBlocksUsed();
 
-    // compile check using the FIRST test's input (compile validity doesn't depend on data)
     const probe = this.interpretForTest(mission, assembled, mission.tests[0].input);
     if (probe.compileError) {
       await this.showCompileError(probe);
@@ -1545,9 +1462,6 @@ export class Level30Scene extends Phaser.Scene {
       if (idxTile) { await this.hopClawTo(idxTile.x); idxTile.drawBody(C_GREEN); this.pushTicker(`'${result.ch}'`); }
       await this.delay(150);
     } else if (mission.mission === 3) {
-      // mirror _interpretMission3's exact loop bound + check logic so the dial
-      // always matches the computed result, including the fixedZero+"<=" edge
-      // case where the wrong-bound loop still runs one extra safe iteration.
       let count = 0;
       const checkCode = this.slotContents.check[0].container.getData("code");
       const condCode = this.slotContents.cond[0].container.getData("code");
@@ -1583,8 +1497,6 @@ export class Level30Scene extends Phaser.Scene {
       }
       this.miniTiles.forEach((t, i) => { if (i % 2 !== 0) t.container.setAlpha(0.3); });
     } else if (mission.mission === 6) {
-      // derive the ghost claw's position from whatever twin expression the
-      // player actually built — never assume the correct mirror pattern.
       const twinCode = this.slotContents.twin[0].container.getData("code");
       const twinExprStr = this._twinExprString(twinCode);
       for (let i = 0; i < len; i++) {
@@ -1592,7 +1504,7 @@ export class Level30Scene extends Phaser.Scene {
         const twinIdx = this._evalIndexExpr(twinExprStr, i, len);
         const tile = this.miniTiles[i];
         if (tile) await this.hopClawTo(tile.x);
-        if (twinIdx < 0 || twinIdx >= len || Number.isNaN(twinIdx)) break; // already filtered by result.crash upstream, guarded here defensively
+        if (twinIdx < 0 || twinIdx >= len || Number.isNaN(twinIdx)) break;
         await this.ghostHopTo(this.miniTiles[twinIdx] ? this.miniTiles[twinIdx].x : OX + OW - 30);
         const match = input[i] === input[twinIdx];
         this.flashTilePair(i, twinIdx, match);
@@ -1609,27 +1521,6 @@ export class Level30Scene extends Phaser.Scene {
     return "s.length() - 1 - i";
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION / FEEDBACK
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1649,8 +1540,6 @@ export class Level30Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level30Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1671,8 +1560,6 @@ export class Level30Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || (compileErr && compileErr.tag) || null;
@@ -1714,16 +1601,12 @@ export class Level30Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1805,10 +1688,6 @@ export class Level30Scene extends Phaser.Scene {
   screenShake(intensity = 0.005, duration = 200) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

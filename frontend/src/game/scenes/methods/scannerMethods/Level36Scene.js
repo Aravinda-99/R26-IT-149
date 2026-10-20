@@ -1,24 +1,3 @@
-/**
- * Level 36 — "The Front Desk" (Scanner Methods: Restructuring Phase —
- * Trilogy Finale, closes the Intake Wing)
- * ===========================================================================
- * The learner CONSTRUCTS complete input-driven programs — no multiple
- * choice. Reuses the Level 27/30/33 code-canvas/parts-bin/RUN-button
- * construction architecture, with a masked rig window compacting the
- * Level 34/35 tape + Scanner machine + typed containers into a live
- * observation pane. A genuine per-mission interpreter (never scripted)
- * executes exactly what the player assembled against real tape state.
- *
- * IMPORTANT SEMANTIC FIX: nextInt()/nextDouble()/next() must skip BOTH
- * spaces and leftover newlines while hunting for their next token (real
- * Java's delimiter pattern is any whitespace, not just spaces). Levels 34
- * and 35 never chained two tokenized reads across a line boundary, so this
- * never surfaced there — but Mission 5 here does exactly that (int age,
- * then double height, on separate lines), so the tokenizer is corrected
- * here to skip newlines for nextInt/nextDouble/next (nextLine's own
- * "consume to the next newline" rule is unaffected).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../GameManager.js";
 import { WellbeingAPI } from "../../../../api/api.js";
@@ -34,18 +13,17 @@ const C_NEWLINE = 0x7b1fa2, C_AMBER = 0xffab00, C_PURPLE = 0x8c7ae6;
 const HEX_GREEN = "#4caf50", HEX_GOLD = "#ffd740", HEX_CYAN = "#00e5ff";
 const HEX_RED = "#f44336", HEX_GRAY = "#78909c", HEX_GREEN_BRIGHT = "#00e676";
 const HEX_INT = "#1565c0", HEX_DOUBLE = "#e65100", HEX_LINE = "#2e7d32";
-const HEX_PURPLE = "#8c7ae6"; // matches C_PURPLE; was referenced in the finale but never defined (ReferenceError stalled the scene timers)
+const HEX_PURPLE = "#8c7ae6";
 const HEX_SPACE = "#c2185b", HEX_NEWLINE = "#7b1fa2";
 
 const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-// Code-editor rows: one 18px line of code per 42px row, so a 34px drop slot never touches the row above/below
 const LINE_H = 42;
-const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;   // 18 logical px = ~16px on screen (canvas is shown at ~0.9)
-const SLOT_PAD = 5, SLOT_HINT_PAD = 8;               // inner padding for a dropped part / for the placeholder hint
-const HEX_HINT = "#7d8c9a";                          // placeholder text: was #3d4450 (≈1.8:1 on the slot fill), now ≈5:1
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;
+const SLOT_PAD = 5, SLOT_HINT_PAD = 8;
+const HEX_HINT = "#7d8c9a";
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const MX = OX + OW / 2, MY = OY + OH / 2 + 6;
@@ -61,9 +39,6 @@ const CONT_Y = { int: MY - 42, double: MY, string: MY + 42 };
 const TICKER_Y = OY + OH - 12;
 const TUTORIAL_KEY = "level36_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Age Gate",
     brief: "The venue's age gate needs to check every guest. Read their AGE and print 'ENTRY' if it's 18 or older, else 'DENIED'.",
@@ -236,10 +211,6 @@ export class Level36Scene extends Phaser.Scene {
     this._dragHoverSlotKey = null;
     this._janitorRecorded = false;
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level34Scene";
   }
 
@@ -284,11 +255,6 @@ export class Level36Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -305,10 +271,6 @@ export class Level36Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — front desk lobby
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l36_dot")) {
@@ -413,10 +375,6 @@ export class Level36Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27/30/33 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -466,7 +424,6 @@ export class Level36Scene extends Phaser.Scene {
     return w;
   }
 
-  /** Width of a slot, from measured text: wide enough for its placeholder hint AND for the longest part that can be dropped into it. */
   _slotWidth(mission, def) {
     const hintW = this._measureText(def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2;
     const partStyle = { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold" };
@@ -483,7 +440,6 @@ export class Level36Scene extends Phaser.Scene {
 
     const allLines = ["Scanner sc = new Scanner(System.in);", ...mission.skeleton];
     allLines.forEach((rawLine, i) => {
-      // every object of a row is vertically centred on the row, so slots and text share one baseline
       const cy = CODE_Y0 + i * LINE_H + LINE_H / 2;
       const numT = this.add.text(CX + 8, cy, String(i + 1), { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5);
       this.codeContainer.add(numT);
@@ -508,7 +464,6 @@ export class Level36Scene extends Phaser.Scene {
           const slotId = part;
           const def = this.slotDefs[slotId];
           const w = this._slotWidth(mission, def);
-          // the slot sits in a gap measured from the text before it; the text after it starts a gap after the slot
           if (x > CODE_X) x += SLOT_GAP;
           def.rect = { x, y: cy - SLOT_H / 2, w, h: SLOT_H };
           this._drawSlotPlaceholder(slotId);
@@ -562,7 +517,6 @@ export class Level36Scene extends Phaser.Scene {
     this._drawSlotPlaceholder(slotId);
   }
 
-  /** A part sitting in a slot is drawn slot-sized with 18px text (the parts-bin chip stays as it was, just hidden meanwhile). */
   _fitBlockToSlot(c, rect) {
     let v = c.getData("slotView");
     if (!v) {
@@ -583,7 +537,6 @@ export class Level36Scene extends Phaser.Scene {
     if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
   }
 
-  /** Back to the parts-bin chip when a part is picked up out of a slot. */
   _releaseBlockFromSlot(c) {
     const v = c.getData("slotView");
     if (!v) return;
@@ -599,10 +552,6 @@ export class Level36Scene extends Phaser.Scene {
     const y = CODE_Y0 + (lineIndex + 1) * LINE_H;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (Level 27/30/33 drag system, reused verbatim)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -765,10 +714,6 @@ export class Level36Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN, 0.06).setDepth(29);
@@ -807,10 +752,6 @@ export class Level36Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — compact Level 34/35 intake apparatus
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -852,10 +793,6 @@ export class Level36Scene extends Phaser.Scene {
       g.lineBetween(Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI TAPE
-  // ══════════════════════════════════════════════════════════════
 
   _classifyChar(ch) {
     if (ch === " ") return "space";
@@ -961,10 +898,6 @@ export class Level36Scene extends Phaser.Scene {
     if (spot.active) spot.destroy();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI SCANNER MACHINE
-  // ══════════════════════════════════════════════════════════════
-
   createMiniScannerMachine() {
     const c = this.add.container(MACHINE_X, MACHINE_Y).setDepth(2);
     const body = this.add.graphics();
@@ -1004,13 +937,6 @@ export class Level36Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.miniMachine.c, x: MACHINE_X + 0.5, duration: 30, yoyo: true, repeat: 3 });
   }
 
-  /**
-   * The honest tokenizer, extended from Level 34/35: nextInt()/nextDouble()/
-   * next() skip BOTH spaces and leftover newlines when hunting for their
-   * token (real Java's whitespace delimiter includes newlines) — Mission 5
-   * chains two tokenized reads across a line boundary and genuinely needs
-   * this. nextLine() keeps its own distinct "consume to next newline" rule.
-   */
   evaluateCall(cells, method) {
     let i = 0;
     const skipped = [];
@@ -1124,10 +1050,6 @@ export class Level36Scene extends Phaser.Scene {
     await this.delay(100);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI CONTAINERS + TICKER + MANIFEST STRIP
-  // ══════════════════════════════════════════════════════════════
-
   createMiniContainers() {
     this.miniContainers = {};
     [{ key: "int", label: "int", color: C_INT, y: CONT_Y.int }, { key: "double", label: "double", color: C_DOUBLE, y: CONT_Y.double }, { key: "string", label: "String", color: C_LINE, y: CONT_Y.string }].forEach((def) => {
@@ -1188,10 +1110,6 @@ export class Level36Scene extends Phaser.Scene {
   updateManifestStrip(text) {
     this.manifestStripText.setText(text);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
@@ -1254,10 +1172,6 @@ export class Level36Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -1313,10 +1227,6 @@ export class Level36Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — head clerk variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1403,10 +1313,6 @@ export class Level36Scene extends Phaser.Scene {
     return t;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1425,10 +1331,6 @@ export class Level36Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1497,10 +1399,6 @@ export class Level36Scene extends Phaser.Scene {
     this.missionElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.missionElements = [];
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest sequential execution
-  // ══════════════════════════════════════════════════════════════
 
   interpretMission(mission, blocks, inputLines) {
     switch (mission.mission) {
@@ -1667,10 +1565,6 @@ export class Level36Scene extends Phaser.Scene {
     return { value: `WELCOME, ${transformed}!`, steps };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REVEAL — trace-driven, shared by all six missions
-  // ══════════════════════════════════════════════════════════════
-
   async playReveal(mission, testInputLines, interpretResult) {
     this.loadMiniTape(testInputLines);
     this.verdictLamp.setFillStyle(C_AMBER);
@@ -1727,10 +1621,6 @@ export class Level36Scene extends Phaser.Scene {
     this.screenShake(0.005, 180);
     this.time.delayedCall(1200, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 250, onComplete: () => stamp.destroy() }); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
 
   _collectWrongBlocksUsed() {
     const used = [];
@@ -1804,23 +1694,6 @@ export class Level36Scene extends Phaser.Scene {
     return { match };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1840,8 +1713,6 @@ export class Level36Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level36Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1862,14 +1733,8 @@ export class Level36Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
-    // compileErr.tag is authoritative (computed directly from the actual
-    // cause) — several slots can each hold a distractor simultaneously, so
-    // wrongBlocksUsed[0] (picked by slot insertion order, not causation)
-    // must not outrank it or the feedback can cite an unrelated block.
     const feedbackTag = (compileErr && compileErr.tag) || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || null;
 
     (async () => {
@@ -1909,16 +1774,12 @@ export class Level36Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2000,10 +1861,6 @@ export class Level36Scene extends Phaser.Scene {
   screenShake(intensity = 0.005, duration = 180) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

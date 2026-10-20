@@ -1,21 +1,3 @@
-/**
- * Level 34 — "The Intake Dock" (Scanner Methods: Accretion Phase)
- * ===========================================================================
- * Opens the new Intake Wing. Teaches Scanner.nextInt() / nextDouble() /
- * nextLine() through a receiving-dock metaphor: raw input arrives on a
- * visible BUFFER TAPE (the ground truth of buffer state — every consumption,
- * skip, and rejection is derived from it, never scripted). The Scanner
- * machine consumes tokens from the tape front and casts them into typed
- * containers; a mismatched token is rejected wholesale (InputMismatchException)
- * and the tape is left completely unchanged, exactly as real Java behaves.
- *
- * evaluateCall() is an honest tokenizer: skip leading whitespace, read the
- * maximal token, validate it against the calling method's type, and return
- * either a typed value with its consumed cells, or an error with ZERO cells
- * consumed. All visuals (tape length, machine casting, container fills,
- * compile/runtime error stamps) are derived from this single function.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../TutorialReplayButton.js";
@@ -43,9 +25,6 @@ const PORT_X = 35, PORT_Y = 250;
 const SRC_Y = 158;
 const TUTORIAL_KEY = "level34_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", inputLine: "7", call: "sc.nextInt()", correct: "7",
     options: [
@@ -255,10 +234,6 @@ export class Level34Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l34_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -400,10 +375,6 @@ export class Level34Scene extends Phaser.Scene {
     side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TAPE — the buffer, the ground truth
-  // ══════════════════════════════════════════════════════════════
-
   _classifyChar(ch) {
     if (ch === " ") return "space";
     if (ch === "\n") return "newline";
@@ -479,7 +450,6 @@ export class Level34Scene extends Phaser.Scene {
     });
   }
 
-  /** Animates the given prefix cell-objects sliding into the machine mouth, then removes them from tapeState and re-renders. */
   async tapeConsumeVisual(count, discard = false) {
     const objs = this.tapeCellObjs.slice(0, count);
     const promises = objs.map((t, i) => new Promise((res) => {
@@ -493,10 +463,6 @@ export class Level34Scene extends Phaser.Scene {
     this.tapeState = this.tapeState.slice(count);
     this.renderTape(false);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCANNER MACHINE
-  // ══════════════════════════════════════════════════════════════
 
   createScannerMachine() {
     const c = this.add.container(MACHINE_X, MACHINE_Y).setDepth(10);
@@ -575,7 +541,6 @@ export class Level34Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.machine.c, x: MACHINE_X + 0.6, duration: 40, yoyo: true, repeat: 5 });
   }
 
-  /** The full honest tokenizer. Pure function over cell arrays; never scripted. */
   evaluateCall(cells, method) {
     let i = 0;
     const skipped = [];
@@ -614,11 +579,6 @@ export class Level34Scene extends Phaser.Scene {
     return { error: true, message: "Unknown method." };
   }
 
-  /**
-   * Runs a full intake call against the live tape: plays skip/consume/cast/
-   * dispense or the mismatch-rejection sequence, and returns the result of
-   * evaluateCall() so callers can grade against it.
-   */
   async runIntake(method, targetContainerKey) {
     const result = this.evaluateCall(this.tapeState, method);
     this.nozzleGlow(method, true);
@@ -655,10 +615,6 @@ export class Level34Scene extends Phaser.Scene {
 
     const key = targetContainerKey || (result.returnType === "int" ? "int" : result.returnType === "double" ? "double" : "string");
     const container = this.containers[key];
-    // Widening can happen two ways: the token itself has no decimal point but
-    // nextDouble() still casts it cleanly (result.widened), OR nextInt()
-    // genuinely returns an int that then widens on assignment into a double
-    // variable/container (key === "double" but the call was nextInt()).
     const assignmentWidened = key === "double" && result.returnType === "int";
     const widening = result.widened || assignmentWidened;
     const displayValue = assignmentWidened ? Number(result.rawValue).toFixed(1) : result.valueDisplay;
@@ -720,10 +676,6 @@ export class Level34Scene extends Phaser.Scene {
     await this.delay(150);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPED CONTAINERS
-  // ══════════════════════════════════════════════════════════════
-
   createContainers() {
     this.containers = {};
     const defs = [
@@ -779,10 +731,6 @@ export class Level34Scene extends Phaser.Scene {
     this.tweens.add({ targets: ghost, alpha: 0, duration: 250, onComplete: () => ghost.destroy() });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE / EXPRESSION DISPLAYS
-  // ══════════════════════════════════════════════════════════════
-
   createSourceDisplay() {
     this.sourceText = this.add.text(MACHINE_X, SRC_Y, "", { font: "18px Courier New", color: "#e0e0e0" }).setOrigin(0.5).setDepth(15);
   }
@@ -792,7 +740,6 @@ export class Level34Scene extends Phaser.Scene {
     this.sourceText.setText("");
     const parts = tokens.map((t) => `${t.t}`).join("");
     this.sourceText.setText(parts);
-    // colorize via a rich-text style approximation: render as multiple text objects
     if (this._sourceParts) this._sourceParts.forEach((p) => p.destroy());
     this.sourceText.setText("");
     this._sourceParts = [];
@@ -844,7 +791,6 @@ export class Level34Scene extends Phaser.Scene {
     this.monitorContainer.add(t);
   }
 
-  /** Renders monitorTemplate with dashed drop-slots in place of <slot:id> tokens. */
   renderMonitorTemplate(template) {
     this.monitorContainer.removeAll(true);
     this.monitorSlotDefs = {};
@@ -903,10 +849,6 @@ export class Level34Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0a120a, 0.93);
@@ -942,10 +884,6 @@ export class Level34Scene extends Phaser.Scene {
   updateRoundHUD() {
     this.roundText.setText(`ROUND ${this.currentRound + 1}/12`);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — dock keeper variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -1025,10 +963,6 @@ export class Level34Scene extends Phaser.Scene {
     this.time.delayedCall(2200, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 300, onComplete: () => t.destroy() }); });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1113,10 +1047,6 @@ export class Level34Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1155,10 +1085,6 @@ export class Level34Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.loadTape(config.inputLine);
@@ -1255,10 +1181,6 @@ export class Level34Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — JUDGE
-  // ══════════════════════════════════════════════════════════════
-
   _declTypeOf(snippet) {
     const m = snippet.match(/^(int|double|String)\s/);
     return m ? m[1] : null;
@@ -1280,10 +1202,6 @@ export class Level34Scene extends Phaser.Scene {
       if (returnType === "String") return { ok: false, tag: "line_into_double_belief" };
       return { ok: true }; // int widens into double
     }
-    // String target: no compile-time block here (documented simplification) —
-    // a numeric method paired with a String declaration is left to run
-    // honestly against the tape, so a word-vs-number mismatch still produces
-    // the real InputMismatchException rather than a scripted outcome.
     return { ok: true };
   }
 
@@ -1380,10 +1298,6 @@ export class Level34Scene extends Phaser.Scene {
     this.time.delayedCall(1600, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 250, onComplete: () => stamp.destroy() }); });
     this.screenShake(0.003, 150);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — COMMAND (drag cartridges)
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.loadTape(config.inputLine);
@@ -1607,7 +1521,6 @@ export class Level34Scene extends Phaser.Scene {
       this.clearTape();
       this.loadTape(config.inputLine);
       this.updateSourceDisplay("");
-      // return cartridges to their homes, keep monitor slots empty for another attempt
       this.cartridges.forEach((cart) => {
         cart.container.setData("placedIn", null);
         const home = cart.container.getData("home");
@@ -1618,10 +1531,6 @@ export class Level34Scene extends Phaser.Scene {
       this.disableReadButton();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -1674,14 +1583,6 @@ export class Level34Scene extends Phaser.Scene {
 
   async advanceRound() {
     this.clearRound();
-    // currentRound is 0-based, so === 2 means the round we're leaving is
-    // ROUNDS[2].round === 3 — i.e. this is the exact round 3 -> round 4
-    // handoff. Awaited (unlike the old fire-and-forget version): a slow or
-    // unreachable backend still can't block gameplay, since
-    // runBehavioralCheck() never throws and the wait below is capped at
-    // 1.5s unless a modal genuinely opens — but a fire-and-forget call let
-    // Round 4 spawn while Bit's modal was still on screen, which is the
-    // actual freeze/timeout bug this was covering up.
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
@@ -1701,15 +1602,6 @@ export class Level34Scene extends Phaser.Scene {
     else this.startRound(next);
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1731,10 +1623,6 @@ export class Level34Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // FLOATING TEXT / SHAKE / CONFETTI
-  // ══════════════════════════════════════════════════════════════
-
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1600) {
     font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
@@ -1755,10 +1643,6 @@ export class Level34Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(900, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

@@ -1,21 +1,3 @@
-/**
- * Level 32 — "The Press Gauntlet" (String Methods: Tuning Phase)
- * ==================================================================
- * Tunes the case-conversion + immutability schema from Level 31 through
- * rapid-fire trials. Each trial arrives as a hot billet on the anvil that
- * visibly COOLS from blazing orange to dead gray — the billet's heat is
- * the visual timer, driven by a single tween on a plain state object
- * (never a GameObject transform), so urgency vibration can safely ride on
- * the billet container's `x` without any risk of fighting the timer for
- * control of a shared property — the exact bug class fixed in Level 26.
- *
- * The full Level 31 press/case/tray apparatus is reused wholesale as the
- * permanent reference and the reveal machinery; Wave 3 adds a genuine
- * chain evaluator that welds this trilogy to charAt() (L28-29) and
- * length() (L25-27) — each call's result genuinely computed step by step,
- * never looked up.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -50,9 +32,6 @@ const HEAT_STOPS = [
   { p: 0.0, color: 0x3a3542 },
 ];
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, wave: 1, type: "predict", timeLimit: 12000,
     decl: { name: "s", value: "mint" }, billet: "s.toUpperCase()", correct: '"MINT"',
@@ -245,9 +224,6 @@ export class Level32Scene extends Phaser.Scene {
     this._alive = true;
     this._bubble = null;
     this._keyHandler = null;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level31Scene";
   }
 
@@ -288,14 +264,12 @@ export class Level32Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this.coolingTween && this.coolingTween.isPlaying()) {
         this.coolingTween.pause();
       }
-      return; // Return early to stop particles, furnace, and stopwatch from animating
+      return;
     } else {
-      // Resume the cooling timer tween if the menu was just dismissed
       if (this.coolingTween && this.coolingTween.isPaused()) {
         this.coolingTween.resume();
       }
@@ -308,10 +282,6 @@ export class Level32Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment (Level 31 hall, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l32_dot")) {
@@ -467,10 +437,6 @@ export class Level32Scene extends Phaser.Scene {
     return mode === "upper" ? str.toUpperCase() : str.toLowerCase();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE PRESS (Level 31 mechanics, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createPress() {
     const g = this.add.graphics().setDepth(10);
     [540, 740].forEach((x) => {
@@ -514,10 +480,6 @@ export class Level32Scene extends Phaser.Scene {
       }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ORIGINAL CASE (Level 31 mechanics, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createOriginalCase() {
     this.caseFrame = this.add.graphics().setDepth(10);
@@ -628,10 +590,6 @@ export class Level32Scene extends Phaser.Scene {
     this.literalGroup = c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OUTPUT TRAY (Level 31 mechanics, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createOutputTray() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x12111a, 1);
@@ -674,10 +632,6 @@ export class Level32Scene extends Phaser.Scene {
     this.time.delayedCall(600, () => this.tweens.add({ targets: label, alpha: 0, duration: 250 }));
     this.clearTray();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TRANSFORMATION (Level 31 mechanics at 1.4x pace)
-  // ══════════════════════════════════════════════════════════════
 
   async runTransformation(str, mode) {
     this.setPressMode(mode);
@@ -751,10 +705,6 @@ export class Level32Scene extends Phaser.Scene {
     }
     return result;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CHAIN EVALUATION (genuine, step-by-step)
-  // ══════════════════════════════════════════════════════════════
 
   _parseChainCalls(billetExpr) {
     const calls = [];
@@ -868,10 +818,6 @@ export class Level32Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD & DISPLAYS
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0c0b12, 0.93);
@@ -978,10 +924,6 @@ export class Level32Scene extends Phaser.Scene {
     this.tickerText.setText("").setAlpha(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — gauntlet marshal variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
     const g = this.add.graphics();
@@ -1068,10 +1010,6 @@ export class Level32Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1130,10 +1068,6 @@ export class Level32Scene extends Phaser.Scene {
     return c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WAVE MANAGEMENT
-  // ══════════════════════════════════════════════════════════════
-
   async startWave(waveNumber) {
     if (!this._alive || this.gameEnded) return;
     this.currentWave = waveNumber;
@@ -1169,10 +1103,6 @@ export class Level32Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BILLET — visual timer
-  // ══════════════════════════════════════════════════════════════
 
   heatColorFor(progress) {
     for (let i = 0; i < HEAT_STOPS.length - 1; i++) {
@@ -1306,7 +1236,6 @@ export class Level32Scene extends Phaser.Scene {
     if (state !== this.urgencyState) {
       this.urgencyState = state;
       if (state === "danger" && this.billet) {
-        // vibration rides on x — cooling only ever tweens the plain _coolState object, never container.x
         this.tweens.add({ targets: this.billet.container, x: 641, duration: 40, yoyo: true, repeat: -1 });
       }
     }
@@ -1347,10 +1276,6 @@ export class Level32Scene extends Phaser.Scene {
     this.screenShake(0.002, 100);
     await this.delay(200);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
 
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
@@ -1403,10 +1328,6 @@ export class Level32Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES
-  // ══════════════════════════════════════════════════════════════
-
   showOptionBubbles(options, onSelect) {
     this.optionBubbles = [];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
@@ -1452,10 +1373,6 @@ export class Level32Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1474,10 +1391,6 @@ export class Level32Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE B — SEALED
-  // ══════════════════════════════════════════════════════════════
 
   setupSealed(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
@@ -1508,10 +1421,6 @@ export class Level32Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color, key) => {
@@ -1576,10 +1485,6 @@ export class Level32Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — CHAIN
-  // ══════════════════════════════════════════════════════════════
-
   setupChain(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1594,10 +1499,6 @@ export class Level32Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE E — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(cfg) {
     const strip = this.add.text(640, 265, "CLICK THE BUG", { font: "bold 15px Arial", color: HEX_MAGENTA }).setOrigin(0.5).setDepth(25);
@@ -1633,7 +1534,6 @@ export class Level32Scene extends Phaser.Scene {
         await this.delay(300);
         if (!this._alive) return;
         if (cfg.round === 15) {
-          // dual reveal: buggy discard, then fixed reassign
           const r1 = await this.runTransformation(cfg.decl.value, "upper");
           await this.discardTrayToChute();
           await this.printTickerTape(`"${cfg.decl.value}"`);
@@ -1660,10 +1560,6 @@ export class Level32Scene extends Phaser.Scene {
       }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ANSWER RESOLUTION
-  // ══════════════════════════════════════════════════════════════
 
   async _resolveAnswer(cfg, correct, selected, tag, revealFn) {
     if (this.answered) return;
@@ -1750,15 +1646,6 @@ export class Level32Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1779,7 +1666,6 @@ export class Level32Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level32Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1790,16 +1676,12 @@ export class Level32Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1877,10 +1759,6 @@ export class Level32Scene extends Phaser.Scene {
   screenShake(intensity = 0.003, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   async forgeCeremony() {
     this.furnaceCircles.forEach((c) => this.tweens.add({ targets: c, fillAlpha: c.fillAlpha * 2, duration: 400, yoyo: true }));

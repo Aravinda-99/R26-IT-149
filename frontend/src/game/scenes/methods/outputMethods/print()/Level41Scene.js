@@ -1,22 +1,3 @@
-/**
- * Level 41 — "The Live Feed" (Output Methods: Tuning Phase — print())
- * ===========================================================================
- * Tunes the Level 40 print() schema under time pressure. The Air Time Bar
- * IS the timer — it drains linearly over the round's time limit; answer
- * before it hits zero or the item goes to DEAD AIR. The reveal always
- * fires the true transmission on a compact reference whisper desk + log
- * (ported from Level 40), so cursor position and newline/tab escape
- * behavior are always genuinely demonstrated — never scripted.
- *
- * evaluateCall() extends the Level 40 evaluator with '\t' (tab): a tab
- * character pads the current row out to the next multiple-of-8 column,
- * mirroring Java's console tab-stop convention. The print/println + '\n'
- * discrimination (round 7's central lesson) falls straight out of the
- * L40 model unmodified: a '\n' inside the argument breaks rows mid-type,
- * and THEN — only for println — the auto-newline fires once more at the
- * very end, landing the cursor a full row further down.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
@@ -45,9 +26,6 @@ const LOG_TEXT_X = LOG_X + 32;
 const TUTORIAL_KEY = "level41_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, wave: 1, type: "predict", source: ['System.out.print("signal");'],
     question: "What appears on the log?", correct: "signal",
@@ -264,9 +242,6 @@ export class Level41Scene extends Phaser.Scene {
     this._urgencyState = "safe";
     this._waveSquares = [];
     this._firstEscapeAnnotationShown = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level40Scene";
   }
 
@@ -301,14 +276,12 @@ export class Level41Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this._drainTween && this._drainTween.isPlaying()) {
         this._drainTween.pause();
       }
-      return; // Return early to stop ambient effects and server LEDs from animating
+      return;
     } else {
-      // Resume the round timer tween if the menu was just dismissed
       if (this._drainTween && this._drainTween.isPaused()) {
         this._drainTween.resume();
       }
@@ -320,10 +293,6 @@ export class Level41Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / ROOM
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l41_dot")) {
@@ -430,10 +399,6 @@ export class Level41Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PREVIEW MONITOR
-  // ══════════════════════════════════════════════════════════════
-
   createPreviewMonitor() {
     const bez = this.add.graphics().setDepth(10);
     bez.fillStyle(0x141a24, 1);
@@ -501,10 +466,6 @@ export class Level41Scene extends Phaser.Scene {
     this.airTimeReadout.setColor(remaining <= 0 ? HEX_RED : "#e0e0e0");
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // AIR TIME DRAIN TIMER
-  // ══════════════════════════════════════════════════════════════
-
   startAirTimeDrain(timeLimitMs, tickCount, onTimeout) {
     this._killDrainTween();
     this._urgencyState = "safe";
@@ -567,10 +528,6 @@ export class Level41Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MONITOR TRIAL CONTENT
-  // ══════════════════════════════════════════════════════════════
-
   _syntaxTokenize(line) {
     const tokens = [];
     const re = /(\\[nt])|(\bSystem\.out\b)|(\.)|(\bprintln\b|\bprint\b)|("(?:[^"\\]|\\.)*")|([(){};=+])/g;
@@ -628,10 +585,6 @@ export class Level41Scene extends Phaser.Scene {
   clearMonitorTrial() {
     if (this.trialContainer) { this.trialContainer.destroy(); this.trialContainer = null; }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE WHISPER DESK (compact, ported from L40)
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceWhisperDesk() {
     const g = this.add.graphics().setDepth(4);
@@ -706,10 +659,6 @@ export class Level41Scene extends Phaser.Scene {
     await this.delay(400);
     this.clearMarquee();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE LOG + CURSOR (compact, ported from L40)
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceLog() {
     const g = this.add.graphics().setDepth(10);
@@ -798,9 +747,6 @@ export class Level41Scene extends Phaser.Scene {
     }
   }
 
-  /** Types `text` onto the log at the current cursor, breaking rows at
-   * real newline chars and padding to the next tab stop (multiple of 8)
-   * at real tab chars. Ground truth: this.rows. */
   async typeAtCursor(text, styleType) {
     const color = this._typeColor(styleType);
     for (const ch of text) {
@@ -864,10 +810,6 @@ export class Level41Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x080810, 0.93);
@@ -914,10 +856,6 @@ export class Level41Scene extends Phaser.Scene {
     if (this.currentWave === 2) return this.currentRound - 5;
     return this.currentRound - 10;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — line producer variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1023,10 +961,6 @@ export class Level41Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(800, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — L40's evaluator extended with \t
-  // ══════════════════════════════════════════════════════════════
 
   _parseDecls(declSource) {
     if (!declSource) return {};
@@ -1136,10 +1070,6 @@ export class Level41Scene extends Phaser.Scene {
     return null;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WHISPER TRANSMISSION — reveal, shared by all rounds
-  // ══════════════════════════════════════════════════════════════
-
   async fireCall(method, argExpr, decls) {
     const evalResult = this.evaluateArg(method, argExpr, decls);
     if (!evalResult.ok) {
@@ -1218,10 +1148,6 @@ export class Level41Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1254,10 +1180,6 @@ export class Level41Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.startWave(1);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WAVE / ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
@@ -1336,10 +1258,6 @@ export class Level41Scene extends Phaser.Scene {
     this.clearRound();
     this.advanceRound();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT / CURSOR / TRACE
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config, decls) {
     this.showTrialOnMonitor(config.source, config.question);
@@ -1424,10 +1342,6 @@ export class Level41Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
-
   setupBugHunt(config) {
     this.trialContainer && this.trialContainer.destroy();
     this.trialContainer = this.add.container(0, 0);
@@ -1504,8 +1418,6 @@ export class Level41Scene extends Phaser.Scene {
     }
   }
 
-  /** Bug-hunt reveals genuinely execute the real (or fixed) sequence
-   * against the whisper desk/log — never scripted. */
   async runBugHuntReveal(config) {
     if (config.round === 14) {
       await this.fireCall("print", '"Ready?"', {});
@@ -1524,7 +1436,6 @@ export class Level41Scene extends Phaser.Scene {
       await this.delay(400);
       if (!this._alive) return;
       await this.clearLog();
-      // fixed: print() then println()
       await this.fireCall("print", '"Name: "', {});
       await this.delay(120);
       if (!this._alive) return;
@@ -1532,10 +1443,6 @@ export class Level41Scene extends Phaser.Scene {
       return;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -1593,15 +1500,6 @@ export class Level41Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1622,7 +1520,6 @@ export class Level41Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level41Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1633,16 +1530,12 @@ export class Level41Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1656,10 +1549,6 @@ export class Level41Scene extends Phaser.Scene {
     if (nextConfig.wave !== this.currentWave) { this.startWave(nextConfig.wave); return; }
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

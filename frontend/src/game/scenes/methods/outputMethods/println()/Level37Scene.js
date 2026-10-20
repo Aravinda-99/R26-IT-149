@@ -1,24 +1,3 @@
-/**
- * Level 37 — "The Broadcast Tower" (Output Methods: Accretion Phase)
- * ===========================================================================
- * Opens the new Output Wing. Teaches System.out.println() as the directional
- * counterpart to Scanner: Scanner PULLS data in, println PUSHES data out.
- * Every transmission (a println call) assembles its argument in the marquee,
- * launches up the tower antenna, and lands on the Broadcast Log — which is
- * the level's ground truth. The log always auto-advances a fresh cursor
- * slot after every transmission (println() included), making the invisible
- * newline visible.
- *
- * evaluatePrintln() is an honest left-to-right expression evaluator: it
- * tokenizes on top-level '+' (respecting quotes), evaluates each token as a
- * String literal / numeric literal / boolean literal / variable reference,
- * and folds left-to-right with "sticky" String context — once either side
- * of a '+' is a String, the rest concatenates; pure-numeric chains add.
- * Malformed or undefined tokens are genuine compile errors. Nothing here is
- * a lookup table — round 6's "score: " + 1 + 1 and round 9's 3 + 4 both
- * fall out of the same fold.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -47,9 +26,6 @@ const SRC_Y = 350;
 const TUTORIAL_KEY = "level37_tutorial_done";
 let firstNewlineAnnotationShown = false;
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", source: ['System.out.println("Broadcasting");'],
     question: "What appears on the log?", correct: "Broadcasting",
@@ -292,10 +268,6 @@ export class Level37Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l37_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -390,10 +362,6 @@ export class Level37Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TOWER
-  // ══════════════════════════════════════════════════════════════
-
   createTower() {
     const g = this.add.graphics().setDepth(3);
     g.lineStyle(2, 0x3d4450, 1);
@@ -452,10 +420,6 @@ export class Level37Scene extends Phaser.Scene {
     g.strokeRoundedRect(LAUNCH_X - 45, LAUNCH_Y - 27, 90, 54, 6);
     this.add.text(LAUNCH_X, LAUNCH_Y - 34, "TX", { font: "bold 11px Arial", color: HEX_CYAN }).setOrigin(0.5).setAlpha(0.6).setDepth(4);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MARQUEE
-  // ══════════════════════════════════════════════════════════════
 
   createMarquee() {
     const g = this.add.graphics().setDepth(4);
@@ -609,10 +573,6 @@ export class Level37Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CARTRIDGE CACHE (preview rail)
-  // ══════════════════════════════════════════════════════════════
-
   createCartridgeCache() {
     this.cacheContainer = this.add.container(0, 0).setDepth(4);
   }
@@ -636,10 +596,6 @@ export class Level37Scene extends Phaser.Scene {
       x += w + 8;
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -701,10 +657,6 @@ export class Level37Scene extends Phaser.Scene {
     else this.monitorText.setFontSize(18);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BROADCAST LOG
-  // ══════════════════════════════════════════════════════════════
-
   createBroadcastLog() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x08111c, 1);
@@ -764,13 +716,6 @@ export class Level37Scene extends Phaser.Scene {
     this.logRowObjs.push({ stripe, numT, textT });
   }
 
-  /**
-   * Cursor-state machine shared by println() and print(): whichever call
-   * lands starts a new row if the cursor is on a fresh line, or appends to
-   * the still-open last row if the previous call was a print() that never
-   * advanced past it. `endsLine` decides whether THIS call leaves the
-   * cursor on a fresh line afterward (println) or mid-row (print).
-   */
   _writeToLog(text, styleType, endsLine) {
     if (this._cursorOnFreshLine === false && this.logLines.length > 0) {
       const lastIndex = this.logLines.length - 1;
@@ -805,10 +750,6 @@ export class Level37Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x050914, 0.93);
@@ -835,10 +776,6 @@ export class Level37Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — broadcast engineer variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -944,10 +881,6 @@ export class Level37Scene extends Phaser.Scene {
     this.time.delayedCall(900, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest, left-to-right, sticky-String
-  // ══════════════════════════════════════════════════════════════
-
   _tokenizeExpr(expr) {
     const tokens = [];
     let cur = "", inQuotes = false;
@@ -986,9 +919,6 @@ export class Level37Scene extends Phaser.Scene {
     return String(val);
   }
 
-  /** Honest evaluator: tokenize on top-level '+', fold left-to-right with
-   * sticky-String semantics. Returns {ok:false} for undefined identifiers
-   * or malformed tokens (compile error). */
   evaluatePrintln(argExpr, decls) {
     if (argExpr === null || argExpr === undefined || argExpr.trim() === "") {
       return { ok: true, isEmpty: true, text: "", styleType: "newline" };
@@ -1012,12 +942,6 @@ export class Level37Scene extends Phaser.Scene {
     return { ok: true, isEmpty: false, text: this._displayValue(acc.value, acc.type), styleType: acc.type, tokens, evaluated };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TRANSMISSION — the reveal, shared by all rounds
-  // ══════════════════════════════════════════════════════════════
-
-  /** Runs one println/print call end-to-end: assemble in marquee, launch,
-   * land on log (or refuse at the launch bay for a compile error). */
   async fireCall(argExpr, decls, method = "println") {
     const evalResult = this.evaluatePrintln(argExpr, decls);
     if (!evalResult.ok) {
@@ -1085,8 +1009,6 @@ export class Level37Scene extends Phaser.Scene {
     await this.delay(150);
   }
 
-  /** print() semantics: writes onto the CURRENT cursor row without
-   * advancing to a new line — used only by the Level-38 preview cartridge. */
   appendToLastLineNoNewline(text, styleType) {
     this._writeToLog(text, styleType, false);
   }
@@ -1106,10 +1028,6 @@ export class Level37Scene extends Phaser.Scene {
     this.screenShake(0.004, 160);
     this.time.delayedCall(1200, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1179,10 +1097,6 @@ export class Level37Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1219,10 +1133,6 @@ export class Level37Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1298,7 +1208,7 @@ export class Level37Scene extends Phaser.Scene {
     for (const line of config.source) {
       if (!this._alive) return;
       const m = line.match(/print(?:ln)?\(([^)]*)\)/);
-      if (!m) continue; // declaration lines (e.g. "int score = 42;") aren't transmissions
+      if (!m) continue;
       const method = line.includes("println") ? "println" : "print";
       this.updateSourceDisplay(config.source);
       await this.fireCall(m[1], config.decls, method);
@@ -1326,10 +1236,6 @@ export class Level37Scene extends Phaser.Scene {
       this.setupPredict(config);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — COMMAND (drag cartridges)
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.updateSourceDisplay(config.sourceTemplate.map((l) => l.replace(/<slot:\w+>/g, "____")));
@@ -1450,9 +1356,6 @@ export class Level37Scene extends Phaser.Scene {
   }
 
   updateSlotVisual(slotId) {
-    // Slots are represented purely by the source display text + drop
-    // zone; no persistent placeholder graphic is drawn (kept intentionally
-    // simple — the cartridge itself, once placed, IS the visual).
   }
 
   _nearestOpenSlot(obj, x, y) {
@@ -1588,10 +1491,6 @@ export class Level37Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1640,15 +1539,6 @@ export class Level37Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1674,16 +1564,12 @@ export class Level37Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1695,10 +1581,6 @@ export class Level37Scene extends Phaser.Scene {
     if (next >= ROUNDS.length) this.levelComplete();
     else this.startRound(next);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   gameOver() {
     PanelFit.arm(this);

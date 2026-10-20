@@ -1,21 +1,3 @@
-/**
- * Level 31 — "The Case Press" (String Methods: Accretion Phase)
- * =================================================================
- * Teaches toUpperCase()/toLowerCase() AND — the deeper lesson — String
- * immutability. Three stations: the sealed Original Case (left), the
- * Press (center), and the Output Tray (right). The press only ever works
- * on a ghost COPY of the original tiles; the case itself is architecturally
- * untouchable except by the one deliberate "reassignment" reveal, so the
- * game's own code structure embodies the semantics being taught — no
- * method can reach inside a String.
- *
- * Four challenge types across 12 rounds:
- *  A. Press Prediction (1-3)   — predict the transformed String
- *  B. The Sealed Case  (4-6)   — immutability trilogy: discard, capture, reassign
- *  C. Die Inspection   (7-9)   — syntax judgment (arguments, method-name case)
- *  D. Press Command    (10-12) — drag method/assignment cartridges, STAMP for real
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
@@ -39,9 +21,6 @@ const RAM_UP_Y = 180, ANVIL_Y = 400;
 
 const TUTORIAL_KEY = "level31_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, type: "predict", varName: "s", str: "java", method: "upper",
     question: "What will s.toUpperCase() return?", correct: '"JAVA"',
@@ -223,11 +202,6 @@ export class Level31Scene extends Phaser.Scene {
     this.createOriginalCase();
     this.createOutputTray();
     this.createHUD();
-    // These 3 files draw hearts as a "❤️" emoji text glyph (font-substituted,
-    // since Arial has no emoji glyphs), which commonly renders its visual ink
-    // a few px below its nominal text-box center -- unlike our vector-drawn
-    // icon, which sits exactly at its given y. Compensating +3px so the two
-    // line up visually; adjust further if still off once you can see it live.
     addTutorialReplayButton(this, W, this.lifeIcons[4].g.x, this.lifeIcons[0].g.y + 3);
     this.createExpressionMonitor();
     this.createTickerTape();
@@ -245,10 +219,6 @@ export class Level31Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l31_dot")) {
@@ -368,10 +338,6 @@ export class Level31Scene extends Phaser.Scene {
     return mode === "upper" ? str.toUpperCase() : str.toLowerCase();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE PRESS
-  // ══════════════════════════════════════════════════════════════
-
   createPress() {
     const g = this.add.graphics().setDepth(10);
     [540, 740].forEach((x) => {
@@ -418,10 +384,6 @@ export class Level31Scene extends Phaser.Scene {
       }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ORIGINAL CASE
-  // ══════════════════════════════════════════════════════════════
 
   createOriginalCase() {
     this.caseFrame = this.add.graphics().setDepth(10);
@@ -539,10 +501,6 @@ export class Level31Scene extends Phaser.Scene {
     this.literalGroup = c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OUTPUT TRAY
-  // ══════════════════════════════════════════════════════════════
-
   createOutputTray() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x12111a, 1);
@@ -603,10 +561,6 @@ export class Level31Scene extends Phaser.Scene {
     await this.delay(300);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE TRANSFORMATION ANIMATION (universal reveal)
-  // ══════════════════════════════════════════════════════════════
-
   async runTransformation(str, mode) {
     this.setPressMode(mode);
     const scale = 0.7, tw = 52 * scale, th = 64 * scale, gap = 6 * scale;
@@ -614,7 +568,6 @@ export class Level31Scene extends Phaser.Scene {
     const totalW = n * tw + (n - 1) * gap;
     const feedStartX = PRESS_CX - 220;
 
-    // ghost copy lifts from the case (new objects — case tiles are untouched)
     const ghosts = str.split("").map((ch, i) => {
       const tile = this._buildTile(ch, feedStartX - i * 20, ANVIL_Y - 60, scale);
       tile.container.setAlpha(0.45);
@@ -687,10 +640,6 @@ export class Level31Scene extends Phaser.Scene {
 
     return result;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // HUD & DISPLAYS
-  // ══════════════════════════════════════════════════════════════
 
   createHUD() {
     const g = this.add.graphics().setDepth(50);
@@ -791,10 +740,6 @@ export class Level31Scene extends Phaser.Scene {
     this.tickerText.setText("").setAlpha(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — press operator variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(W + 80, 520).setDepth(60);
     const g = this.add.graphics();
@@ -873,10 +818,6 @@ export class Level31Scene extends Phaser.Scene {
     this.hideBubble();
     await this.bitSlideTo(W + 80, 520, 250);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -983,10 +924,6 @@ export class Level31Scene extends Phaser.Scene {
     return c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
@@ -1060,10 +997,6 @@ export class Level31Scene extends Phaser.Scene {
     this.questionCard = card;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES
-  // ══════════════════════════════════════════════════════════════
-
   showOptionBubbles(options, onSelect) {
     this.optionBubbles = [];
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
@@ -1109,10 +1042,6 @@ export class Level31Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, async (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1132,10 +1061,6 @@ export class Level31Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, opt.tag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE B — SEALED (immutability trilogy)
-  // ══════════════════════════════════════════════════════════════
 
   setupSealed(cfg) {
     this.showOptionBubbles(cfg.options, async (opt, bubble, draw) => {
@@ -1173,10 +1098,6 @@ export class Level31Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, opt.tag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color) => {
@@ -1230,10 +1151,6 @@ export class Level31Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, cfg.wrongTag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — PRESS COMMAND
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(cfg) {
     this.monitorSlots = {};
@@ -1462,18 +1379,12 @@ export class Level31Scene extends Phaser.Scene {
     if (cfg.expectedResult !== undefined) {
       allCorrect = result === cfg.expectedResult;
     } else {
-      // round 12: lhs determines whether the case actually gets reassigned.
-      // print(user) is the ground truth — only a real reassignment changes it,
-      // so the comparison must be exact/case-sensitive (never normalize with
-      // toLowerCase(), which would make the original mixed-case "AnJaNa"
-      // falsely equal the expected "anjana" even when nothing was saved).
       const lhsCart = chosen.lhs;
       if (lhsCart.correct) {
         await this.replaceCaseContents(result);
         this.updateSourceLiteral(cfg.varName, result);
         printedValue = result;
       } else if (lhsCart.empty) {
-        // no assignment at all — result discarded, case (and variable) unchanged
         await this.discardTrayToChute();
         printedValue = cfg.str;
       } else {
@@ -1522,19 +1433,6 @@ export class Level31Scene extends Phaser.Scene {
     this.inputLocked = false;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/behavioural signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * emotion detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1590,9 +1488,6 @@ export class Level31Scene extends Phaser.Scene {
       if (this.currentRound === 2) {
         await this.runBehavioralCheck();
 
-        // Wait up to 1.5s for the 1Hz polling loop to catch the flag, then
-        // block until the modal (if any) is dismissed, before advancing —
-        // inputLocked is already true throughout this whole window.
         let waitTime = 0;
         while (!GameManager.interventionInFlight && waitTime < 1500) {
           await this.delay(100);
@@ -1705,10 +1600,6 @@ export class Level31Scene extends Phaser.Scene {
   screenShake(intensity = 0.003, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   async celebrationDrumRoll() {
     for (let i = 0; i < 6; i++) {
