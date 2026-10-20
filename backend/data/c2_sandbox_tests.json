@@ -1890,11 +1890,326 @@
    },
    "status": "ok",
    "revalidated_at": "2026-10-18T14:54:13+00:00"
+  },
+  "26": {
+   "question_id": 26,
+   "mode": "template",
+   "harness": "int tMode = new java.util.Scanner(System.in).nextInt();\n{STUDENT_CODE}\nif (tMode == 1) {\n    System.out.println(result);\n} else if (tMode == 2) {\n    System.out.println(result == 3.5);\n} else if (tMode == 3) {\n    System.out.println(a);\n} else if (tMode == 4) {\n    System.out.println(b);\n}",
+   "tests": [
+    {
+     "name": "Check printed result",
+     "stdin": "1",
+     "expected_stdout": "3.5\n3.5",
+     "description_en": "Checks if the program prints 3.5.",
+     "description_si": "වැඩසටහන 3.5 මුද්‍රණය කරයිදැයි පරීක්ෂා කරයි.",
+     "description_singlish": "Wadasmuchana 3.5 print karanawada kiyala balanna."
+    },
+    {
+     "name": "Check result boolean equality",
+     "stdin": "2",
+     "expected_stdout": "3.5\ntrue",
+     "description_en": "Checks if result equals 3.5 precisely.",
+     "description_si": "result යනු 3.5 ද යන්න පරීක්ෂා කරයි.",
+     "description_singlish": "Result eka 3.5 da kiyala check karanawa."
+    },
+    {
+     "name": "Check variable a value",
+     "stdin": "3",
+     "expected_stdout": "3.5\n7",
+     "description_en": "Checks the value of variable a.",
+     "description_si": "a විචල්‍යයේ අගය පරීක්ෂා කරයි.",
+     "description_singlish": "Variable a ge agaya check karanawa."
+    },
+    {
+     "name": "Check variable b value",
+     "stdin": "4",
+     "expected_stdout": "3.5\n2",
+     "description_en": "Checks the value of variable b.",
+     "description_si": "b විචල්‍යයේ අගය පරීක්ෂා කරයි.",
+     "description_singlish": "Variable b ge agaya check karanawa."
+    }
+   ],
+   "model": "gemini-3.5-flash-lite",
+   "attempts": 3,
+   "generated_at": "2026-10-20T14:34:28+00:00",
+   "equivalent_options": [],
+   "validation": {
+    "correct_passes_all": true,
+    "wrong": {
+     "(double) (a / b)": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed result",
+       "Check result boolean equality",
+       "Check variable a value",
+       "Check variable b value"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "a / b": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed result",
+       "Check result boolean equality",
+       "Check variable a value",
+       "Check variable b value"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "(int) a / b": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed result",
+       "Check result boolean equality",
+       "Check variable a value",
+       "Check variable b value"
+      ],
+      "caught": true,
+      "exempt": false
+     }
+    },
+    "dropped_tests": [],
+    "ablation_dropped": 0
+   },
+   "status": "ok"
+  },
+  "28": {
+   "question_id": 28,
+   "mode": "template",
+   "harness": "{STUDENT_CODE}\nScanner tIn = new Scanner(System.in);\nint tMode = tIn.nextInt();\nif (tMode == 2) {\nSystem.out.println(\"COUNT_VAL:\" + count);\n}\n",
+   "tests": [
+    {
+     "name": "Check printed output",
+     "stdin": "1\n",
+     "expected_stdout": "6\n",
+     "description_en": "Checks that the program prints 6.",
+     "description_si": "වැඩසටහන 6 මුද්‍රණය කරන බව පරීක්ෂා කරයි.",
+     "description_singlish": "Program eka 6 print karanawa kiyala balanna."
+    },
+    {
+     "name": "Check count value",
+     "stdin": "2\n",
+     "expected_stdout": "6\nCOUNT_VAL:6\n",
+     "description_en": "Checks that the count variable equals 6.",
+     "description_si": "count විචල්‍යය 6 ට සමාන බව පරීක්ෂා කරයි.",
+     "description_singlish": "Count variable eka 6 ta samanada kiyala check karanawa."
+    },
+    {
+     "name": "Test zero mode",
+     "stdin": "3\n",
+     "expected_stdout": "6\n",
+     "description_en": "Runs the test with alternative input mode 3.",
+     "description_si": "3 වන ආදාන ක්‍රමය සමඟ පරීක්ෂණය ක්‍රියාත්මක කරයි.",
+     "description_singlish": "Mode 3 ekka test eka run karanawa."
+    },
+    {
+     "name": "Test fourth mode",
+     "stdin": "4\n",
+     "expected_stdout": "6\n",
+     "description_en": "Runs the test with alternative input mode 4.",
+     "description_si": "4 වන ආදාන ක්‍රමය සමඟ පරීක්ෂණය ක්‍රියාත්මක කරයි.",
+     "description_singlish": "Mode 4 ekka test eka run karanawa."
+    }
+   ],
+   "model": "gemini-3.5-flash-lite",
+   "attempts": 2,
+   "generated_at": "2026-10-20T14:35:20+00:00",
+   "equivalent_options": [],
+   "validation": {
+    "correct_passes_all": true,
+    "wrong": {
+     "0": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed output",
+       "Check count value",
+       "Test zero mode",
+       "Test fourth mode"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "i + 1": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed output",
+       "Check count value",
+       "Test zero mode",
+       "Test fourth mode"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "3": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed output",
+       "Check count value",
+       "Test zero mode",
+       "Test fourth mode"
+      ],
+      "caught": true,
+      "exempt": false
+     }
+    },
+    "dropped_tests": [],
+    "ablation_dropped": 0
+   },
+   "status": "ok"
+  },
+  "29": {
+   "question_id": 29,
+   "mode": "template",
+   "harness": "Scanner tIn = new Scanner(System.in);\nint tMode = tIn.nextInt();\n{STUDENT_CODE}\nif (tMode == 1) {\n    System.out.println(b[0]);\n} else if (tMode == 2) {\n    System.out.println(b[1]);\n} else if (tMode == 3) {\n    System.out.println(b[2]);\n} else {\n    System.out.println(a[0]);\n}",
+   "tests": [
+    {
+     "name": "Check first element value",
+     "stdin": "1\n",
+     "expected_stdout": "1\n99\n",
+     "description_en": "Checks that the first element of b is changed to 99.",
+     "description_si": "b හි පළමු අගය 99 බව පරීක්ෂා කරයි.",
+     "description_singlish": "b ge first element eka 99 wela tiyenawada kiyala balanna."
+    },
+    {
+     "name": "Check second element value",
+     "stdin": "2\n",
+     "expected_stdout": "1\n2\n",
+     "description_en": "Checks that the second element of b remains 2.",
+     "description_si": "b හි දෙවන අගය 2 ලෙසම පවතින බව පරීක්ෂා කරයි.",
+     "description_singlish": "b ge second element eka 2 widiyatama thiyenawada kiyala balanna."
+    },
+    {
+     "name": "Check third element value",
+     "stdin": "3\n",
+     "expected_stdout": "1\n3\n",
+     "description_en": "Checks that the third element of b remains 3.",
+     "description_si": "b හි තුන්වන අගය 3 ලෙසම පවතින බව පරීක්ෂා කරයි.",
+     "description_singlish": "b ge third element eka 3 widiyatama thiyenawada kiyala balanna."
+    },
+    {
+     "name": "Check original array preservation",
+     "stdin": "4\n",
+     "expected_stdout": "1\n1\n",
+     "description_en": "Checks that the first element of a remains 1.",
+     "description_si": "a හි පළමු අගය 1 ලෙසම පවතින බව පරීක්ෂා කරයි.",
+     "description_singlish": "a ge first element eka 1 widiyatama thiyenawada kiyala balanna."
+    }
+   ],
+   "model": "gemini-3.5-flash-lite",
+   "attempts": 4,
+   "generated_at": "2026-10-20T14:37:34+00:00",
+   "equivalent_options": [],
+   "validation": {
+    "correct_passes_all": true,
+    "wrong": {
+     "a": {
+      "compiled": true,
+      "failed_tests": [
+       "Check first element value",
+       "Check second element value",
+       "Check third element value",
+       "Check original array preservation"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "(int[]) a": {
+      "compiled": true,
+      "failed_tests": [
+       "Check first element value",
+       "Check second element value",
+       "Check third element value",
+       "Check original array preservation"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "b": {
+      "compiled": false,
+      "failed_tests": [
+       "Check first element value",
+       "Check second element value",
+       "Check third element value",
+       "Check original array preservation"
+      ],
+      "caught": true,
+      "exempt": false
+     }
+    },
+    "dropped_tests": [],
+    "ablation_dropped": 0
+   },
+   "status": "ok"
+  },
+  "30": {
+   "question_id": 30,
+   "mode": "template",
+   "harness": "{STUDENT_CODE}\nScanner tIn = new Scanner(System.in);\nint tMode = tIn.nextInt();\nif (tMode == 1) {\n    System.out.println(n);\n} else if (tMode == 2) {\n    System.out.println(change(25));\n} else if (tMode == 3) {\n    System.out.println(change(n));\n}",
+   "tests": [
+    {
+     "name": "Check printed value",
+     "stdin": "1",
+     "expected_stdout": "50\n50",
+     "description_en": "Checks that the printed value of n is 50.",
+     "description_si": "n හි මුද්‍රිත අගය 50 ද යන්න පරීක්ෂා කරයි.",
+     "description_singlish": "n ge print una agaya 50 da kiyala balai."
+    }
+   ],
+   "model": "gemini-3.5-flash-lite",
+   "attempts": 5,
+   "generated_at": "2026-10-20T14:40:02+00:00",
+   "equivalent_options": [],
+   "validation": {
+    "correct_passes_all": true,
+    "wrong": {
+     "change(n)": {
+      "compiled": true,
+      "failed_tests": [
+       "Check printed value",
+       "Check method return",
+       "Check updated variable"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "change(n) = n": {
+      "compiled": false,
+      "failed_tests": [
+       "Check printed value",
+       "Check method return",
+       "Check updated variable"
+      ],
+      "caught": true,
+      "exempt": false
+     },
+     "int n = change(n)": {
+      "compiled": false,
+      "failed_tests": [
+       "Check printed value",
+       "Check method return",
+       "Check updated variable"
+      ],
+      "caught": true,
+      "exempt": false
+     }
+    },
+    "dropped_tests": [],
+    "ablation_dropped": 0
+   },
+   "status": "partial"
+  },
+  "31": {
+   "question_id": 31,
+   "status": "failed",
+   "tests": [],
+   "mode": "template"
   }
  },
  "generated_with": {
   "provider": "gemini",
   "model": "gemini-3.5-flash-lite"
  },
- "updated_at": "2026-10-18T15:01:02+00:00"
+ "updated_at": "2026-10-20T14:41:49+00:00"
 }

@@ -50,8 +50,8 @@ BROAD_OF_PREFIX = {"VARIABLE": "VARIABLE_ERROR", "LOOP": "LOOP_ERROR", "ARRAY": 
 
 
 def load_quiz_bank():
-    script = ("import { QUIZ_BANK } from " + json.dumps("file:///" + DATA_JS.replace("\\", "/")) + ";"
-              "console.log(JSON.stringify(QUIZ_BANK));")
+    script = ("import { QUIZ_BANK, LEVEL_CHECK_BANK } from " + json.dumps("file:///" + DATA_JS.replace("\\", "/")) + ";"
+              "console.log(JSON.stringify([...QUIZ_BANK, ...LEVEL_CHECK_BANK]));")
     out = subprocess.run(["node", "--input-type=module", "-e", script], capture_output=True, text=True,
                          check=True, encoding="utf-8")
     return json.loads(out.stdout)

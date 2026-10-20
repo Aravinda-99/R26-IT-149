@@ -341,6 +341,40 @@ function readQuizResults() {
     }
 }
 
+function readLevelCheckResults() {
+    try {
+        const raw = sessionStorage.getItem("level-check-results") || localStorage.getItem("latest_level_check_results");
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+export function loadLevelCheckAttempt() {
+    const quizResults = readLevelCheckResults();
+    if (!quizResults) return null;
+
+    let items = Array.isArray(quizResults.questionResults) ? quizResults.questionResults : null;
+    const partial = !items;
+    if (!items) {
+        items = (quizResults.wrongCodeQuestions || []).filter(w => w.question_id && w.chosenOption != null).map(w => ({
+            question_id: w.question_id, topic: w.topic, questionText: w.questionText, chosenOption: w.chosenOption,
+            correctOption: null, isCorrect: false, answered: true, code: w.code || "",
+        }));
+    }
+    if (items.length === 0) return null;
+    items = items.map(it => ({
+        ...it,
+        expression: it.code ? null : (it.expression ?? (it.questionText ? parseQuestion(it.questionText).code : null)),
+    }));
+
+    const c2ByQuestion = {};
+    (quizResults.wrongCodeQuestions || []).forEach(w => {
+        if (w.question_id && w.full_response) c2ByQuestion[w.question_id] = w.full_response;
+    });
+    return { quizResults, items, partial, c2ByQuestion };
+}
+
 function copyText(text) {
     if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
     return new Promise((resolve, reject) => {
@@ -396,17 +430,23 @@ export function loadPretestAttempt() {
 }
 
 export function renderPretestReview(root, studentId, attempt = loadPretestAttempt(),
-    store = attempt && createExplanationStore(studentId, attempt.c2ByQuestion)) {
+    store = attempt && createExplanationStore(studentId, attempt.c2ByQuestion),
+    lcAttempt = loadLevelCheckAttempt()) {
     if (!root) return;
-    if (!attempt) {
+    if (!attempt && !lcAttempt) {
         root.innerHTML = "";
         return;
     }
-    const { items, partial, c2ByQuestion } = attempt;
+    const { items = [], partial = false, c2ByQuestion = {} } = attempt || {};
+    const lcItems = lcAttempt?.items || [];
+    const lcC2ByQuestion = lcAttempt?.c2ByQuestion || {};
+    const lcStore = lcAttempt ? createExplanationStore(studentId, lcC2ByQuestion) : null;
+    const allC2ByQuestion = { ...c2ByQuestion, ...lcC2ByQuestion };
+    const getStore = (item) => (lcItems.includes(item) ? lcStore : store);
 
     let lang = readLang();
     let order = readOrder();
-    let selectedIdx = null; // index into `items` (the order the student answered), whatever the list order
+    let selected = null; // { source: "test1" | "retest", idx: number }
     let selectionToken = 0;
     // "Regenerate explanation live" results for this page view: `${question_id}::${option}` ->
     // { status: "loading" } | { status: "done", res } | { status: "error" }. Never persisted.
@@ -415,6 +455,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
 
     ensureSinhalaFont();
     const nCorrect = items.filter(i => i.isCorrect).length;
+    const lcNCorrect = lcItems.filter(i => i.isCorrect).length;
 
     root.innerHTML = `
         <div class="ef-card">
@@ -438,7 +479,16 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
                         </div>
                     </div>
                     <div id="pr-order-note" class="pr-order-note"></div>
-                    <div id="pr-list" style="display:flex;flex-direction:column;gap:0.4rem;max-height:640px;overflow-y:auto;padding-right:0.2rem;"></div>
+                    <div id="pr-list" style="display:flex;flex-direction:column;gap:0.4rem;max-height:${lcAttempt ? '440px' : '640px'};overflow-y:auto;padding-right:0.2rem;"></div>
+                    ${lcAttempt ? `
+                    <div id="pr-lc-section" style="margin-top:0.6rem;padding-top:0.6rem;border-top:1px solid var(--border-color);display:flex;flex-direction:column;gap:0.4rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0 0.1rem;">
+                            <h4 style="margin:0;font-size:0.92rem;color:var(--text-primary);font-weight:700;"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Re-test (10 questions)</h4>
+                            <span style="font-size:0.75rem;color:var(--text-secondary);font-weight:600;">${lcNCorrect} / ${lcItems.length} correct</span>
+                        </div>
+                        <div id="pr-lc-list" style="display:flex;flex-direction:column;gap:0.4rem;max-height:260px;overflow-y:auto;padding-right:0.2rem;"></div>
+                    </div>
+                    ` : ""}
                 </div>
                 <div id="pr-panel" style="flex:2 1 420px;min-width:0;"></div>
             </div>
@@ -446,6 +496,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
     `;
 
     const listEl = root.querySelector("#pr-list");
+    const lcListEl = root.querySelector("#pr-lc-list");
     const panelEl = root.querySelector("#pr-panel");
     const langEl = root.querySelector("#pr-lang");
     const orderEl = root.querySelector("#pr-order");
@@ -473,6 +524,14 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         }
         return idxs;
     };
+    const lcListOrder = () => {
+        const idxs = lcItems.map((_, i) => i);
+        if (order === "topic") {
+            idxs.sort((a, b) => topicRank(lcItems[a].topic) - topicRank(lcItems[b].topic)
+                || (lcItems[a].question_id ?? 0) - (lcItems[b].question_id ?? 0) || a - b);
+        }
+        return idxs;
+    };
 
     const paintList = () => {
         listEl.innerHTML = listOrder().map((idx) => {
@@ -480,7 +539,8 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
             const mark = !it.answered ? "➖" : (isWrongAnswer(it) ? "❌" : "✅");
             const tone = !it.answered ? "" : (isWrongAnswer(it) ? " pr-item--bad" : " pr-item--ok");
             const status = !it.answered ? "not answered" : (isWrongAnswer(it) ? "wrong" : "correct");
-            return `<button type="button" data-idx="${idx}" class="pr-item${tone}" aria-current="${idx === selectedIdx}">
+            const isSelected = selected?.source === "test1" && selected?.idx === idx;
+            return `<button type="button" data-idx="${idx}" class="pr-item${tone}" aria-current="${isSelected}">
                 <span style="flex-shrink:0;font-size:1rem;line-height:1.3;" role="img" aria-label="${status}">${mark}</span>
                 <span style="min-width:0;">
                     <span class="pr-item-meta">Q${escapeHtml(it.question_id ?? idx + 1)} ${conceptChip(it.topic)}</span>
@@ -490,10 +550,28 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         }).join("");
     };
 
+    const paintLcList = () => {
+        if (!lcListEl || !lcAttempt) return;
+        lcListEl.innerHTML = lcListOrder().map((idx) => {
+            const it = lcItems[idx];
+            const mark = !it.answered ? "➖" : (isWrongAnswer(it) ? "❌" : "✅");
+            const tone = !it.answered ? "" : (isWrongAnswer(it) ? " pr-item--bad" : " pr-item--ok");
+            const status = !it.answered ? "not answered" : (isWrongAnswer(it) ? "wrong" : "correct");
+            const isSelected = selected?.source === "retest" && selected?.idx === idx;
+            return `<button type="button" data-idx="${idx}" class="pr-item${tone}" aria-current="${isSelected}">
+                <span style="flex-shrink:0;font-size:1rem;line-height:1.3;" role="img" aria-label="${status}">${mark}</span>
+                <span style="min-width:0;">
+                    <span class="pr-item-meta">Q${escapeHtml(it.question_id ?? idx + 31)} ${conceptChip(it.topic)}</span>
+                    <span style="display:block;font-size:0.8rem;color:var(--text-primary);line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escapeHtml(it.questionText || "")}</span>
+                </span>
+            </button>`;
+        }).join("");
+    };
+
     // Model verdict for an answered question. Reads the C2 analysis already computed in
     // quizLab.js (c2ByQuestion) and the /explain verification result — no extra calls.
     const diagnosisOf = (item, res) => {
-        const c2 = c2ByQuestion[item.question_id] || {};
+        const c2 = allC2ByQuestion[item.question_id] || {};
         const trace = c2.model_trace || {};
         const lite = res?.c2 || {};
         const labelSource = res?.label_source;
@@ -570,7 +648,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
 
         let liveNote = "";
         if (liveRes && isWrongAnswer(item) && liveRes.source === "llm") {
-            const cardLabel = cardLabelOf(c2ByQuestion[item.question_id], res);
+            const cardLabel = cardLabelOf(allC2ByQuestion[item.question_id], res);
             if (liveRes.final_reason_group && cardLabel && liveRes.final_reason_group !== cardLabel) {
                 liveNote = `<span class="pr-live-note">The live AI tutor suggests a different mistake type: <strong>${escapeHtml(friendlyReason(liveRes.final_reason_group))}</strong>.</span>`;
             }
@@ -589,7 +667,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
             <div style="border:1px solid var(--border-color);border-radius:var(--radius);padding:1.2rem 1.3rem;background:var(--bg-card);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.9rem;">
                     <div style="min-width:0;flex:1;">
-                        <div class="pr-item-meta" style="font-size:0.75rem;">Q${escapeHtml(item.question_id ?? selectedIdx + 1)} ${conceptChip(item.topic)}</div>
+                        <div class="pr-item-meta" style="font-size:0.75rem;">Q${escapeHtml(item.question_id ?? (selected?.idx != null ? selected.idx + 1 : 1))} ${conceptChip(item.topic)}</div>
                         <div style="font-size:1rem;font-weight:600;color:var(--text-primary);line-height:1.45;margin-top:0.2rem;">${escapeHtml(item.questionText || "")}</div>
                     </div>
                     <span style="flex-shrink:0;padding:0.3rem 0.75rem;border-radius:999px;font-size:0.8rem;font-weight:700;background:${verdictBg};color:${verdictColor};font-family:${fontFor(true)};">${item.isCorrect ? "✅" : (item.answered ? "❌" : "➖")} ${escapeHtml(verdict)}</span>
@@ -615,7 +693,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
                 ${body}
                 ${liveRow}
                 ${isWrongAnswer(item) && state === "done"
-                    ? practiceGameHtml(mistakeConcept(cardLabelOf(c2ByQuestion[item.question_id], res), item.topic)) : ""}
+                    ? practiceGameHtml(mistakeConcept(cardLabelOf(allC2ByQuestion[item.question_id], res), item.topic)) : ""}
                 ${diag ? renderTechDetails(diag) : ""}
                 <div style="display:flex;justify-content:flex-end;margin-top:1rem;padding-top:0.8rem;border-top:1px solid var(--border-color);">
                     <button type="button" id="pr-sandbox" class="btn btn-primary" style="margin:0;font-size:0.82rem;">
@@ -658,27 +736,34 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         }
     };
 
-    const showItem = (idx) => {
-        selectedIdx = idx;
+    const showItem = (source, idx) => {
+        selected = { source, idx };
         paintList();
-        const item = items[idx];
+        paintLcList();
+        const item = source === "retest" ? lcItems[idx] : items[idx];
         const token = ++selectionToken;
         if (!item.answered) {
             renderPanel(item, null, "done");
             return;
         }
-        const cached = store.peek(item);
+        const itemStore = getStore(item);
+        const cached = itemStore.peek(item);
         if (cached) {
             renderPanel(item, cached, "done");
             return;
         }
         renderPanel(item, null, "loading");
-        store.get(item)
+        itemStore.get(item)
             .then(res => { if (token === selectionToken) renderPanel(item, res, res?.explanation ? "done" : "error"); })
             .catch(() => { if (token === selectionToken) renderPanel(item, null, "error"); });
     };
 
-    const refreshIfSelected = (item) => { if (selectedIdx !== null && items[selectedIdx] === item) showItem(selectedIdx); };
+    const refreshIfSelected = (item) => {
+        if (selected !== null) {
+            const currentItem = selected.source === "retest" ? lcItems[selected.idx] : items[selected.idx];
+            if (currentItem === item) showItem(selected.source, selected.idx);
+        }
+    };
 
     // Ask the backend to generate this answer's explanation again, now (25 s client timeout, set on
     // ErrorAPI.explain). A failure still returns a template, which the badge labels as such.
@@ -687,7 +772,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         if (liveByKey.get(key)?.status === "loading") return;
         liveByKey.set(key, { status: "loading" });
         refreshIfSelected(item);
-        store.live(item)
+        getStore(item).live(item)
             .then(res => liveByKey.set(key, res?.explanation ? { status: "done", res } : { status: "error" }))
             .catch(() => liveByKey.set(key, { status: "error" }))
             .finally(() => refreshIfSelected(item));
@@ -700,12 +785,20 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         saveOrder(order);
         paintOrderButtons();
         paintList();
+        paintLcList();
     });
 
     listEl.addEventListener("click", (ev) => {
         const btn = ev.target.closest("button[data-idx]");
-        if (btn) showItem(Number(btn.dataset.idx));
+        if (btn) showItem("test1", Number(btn.dataset.idx));
     });
+
+    if (lcListEl) {
+        lcListEl.addEventListener("click", (ev) => {
+            const btn = ev.target.closest("button[data-idx]");
+            if (btn) showItem("retest", Number(btn.dataset.idx));
+        });
+    }
 
     langEl.addEventListener("click", (ev) => {
         const btn = ev.target.closest("button[data-lang]");
@@ -713,7 +806,7 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
         lang = btn.dataset.lang;
         saveLang(lang);
         paintLangButtons();
-        if (selectedIdx !== null) showItem(selectedIdx);
+        if (selected !== null) showItem(selected.source, selected.idx);
         else panelEl.innerHTML = placeholder();
     });
 
@@ -722,5 +815,6 @@ export function renderPretestReview(root, studentId, attempt = loadPretestAttemp
     paintLangButtons();
     paintOrderButtons();
     paintList();
+    paintLcList();
     panelEl.innerHTML = placeholder();
 }

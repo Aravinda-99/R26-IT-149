@@ -252,9 +252,34 @@ class TestLiveRequests(unittest.TestCase):
         self.assertIsNone(res["c2_reason_group"])
 
     def test_llm_disabled_uses_template(self):
-        with mock.patch.object(xs, "EXPLANATION_USE_LLM", False),                 mock.patch.object(xs, "call_llm", side_effect=AssertionError("LLM must not be called")):
+        with mock.patch.object(xs, "EXPLANATION_USE_LLM", False), \
+                mock.patch.object(xs, "call_llm", side_effect=AssertionError("LLM must not be called")):
             res = ExplanationService.explain(self.body())
         self.assertEqual(res["source"], "template")
+
+    def test_unknown_question_id_without_question_data_falls_back_to_template(self):
+        with mock.patch.object(xs, "call_llm", side_effect=AssertionError("LLM must not be called on empty question")):
+            res = ExplanationService.explain(self.body(question_id=9999))
+        self.assertTrue(res["success"])
+        self.assertEqual(res["source"], "template")
+        self.assertIn("missing", res.get("llm_error", "").lower())
+
+    def test_unknown_question_id_with_carried_question_data_uses_it(self):
+        q_data = {
+            "question": "What is the capital keyword of int?",
+            "topic": "Variables",
+            "options": ["int", "Int", "integer", "number"],
+            "correct_option": "int",
+            "codeTemplate": "{BLANK} x = 1;"
+        }
+        reply = json.dumps(valid_payload())
+        with mock.patch.object(xs, "call_llm", return_value=(reply, "mock")) as m:
+            res = ExplanationService.explain(self.body(question_id=9999, question=q_data))
+        self.assertEqual(m.call_count, 1)
+        prompt_sent = m.call_args[0][0]
+        self.assertIn("What is the capital keyword of int?", prompt_sent)
+        self.assertIn("CORRECT OPTION (answer key): int", prompt_sent)
+        self.assertEqual(res["source"], "llm")
 
 
 class TestTemplates(unittest.TestCase):
