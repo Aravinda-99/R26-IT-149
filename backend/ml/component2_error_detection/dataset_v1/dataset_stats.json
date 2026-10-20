@@ -1,0 +1,58 @@
+{
+  "final_rows": 3966,
+  "reason_group": {
+    "ARRAY_BOUNDARY_INDEX_ISSUE": 320,
+    "VARIABLE_CALCULATION_ISSUE": 320,
+    "METHOD_SIGNATURE_ISSUE": 320,
+    "LOOP_UPDATE_ISSUE": 320,
+    "METHOD_RETURN_ISSUE": 320,
+    "METHOD_PARAMETER_USAGE_ISSUE": 317,
+    "LOOP_BOUNDARY_ISSUE": 320,
+    "CORRECT_NO_ERROR": 480,
+    "ARRAY_TRAVERSAL_ISSUE": 320,
+    "VARIABLE_ASSIGNMENT_ISSUE": 320,
+    "LOOP_CONDITION_ISSUE": 320,
+    "LOOP_CONTROL_FLOW_ISSUE": 289
+  },
+  "label": {
+    "ARRAY_ERROR": 640,
+    "VARIABLE_ERROR": 640,
+    "METHOD_ERROR": 957,
+    "LOOP_ERROR": 1249,
+    "CORRECT": 480
+  },
+  "form": {
+    "minimal": 1259,
+    "body": 1453,
+    "full": 1254
+  },
+  "outcome": {
+    "RUNTIME_EXCEPTION": 266,
+    "WRONG_OUTPUT": 2333,
+    "COMPILE_ERROR": 554,
+    "EXPECTED_OUTPUT": 480,
+    "NON_TERMINATING": 333
+  },
+  "families": 27,
+  "dropped": {
+    "VARIABLE_WRONG_CALCULATION | equivalent_mutant_or_unexpected_compile_error": 69,
+    "ARRAY_SKIPPED_ELEMENT | equivalent_mutant_or_unexpected_compile_error": 50,
+    "METHOD_IGNORED_PARAMETER | equivalent_mutant_or_unexpected_compile_error": 41,
+    "VARIABLE_INTEGER_DIVISION | equivalent_mutant_or_unexpected_compile_error": 19,
+    "VARIABLE_WRONG_ASSIGNMENT | equivalent_mutant_or_unexpected_compile_error": 16,
+    "ARRAY_WRONG_TRAVERSAL | equivalent_mutant_or_unexpected_compile_error": 13,
+    "LOOP_OFF_BY_ONE | equivalent_mutant_or_unexpected_compile_error": 12,
+    "VARIABLE_OVERWRITTEN_VALUE | equivalent_mutant_or_unexpected_compile_error": 11,
+    "LOOP_WRONG_CONDITION | equivalent_mutant_or_unexpected_compile_error": 10,
+    "ARRAY_WRONG_INDEX_VARIABLE | equivalent_mutant_or_unexpected_compile_error": 10,
+    "VARIABLE_SELF_ASSIGNMENT | equivalent_mutant_or_unexpected_compile_error": 7,
+    "LOOP_EARLY_BREAK_MISSING | equivalent_mutant_or_unexpected_compile_error": 6,
+    "LOOP_WRONG_COUNTER_DIRECTION | equivalent_mutant_or_unexpected_compile_error": 5,
+    "LOOP_MISSING_UPDATE | equivalent_mutant_or_unexpected_compile_error": 3,
+    "LOOP_EARLY_BREAK | equivalent_mutant_or_unexpected_compile_error": 3,
+    "ARRAY_LENGTH_AS_INDEX | equivalent_mutant_or_unexpected_compile_error": 3,
+    "ARRAY_OUT_OF_BOUNDS | equivalent_mutant_or_unexpected_compile_error": 2,
+    "VARIABLE_WRONG_INITIALIZATION | equivalent_mutant_or_unexpected_compile_error": 1,
+    "METHOD_WRONG_RETURN_OPERATION | equivalent_mutant_or_unexpected_compile_error": 1
+  }
+}

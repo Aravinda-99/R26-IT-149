@@ -1,0 +1,368 @@
+{
+  "created_at": "2026-10-18T14:20:01",
+  "sklearn_version": "1.8.0",
+  "numpy_version": "2.5.2",
+  "pandas_version": "3.0.1",
+  "python_version": "3.12.6",
+  "dataset": {
+    "path": "ml/component2_error_detection/dataset/c2_synthetic_dataset.csv",
+    "rows": 5976,
+    "families": 44
+  },
+  "files": {
+    "stage1": "c2_stage1_v2.pkl",
+    "stage2": "c2_stage2_v2.pkl",
+    "model3": "c2_model3_meta.pkl"
+  },
+  "stage1": {
+    "classes": [
+      "ARRAY_ERROR",
+      "CORRECT",
+      "LOOP_ERROR",
+      "METHOD_ERROR",
+      "VARIABLE_ERROR"
+    ],
+    "vectorizer": "code-aware TF-IDF (1-3 grams, CODE_TOKENS, min_df=2, sublinear_tf)",
+    "classifier": "LinearSVC(C=1.0)",
+    "vocab_size": 4620
+  },
+  "stage2": {
+    "classes": [
+      "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "ARRAY_TRAVERSAL_ISSUE",
+      "CORRECT_NO_ERROR",
+      "LOOP_BOUNDARY_ISSUE",
+      "LOOP_CONDITION_ISSUE",
+      "LOOP_CONTROL_FLOW_ISSUE",
+      "LOOP_UPDATE_ISSUE",
+      "METHOD_PARAMETER_USAGE_ISSUE",
+      "METHOD_RETURN_ISSUE",
+      "METHOD_SIGNATURE_ISSUE",
+      "VARIABLE_ASSIGNMENT_ISSUE",
+      "VARIABLE_CALCULATION_ISSUE"
+    ],
+    "vectorizer": "same as stage1",
+    "classifier": "LinearSVC(C=1.0)",
+    "vocab_size": 4620
+  },
+  "model3": {
+    "classifier": "HistGradientBoostingClassifier(max_iter=300, learning_rate=0.08)",
+    "calibration": "isotonic CalibratedClassifierCV, 5-fold (shuffled, stratified), ensemble=False",
+    "classes": [
+      "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "ARRAY_TRAVERSAL_ISSUE",
+      "CORRECT_NO_ERROR",
+      "LOOP_BOUNDARY_ISSUE",
+      "LOOP_CONDITION_ISSUE",
+      "LOOP_CONTROL_FLOW_ISSUE",
+      "LOOP_UPDATE_ISSUE",
+      "METHOD_PARAMETER_USAGE_ISSUE",
+      "METHOD_RETURN_ISSUE",
+      "METHOD_SIGNATURE_ISSUE",
+      "VARIABLE_ASSIGNMENT_ISSUE",
+      "VARIABLE_CALCULATION_ISSUE"
+    ],
+    "variants": {
+      "no_runner": [
+        "s1_score__ARRAY_ERROR",
+        "s1_score__CORRECT",
+        "s1_score__LOOP_ERROR",
+        "s1_score__METHOD_ERROR",
+        "s1_score__VARIABLE_ERROR",
+        "s2_score__ARRAY_BOUNDARY_INDEX_ISSUE",
+        "s2_score__ARRAY_TRAVERSAL_ISSUE",
+        "s2_score__CORRECT_NO_ERROR",
+        "s2_score__LOOP_BOUNDARY_ISSUE",
+        "s2_score__LOOP_CONDITION_ISSUE",
+        "s2_score__LOOP_CONTROL_FLOW_ISSUE",
+        "s2_score__LOOP_UPDATE_ISSUE",
+        "s2_score__METHOD_PARAMETER_USAGE_ISSUE",
+        "s2_score__METHOD_RETURN_ISSUE",
+        "s2_score__METHOD_SIGNATURE_ISSUE",
+        "s2_score__VARIABLE_ASSIGNMENT_ISSUE",
+        "s2_score__VARIABLE_CALCULATION_ISSUE",
+        "n_le",
+        "le_length",
+        "lt_length_minus1",
+        "idx_length",
+        "idx_plus1",
+        "for_start1",
+        "for_no_update",
+        "decrement_with_lt",
+        "while_no_update",
+        "has_continue",
+        "has_break",
+        "n_return",
+        "int_method_no_return",
+        "void_returns_value",
+        "arity_mismatch",
+        "string_arg_to_int",
+        "int_div_2",
+        "self_assign",
+        "not_a_statement",
+        "typed_decl_no_init",
+        "invalid_ident",
+        "type_str_to_int",
+        "n_for",
+        "n_while",
+        "n_methods",
+        "has_array",
+        "loop_step2",
+        "returns_const_expr"
+      ],
+      "with_runner": [
+        "s1_score__ARRAY_ERROR",
+        "s1_score__CORRECT",
+        "s1_score__LOOP_ERROR",
+        "s1_score__METHOD_ERROR",
+        "s1_score__VARIABLE_ERROR",
+        "s2_score__ARRAY_BOUNDARY_INDEX_ISSUE",
+        "s2_score__ARRAY_TRAVERSAL_ISSUE",
+        "s2_score__CORRECT_NO_ERROR",
+        "s2_score__LOOP_BOUNDARY_ISSUE",
+        "s2_score__LOOP_CONDITION_ISSUE",
+        "s2_score__LOOP_CONTROL_FLOW_ISSUE",
+        "s2_score__LOOP_UPDATE_ISSUE",
+        "s2_score__METHOD_PARAMETER_USAGE_ISSUE",
+        "s2_score__METHOD_RETURN_ISSUE",
+        "s2_score__METHOD_SIGNATURE_ISSUE",
+        "s2_score__VARIABLE_ASSIGNMENT_ISSUE",
+        "s2_score__VARIABLE_CALCULATION_ISSUE",
+        "n_le",
+        "le_length",
+        "lt_length_minus1",
+        "idx_length",
+        "idx_plus1",
+        "for_start1",
+        "for_no_update",
+        "decrement_with_lt",
+        "while_no_update",
+        "has_continue",
+        "has_break",
+        "n_return",
+        "int_method_no_return",
+        "void_returns_value",
+        "arity_mismatch",
+        "string_arg_to_int",
+        "int_div_2",
+        "self_assign",
+        "not_a_statement",
+        "typed_decl_no_init",
+        "invalid_ident",
+        "type_str_to_int",
+        "n_for",
+        "n_while",
+        "n_methods",
+        "has_array",
+        "loop_step2",
+        "returns_const_expr",
+        "compiled",
+        "ce_not_statement",
+        "ce_missing_return",
+        "ce_incompatible",
+        "ce_arg_mismatch",
+        "ce_cannot_find",
+        "ce_uninitialized",
+        "ce_unexpected_return",
+        "ce_syntax",
+        "ce_other",
+        "rt_array_index",
+        "rt_other_exception",
+        "rt_non_terminating"
+      ]
+    },
+    "default_variant": "no_runner",
+    "research_variants_file": "ml/component2_error_detection/research_models/c2_model3_research.pkl",
+    "note": "Trained on 5-fold out-of-fold stage decision scores. Only the calibrated 'no_runner' variant ships in c2_model3_meta.pkl; 'with_runner' needs Code Runner evidence (javac/java), which the backend does not provide, and lives in the git-ignored research file."
+  },
+  "metrics": {
+    "full_data_oof_5fold_stratified": {
+      "stage1_broad": {
+        "accuracy": 0.913,
+        "macro_f1": 0.8566
+      },
+      "stage2_reason": {
+        "accuracy": 0.9254,
+        "macro_f1": 0.9306
+      }
+    },
+    "model3_calibration_outer_cv": {
+      "no_runner": {
+        "before": {
+          "accuracy": 0.9787,
+          "macro_f1": 0.9814,
+          "brier": 0.039,
+          "ece_15bin": 0.0186,
+          "log_loss": 0.1393,
+          "mean_max_proba": 0.9958
+        },
+        "after": {
+          "accuracy": 0.9772,
+          "macro_f1": 0.98,
+          "brier": 0.0384,
+          "ece_15bin": 0.0047,
+          "log_loss": 0.151,
+          "mean_max_proba": 0.9727
+        }
+      }
+    },
+    "ablation_sklearn_1_8_0": {
+      "random": {
+        "E1": {
+          "stage1_broad": {
+            "accuracy": 0.8637,
+            "macro_f1": 0.7617,
+            "weighted_f1": 0.8306
+          },
+          "stage2_reason": {
+            "accuracy": 0.6171,
+            "macro_f1": 0.613,
+            "weighted_f1": 0.5976
+          }
+        },
+        "E2": {
+          "stage1_broad": {
+            "accuracy": 0.9181,
+            "macro_f1": 0.8705,
+            "weighted_f1": 0.9053
+          },
+          "stage2_reason": {
+            "accuracy": 0.9264,
+            "macro_f1": 0.9323,
+            "weighted_f1": 0.9211
+          }
+        },
+        "E3": {
+          "stage1_broad": {
+            "accuracy": 0.9774,
+            "macro_f1": 0.9691,
+            "weighted_f1": 0.9771
+          },
+          "stage2_reason": {
+            "accuracy": 0.9766,
+            "macro_f1": 0.9794,
+            "weighted_f1": 0.9763
+          }
+        },
+        "E4": {
+          "stage1_broad": {
+            "accuracy": 0.9883,
+            "macro_f1": 0.985,
+            "weighted_f1": 0.9882
+          },
+          "stage2_reason": {
+            "accuracy": 0.9875,
+            "macro_f1": 0.9888,
+            "weighted_f1": 0.9874
+          }
+        }
+      },
+      "instance": {
+        "E1": {
+          "stage1_broad": {
+            "accuracy": 0.879,
+            "macro_f1": 0.7763,
+            "weighted_f1": 0.8433
+          },
+          "stage2_reason": {
+            "accuracy": 0.6765,
+            "macro_f1": 0.6673,
+            "weighted_f1": 0.6579
+          }
+        },
+        "E2": {
+          "stage1_broad": {
+            "accuracy": 0.9143,
+            "macro_f1": 0.8562,
+            "weighted_f1": 0.8975
+          },
+          "stage2_reason": {
+            "accuracy": 0.9311,
+            "macro_f1": 0.9355,
+            "weighted_f1": 0.9252
+          }
+        },
+        "E3": {
+          "stage1_broad": {
+            "accuracy": 0.9773,
+            "macro_f1": 0.9688,
+            "weighted_f1": 0.9771
+          },
+          "stage2_reason": {
+            "accuracy": 0.9756,
+            "macro_f1": 0.9778,
+            "weighted_f1": 0.9754
+          }
+        },
+        "E4": {
+          "stage1_broad": {
+            "accuracy": 0.9807,
+            "macro_f1": 0.9744,
+            "weighted_f1": 0.9806
+          },
+          "stage2_reason": {
+            "accuracy": 0.9807,
+            "macro_f1": 0.9827,
+            "weighted_f1": 0.9806
+          }
+        }
+      },
+      "family": {
+        "E1": {
+          "stage1_broad": {
+            "accuracy": 0.6944,
+            "macro_f1": 0.6183,
+            "weighted_f1": 0.6847
+          },
+          "stage2_reason": {
+            "accuracy": 0.3216,
+            "macro_f1": 0.2894,
+            "weighted_f1": 0.2831
+          }
+        },
+        "E2": {
+          "stage1_broad": {
+            "accuracy": 0.6071,
+            "macro_f1": 0.5791,
+            "weighted_f1": 0.6272
+          },
+          "stage2_reason": {
+            "accuracy": 0.3435,
+            "macro_f1": 0.3413,
+            "weighted_f1": 0.3356
+          }
+        },
+        "E3": {
+          "stage1_broad": {
+            "accuracy": 0.4652,
+            "macro_f1": 0.4768,
+            "weighted_f1": 0.4993
+          },
+          "stage2_reason": {
+            "accuracy": 0.3141,
+            "macro_f1": 0.3016,
+            "weighted_f1": 0.2992
+          }
+        },
+        "E4": {
+          "stage1_broad": {
+            "accuracy": 0.5338,
+            "macro_f1": 0.5336,
+            "weighted_f1": 0.5637
+          },
+          "stage2_reason": {
+            "accuracy": 0.3678,
+            "macro_f1": 0.355,
+            "weighted_f1": 0.3534
+          }
+        }
+      }
+    },
+    "ablation_key": {
+      "E2": "v2 stages only",
+      "E3": "v2 + Model 3 no_runner",
+      "E4": "v2 + Model 3 with_runner"
+    },
+    "note": "random/instance splits are in-distribution (optimistic); family split = unseen task types. Calibration report: outer 5-fold CV over the out-of-fold stage features (the stage OOF scores were computed once on all rows, so both raw and calibrated share the same small optimism)."
+  }
+}

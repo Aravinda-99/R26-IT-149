@@ -16,23 +16,114 @@ The response always includes:
   final_label         – label after optional rule override
   override_applied    – bool, True when a rule changed the label
   override_reason     – human-readable explanation of the override
+
+v2 models (USE_C2_V2=true)
+--------------------------
+Code-aware TF-IDF + LinearSVC stages (c2_stage1_v2.pkl / c2_stage2_v2.pkl) feed
+Model 3 (c2_model3_meta.pkl, HistGradientBoosting over stage scores + structural
+code features), whose reason group becomes the ML prediction. The rule layer above
+still runs on top. If any v2 file is missing or fails to load, the original
+models are used. Trained by scripts/train_final_c2.py.
+
+Model 3 is isotonic-calibrated. error_pattern_score = probability that the code
+contains an error = 1 - P(CORRECT_NO_ERROR) (source "model3_calibrated_p_error");
+prediction_confidence = the calibrated max class probability.
+
+v2 rule policy: Model 3 is the primary decision. The "obviously correct" CORRECT
+override is disabled; a rule may override Model 3 only if it is a high-precision
+error rule (method arity mismatch) or Model 3's calibrated confidence is < 0.5.
+Every override (and every suppressed rule hit) is logged in model_trace.
+Input validation is relaxed in v2: only text with no code structure is rejected.
+v1 behaviour (USE_C2_V2 unset) is unchanged.
+
+Answer-key gate
+---------------
+When the caller already knows the submitted code is the quiz's correct option
+(is_correct_option=true, sent by quizLab.js for pre-test answers), the result is
+CORRECT / CORRECT_NO_ERROR with source "answer_key" and error_pattern_score 0.0. The ML models still run and
+their output is kept in model_trace["ml_before_answer_key"] for research.
+Free-form code (no flag) is decided by ML + rules only (source "ml").
 """
 
 import os
 import re
+import time
 import joblib
 import datetime
+import numpy as np
 from firebase.firebase_service import db
 
 # Path to the saved models
 MODEL_1_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "best_error_detection_model.pkl"))
 MODEL_2_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "best_reason_detection_model.pkl"))
 
+# v2 models (enabled with USE_C2_V2=true)
+C2_V2_STAGE1_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_stage1_v2.pkl"))
+C2_V2_STAGE2_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_stage2_v2.pkl"))
+C2_V2_MODEL3_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "ml_models", "c2_model3_meta.pkl"))
+
+
+def _use_c2_v2():
+    return os.getenv("USE_C2_V2", "false").strip().lower() in ("1", "true", "yes")
+
+
+def _is_true_flag(value):
+    """Strict boolean flag from JSON: true / "true" / 1 only."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    return isinstance(value, str) and value.strip().lower() in ("1", "true", "yes")
+
+
+# v2 rule layer: a non-high-precision rule may override Model 3 only below this calibrated confidence.
+V2_RULE_OVERRIDE_MAX_CONF = 0.5
+
+# detect_obviously_correct_java error patterns -> broad label / reason group
+RULE_PATTERN_LABEL = {
+    "method_argument_mismatch": "METHOD_ERROR",
+    "array_length_index": "ARRAY_ERROR",
+    "array_out_of_bounds": "ARRAY_ERROR",
+    "loop_boundary_risk": "LOOP_ERROR",
+    "loop_start_at_1": "LOOP_ERROR",
+    "for_empty_update": "LOOP_ERROR",
+    "infinite_loop_no_break": "LOOP_ERROR",
+    "while_no_update": "LOOP_ERROR",
+    "discount_wrong_operator": "VARIABLE_ERROR",
+    "add_returns_subtraction": "VARIABLE_ERROR",
+    "void_method_returns_value": "METHOD_ERROR",
+    "non_void_method_missing_return": "METHOD_ERROR",
+    "self_assignment": "VARIABLE_ERROR"
+}
+RULE_PATTERN_REASON = {
+    "method_argument_mismatch": "METHOD_SIGNATURE_ISSUE",
+    "array_length_index": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "array_out_of_bounds": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "loop_boundary_risk": "LOOP_BOUNDARY_ISSUE",
+    "loop_start_at_1": "LOOP_BOUNDARY_ISSUE",
+    "for_empty_update": "LOOP_UPDATE_ISSUE",
+    "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
+    "while_no_update": "LOOP_UPDATE_ISSUE",
+    "discount_wrong_operator": "VARIABLE_CALCULATION_ISSUE",
+    "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
+    "void_method_returns_value": "METHOD_RETURN_ISSUE",
+    "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
+    "self_assignment": "VARIABLE_ASSIGNMENT_ISSUE"
+}
+
+
 class ErrorService:
     _model_1 = None
     _model_2 = None
+    _v2_models = None  # dict once loaded, False if unavailable
     _history = []  # In-memory history (fallback if Firestore is offline)
     _last_analysis = {} # Store full response of last analysis per user for Component 2 polling
+    _history_cache = {} # Cache by student_id: student_id -> {"timestamp": float, "data": list, "source": str}
+    _cache_ttl_seconds = 60 # TTL 60 seconds
+    _firestore_cooldown_until = 0 # Timestamp until which Firestore reads are skipped on 429
+    _firestore_cooldown_duration = 300 # 5 minutes (300 seconds) cooldown
+    _last_firestore_warn_time = 0 # Timestamp of last logged warning to avoid log spam
+
 
     @classmethod
     def _load_models(cls):
@@ -57,6 +148,59 @@ class ErrorService:
                 
         return cls._model_1, cls._model_2
 
+    @classmethod
+    def _load_v2_models(cls):
+        """Loads the v2 stage models and Model 3 once. Returns None if any file is missing or broken."""
+        if cls._v2_models is None:
+            missing = [p for p in (C2_V2_STAGE1_PATH, C2_V2_STAGE2_PATH, C2_V2_MODEL3_PATH) if not os.path.exists(p)]
+            if missing:
+                print(f"[WARN] USE_C2_V2 is set but v2 model files are missing ({missing}); using original models.")
+                cls._v2_models = False
+            else:
+                try:
+                    # The pickled vectorizers reference this module's code_normalize.
+                    from ml.component2_error_detection.features import struct_features, broad_of
+                    cls._v2_models = {
+                        "stage1": joblib.load(C2_V2_STAGE1_PATH),
+                        "stage2": joblib.load(C2_V2_STAGE2_PATH),
+                        "model3": joblib.load(C2_V2_MODEL3_PATH),
+                        "struct_features": struct_features,
+                        "broad_of": broad_of,
+                    }
+                except Exception as e:
+                    print(f"[WARN] Failed to load v2 models ({e}); using original models.")
+                    cls._v2_models = False
+        return cls._v2_models or None
+
+    @staticmethod
+    def _predict_v2(v2, code):
+        """v2 stage 1 + stage 2 + Model 3 (no_runner variant: the backend has no Code Runner)."""
+        stage1, stage2, bundle = v2["stage1"], v2["stage2"], v2["model3"]
+        s1 = stage1.decision_function([code])[0]
+        s2 = stage2.decision_function([code])[0]
+        stage1_label = stage1.classes_[int(np.argmax(s1))]
+        stage2_label = stage2.classes_[int(np.argmax(s2))]
+
+        meta = bundle["no_runner"]
+        z = np.hstack([s1, s2, v2["struct_features"](code)]).reshape(1, -1)
+        proba = meta.predict_proba(z)[0]
+        best = int(np.argmax(proba))
+        model3_label = str(meta.classes_[best])
+        model3_broad = v2["broad_of"](model3_label)
+        classes = [str(c) for c in meta.classes_]
+        p_correct = float(proba[classes.index("CORRECT_NO_ERROR")]) if "CORRECT_NO_ERROR" in classes else 0.0
+        return {
+            "stage1_label": str(stage1_label),
+            "stage2_label": str(stage2_label),
+            "stage1_scores": s1,
+            "model3_label": model3_label,
+            "model3_broad_label": model3_broad,
+            "model3_confidence": round(float(proba[best]), 4),
+            "model3_p_error": round(1.0 - p_correct, 4),
+            "model3_calibrated": bool(bundle.get("calibration")),
+            "model3_changed_output": bool(model3_label != stage2_label or model3_broad != stage1_label),
+        }
+
     @staticmethod
     def clean_java_code(code):
         """Preprocesses Java code to match training data format."""
@@ -77,7 +221,13 @@ class ErrorService:
         return code.strip()
 
     @staticmethod
-    def validate_java_submission(code):
+    def validate_java_submission(code, relaxed=False):
+        """
+        Default (v1): accept only text matching a recognised Java construct.
+        relaxed (v2): reject only text with no code structure at all (plain natural
+        language). Invalid-but-code-like input such as "Int age = 25;" or "int() arr"
+        goes to the models, because invalid code is itself the error to classify.
+        """
         if not code or not code.strip():
             return {
                 "valid": False,
@@ -85,6 +235,16 @@ class ErrorService:
             }
 
         text = code.strip()
+
+        if relaxed:
+            code_structure = (
+                re.search(r"[;{}]", text) or                        # statement / block delimiters
+                re.search(r"[A-Za-z_]\w*\s*\[|[A-Za-z_]\w*\(", text) or  # indexing or call: arr[ / foo(
+                re.search(r"\w\s*(?:[-+*/%<>!=]=|=|\+\+|--|&&|\|\||<|>)\s*[\w\"'(]", text)  # operator between operands
+            )
+            if code_structure:
+                return {"valid": True, "reason": "Code-like structure detected (relaxed v2 validation)."}
+            return {"valid": False, "reason": "Input has no code structure (looks like natural language)."}
 
         java_patterns = [
             r"\bpublic\s+class\b",
@@ -204,7 +364,6 @@ class ErrorService:
             (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*$', "simple valid integer declaration"),
             (r'^\s*boolean\s+[a-zA-Z_$][\w$]*\s*=\s*(true|false)\s*;\s*$', "simple valid boolean declaration"),
             (r'^\s*int\s+[a-zA-Z_$][\w$]*\s*=\s*\d+\s*;\s*if\s*\(\s*[a-zA-Z_$][\w$]*\s*==\s*\d+\s*\)\s*\{\s*System\.out\.println\([^)]*\)\s*;\s*\}\s*$', "valid if-condition equality check"),
-            (r'^\s*int\s+a\s*=\s*10\s*;\s*int\s+b\s*=\s*a\+\+\s*;\s*System\.out\.println\([^)]*\)\s*;\s*$', "valid post-increment logic"),
             (r'^\s*\w+\s*=\s*\w+\s*[-+*/]\s*\w+\s*;\s*$', "simple variable calculation with normal arithmetic"),
             (r'^\s*\w+\s*\([^)]*\)\s*;\s*$', "simple method call"),
             (r'^\s*\w+\s*\[\s*\d+\s*\]\s*;\s*$', "simple array access with valid constant index"),
@@ -701,16 +860,21 @@ class ErrorService:
         }
 
     @classmethod
-    def analyze(cls, data):
+    def analyze(cls, data, persist=True):
         """
         Detect error patterns in submitted code using Two-stage Linear SVM models
         backed by a rule-based safety layer.
+        persist=False skips the history / Firestore / latest-analysis writes (used by
+        the explanation service, which only needs the label).
         """
         student_id = data.get("student_id", "anonymous")
         code = data.get("code", "")
         pretest = data.get("pretest_results", {})
+        answer_key_correct = _is_true_flag(data.get("is_correct_option"))
 
-        validation = cls.validate_java_submission(code)
+        # v2 models are loaded first: relaxed validation only applies when they will run.
+        v2 = cls._load_v2_models() if _use_c2_v2() else None
+        validation = cls.validate_java_submission(code, relaxed=bool(v2))
 
         if not validation["valid"]:
             return {
@@ -721,33 +885,55 @@ class ErrorService:
                 "validation_reason": validation["reason"]
             }
 
-        model_1, model_2 = cls._load_models()
-        if not model_1 or not model_2:
-            return {"success": False, "error": "ML Models not available on backend"}
-
         # ------------------------------------------------------------------
-        # Step 1 — ML predictions
+        # Step 1 — ML predictions (v2 + Model 3 when enabled, else original models)
         # ------------------------------------------------------------------
-        cleaned_code = cls.clean_java_code(code)
+        # Live proof: when this analysis ran and how long the pipeline took. The clock starts
+        # after the (one-off) model loading above, so it measures this answer's inference only.
+        computed_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="milliseconds")
+        infer_started = time.perf_counter()
         decision_scores_raw = None  # raw decision_function output, used for XAI confidence %
-        try:
-            ml_label = model_1.predict([cleaned_code])[0]
-            reason_group = model_2.predict([cleaned_code])[0]
+        v2_result = None
+        if v2:
+            try:
+                v2_result = cls._predict_v2(v2, code)
+                ml_label = v2_result["model3_broad_label"]
+                reason_group = v2_result["model3_label"]
+                decision_scores_raw = v2_result["stage1_scores"]
+                m3_conf = v2_result["model3_confidence"]
+                confidence = "High" if m3_conf >= 0.8 else ("Low" if m3_conf < 0.5 else "Medium")
+            except Exception as e:
+                print(f"[WARN] v2 prediction failed ({e}); using original models.")
+                v2_result = None
 
-            confidence = "Medium"
-            if hasattr(model_1, "decision_function"):
-                decision_scores_raw = model_1.decision_function([cleaned_code])[0]
-                if max(decision_scores_raw) > 1.0:
-                    confidence = "High"
-                elif max(decision_scores_raw) < 0.3:
-                    confidence = "Low"
-        except Exception as e:
-            return {"success": False, "error": f"Prediction failed: {str(e)}"}
+        if v2_result is None:
+            model_1, model_2 = cls._load_models()
+            if not model_1 or not model_2:
+                return {"success": False, "error": "ML Models not available on backend"}
+
+            cleaned_code = cls.clean_java_code(code)
+            try:
+                ml_label = model_1.predict([cleaned_code])[0]
+                reason_group = model_2.predict([cleaned_code])[0]
+
+                confidence = "Medium"
+                if hasattr(model_1, "decision_function"):
+                    decision_scores_raw = model_1.decision_function([cleaned_code])[0]
+                    if max(decision_scores_raw) > 1.0:
+                        confidence = "High"
+                    elif max(decision_scores_raw) < 0.3:
+                        confidence = "Low"
+            except Exception as e:
+                return {"success": False, "error": f"Prediction failed: {str(e)}"}
 
         # ------------------------------------------------------------------
         # Step 1.5 — Hybrid Confidence Recalibration Layer
         # ------------------------------------------------------------------
-        svm_conf_pct = cls._compute_confidence_pct(confidence, decision_scores_raw)
+        if v2_result:
+            # Model 3 gives a class probability; use it as the ML confidence (same 35–97 clamp).
+            svm_conf_pct = min(97, max(35, int(round(v2_result["model3_confidence"] * 100))))
+        else:
+            svm_conf_pct = cls._compute_confidence_pct(confidence, decision_scores_raw)
         
         # Calculate rule-based validation score (base is 0.5)
         rule_validation_score = 0.5
@@ -864,48 +1050,91 @@ class ErrorService:
         correctness_validation_applied = False
         correctness_validation_reason = None
         correctness_check = None
+        rule_overrides = []    # v2: every rule decision that changed Model 3's output
+        rules_suppressed = []  # v2: rule hits that were not allowed to override Model 3
 
         mismatch = cls.detect_method_argument_mismatch(code)
-        if mismatch["mismatch_found"]:
-            final_label = "METHOD_ERROR"
-            override_applied = True
-            override_reason = mismatch["reason"]
-            hybrid_correction_badge = "Rule-based correction applied"
 
-        if not override_applied:
-            correctness_check = cls.detect_obviously_correct_java(code)
-            if correctness_check.get("is_correct"):
-                final_label = "CORRECT"
-                override_applied = True
-                override_reason = "Correctness validation identified a simple valid Java pattern with no obvious beginner error."
-                correctness_validation_applied = True
-                correctness_validation_reason = correctness_check.get("reason")
-                hybrid_correction_badge = "Validated as Correct"
+        if v2_result:
+            # v2: Model 3 is the primary decision. A rule may override it only when it is a
+            # high-precision error rule (arity mismatch) or Model 3's calibrated confidence is low.
+            # The "obviously correct" CORRECT override is disabled.
+            m3_conf = v2_result["model3_confidence"]
+            low_conf = m3_conf < V2_RULE_OVERRIDE_MAX_CONF
+            if mismatch["mismatch_found"]:
+                if (final_label, reason_group) != ("METHOD_ERROR", "METHOD_SIGNATURE_ISSUE"):
+                    rule_overrides.append({
+                        "rule": "method_argument_mismatch",
+                        "allowed_because": "high_precision_error_rule",
+                        "from": f"{final_label}/{reason_group}",
+                        "to": "METHOD_ERROR/METHOD_SIGNATURE_ISSUE",
+                        "model3_confidence": m3_conf,
+                        "rule_reason": mismatch["reason"],
+                    })
+                    final_label = "METHOD_ERROR"
+                    override_applied = True
+                    override_reason = mismatch["reason"]
+                    hybrid_correction_badge = "Rule-based correction applied"
             else:
-                # ML model falsely predicted CORRECT, but rule validation detected an error pattern
-                if final_label == "CORRECT":
-                    pattern_map = {
-                        "method_argument_mismatch": "METHOD_ERROR",
-                        "array_length_index": "ARRAY_ERROR",
-                        "array_out_of_bounds": "ARRAY_ERROR",
-                        "loop_boundary_risk": "LOOP_ERROR",
-                        "loop_start_at_1": "LOOP_ERROR",
-                        "for_empty_update": "LOOP_ERROR",
-                        "infinite_loop_no_break": "LOOP_ERROR",
-                        "while_no_update": "LOOP_ERROR",
-                        "discount_wrong_operator": "VARIABLE_ERROR",
-                        "add_returns_subtraction": "VARIABLE_ERROR",
-                        "void_method_returns_value": "METHOD_ERROR",
-                        "non_void_method_missing_return": "METHOD_ERROR",
-                        "self_assignment": "VARIABLE_ERROR"
-                    }
-                    mp = correctness_check.get("matched_pattern")
-                    mapped_label = pattern_map.get(mp)
-                    if mapped_label:
-                        final_label = mapped_label
-                        override_applied = True
-                        override_reason = correctness_check.get('reason')
-                        hybrid_correction_badge = "Rule-based correction applied"
+                correctness_check = cls.detect_obviously_correct_java(code)
+                mp = correctness_check.get("matched_pattern")
+                if correctness_check.get("is_correct"):
+                    if final_label != "CORRECT":
+                        rules_suppressed.append({
+                            "rule": f"obviously_correct:{mp}",
+                            "would_set": "CORRECT/CORRECT_NO_ERROR",
+                            "why_suppressed": "CORRECT override disabled in v2 mode",
+                            "model3_confidence": m3_conf,
+                        })
+                elif RULE_PATTERN_LABEL.get(mp):
+                    target = (RULE_PATTERN_LABEL[mp], RULE_PATTERN_REASON[mp])
+                    if target != (final_label, reason_group):
+                        if low_conf:
+                            rule_overrides.append({
+                                "rule": mp,
+                                "allowed_because": f"model3_confidence<{V2_RULE_OVERRIDE_MAX_CONF}",
+                                "from": f"{final_label}/{reason_group}",
+                                "to": "/".join(target),
+                                "model3_confidence": m3_conf,
+                                "rule_reason": correctness_check.get("reason"),
+                            })
+                            final_label = target[0]
+                            override_applied = True
+                            override_reason = correctness_check.get("reason")
+                            hybrid_correction_badge = "Rule-based correction applied"
+                        else:
+                            rules_suppressed.append({
+                                "rule": mp,
+                                "would_set": "/".join(target),
+                                "why_suppressed": f"model3_confidence>={V2_RULE_OVERRIDE_MAX_CONF}",
+                                "model3_confidence": m3_conf,
+                            })
+        else:
+            if mismatch["mismatch_found"]:
+                final_label = "METHOD_ERROR"
+                override_applied = True
+                override_reason = mismatch["reason"]
+                hybrid_correction_badge = "Rule-based correction applied"
+
+            if not override_applied:
+                correctness_check = cls.detect_obviously_correct_java(code)
+                if correctness_check.get("is_correct"):
+                    final_label = "CORRECT"
+                    override_applied = True
+                    override_reason = "Correctness validation identified a simple valid Java pattern with no obvious beginner error."
+                    correctness_validation_applied = True
+                    correctness_validation_reason = correctness_check.get("reason")
+                    hybrid_correction_badge = "Validated as Correct"
+                else:
+                    # ML model falsely predicted CORRECT, but rule validation detected an error pattern
+                    if final_label == "CORRECT":
+                        mp = correctness_check.get("matched_pattern")
+                        mapped_label = RULE_PATTERN_LABEL.get(mp)
+                        if mapped_label:
+                            final_label = mapped_label
+                            override_applied = True
+                            override_reason = correctness_check.get('reason')
+                            hybrid_correction_badge = "Rule-based correction applied"
 
         # ------------------------------------------------------------------
         # Step 2b — Consistency Validation
@@ -936,23 +1165,8 @@ class ErrorService:
             reason_group_adjusted = True
             reason_group_adjustment_reason = "Method signature mismatch rule overrode the predicted sub-reason."
         elif override_applied and correctness_check and not correctness_check.get("is_correct"):
-            sub_reason_map = {
-                "method_argument_mismatch": "METHOD_SIGNATURE_ISSUE",
-                "array_length_index": "ARRAY_BOUNDARY_INDEX_ISSUE",
-                "array_out_of_bounds": "ARRAY_BOUNDARY_INDEX_ISSUE",
-                "loop_boundary_risk": "LOOP_BOUNDARY_ISSUE",
-                "loop_start_at_1": "LOOP_BOUNDARY_ISSUE",
-                "for_empty_update": "LOOP_UPDATE_ISSUE",
-                "infinite_loop_no_break": "LOOP_CONTROL_FLOW_ISSUE",
-                "while_no_update": "LOOP_UPDATE_ISSUE",
-                "discount_wrong_operator": "VARIABLE_CALCULATION_ISSUE",
-                "add_returns_subtraction": "VARIABLE_CALCULATION_ISSUE",
-                "void_method_returns_value": "METHOD_RETURN_ISSUE",
-                "non_void_method_missing_return": "METHOD_RETURN_ISSUE",
-                "self_assignment": "VARIABLE_ASSIGNMENT_ISSUE"
-            }
             mp = correctness_check.get("matched_pattern")
-            mapped_sub = sub_reason_map.get(mp)
+            mapped_sub = RULE_PATTERN_REASON.get(mp)
             if mapped_sub:
                 reason_group_final = mapped_sub
                 reason_group_adjusted = True
@@ -965,18 +1179,49 @@ class ErrorService:
         reason_group = reason_group_final
 
         # ------------------------------------------------------------------
+        # Step 2c — Answer-key gate: the caller knows this is the correct option.
+        # ML + rules have already run; keep their output for research.
+        # ------------------------------------------------------------------
+        decision_source = "ml"
+        ml_before_answer_key = None
+        if answer_key_correct:
+            decision_source = "answer_key"
+            ml_before_answer_key = {
+                "broad_prediction": final_label,
+                "reason_group": reason_group_final,
+                "rule_override_applied": override_applied,
+                "rule_override_reason": override_reason or "None",
+                "confidence_score": final_confidence_pct,
+                "model3_probability": v2_result["model3_confidence"] if v2_result else None,
+                "model3_p_error": v2_result["model3_p_error"] if v2_result else None,
+                "agrees_with_answer_key": final_label == "CORRECT",
+            }
+            final_label = "CORRECT"
+            reason_group = reason_group_final = "CORRECT_NO_ERROR"
+            override_applied = False
+            override_reason = None
+            mismatch = {"mismatch_found": False}
+            hybrid_correction_badge = "Verified by answer key"
+            final_confidence_pct = 100
+            confidence = "High"
+
+        # ------------------------------------------------------------------
         # Step 3 — Build response using the reason group
         # ------------------------------------------------------------------
         details = cls._get_reason_details(reason_group, final_label)
         
         evidence = cls._extract_evidence(code, reason_group)
         
+        model_version = "v2" if v2_result else "v1"
+        svm_name = "Linear SVM + code-aware TF-IDF (v2)" if v2_result else "Linear SVM + TF-IDF"
         model_trace = {
-            "preprocessing": "Java code cleaned using training preprocessing pipeline",
-            "broad_model": "Linear SVM + TF-IDF",
+            "model_version": model_version,
+            "preprocessing": ("Code-aware normalisation (operators kept, literals normalised)" if v2_result
+                              else "Java code cleaned using training preprocessing pipeline"),
+            "broad_model": svm_name,
             "original_broad_prediction": original_ml_label,
             "final_broad_prediction": final_label,
-            "reason_model": "Linear SVM + TF-IDF",
+            "reason_model": svm_name,
             "original_reason_prediction": reason_group_original,
             "final_reason_group": reason_group_final,
             "reason_group_adjusted": "Yes" if reason_group_adjusted else "No",
@@ -984,8 +1229,37 @@ class ErrorService:
             "rule_override_applied": override_applied,
             "rule_override_reason": override_reason if override_reason else "None",
             "correctness_validation_applied": correctness_validation_applied,
-            "correctness_validation_reason": correctness_validation_reason if correctness_validation_applied else "None"
+            "correctness_validation_reason": correctness_validation_reason if correctness_validation_applied else "None",
+            "decision_source": decision_source,
         }
+        if v2_result:
+            model_trace["meta_model"] = ("Model 3: HistGradientBoosting meta-corrector (no_runner"
+                                         + (", isotonic-calibrated)" if v2_result["model3_calibrated"] else ")"))
+            model_trace["v2_stage1_prediction"] = v2_result["stage1_label"]
+            model_trace["v2_stage2_prediction"] = v2_result["stage2_label"]
+            model_trace["model3_prediction"] = v2_result["model3_label"]
+            model_trace["model3_probability"] = v2_result["model3_confidence"]
+            model_trace["model3_p_error"] = v2_result["model3_p_error"]
+            model_trace["rule_policy"] = (f"Model 3 primary; rules override only if high-precision (arity mismatch) "
+                                          f"or Model 3 confidence < {V2_RULE_OVERRIDE_MAX_CONF}; CORRECT override disabled")
+            model_trace["rule_overrides"] = rule_overrides
+            model_trace["rules_suppressed"] = rules_suppressed
+        if ml_before_answer_key:
+            model_trace["ml_before_answer_key"] = ml_before_answer_key
+
+        # error_pattern_score = probability the code contains an error:
+        #   answer key says correct -> 0.0; v2 -> 1 - P(CORRECT_NO_ERROR) from calibrated Model 3.
+        # None (v1 models) lets calculate_error_pattern_score fall back to confidence_score.
+        # prediction_confidence = Model 3's calibrated max probability (confidence in the predicted class).
+        prediction_confidence = v2_result["model3_confidence"] if v2_result else None
+        if decision_source == "answer_key":
+            error_pattern_score, error_pattern_score_source = 0.0, "answer_key"
+        elif v2_result:
+            error_pattern_score = v2_result["model3_p_error"]
+            error_pattern_score_source = ("model3_calibrated_p_error" if v2_result["model3_calibrated"]
+                                          else "model3_uncalibrated_p_error")
+        else:
+            error_pattern_score, error_pattern_score_source = None, None
 
         if override_applied and override_reason:
             details = dict(details)
@@ -1014,10 +1288,13 @@ class ErrorService:
             decision_scores=decision_scores_raw,
             recalibrated_confidence_pct=final_confidence_pct,
         )
+        inference_ms = round((time.perf_counter() - infer_started) * 1000, 1)
 
         response = {
             "success": True,
             "student_id": student_id,
+            "computed_at": computed_at,
+            "inference_ms": inference_ms,
             "predicted_label": final_label,
             "reason_group": reason_group_final,
             "confidence_score": final_confidence_pct,
@@ -1028,9 +1305,18 @@ class ErrorService:
             },
             "explanation_steps": xai_explanation["explanation_steps"],
             "why_not_correct": xai_explanation["why_not_correct"],
-            "analysis_source": "Two-stage ML prediction",
-            "model_1": "Linear SVM broad error classifier",
-            "model_2": "Linear SVM reason-group classifier",
+            "analysis_source": "Two-stage ML prediction + Model 3 meta-corrector" if v2_result else "Two-stage ML prediction",
+            "model_1": "Linear SVM broad error classifier" + (" (v2)" if v2_result else ""),
+            "model_2": "Linear SVM reason-group classifier" + (" (v2)" if v2_result else ""),
+            "model_version": model_version,
+            "model3_label": v2_result["model3_label"] if v2_result else None,
+            "model3_confidence": v2_result["model3_confidence"] if v2_result else None,
+            "model3_changed_output": v2_result["model3_changed_output"] if v2_result else False,
+            "source": decision_source,
+            "is_correct_option": answer_key_correct,
+            "error_pattern_score": error_pattern_score,
+            "error_pattern_score_source": error_pattern_score_source,
+            "prediction_confidence": prediction_confidence,
             "broad_label": ml_label,
             "reason_group_original": reason_group_original,
             "reason_group_adjusted": reason_group_adjusted,
@@ -1079,10 +1365,12 @@ class ErrorService:
 
         history_entry = {
             "student_id": student_id,
-            "code": code if len(code) <= 100 else code[:100] + "...",
+            "code": code or "",
             "label": final_label,
             "original_ml_label": original_ml_label,
             "override_applied": override_applied,
+            "model_version": model_version,
+            "decision_source": decision_source,
             "concept": details["concept"],
             "timestamp": _now.isoformat(),
             "activity": details["gamification"]["recommended_activity"],
@@ -1090,6 +1378,9 @@ class ErrorService:
             "reason_group": reason_group,          # Feature 3 — learning report detail
             "full_response": response,             # Full payload for history item click-through
         }
+
+        if not persist:
+            return response
 
         cls._history.append(history_entry)
 
@@ -1349,27 +1640,78 @@ class ErrorService:
         }
 
     @classmethod
-    def _get_user_history(cls, user_id):
-        """Helper to get user history from Firestore (if online) or in-memory fallback."""
+    def _get_user_history_data(cls, user_id):
+        """
+        Retrieves user history with 60-second in-memory cache and 5-minute Firestore 429 quota cooldown.
+        Returns tuple: (user_history_list, source_str)
+        """
+        now = time.time()
+
+        # 1. Check in-memory cache first (60s TTL)
+        cached = cls._history_cache.get(user_id)
+        if cached and (now - cached.get("timestamp", 0) < cls._cache_ttl_seconds):
+            return cached.get("data", []), "cache"
+
+        # 2. Check if Firestore is in 5-minute quota cooldown
+        if now < cls._firestore_cooldown_until:
+            if cached:
+                return cached.get("data", []), "cache"
+            fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+            return fallback_data, "fallback"
+
+        # 3. Attempt Firestore query if client is available
         if db:
             try:
                 docs = db.collection("error_history").where("student_id", "==", user_id).stream()
                 user_history = [doc.to_dict() for doc in docs]
                 user_history.sort(key=lambda x: x.get("timestamp", ""))
-                return user_history
+
+                # Store in cache
+                cls._history_cache[user_id] = {
+                    "timestamp": now,
+                    "data": user_history,
+                    "source": "firestore"
+                }
+                return user_history, "firestore"
+
             except Exception as e:
-                print(f"[WARN] Error reading from Firestore error_history: {e}")
-        
-        return [h for h in cls._history if h["student_id"] == user_id]
+                err_str = str(e)
+                # Catch 429 quota exceeded and enter 5-minute cooldown
+                if "429" in err_str or "Quota exceeded" in err_str or "ResourceExhausted" in err_str:
+                    cls._firestore_cooldown_until = now + cls._firestore_cooldown_duration
+                    # Log warning only once per cooldown period
+                    if now - cls._last_firestore_warn_time > cls._firestore_cooldown_duration:
+                        cls._last_firestore_warn_time = now
+                        print("[WARN] Firestore quota exceeded for error_history. Using fallback for 5 minutes.")
+                else:
+                    print(f"[WARN] Error reading from Firestore error_history: {e}")
+
+                if cached:
+                    return cached.get("data", []), "cache"
+                fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+                return fallback_data, "fallback"
+
+        # 4. Fallback if db is None (offline)
+        fallback_data = [h for h in cls._history if h.get("student_id") == user_id]
+        return fallback_data, "fallback"
+
+    @classmethod
+    def _get_user_history(cls, user_id):
+        """Helper to get user history from cached/Firestore data."""
+        data, _ = cls._get_user_history_data(user_id)
+        return data
 
     @classmethod
     def get_history(cls, user_id):
-        """Returns error analysis history (last 10 items)."""
-        user_history = cls._get_user_history(user_id)
+        """Returns error analysis history (last 10 items) with safe fallback."""
+        user_history, source = cls._get_user_history_data(user_id)
         return {
-            "user_id": user_id,
+            "success": True,
+            "student_id": user_id,
+            "source": source,
             "total": len(user_history),
-            "history": user_history[-10:]
+            "history": user_history[-10:] if user_history else [],
+            "message": "No error history available yet" if not user_history else None
         }
 
     @classmethod
@@ -1378,7 +1720,7 @@ class ErrorService:
         if user_id in cls._last_analysis:
             return cls._last_analysis[user_id]
         
-        user_history = [h for h in cls._history if h.get("student_id") == user_id]
+        user_history = cls._get_user_history(user_id)
         if user_history:
             latest_entry = user_history[-1]
             code = latest_entry.get("code", "")
@@ -1395,15 +1737,23 @@ class ErrorService:
 
     @classmethod
     def get_summary(cls, user_id):
-        """Aggregates error patterns for the user."""
-        user_history = cls._get_user_history(user_id)
+        """Aggregates error patterns for the user with safe fallback."""
+        user_history, source = cls._get_user_history_data(user_id)
         if not user_history:
-            return {"user_id": user_id, "total_analyses": 0, "counts": {}}
+            return {
+                "success": True,
+                "user_id": user_id,
+                "source": source,
+                "total_analyses": 0,
+                "counts": {},
+                "most_frequent_error": "None",
+                "recommended_focus": "General"
+            }
 
         counts = {}
         for h in user_history:
-            lbl = h["label"]
-            if lbl != "CORRECT":
+            lbl = h.get("label")
+            if lbl and lbl != "CORRECT":
                 counts[lbl] = counts.get(lbl, 0) + 1
 
         most_freq = max(counts, key=counts.get) if counts else "None"
@@ -1421,12 +1771,56 @@ class ErrorService:
             rec_focus = concept_map.get(most_freq, "General")
         
         return {
+            "success": True,
             "user_id": user_id,
+            "source": source,
             "total_analyses": len(user_history),
             "counts": counts,
             "most_frequent_error": most_freq,
             "recommended_focus": rec_focus
         }
+
+    @classmethod
+    def save_top_misconception(cls, payload):
+        """
+        Saves the student's top misconception directly to Firestore:
+        1. Appends record to 'student_misconceptions' collection.
+        2. Merges with 'student_behaviour' document.
+        """
+        student_id = payload.get("student_id") or "anonymous"
+        top_misconception = payload.get("top_misconception") or "UNKNOWN_ERROR"
+        concept = payload.get("concept") or "General"
+        total_errors = payload.get("total_errors", 0)
+        topic_breakdown = payload.get("topic_breakdown", {})
+        accuracy_pct = payload.get("accuracy_pct", 0)
+        
+        now = datetime.datetime.now().isoformat()
+        
+        record = {
+            "student_id": student_id,
+            "top_misconception": top_misconception,
+            "concept": concept,
+            "total_errors": total_errors,
+            "topic_breakdown": topic_breakdown,
+            "accuracy_pct": accuracy_pct,
+            "timestamp": now,
+            "source": payload.get("source", "error_pattern_detector")
+        }
+        
+        if db:
+            try:
+                db.collection("student_misconceptions").add(record)
+                db.collection("student_behaviour").document(student_id).set({
+                    "latest_top_misconception": top_misconception,
+                    "latest_top_concept": concept,
+                    "latest_error_count": total_errors,
+                    "updated_at": now
+                }, merge=True)
+                print(f"[OK] Saved top misconception '{top_misconception}' to Firestore for {student_id}")
+            except Exception as e:
+                print(f"[WARN] Failed to save top misconception to Firestore: {e}")
+                
+        return {"success": True, "record": record}
 
     # ======================================================================
     # Feature 1 — Error Progression Analytics
@@ -1435,19 +1829,15 @@ class ErrorService:
     @classmethod
     def get_analytics(cls, user_id):
         """
-        Computes error progression analytics for a learner.
-
-        Groups submission history by ISO week, calculates per-category error
-        counts, improvement percentages (first-half vs second-half comparison),
-        and identifies the most improved and most problematic concepts.
-
-        Returns a fully structured response ready for Chart.js consumption.
+        Computes error progression analytics for a learner with safe fallback.
         """
-        user_history = cls._get_user_history(user_id)
+        user_history, source = cls._get_user_history_data(user_id)
 
         if not user_history:
             return {
+                "success": True,
                 "user_id": user_id,
+                "source": source,
                 "has_data": False,
                 "total_submissions": 0,
                 "weeks": [],
@@ -1468,9 +1858,8 @@ class ErrorService:
         for entry in user_history:
             week_key = entry.get("week_bucket")
             if not week_key:
-                # Back-compute from timestamp for entries created before this feature
                 try:
-                    dt = datetime.datetime.fromisoformat(entry["timestamp"])
+                    dt = datetime.datetime.fromisoformat(entry.get("timestamp", ""))
                     week_key = dt.strftime("%Y-W%V")
                 except Exception:
                     week_key = "Unknown"
@@ -1479,7 +1868,7 @@ class ErrorService:
                 week_buckets[week_key] = {"total": 0, "errors": {}, "correct": 0}
 
             week_buckets[week_key]["total"] += 1
-            label = entry["label"]
+            label = entry.get("label", "CORRECT")
             if label == "CORRECT":
                 week_buckets[week_key]["correct"] += 1
             else:
@@ -1515,8 +1904,8 @@ class ErrorService:
 
         improvement_scores = {}
         for cat in all_error_cats:
-            first_count  = sum(1 for h in first_half  if h["label"] == cat)
-            second_count = sum(1 for h in second_half if h["label"] == cat)
+            first_count  = sum(1 for h in first_half  if h.get("label") == cat)
+            second_count = sum(1 for h in second_half if h.get("label") == cat)
 
             if first_count == 0 and second_count == 0:
                 improvement_scores[cat] = {"pct": 0,    "direction": "stable",   "first": 0, "second": 0}
@@ -1529,8 +1918,8 @@ class ErrorService:
                                            "first": first_count, "second": second_count}
 
         # ── Overall improvement ───────────────────────────────────────
-        total_first_errors  = sum(1 for h in first_half  if h["label"] != "CORRECT")
-        total_second_errors = sum(1 for h in second_half if h["label"] != "CORRECT")
+        total_first_errors  = sum(1 for h in first_half  if h.get("label") != "CORRECT")
+        total_second_errors = sum(1 for h in second_half if h.get("label") != "CORRECT")
         if total_first_errors == 0:
             overall_improvement_pct = 0
         else:
@@ -1549,16 +1938,18 @@ class ErrorService:
         # ── Most problematic (by total count) ─────────────────────────
         total_counts = {}
         for h in user_history:
-            if h["label"] != "CORRECT":
+            if h.get("label") != "CORRECT":
                 total_counts[h["label"]] = total_counts.get(h["label"], 0) + 1
         most_problematic = max(total_counts, key=total_counts.get) if total_counts else None
 
         # ── Error-free rate ───────────────────────────────────────────
-        correct_count    = sum(1 for h in user_history if h["label"] == "CORRECT")
-        error_free_rate  = round((correct_count / len(user_history)) * 100)
+        correct_count    = sum(1 for h in user_history if h.get("label") == "CORRECT")
+        error_free_rate  = round((correct_count / len(user_history)) * 100) if user_history else 0
 
         return {
+            "success":               True,
             "user_id":               user_id,
+            "source":                source,
             "has_data":              True,
             "total_submissions":     n,
             "weeks":                 sorted_weeks,
@@ -1579,22 +1970,15 @@ class ErrorService:
     @classmethod
     def generate_learning_report(cls, user_id):
         """
-        Generates a dynamic, personalized learning report for a learner.
-
-        Uses the full submission history to identify:
-          • Current strengths   — error categories absent in recent submissions
-          • Recurring mistakes  — categories appearing in ≥ 25% of all submissions
-          • Recently improved   — categories frequent in early history, rare now
-          • New mistakes        — categories appearing only in the last 3 submissions
-          • Recommended focus   — top-2 error categories in the last 5 submissions
-
-        The summary narrative is dynamically generated — not a fixed template.
+        Generates a dynamic, personalized learning report for a learner with safe fallback.
         """
-        user_history = cls._get_user_history(user_id)
+        user_history, source = cls._get_user_history_data(user_id)
 
         if not user_history:
             return {
+                "success": True,
                 "user_id": user_id,
+                "source": source,
                 "has_data": False,
                 "total_submissions": 0,
                 "summary": "No submission history found. Submit code to generate your learning report.",
@@ -1636,8 +2020,8 @@ class ErrorService:
         very_recent = user_history[-3:]             # last 3 submissions
         early      = user_history[:max(1, n - 5)]  # all except last 5
 
-        all_labels    = [h["label"] for h in user_history]
-        recent_labels = [h["label"] for h in recent]
+        all_labels    = [h.get("label", "CORRECT") for h in user_history]
+        recent_labels = [h.get("label", "CORRECT") for h in recent]
 
         # ── Strengths ─────────────────────────────────────────────────
         strengths = []
@@ -1662,7 +2046,7 @@ class ErrorService:
         recurring_mistakes = []
         for cat in all_error_cats:
             count = all_labels.count(cat)
-            rate  = count / len(user_history)
+            rate  = count / len(user_history) if user_history else 0
             if rate >= 0.25:
                 concept = concept_map[cat]
                 reasons = [h.get("reason_group", "") for h in user_history
@@ -1683,7 +2067,7 @@ class ErrorService:
         # ── Recently improved ─────────────────────────────────────────
         recently_improved = []
         if len(user_history) >= 4 and early:
-            early_labels = [h["label"] for h in early]
+            early_labels = [h.get("label", "CORRECT") for h in early]
             for cat in all_error_cats:
                 early_rate  = early_labels.count(cat)  / len(early_labels)  if early_labels  else 0
                 recent_rate = recent_labels.count(cat) / len(recent_labels) if recent_labels else 0
@@ -1703,15 +2087,16 @@ class ErrorService:
         # ── New mistakes ──────────────────────────────────────────────
         new_mistakes  = []
         older         = user_history[:-3] if len(user_history) > 3 else []
-        recent3_cats  = {h["label"] for h in very_recent if h["label"] != "CORRECT"}
-        older_cats    = {h["label"] for h in older}
+        recent3_cats  = {h.get("label") for h in very_recent if h.get("label") != "CORRECT"}
+        older_cats    = {h.get("label") for h in older}
         for cat in recent3_cats - older_cats:
-            concept = concept_map.get(cat, cat)
-            new_mistakes.append({
-                "concept": concept,
-                "message": f"A new {concept.lower()} error pattern appeared in your most recent submissions.",
-                "icon": "🆕",
-            })
+            if cat:
+                concept = concept_map.get(cat, cat)
+                new_mistakes.append({
+                    "concept": concept,
+                    "message": f"A new {concept.lower()} error pattern appeared in your most recent submissions.",
+                    "icon": "🆕",
+                })
 
         # ── Recommended focus ─────────────────────────────────────────
         reason_advice = {
@@ -1735,7 +2120,7 @@ class ErrorService:
 
         recent_error_counts = {}
         for h in recent:
-            if h["label"] != "CORRECT":
+            if h.get("label") != "CORRECT":
                 recent_error_counts[h["label"]] = recent_error_counts.get(h["label"], 0) + 1
 
         sorted_recent  = sorted(recent_error_counts.items(), key=lambda x: x[1], reverse=True)
@@ -1754,7 +2139,7 @@ class ErrorService:
                 avoid_patterns.append({"text": pattern, "concept": concept})
 
         # ── Summary narrative (dynamic) ───────────────────────────────
-        error_submissions = [h for h in user_history if h["label"] != "CORRECT"]
+        error_submissions = [h for h in user_history if h.get("label") != "CORRECT"]
 
         if not error_submissions:
             summary = (
@@ -1785,7 +2170,9 @@ class ErrorService:
             )
 
         return {
+            "success":           True,
             "user_id":           user_id,
+            "source":            source,
             "has_data":          True,
             "total_submissions": n,
             "summary":           summary,
@@ -1796,3 +2183,4 @@ class ErrorService:
             "recommended_focus": recommended_focus,
             "avoid_patterns":    avoid_patterns,
         }
+

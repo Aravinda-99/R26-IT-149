@@ -1,30 +1,9 @@
-/**
- * Level 28 — "The Retrieval Claw" (String Methods: Accretion Phase)
- * ====================================================================
- * Teaches Java's charAt(index) through a robotic-claw extraction bay.
- * Character tiles sit above ALWAYS-VISIBLE 0-based index plates (a
- * deliberate visual echo of the Level 22 Memory Vault); an overhead claw
- * travels along a rail to a commanded index, descends, and physically
- * extracts the character into a Result Display that shows it wrapped in
- * single quotes with a `char` type tag — hammering home char vs String.
- *
- * Every round resolves with a REAL claw action: a true extraction, a
- * boundary crash (StringIndexOutOfBoundsException), or — for the bracket-
- * syntax round — the claw refusing to move while a compile-error stamp
- * lands on the monitor. The claw never lies about what's actually there.
- *
- * 12 rounds across 4 challenge types:
- *  A. Extraction Prediction (1-3)  — predict charAt(i)
- *  B. Address Lookup        (4-6)  — reverse: find the index of a char
- *  C. Safety & Syntax Judge  (7-9)  — safe/crash/compile-error judgment
- *  D. Claw Command          (10-12) — drag index capsules, EXECUTE for real
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -41,9 +20,6 @@ const RESULT_CX = 1205, RESULT_CY = 355;
 
 const TUTORIAL_KEY = "level28_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, type: "predict", varName: "s", str: "robot",
     question: "What will s.charAt(2) return?", index: 2, correct: "'b'",
@@ -208,11 +184,6 @@ export class Level28Scene extends Phaser.Scene {
     this.createClaw();
     this.createResultDisplay();
     this.createHUD();
-    // These 3 files draw hearts as a "❤️" emoji text glyph (font-substituted,
-    // since Arial has no emoji glyphs), which commonly renders its visual ink
-    // a few px below its nominal text-box center -- unlike our vector-drawn
-    // icon, which sits exactly at its given y. Compensating +3px so the two
-    // line up visually; adjust further if still off once you can see it live.
     addTutorialReplayButton(this, W, this.lifeIcons[4].x, this.lifeIcons[0].y + 3);
     this.createBit();
     this.setupDragEvents();
@@ -228,10 +199,6 @@ export class Level28Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l28_dot")) {
@@ -354,10 +321,6 @@ export class Level28Scene extends Phaser.Scene {
     side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE CLAW
-  // ══════════════════════════════════════════════════════════════
-
   createRail() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x241f36, 1);
@@ -449,10 +412,6 @@ export class Level28Scene extends Phaser.Scene {
     return this.moveClawTo(RAIL_X_START);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CHARACTER TILES + INDEX PLATES
-  // ══════════════════════════════════════════════════════════════
-
   _charMeta(ch) {
     if (ch === " ") return { display: "␣", color: HEX_MAGENTA, isSpace: true };
     if (/[0-9]/.test(ch)) return { display: ch, color: HEX_AMBER, isSpace: false };
@@ -538,10 +497,6 @@ export class Level28Scene extends Phaser.Scene {
     this.tiles = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RESULT DISPLAY & LITERAL / MONITOR
-  // ══════════════════════════════════════════════════════════════
-
   createResultDisplay() {
     const g = this.add.graphics().setDepth(14);
     g.fillStyle(0x0d0b16, 1);
@@ -594,10 +549,6 @@ export class Level28Scene extends Phaser.Scene {
     this.literalGroup = c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0c0916, 0.93);
@@ -605,8 +556,8 @@ export class Level28Scene extends Phaser.Scene {
     g.lineStyle(1, 0x241f36, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE RETRIEVAL CLAW", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Accretion Phase — String Methods: charAt()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE RETRIEVAL CLAW", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Accretion Phase — String Methods: charAt()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     const mg = this.add.graphics().setDepth(51);
     mg.fillStyle(0x1a1a2e, 1);
@@ -710,10 +661,6 @@ export class Level28Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — crane operator variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(W + 80, 500).setDepth(60);
     const g = this.add.graphics();
@@ -744,8 +691,8 @@ export class Level28Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 330 } });
-    const bw = Math.min(inner.width, 330) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - 24 - bw, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh / 2, 80, H - bh - 20);
@@ -795,10 +742,6 @@ export class Level28Scene extends Phaser.Scene {
     this.hideBubble();
     await this.bitSlideTo(W + 80, 500, 250);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -879,10 +822,6 @@ export class Level28Scene extends Phaser.Scene {
       await this.delay(150);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE EXTRACTION ANIMATION
-  // ══════════════════════════════════════════════════════════════
 
   async clawExtract(index) {
     const tile = this.tiles[index];
@@ -978,10 +917,6 @@ export class Level28Scene extends Phaser.Scene {
     await this.parkClaw();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
@@ -1050,10 +985,6 @@ export class Level28Scene extends Phaser.Scene {
     this.questionCard = card;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES
-  // ══════════════════════════════════════════════════════════════
-
   showOptionBubbles(options, onSelect) {
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
     const style = { font: "bold 18px Courier New", color: HEX_CYAN };
@@ -1099,10 +1030,6 @@ export class Level28Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, async (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1120,10 +1047,6 @@ export class Level28Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, opt.tag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE B — LOOKUP
-  // ══════════════════════════════════════════════════════════════
 
   setupLookup(cfg) {
     this.showOptionBubbles(cfg.options, async (opt, bubble, draw) => {
@@ -1153,10 +1076,6 @@ export class Level28Scene extends Phaser.Scene {
       else this.onIncorrectAnswer(cfg, opt.tag);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color) => {
@@ -1237,10 +1156,6 @@ export class Level28Scene extends Phaser.Scene {
       await this.delay(400);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — CLAW COMMAND
-  // ══════════════════════════════════════════════════════════════
 
   resolveCapsuleValue(capsule, str) {
     if (capsule.value === "len") return str.length;
@@ -1458,19 +1373,6 @@ export class Level28Scene extends Phaser.Scene {
     this.inputLocked = false;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1526,9 +1428,6 @@ export class Level28Scene extends Phaser.Scene {
       if (this.currentRound === 2) {
         await this.runBehavioralCheck();
 
-        // Wait up to 1.5s for the 1Hz polling loop to catch the flag, then
-        // block until the modal (if any) is dismissed, before advancing —
-        // inputLocked is already true throughout this whole window.
         let waitTime = 0;
         while (!GameManager.interventionInFlight && waitTime < 1500) {
           await this.delay(100);
@@ -1620,6 +1519,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(65);
     this.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1637,10 +1537,6 @@ export class Level28Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 200) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
 
   async celebrationJuggle() {
     for (let sweep = 0; sweep < 2; sweep++) {
@@ -1666,6 +1562,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1696,6 +1593,7 @@ export class Level28Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1703,7 +1601,7 @@ export class Level28Scene extends Phaser.Scene {
     this.hideBubble();
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
-    try { GameManager.completeLevel(28, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(27, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_schema"); } catch (_) {}
     try {
       localStorage.setItem("level28_results", JSON.stringify({
@@ -1766,9 +1664,9 @@ export class Level28Scene extends Phaser.Scene {
     bg.fillStyle(C_AMBER, 1);
     bg.fillCircle(0, 4, 3);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 508, "charAt() SCHEMA ACQUIRED", { font: "bold 15px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 540, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 540, "NEXT: Claw Trials →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {

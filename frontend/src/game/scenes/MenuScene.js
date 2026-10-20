@@ -1,12 +1,12 @@
 /**
  * MenuScene — Level Selection Menu
  * ==================================
- * Animated starfield background with 15 level cards in 5 modules.
+ * Animated starfield background with 63 level cards (Levels 1–24 in 8 modules + Levels 25–63 in 5 Methods wings).
  * Locked/unlocked state based on GameManager progress.
  */
 
 import Phaser from "phaser";
-import { GameManager } from "../GameManager.js";
+import { GameManager, TOTAL_LEVELS } from "../GameManager.js";
 import { BadgeSystem, BADGES } from "../BadgeSystem.js";
 import { ProgressTracker } from "../ProgressTracker.js";
 
@@ -61,7 +61,7 @@ export class MenuScene extends Phaser.Scene {
     const shouldShowWhileLoops = !activeModule || activeModule === "whileloops";
     const shouldShowArrays = !activeModule || activeModule === "arrays";
 
-    // Methods world — 8 wings, Levels 25–88
+    // Methods world — 5 wings, Levels 25–63
     const METHOD_WINGS = [
       {
         key: "stringmethods", label: "STRING METHODS WING", color: 0xf59e0b,
@@ -143,70 +143,13 @@ export class MenuScene extends Phaser.Scene {
           ] },
           { key: "mathclassmethods_abs", label: "ABS()", levels: [
             { title: "Level 58: The Distance Hall", phase: "ACCRETION", desc: "Learn Math.abs() — the distance of a value from zero!", badge: BADGES.math_abs_schema, scene: "Level58Scene", index: 57 },
+            { title: "Level 59: The Distance Trials", phase: "TUNING", desc: "Drill abs() at speed — gaps in either order, the int/double trap, abs inside a condition!", badge: BADGES.math_abs_tuned, scene: "Level59Scene", index: 58 },
             { title: "Level 60: The Standards Office", phase: "RESTRUCTURING", desc: "Build abs()-driven tolerance gates and deviation surveys!", badge: BADGES.math_abs_mastery, scene: "Level60Scene", index: 59 },
           ] },
           { key: "mathclassmethods_pow", label: "POW()", levels: [
             { title: "Level 61: The Power Tower", phase: "ACCRETION", desc: "Learn Math.pow() — genuine repeated-multiplication, always double!", badge: BADGES.math_pow_schema, scene: "Level61Scene", index: 60 },
             { title: "Level 62: The Exponent Trials", phase: "TUNING", desc: "Drill pow() to reflex speed — mind the integer-division trap!", badge: BADGES.math_pow_tuned, scene: "Level62Scene", index: 61 },
             { title: "Level 63: The Formula Works", phase: "RESTRUCTURING", desc: "Build pow()-driven formulas — Math Wing sealed!", badge: BADGES.math_pow_mastery, scene: "Level63Scene", index: 62 },
-          ] },
-        ],
-      },
-      {
-        key: "arraymethods", label: "ARRAY METHODS WING", color: 0xc8a05a,
-        groups: [
-          { key: "arraymethods_tostring", label: "TOSTRING()", levels: [
-            { title: "Level 64: The Specimen Hall", phase: "ACCRETION", desc: "Learn the fixed-size array and Arrays.toString() — lift the hash label!", badge: BADGES.arrays_toString_schema, scene: "Level64Scene", index: 63 },
-          ] },
-          { key: "arraymethods_sort", label: "SORT()", levels: [
-            { title: "Level 65: The Sorting Room", phase: "ACCRETION", desc: "Learn Arrays.sort() — the wing's first in-place mutation!", badge: BADGES.arrays_sort_schema, scene: "Level65Scene", index: 64 },
-            { title: "Level 66: The Classification Trials", phase: "TUNING", desc: "Sort at speed — lexicographic order and the void-capture trap!", badge: BADGES.arrays_sort_tuned, scene: "Level66Scene", index: 65 },
-            { title: "Level 67: The Arrangement Workshop", phase: "RESTRUCTURING", desc: "Build sort-and-report programs — sort() trilogy complete!", badge: BADGES.arrays_sort_restructured, scene: "Level67Scene", index: 66 },
-          ] },
-          { key: "arraymethods_copyof", label: "COPYOF()", levels: [
-            { title: "Level 68: The Copy Bench", phase: "ACCRETION", desc: "Learn Arrays.copyOf() — a genuinely independent twin array!", badge: BADGES.arrays_copyOf_schema, scene: "Level68Scene", index: 67 },
-            { title: "Level 69: The Replication Trials", phase: "TUNING", desc: "Drill the alias-vs-copy discrimination to reflex speed!", badge: BADGES.arrays_copyOf_tuned, scene: "Level69Scene", index: 68 },
-            { title: "Level 70: The Curator's Bureau", phase: "RESTRUCTURING", desc: "Build duplication-and-report programs — Arrays Wing sealed!", badge: BADGES.arrays_copyOf_mastery, scene: "Level70Scene", index: 69 },
-          ] },
-        ],
-      },
-      {
-        key: "typeconversionmethods", label: "TYPE CONVERSION METHODS WING", color: 0xb87333,
-        groups: [
-          { key: "typeconversionmethods_parseint", label: "PARSEINT()", levels: [
-            { title: "Level 71: The Integer Furnace", phase: "ACCRETION", desc: "Learn Integer.parseInt() — smelt a digit String into a primitive int!", badge: BADGES.integer_parseInt_schema, scene: "Level71Scene", index: 70 },
-            { title: "Level 72: The Smelting Trials", phase: "TUNING", desc: "Drill parseInt() — leading-plus, NFEs, and the overflow trap!", badge: BADGES.integer_parseInt_tuned, scene: "Level72Scene", index: 71 },
-            { title: "Level 73: The Conversion Works", phase: "RESTRUCTURING", desc: "Build parseInt()-driven programs — trilogy complete!", badge: BADGES.integer_parseInt_mastery, scene: "Level73Scene", index: 72 },
-          ] },
-          { key: "typeconversionmethods_parsedouble", label: "PARSEDOUBLE()", levels: [
-            { title: "Level 74: The Decimal Crucible", phase: "ACCRETION", desc: "Learn Double.parseDouble() — dissolve decimal text into doubles!", badge: BADGES.double_parseDouble_schema, scene: "Level74Scene", index: 73 },
-            { title: "Level 75: The Precision Trials", phase: "TUNING", desc: "Drill parseDouble() — decimal edge cases and the wrong-parser bug!", badge: BADGES.double_parseDouble_tuned, scene: "Level75Scene", index: 74 },
-            { title: "Level 76: The Decimal Works", phase: "RESTRUCTURING", desc: "Build parseDouble()-driven programs — trilogy complete!", badge: BADGES.double_parseDouble_mastery, scene: "Level76Scene", index: 75 },
-          ] },
-          { key: "typeconversionmethods_valueof", label: "VALUEOF()", levels: [
-            { title: "Level 77: The Inscription Press", phase: "ACCRETION", desc: "Learn String.valueOf() — stamp ANY value onto a String!", badge: BADGES.string_valueOf_schema, scene: "Level77Scene", index: 76 },
-            { title: "Level 78: The Inscription Trials", phase: "TUNING", desc: "Drill the full conversion triangle against a cooling wax seal!", badge: BADGES.string_valueOf_tuned, scene: "Level78Scene", index: 77 },
-            { title: "Level 79: The Assay Bureau", phase: "RESTRUCTURING", desc: "Build valueOf()-driven programs — Type Conversion Wing sealed!", badge: BADGES.string_valueOf_mastery, scene: "Level79Scene", index: 78 },
-          ] },
-        ],
-      },
-      {
-        key: "charactermethods", label: "CHARACTER METHODS WING", color: 0x4fc3f7,
-        groups: [
-          { key: "charactermethods_isdigit", label: "ISDIGIT()", levels: [
-            { title: "Level 80: The Numeral Loupe", phase: "ACCRETION", desc: "Learn Character.isDigit() — inspect a char without changing it!", badge: BADGES.character_isDigit_schema, scene: "Level80Scene", index: 79 },
-            { title: "Level 81: The Numeral Trials", phase: "TUNING", desc: "Drill isDigit() — char arithmetic and the ASCII-code trap!", badge: BADGES.character_isDigit_tuned, scene: "Level81Scene", index: 80 },
-            { title: "Level 82: The Classification Works", phase: "RESTRUCTURING", desc: "Build isDigit()-driven programs — isDigit() trilogy complete!", badge: BADGES.character_isDigit_mastery, scene: "Level82Scene", index: 81 },
-          ] },
-          { key: "charactermethods_isletter", label: "ISLETTER()", levels: [
-            { title: "Level 83: The Alphabet Lens", phase: "ACCRETION", desc: "Learn Character.isLetter() — case-blind across A–Z and a–z!", badge: BADGES.character_isLetter_schema, scene: "Level83Scene", index: 82 },
-            { title: "Level 84: The Letter Trials", phase: "TUNING", desc: "Drill isLetter() — the !isDigit-vs-isLetter discrimination!", badge: BADGES.character_isLetter_tuned, scene: "Level84Scene", index: 83 },
-            { title: "Level 85: The Alphabet Works", phase: "RESTRUCTURING", desc: "Build isLetter()-driven programs — isLetter() trilogy complete!", badge: BADGES.character_isLetter_mastery, scene: "Level85Scene", index: 84 },
-          ] },
-          { key: "charactermethods_isuppercase", label: "ISUPPERCASE()", levels: [
-            { title: "Level 86: The Case Prism", phase: "ACCRETION", desc: "Learn Character.isUpperCase() — nested inside isLetter(), not exclusive!", badge: BADGES.character_isUpperCase_schema, scene: "Level86Scene", index: 85 },
-            { title: "Level 87: The Case Trials", phase: "TUNING", desc: "Drill isUpperCase() — the narrow-before-broad ordering principle!", badge: BADGES.character_isUpperCase_tuned, scene: "Level87Scene", index: 86 },
-            { title: "Level 88: The Grand Classification", phase: "RESTRUCTURING", desc: "Build the grand census — Character Wing sealed, curriculum complete!", badge: BADGES.character_isUpperCase_mastery, scene: "Level88Scene", index: 87 },
           ] },
         ],
       },
@@ -249,7 +192,7 @@ export class MenuScene extends Phaser.Scene {
       ];
 
       intLevels.forEach((lvl, i) => {
-        const y = 100 + i * 60;
+        const y = 100 + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -296,7 +239,7 @@ export class MenuScene extends Phaser.Scene {
 
       floatLevels.forEach((lvl, i) => {
         const floatBaseY = shouldShowInteger ? 220 : 100;
-        const y = floatBaseY + i * 60;
+        const y = floatBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -351,7 +294,7 @@ export class MenuScene extends Phaser.Scene {
         else if (!shouldShowInteger) charBaseY = 220;
         else if (!shouldShowFloat) charBaseY = 220;
 
-        const y = charBaseY + i * 60;
+        const y = charBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -401,7 +344,7 @@ export class MenuScene extends Phaser.Scene {
 
       stringLevels.forEach((lvl, i) => {
         const stringBaseY = stringHeaderY + 16;
-        const y = stringBaseY + i * 60;
+        const y = stringBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -451,7 +394,7 @@ export class MenuScene extends Phaser.Scene {
 
       operatorLevels.forEach((lvl, i) => {
         const opsBaseY = opsHeaderY + 16;
-        const y = opsBaseY + i * 60;
+        const y = opsBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -500,7 +443,7 @@ export class MenuScene extends Phaser.Scene {
 
       loopLevels.forEach((lvl, i) => {
         const loopsBaseY = loopsHeaderY + 16;
-        const y = loopsBaseY + i * 60;
+        const y = loopsBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -549,7 +492,7 @@ export class MenuScene extends Phaser.Scene {
 
       whileLevels.forEach((lvl, i) => {
         const whileBaseY = whileHeaderY + 16;
-        const y = whileBaseY + i * 60;
+        const y = whileBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -598,7 +541,7 @@ export class MenuScene extends Phaser.Scene {
 
       arrayLevels.forEach((lvl, i) => {
         const arraysBaseY = arraysHeaderY + 16;
-        const y = arraysBaseY + i * 60;
+        const y = arraysBaseY + i * 70;
         const unlocked = GameManager.isLevelUnlocked(lvl.index);
         const completed = GameManager.get("levelsCompleted")[lvl.index];
         const badgeUnlocked = BadgeSystem.isUnlocked(lvl.badge.id);
@@ -606,7 +549,7 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
-    // ── METHODS WORLD (8 wings, Levels 25–88) ──
+    // ── METHODS WORLD (5 wings, Levels 25–63) ──
     const oldModulesShownCount = [
       shouldShowInteger, shouldShowFloat, shouldShowChar, shouldShowString,
       shouldShowOperators, shouldShowLoops, shouldShowWhileLoops, shouldShowArrays,
@@ -630,19 +573,19 @@ export class MenuScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         group.levels.forEach((lvl, i) => {
-          const y = headerY + 20 + i * 60;
+          const y = headerY + 20 + i * 70;
           const unlocked = GameManager.isLevelUnlocked(lvl.index);
           const completed = GameManager.get("levelsCompleted")[lvl.index];
           const badgeUnlocked = lvl.badge ? BadgeSystem.isUnlocked(lvl.badge.id) : false;
           this._createLevelCard(lvl, y, unlocked, completed, badgeUnlocked, wing.color);
         });
 
-        methodsCursorY = headerY + 20 + group.levels.length * 60 + 20;
+        methodsCursorY = headerY + 20 + group.levels.length * 70 + 20;
       });
     });
 
     // ── Completion badge ──
-    const allDone = GameManager.get("levelsCompleted").every(Boolean);
+    const allDone = GameManager.get("levelsCompleted").slice(0, TOTAL_LEVELS).every(Boolean);
     if (allDone) {
       this.add.text(640, 596, "🏅 ALL MODULES COMPLETE!", {
         fontFamily: "Arial",

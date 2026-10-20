@@ -42,6 +42,8 @@ def get_all_students():
     """
     try:
         students = MasteryService.get_all_students()
+        from services.student_roster_service import StudentRosterService
+        students = StudentRosterService.active_students(students)
         return jsonify({
             "success": True,
             "students": students,

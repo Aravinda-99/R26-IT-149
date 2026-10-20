@@ -25,7 +25,7 @@ export class UIScene extends Phaser.Scene {
     // ── Level Label ──
     this.levelLabel = this.add.text(640, 30, "", {
       fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#38bdf8",
       fontStyle: "bold",
     }).setOrigin(0.5).setDepth(903);
@@ -33,7 +33,7 @@ export class UIScene extends Phaser.Scene {
     // ── XP Counter ──
     this.xpText = this.add.text(16, 16, "XP: 0", {
       fontFamily: "monospace",
-      fontSize: "18px",
+      fontSize: "20px",
       color: "#fbbf24",
       stroke: "#92400e",
       strokeThickness: 2,
@@ -43,7 +43,7 @@ export class UIScene extends Phaser.Scene {
     // ── Lives (numeric, no heart icons) ──
     this.livesText = this.add.text(1264, 16, "Lives: 0", {
       fontFamily: "monospace",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#f87171",
       shadow: { blur: 8, color: "#f87171", fill: true },
     }).setOrigin(1, 0).setDepth(903);
@@ -52,7 +52,7 @@ export class UIScene extends Phaser.Scene {
     // Combo UI removed per request; update logic retained but disabled in _syncCombo().
 
     // ── Badge popup container (hidden) ──
-    this.badgePopup = this.add.container(640, 360).setDepth(950).setAlpha(0);
+    this.badgePopup = this.add.container(1132, 66).setDepth(950).setAlpha(0);
 
     // ── Listen to GameManager events ──
     this._bindEvents();
@@ -145,39 +145,33 @@ export class UIScene extends Phaser.Scene {
     // Clear previous popup
     this.badgePopup.removeAll(true);
 
-    const bg = this.add.rectangle(0, 0, 400, 200, 0x0f172a, 0.95);
+    // Compact toast pinned to the right-hand margin (below the HUD bar) so it
+    // never covers the centred result panels; content is stacked from the
+    // measured text heights so a long description just makes it taller.
+    const POP_W = 270, PAD = 16, INNER = POP_W - 2 * PAD;
+    const wrap = { width: INNER, useAdvancedWrap: true };
+    const fam = "Inter, Arial, sans-serif";
+
+    const emoji = this.add.text(0, PAD, badge.emoji, { fontSize: "44px" }).setOrigin(0.5, 0);
+    let y = PAD + emoji.height + 8;
+    const title = this.add.text(0, y, "BADGE UNLOCKED!", {
+      fontFamily: fam, fontSize: "22px", color: "#fbbf24", fontStyle: "bold",
+    }).setOrigin(0.5, 0);
+    y += title.height + 6;
+    const name = this.add.text(0, y, badge.name, {
+      fontFamily: fam, fontSize: "20px", color: "#e2e8f0", align: "center", wordWrap: wrap,
+    }).setOrigin(0.5, 0);
+    y += name.height + 8;
+    const desc = this.add.text(0, y, badge.description, {
+      fontFamily: fam, fontSize: "18px", color: "#94a3b8", align: "center", wordWrap: wrap,
+    }).setOrigin(0.5, 0);
+    y += desc.height + PAD;
+
+    const bg = this.add.rectangle(0, 0, POP_W, y, 0x0f172a, 0.95).setOrigin(0.5, 0);
     bg.setStrokeStyle(3, badge.color);
-    this.badgePopup.add(bg);
-
-    const glow = this.add.circle(0, -30, 40, badge.color, 0.3);
-    this.badgePopup.add(glow);
-
-    const emoji = this.add.text(0, -35, badge.emoji, {
-      fontSize: "48px",
-    }).setOrigin(0.5);
-    this.badgePopup.add(emoji);
-
-    const title = this.add.text(0, 20, "BADGE UNLOCKED!", {
-      fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "20px",
-      color: "#fbbf24",
-      fontStyle: "bold",
-    }).setOrigin(0.5);
-    this.badgePopup.add(title);
-
-    const name = this.add.text(0, 50, badge.name, {
-      fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "16px",
-      color: "#e2e8f0",
-    }).setOrigin(0.5);
-    this.badgePopup.add(name);
-
-    const desc = this.add.text(0, 75, badge.description, {
-      fontFamily: "Inter, Arial, sans-serif",
-      fontSize: "13px",
-      color: "#94a3b8",
-    }).setOrigin(0.5);
-    this.badgePopup.add(desc);
+    const glow = this.add.circle(0, PAD + emoji.height / 2, 36, badge.color, 0.3);
+    this.badgePopup.add([bg, glow, emoji, title, name, desc]);
+    this.badgePopup.setPosition(1280 - 12 - POP_W / 2, 66);
 
     // Animate in
     this.badgePopup.setAlpha(0).setScale(0.5);

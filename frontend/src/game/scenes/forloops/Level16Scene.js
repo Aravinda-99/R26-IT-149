@@ -1,8 +1,7 @@
-/**
- * Level16Scene — Loop Train Express
- * Canvas: 800×600 (matches GameConfig)
- */
 import Phaser from "phaser";
+import { GameManager } from "../../GameManager.js";
+import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 const TRACK_Y1 = 383, TRACK_Y2 = 395;
@@ -10,7 +9,6 @@ const TRAIN_Y  = 353;   // train container centre-y
 const ST_SY    = 378;   // station bottom-y (just above top rail)
 const ST_SPACING = 110; // px between consecutive station centres
 
-// ─── Round data ───────────────────────────────────────────────────────────────
 const ROUNDS = [
   {
     round:1, mission:"Deliver cargo to 3 stations, starting from Station 0.",
@@ -93,11 +91,9 @@ const FEEDBACK = {
   wrong_direction:"The train went the wrong direction! For counting down, use i-- instead of i++."
 };
 
-// ─── Scene ────────────────────────────────────────────────────────────────────
 export class Level16Scene extends Phaser.Scene {
   constructor() { super({ key:"Level16Scene" }); }
 
-  // ── Lifecycle ───────────────────────────────────────────────────────────────
   init() {
     this.currentRound = 0;
     this.score = 0;  this.combo = 0;  this.lives = 3;
@@ -131,7 +127,6 @@ export class Level16Scene extends Phaser.Scene {
     this.scale.on('resize', updateCamera, this);
     this.events.once('shutdown', () => this.scale.off('resize', updateCamera, this));
 
-    // Stop UIScene overlay — Level16 has its own HUD
     if (this.scene.isActive("UIScene")) this.scene.stop("UIScene");
 
     // Particle texture
@@ -162,7 +157,6 @@ export class Level16Scene extends Phaser.Scene {
     });
   }
 
-  // ── Background ──────────────────────────────────────────────────────────────
   createBackground() {
     const g = this.add.graphics();
     g.fillGradientStyle(0x050520,0x050520,0x0a0a2a,0x0a0a2a,1);
@@ -225,7 +219,6 @@ export class Level16Scene extends Phaser.Scene {
     }
   }
 
-  // ── Track ───────────────────────────────────────────────────────────────────
   createTrack() {
     const g=this.add.graphics();
     g.lineStyle(3,0x455a64);
@@ -239,7 +232,6 @@ export class Level16Scene extends Phaser.Scene {
     this.tweens.add({ targets:pr, alpha:0.7, duration:1500, yoyo:true, repeat:-1 });
   }
 
-  // ── Stations ────────────────────────────────────────────────────────────────
   createStations(indices) {
     this._stations.forEach(s=>s.container&&s.container.destroy());
     this._stations=[]; this._stationXMap={};
@@ -305,7 +297,6 @@ export class Level16Scene extends Phaser.Scene {
     }
   }
 
-  // ── Train ───────────────────────────────────────────────────────────────────
   createTrain() {
     if(this.trainContainer&&this.trainContainer.active) this.trainContainer.destroy();
     this.trainContainer=this.add.container(60, TRAIN_Y);
@@ -370,7 +361,6 @@ export class Level16Scene extends Phaser.Scene {
     });
   }
 
-  // ── HUD ─────────────────────────────────────────────────────────────────────
   createHUD() {
     const bar=this.add.graphics();
     bar.fillStyle(0x0f0f13,0.92); bar.fillRect(-W * 2, 0, W * 5, 72);
@@ -415,7 +405,6 @@ export class Level16Scene extends Phaser.Scene {
     } else { this._comboTxt.setScale(1); }
   }
 
-  // ── Loop Monitor ────────────────────────────────────────────────────────────
   createLoopMonitor() {
     this._monCont=this.add.container(W/2, 95);
     const bg=this.add.graphics();
@@ -487,7 +476,6 @@ export class Level16Scene extends Phaser.Scene {
     this.tweens.add({ targets:f,alpha:0,duration:500,onComplete:()=>f.destroy() });
   }
 
-  // ── Bit ─────────────────────────────────────────────────────────────────────
   createBit() {
     this._bitC=this.add.container(W+60, 280);
 
@@ -552,7 +540,6 @@ export class Level16Scene extends Phaser.Scene {
     });
   }
 
-  // ── Tutorial ────────────────────────────────────────────────────────────────
   runTutorial() {
     const ov=this.add.graphics().setDepth(50);
     ov.fillStyle(0x000000); ov.fillRect(0,0,W,H);
@@ -643,7 +630,6 @@ export class Level16Scene extends Phaser.Scene {
       }) });
   }
 
-  // ── Gameplay ────────────────────────────────────────────────────────────────
   startRound(idx) {
     this._clearRound();
     if(idx>=ROUNDS.length){ this.levelComplete(); return; }
@@ -806,7 +792,6 @@ export class Level16Scene extends Phaser.Scene {
     this.executeLoop(ROUNDS[this.currentRound]);
   }
 
-  // ── Loop execution ───────────────────────────────────────────────────────────
   async executeLoop(cfg) {
     const cv=cfg.correctValues;
     const initVal = this.playerAnswers.init_value!==undefined ? Number(this.playerAnswers.init_value) : cv.init_value;
@@ -871,7 +856,6 @@ export class Level16Scene extends Phaser.Scene {
     return "wrong_step";
   }
 
-  // ── Results ─────────────────────────────────────────────────────────────────
   async onCorrect() {
     this.correctFirstTryCount++;
     this.totalRoundTime+=(this.time.now-this.roundStartTime)/1000;
@@ -940,6 +924,7 @@ export class Level16Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     const ov=this.add.graphics().setDepth(50);
     ov.fillStyle(0x000000,0.82); ov.fillRect(-W * 2, -H, W * 5, H * 3);
     this.add.text(W/2,H/2-70,"GAME OVER",{fontFamily:"Arial",fontSize:"42px",fontStyle:"bold",color:"#f44336"}).setOrigin(0.5,0.5).setDepth(51);
@@ -952,12 +937,16 @@ export class Level16Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     this.totalRoundTime+=(this.time.now-this.roundStartTime)/1000;
     const accuracy=this.correctFirstTryCount/10;
     const stars=accuracy>=0.9?3:accuracy>=0.7?2:1;
     const livesBonus=this.lives*200;
     const total=this.score+livesBonus;
     console.log("Level 16 complete",{level:16,score:total,accuracy,avgTime:this.totalRoundTime/10,comboMax:this.highestCombo,stars,livesRemaining:this.lives,timestamp:Date.now()});
+
+    try { GameManager.completeLevel(15, Math.round(accuracy * 100)); } catch (_) {}
+    try { BadgeSystem.unlock("loop_engineer"); } catch (_) {}
 
     // Final station
     const fs=this.add.container(720,ST_SY).setDepth(5);
@@ -1022,7 +1011,6 @@ export class Level16Scene extends Phaser.Scene {
     mkBtn(70,"NEXT →",0x00e676,()=>{ if(this.scene.get("Level17Scene"))this.scene.start("Level17Scene"); else console.log("Level17Scene not yet registered."); });
   }
 
-  // ── Utilities ───────────────────────────────────────────────────────────────
   async dropCargo(x) {
     return new Promise(resolve=>{
       const cg=this.add.graphics();

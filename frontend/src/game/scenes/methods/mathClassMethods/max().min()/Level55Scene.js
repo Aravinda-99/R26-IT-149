@@ -1,30 +1,10 @@
-/**
- * Level 55 — "The Observatory" (Math Class Methods: Accretion Phase —
- * Math.max() & Math.min(), opening the Math Wing)
- * ===========================================================================
- * Teaches Java's first STATIC methods: Math.max(a, b) / Math.min(a, b).
- * The Great Comparator is a permanent brass instrument — the receiver is
- * the CLASS ITSELF, never an object. Two argument stars enter twin
- * cradles; a needle oscillates and locks toward the winner (max: larger,
- * min: smaller); the loser DIMS BUT REMAINS (pure computation, nothing
- * consumed — the L49 ghost-copy lesson, now for arithmetic); a COPY of
- * the winner descends the chute as the return value. Instance-style
- * calls (`a.max(b)`), construction (`new Math()`), and case errors
- * (`math.max`) all get their own honest compile-error choreography.
- * Nested calls resolve inner-first, with the inner verdict physically
- * carried into the outer cradle by a small brass arm.
- *
- * The evaluator is honest: real comparison, real int→double widening
- * when either argument is a double, real inner-first nested resolution,
- * and a genuine bare-call discard when the return value is never used.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -44,9 +24,6 @@ const PLINTH = { x: 640, y: 470 };
 const SLATE_X = 940, SLATE_Y = 130, SLATE_W = 300, SLATE_H = 290;
 const TUTORIAL_KEY = "level55_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict", method: "max",
     source: ["int r = Math.max(4, 9);"],
@@ -331,10 +308,6 @@ export class Level55Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / DOME INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l55_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -492,10 +465,6 @@ export class Level55Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE GREAT COMPARATOR
-  // ══════════════════════════════════════════════════════════════
-
   createGreatComparator() {
     const g = this.add.graphics().setDepth(4);
     // pedestal
@@ -533,7 +502,6 @@ export class Level55Scene extends Phaser.Scene {
     this.modeBg = modeBg;
     this.modeText = this.add.text(BEAM_CX, BEAM_Y + 21, ".max", { font: "bold 14px Courier New", color: HEX_CYAN }).setOrigin(0.5).setDepth(6);
 
-    // link chains to cradles — 3 small linked circles down each drop
     [CRADLE_A, CRADLE_B].forEach((c) => {
       g.lineStyle(1.5, C_BRASS, 0.5);
       const dropTop = BEAM_Y + 9, dropBot = c.y - 17;
@@ -598,8 +566,6 @@ export class Level55Scene extends Phaser.Scene {
     this.needleContainer.setAngle(Math.sin(time * 0.0015) * 1);
   }
 
-  // ── argument stars ──
-
   _typeColorHex(type) { return type === "double" ? HEX_ORANGE : HEX_GOLD; }
   _typeColorInt(type) { return type === "double" ? C_ORANGE : C_GOLD; }
 
@@ -641,10 +607,6 @@ export class Level55Scene extends Phaser.Scene {
     if (this._starsA) { this._starsA.container.destroy(); this._starsA = null; }
     if (this._starsB) { this._starsB.container.destroy(); this._starsB = null; }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE COMPARISON RUN (signature choreography)
-  // ══════════════════════════════════════════════════════════════
 
   async needleOscillate() {
     this._needleBusy = true;
@@ -723,10 +685,6 @@ export class Level55Scene extends Phaser.Scene {
     this._varContainers = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REJECTIONS — the static-call compile-error choreography
-  // ══════════════════════════════════════════════════════════════
-
   async instanceCallShudder(value, type) {
     const star = await this.spawnArgumentStar(value, type, "a");
     await this.delay(150);
@@ -780,10 +738,6 @@ export class Level55Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ASTRONOMER'S SLATE
-  // ══════════════════════════════════════════════════════════════
-
   createAstronomersSlate() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0a0d18, 1);
@@ -833,10 +787,6 @@ export class Level55Scene extends Phaser.Scene {
     this.resultText.setFontSize(14).setText(display).setColor(this._typeColorHex(type));
     this.tweens.add({ targets: this.resultText, scale: 1.2, duration: 110, yoyo: true });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY / EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -895,10 +845,6 @@ export class Level55Scene extends Phaser.Scene {
     this.monitorText.setFontSize(this.monitorText.width > 380 ? 10 : 12);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x060810, 0.93);
@@ -906,12 +852,12 @@ export class Level55Scene extends Phaser.Scene {
     g.lineStyle(1, 0x2a3654, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE OBSERVATORY", { font: "bold 17px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — max() & min()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 14, "THE OBSERVATORY", { font: "bold 18px Georgia", color: "#b0bec5" }).setDepth(50);
+    this.add.text(20, 38, "Accretion Phase — max() & min()", { font: "18px Arial", color: "#546e7a" }).setDepth(50);
 
-    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(50);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(50);
+    this.comboText = this.add.text(960, 32, "×1", { font: "bold 18px Arial", color: HEX_GOLD }).setOrigin(1, 0.5).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -924,10 +870,6 @@ export class Level55Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — astronomer variant (observing cloak, hand telescope)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -958,8 +900,8 @@ export class Level55Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1008,14 +950,15 @@ export class Level55Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "italic 13px Georgia", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "italic 18px Georgia", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(1600, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 280 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1400) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
@@ -1029,10 +972,6 @@ export class Level55Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(900, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — Math.max/min with inner-first nesting
-  // ══════════════════════════════════════════════════════════════
 
   _splitTopArgs(argsStr) {
     const parts = [];
@@ -1077,14 +1016,6 @@ export class Level55Scene extends Phaser.Scene {
     if (cradleKey === "a") this._starsA = starObj; else this._starsB = starObj;
   }
 
-  /** Resolves an argument to its VALUE only — does NOT touch the outer
-   * cradles yet. A nested Math.max/min recurses fully (its own isolated
-   * spawn+oscillate+lock cycle, using both cradles since the outer
-   * cradles are still empty at this point) and returns its detached
-   * winner star for the caller to place later. This two-phase split
-   * (resolve both values, THEN populate both outer cradles) is what
-   * lets a nested call safely reuse the same two cradle slots without
-   * clobbering the outer call's other, not-yet-placed argument. */
   async _resolveArgValue(argExpr, vars) {
     const t = argExpr.trim();
     if (/^Math\.(max|min)\(/.test(t)) {
@@ -1105,10 +1036,6 @@ export class Level55Scene extends Phaser.Scene {
     }
   }
 
-  /** Real Math.max/min evaluation with genuine comparison, int→double
-   * widening, and inner-first nested resolution. isTopLevel controls
-   * whether the winner descends to the plinth (true) or is left
-   * detached for the parent call to carry (false, nested). */
   async evalMathCall(callText, vars, isTopLevel) {
     const m = callText.trim().match(/^Math\.(max|min)\((.*)\)$/);
     if (!m) return { ok: false, crash: "eval" };
@@ -1117,29 +1044,16 @@ export class Level55Scene extends Phaser.Scene {
     if (args.length !== 2) return { ok: false, crash: "wrong_arity" };
     this.setModePlate(method);
 
-    // Phase 1 — resolve both argument VALUES first (any nested call runs
-    // its own complete, isolated cradle cycle here, before either outer
-    // cradle is touched).
     const aRes = await this._resolveArgValue(args[0], vars);
     if (!aRes.ok) return aRes;
     const bRes = await this._resolveArgValue(args[1], vars);
     if (!bRes.ok) return bRes;
 
-    // Phase 2 — now populate the outer cradles: fresh spawn for literal/
-    // variable args, or carry the nested call's already-resolved winner
-    // star into place.
     await this._placeIntoCradle(aRes, "a");
     await this._placeIntoCradle(bRes, "b");
 
-    // re-assert this call's own method — a nested inner call (e.g. the
-    // .max inside Math.min(10, Math.max(4, 7))) may have flipped the
-    // nameplate to its own method during Phase 1; the plate must read
-    // THIS call's method before its own needle run.
     this.setModePlate(method);
 
-    // widening happens BEFORE the comparison runs — both cradles widen
-    // to double if either argument is a double, regardless of which one
-    // ultimately wins (a losing int must still visibly widen).
     const widened = aRes.type === "double" || bRes.type === "double";
     if (widened) {
       if (this._starsA && this._starsA.type !== "double") this._warmStarToDouble(this._starsA);
@@ -1183,7 +1097,6 @@ export class Level55Scene extends Phaser.Scene {
       this.time.delayedCall(500, () => { if (this._alive) this.resetCradles(); });
       return { ok: true, value: winner, type: winnerType };
     }
-    // nested: detach the winner for the parent to carry; fade the loser now
     this._starsA = null; this._starsB = null;
     if (loseStar) {
       this.time.delayedCall(250, () => { if (loseStar.container.active) this.tweens.add({ targets: loseStar.container, alpha: 0, duration: 200, onComplete: () => loseStar.container.destroy() }); });
@@ -1191,8 +1104,6 @@ export class Level55Scene extends Phaser.Scene {
     return { ok: true, value: winner, type: winnerType, winnerStarObj: winStar };
   }
 
-  /** Executes statements honestly, including the static-call compile
-   * rejections, which halt the run exactly where they occur. */
   async runStatements(lines, vars) {
     for (const raw of lines) {
       if (!this._alive) return { ok: true };
@@ -1258,10 +1169,6 @@ export class Level55Scene extends Phaser.Scene {
     }
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL (6 steps)
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1334,10 +1241,6 @@ export class Level55Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   startRound(index) {
     this.currentRound = index;
     const config = ROUNDS[index];
@@ -1378,10 +1281,6 @@ export class Level55Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1473,10 +1372,6 @@ export class Level55Scene extends Phaser.Scene {
       this.setupPredict(config);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — ASTRONOMER COMMAND
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.renderCommandSkeleton(config);
@@ -1806,10 +1701,6 @@ export class Level55Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
     if (this.combo >= 3) return 2;
@@ -1856,15 +1747,6 @@ export class Level55Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1908,11 +1790,8 @@ export class Level55Scene extends Phaser.Scene {
     else this.startRound(next);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1941,13 +1820,14 @@ export class Level55Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(55, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(54, Math.round((this.correctFirstTry / 12) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("math_max_min_schema"); } catch (_) {}
     try {
       localStorage.setItem("level55_results", JSON.stringify({
@@ -2053,9 +1933,9 @@ export class Level55Scene extends Phaser.Scene {
     bg.fillPoints(starPts1, true);
     bg.fillPoints(starPts2, true);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 1950 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 505, "max()/min() SCHEMA ACQUIRED", { font: "bold 14px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 545, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 545, "NEXT: The Meridian Trials →", 270, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

@@ -1,34 +1,9 @@
-/**
- * Level 29 — "The Claw Trials" (String Methods: Tuning Phase)
- * ==============================================================
- * Tunes the charAt() schema from Level 28 through rapid-fire certification
- * trials. Trial pods descend from a ceiling hatch on a cable, hold briefly,
- * then retract straight back up — the pod's height IS the visual timer.
- * The Level 28 extraction bay (claw, rail, character tiles with always-
- * visible index plates, Result Display) is reused as the permanent
- * reference and the reveal stage: every trial resolves with a REAL claw
- * action (extraction, boundary crash, or compile refusal), never a looked-
- * up verdict.
- *
- * 15 rounds in 3 waves of 5:
- *  Wave 1 — Rapid Extraction (predict)
- *  Wave 2 — Safe or Crash (judge, including the empty-string trap and the
- *           charAt(length()) vs charAt(length()-1) side-by-side crash/safe
- *           discrimination)
- *  Wave 3 — Expression Evaluation + Bug Hunt (clickable tokens)
- *
- * The pod's retraction tween's `progress` is the single source of truth
- * for the timer bar, urgency states, and timeout — mirroring Level 26's
- * conveyor-belt design (and its lesson: never let a second tween fight the
- * timer tween over the same property — urgency vibration here rides on
- * `x`/an independent sway amplitude, never on the `y` the timer owns).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -46,9 +21,6 @@ const TIMER_X = 885, TIMER_TOP = 60, TIMER_BOTTOM = 210;
 
 const TUTORIAL_KEY = "level29_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
   { round: 1, wave: 1, type: "predict", timeLimit: 12000,
     decl: [{ name: "s", value: "trial" }], pod: "s.charAt(1)", correct: "'r'",
@@ -228,9 +200,6 @@ export class Level29Scene extends Phaser.Scene {
     this._alive = true;
     this._bubble = null;
     this._keyHandler = null;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level28Scene";
   }
 
@@ -270,14 +239,12 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this.podTween && this.podTween.isPlaying()) {
         this.podTween.pause();
       }
-      return; // Return early to stop particles, claw, and drone from animating
+      return;
     } else {
-      // Resume the pod's timer tween if the menu was just dismissed
       if (this.podTween && this.podTween.isPaused()) {
         this.podTween.resume();
       }
@@ -290,10 +257,6 @@ export class Level29Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment (Level 28 bay, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l29_dot")) {
@@ -481,10 +444,6 @@ export class Level29Scene extends Phaser.Scene {
     side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // THE CLAW (rail at y=285, identical mechanics to Level 28)
-  // ══════════════════════════════════════════════════════════════
-
   createRail() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x241f36, 1);
@@ -572,10 +531,6 @@ export class Level29Scene extends Phaser.Scene {
     this.clawGrip(false);
     return this.moveClawTo(168 + 20);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CHARACTER TILES + INDEX PLATES (Level 28 mechanics)
-  // ══════════════════════════════════════════════════════════════
 
   _charMeta(ch) {
     if (ch === " ") return { display: "␣", color: HEX_MAGENTA, isSpace: true };
@@ -679,10 +634,6 @@ export class Level29Scene extends Phaser.Scene {
     return this.tiles.filter((t) => t.groupId === groupId)[index];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RESULT DISPLAY & DECLARATIONS
-  // ══════════════════════════════════════════════════════════════
-
   createResultDisplay() {
     const g = this.add.graphics().setDepth(14);
     g.fillStyle(0x0d0b16, 1);
@@ -731,10 +682,6 @@ export class Level29Scene extends Phaser.Scene {
     this.declGroup = c;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0c0916, 0.93);
@@ -742,8 +689,8 @@ export class Level29Scene extends Phaser.Scene {
     g.lineStyle(1, 0x241f36, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE CLAW TRIALS", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Tuning Phase — String Methods: charAt()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE CLAW TRIALS", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Tuning Phase — String Methods: charAt()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.waveText = this.add.text(640, 12, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(51);
     this.waveSquares = [];
@@ -752,8 +699,8 @@ export class Level29Scene extends Phaser.Scene {
       this.waveSquares.push(sq);
     }
 
-    this.add.text(1060, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
     this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
     this.lifeIcons = [];
@@ -773,10 +720,6 @@ export class Level29Scene extends Phaser.Scene {
     sq.setFillStyle(result ? C_GREEN : C_RED, 1);
     sq.setStrokeStyle(1, result ? C_GREEN : C_RED);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — examiner variant (headset + clipboard)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -808,8 +751,8 @@ export class Level29Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 330 } });
-    const bw = Math.min(inner.width, 330) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -857,10 +800,6 @@ export class Level29Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -901,7 +840,7 @@ export class Level29Scene extends Phaser.Scene {
 
   createAnnotation(x, y, text, colorHex, arrowTarget = null) {
     const c = this.add.container(0, 0).setDepth(70).setAlpha(0);
-    const txt = this.add.text(x, y, text, { font: "bold 15px Arial", color: colorHex }).setOrigin(0.5);
+    const txt = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5);
     c.add(txt);
     if (arrowTarget) {
       const g = this.add.graphics();
@@ -915,10 +854,6 @@ export class Level29Scene extends Phaser.Scene {
     this.tweens.add({ targets: c, alpha: 1, duration: 300 });
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WAVE MANAGEMENT
-  // ══════════════════════════════════════════════════════════════
 
   async startWave(waveNumber) {
     if (!this._alive || this.gameEnded) return;
@@ -953,10 +888,6 @@ export class Level29Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // POD — visual timer
-  // ══════════════════════════════════════════════════════════════
 
   spawnPod(cfg) {
     const width = cfg.type === "bughunt" ? 560 : 460;
@@ -1089,7 +1020,6 @@ export class Level29Scene extends Phaser.Scene {
         this.pod.drawBody(C_RED);
         this.pod.glow.setFillStyle(C_RED, 0);
         this.tweens.add({ targets: this.pod.glow, fillAlpha: 0.15, duration: 250, yoyo: true, repeat: -1 });
-        // vibration rides on x (untouched by the retraction tween, which owns y only)
         this.tweens.add({ targets: this.pod.container, x: 640 + 1, duration: 40, yoyo: true, repeat: -1 });
       }
     }
@@ -1139,10 +1069,6 @@ export class Level29Scene extends Phaser.Scene {
     this.pod.container.destroy();
     this.pod = null;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CLAW REVEAL (Level 28 mechanics, 1.4x pace)
-  // ══════════════════════════════════════════════════════════════
 
   async clawExtract(index, groupId = 0) {
     const tile = this.getTile(index, groupId);
@@ -1327,10 +1253,6 @@ export class Level29Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
-
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
     this.currentRound = index;
@@ -1374,10 +1296,6 @@ export class Level29Scene extends Phaser.Scene {
       case "bughunt": this.setupBugHunt(cfg); break;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // OPTION BUBBLES
-  // ══════════════════════════════════════════════════════════════
 
   showOptionBubbles(options, onSelect) {
     this.optionBubbles = [];
@@ -1424,10 +1342,6 @@ export class Level29Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A — PREDICT
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1447,15 +1361,10 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   _resolveIndexFromStr(str, cfg) {
-    // extract the numeric index actually named/derivable from cfg.pod, defaulting to declared index
     if (cfg.pod.includes("length() - 1")) return str.length - 1;
     const m = cfg.pod.match(/charAt\((\d+)\)/);
     return m ? parseInt(m[1], 10) : 0;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE B — JUDGE
-  // ══════════════════════════════════════════════════════════════
 
   showJudgmentButtons(onSelect) {
     const mk = (x, label, color, key) => {
@@ -1531,10 +1440,6 @@ export class Level29Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE C — EXPRESSION
-  // ══════════════════════════════════════════════════════════════
-
   setupExpression(cfg) {
     this.showOptionBubbles(cfg.options, (opt, bubble, draw) => {
       const correct = opt.value === cfg.correct;
@@ -1548,7 +1453,6 @@ export class Level29Scene extends Phaser.Scene {
         if (cfg.steps) await this.showEvaluationFloat(cfg.steps);
         if (!this._alive) return;
 
-        // genuinely resolve every charAt(...) argument in the expression — never hardcode the index
         const indices = [...cfg.pod.matchAll(/charAt\((.+?)\)/g)].map((m) => {
           try { return Function(`"use strict"; return (${m[1]});`)(); } catch (_) { return 0; }
         });
@@ -1567,10 +1471,6 @@ export class Level29Scene extends Phaser.Scene {
       });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(cfg) {
     const strip = this.add.text(640, 265, "CLICK THE BUG", { font: "bold 15px Arial", color: HEX_MAGENTA }).setOrigin(0.5).setDepth(25);
@@ -1621,10 +1521,6 @@ export class Level29Scene extends Phaser.Scene {
       }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // ANSWER RESOLUTION
-  // ══════════════════════════════════════════════════════════════
 
   async _resolveAnswer(cfg, correct, selected, tag, revealFn) {
     if (this.answered) return;
@@ -1712,15 +1608,6 @@ export class Level29Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1741,7 +1628,6 @@ export class Level29Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level29Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1752,16 +1638,12 @@ export class Level29Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1821,6 +1703,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(65);
     this.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1839,10 +1722,6 @@ export class Level29Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   async certificationCeremony() {
     this.drones.forEach((d, i) => {
       this.tweens.add({ targets: d.c, x: 640 + (i - 1) * 30, y: 250, duration: 500, delay: i * 100 });
@@ -1859,6 +1738,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1885,6 +1765,7 @@ export class Level29Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1893,7 +1774,7 @@ export class Level29Scene extends Phaser.Scene {
 
     const accuracy = this.correctFirstTry / ROUNDS.length;
     const avgTimePct = this.totalTimePctUsed / ROUNDS.length;
-    try { GameManager.completeLevel(29, Math.round(accuracy * 100)); } catch (_) {}
+    try { GameManager.completeLevel(28, Math.round(accuracy * 100)); } catch (_) {}
     try { BadgeSystem.unlock("charAt_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level29_results", JSON.stringify({
@@ -1962,9 +1843,9 @@ export class Level29Scene extends Phaser.Scene {
     bg.fillStyle(C_AMBER, 1);
     bg.fillCircle(6, -10, 2);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 533, "charAt() SCHEMA TUNED", { font: "bold 15px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 555, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 555, "NEXT: The Workshop →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {

@@ -1,0 +1,2001 @@
+filename,label,concept,error_description,error_type
+SYN_LOOP_01217.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01301.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00941.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00677.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01181.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00353.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01265.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00989.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01253.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01313.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00233.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00509.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00185.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00809.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00293.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00377.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01589.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00617.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01925.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00197.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00917.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00221.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00149.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00113.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01601.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00905.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01637.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00725.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00665.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01769.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00365.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01697.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01445.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01781.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01901.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00029.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01205.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01517.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00821.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01577.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00545.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00317.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01721.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01025.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01157.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01133.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00437.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01421.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00269.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01433.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01625.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01145.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00137.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00797.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01169.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00077.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00329.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01757.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01733.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00461.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00497.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00053.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01685.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00389.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00785.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01349.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00833.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00125.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01865.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01373.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00005.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01493.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01877.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00773.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00533.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01085.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00341.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00485.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01409.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00305.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00281.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01469.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00977.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00953.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01013.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00473.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01121.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01037.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01337.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01949.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01673.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00569.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01529.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00737.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00881.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00401.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01385.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01481.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01613.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00749.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01985.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01649.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01961.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00641.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00065.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01505.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00041.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01853.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00593.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00425.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00965.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00929.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00413.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00557.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00089.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00521.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00845.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01541.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01325.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01097.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01001.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01841.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01805.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01073.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00101.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01913.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01361.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00161.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00713.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01709.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00209.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00869.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01745.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01661.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01829.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00761.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00653.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01289.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00605.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01973.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00701.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00581.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01061.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00257.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00689.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01937.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01553.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00449.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01889.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00017.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00629.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01793.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01565.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01817.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01241.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01193.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01397.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01049.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00893.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01457.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01997.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_00245.java,LOOP_ERROR,Loops,Modifying for-each loop variable,CONCEPTUAL
+SYN_LOOP_01213.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01297.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00937.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00673.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01177.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00349.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01261.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00985.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01249.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01309.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00229.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00505.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00181.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00805.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00289.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00373.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01585.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00613.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01921.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00193.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00913.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00217.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_00145.java,LOOP_ERROR,Loops,Off-by-one loop condition,LOGIC
+SYN_LOOP_01216.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01300.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00940.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00676.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01180.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00352.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01264.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00988.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01252.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01312.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00232.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00508.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00184.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00808.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00292.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00376.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01588.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00616.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01924.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00196.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00916.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00220.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_00148.java,LOOP_ERROR,Loops,Wrong termination condition,LOGIC
+SYN_LOOP_01210.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01642.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00946.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00682.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01174.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00358.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01258.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00994.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01954.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01306.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00238.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00514.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00190.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00814.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00298.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00382.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01582.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00622.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01222.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00202.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00922.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00226.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_00154.java,LOOP_ERROR,Loops,Semicolon after for condition,LOGIC
+SYN_LOOP_01212.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01644.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00948.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00684.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01176.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00360.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01260.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00996.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01956.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01308.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00240.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00516.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00192.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00816.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00300.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00384.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01584.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00624.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01224.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00204.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00924.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00228.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_00156.java,LOOP_ERROR,Loops,Reverse loop off-by-one,LOGIC
+SYN_LOOP_01215.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01299.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00939.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00675.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01179.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00351.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01263.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00987.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01251.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01311.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00231.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00507.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00183.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00807.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00291.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00375.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01587.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00615.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01923.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00195.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00915.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00219.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_00147.java,LOOP_ERROR,Loops,Wrong start index,LOGIC
+SYN_LOOP_01211.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01643.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00947.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00683.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01175.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00359.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01259.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00995.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01955.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01307.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00239.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00515.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00191.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00815.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00299.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00383.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01583.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00623.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01223.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00203.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00923.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00227.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_00155.java,LOOP_ERROR,Loops,Modifying loop counter inside body,LOGIC
+SYN_LOOP_01214.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01298.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00938.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00674.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01178.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00350.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01262.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00986.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01250.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01310.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00230.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00506.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00182.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00806.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00290.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_00374.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01586.java,LOOP_ERROR,Loops,Missing loop update,RUNTIME
+SYN_LOOP_01220.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01304.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00944.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00680.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01184.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00356.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01268.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00992.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01256.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01316.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00236.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00512.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00188.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00812.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00296.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_00380.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01592.java,LOOP_ERROR,Loops,Wrong nested loop counter,RUNTIME
+SYN_LOOP_01218.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01302.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00942.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00678.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01182.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00354.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01266.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00990.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01254.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01314.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00234.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00510.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00186.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00810.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00294.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_00378.java,LOOP_ERROR,Loops,Continue skips update,RUNTIME
+SYN_LOOP_01209.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01641.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00945.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00681.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01173.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00357.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01257.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00993.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01953.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01305.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00237.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00513.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00189.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00813.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00297.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00381.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01581.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00621.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01221.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00201.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00921.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00225.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00153.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_00117.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01593.java,LOOP_ERROR,Loops,Unreachable loop condition,SYNTAX
+SYN_LOOP_01219.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01303.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00943.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00679.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01183.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00355.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01267.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00991.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01255.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01315.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00235.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00511.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00187.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00811.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00295.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00379.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01591.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00619.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01927.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00199.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00919.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00223.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00151.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_00115.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_LOOP_01603.java,LOOP_ERROR,Loops,Loop counter out of scope,SYNTAX
+SYN_VAR_01216.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01300.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00940.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00676.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01180.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00352.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01264.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00988.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01252.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01312.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00232.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00508.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00184.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00808.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00292.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00376.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01588.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00616.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01924.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00196.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00916.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00220.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00148.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00112.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01600.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00904.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01636.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_01217.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01301.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00941.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00677.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01181.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00353.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01265.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00989.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01253.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01313.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00233.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00509.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00185.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00809.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00293.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00377.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01589.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00617.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01925.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00197.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00917.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00221.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00149.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00113.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01601.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00905.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01637.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01212.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01644.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00948.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00684.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01176.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00360.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01260.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00996.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01956.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01308.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00240.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00516.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00192.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00816.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00300.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00384.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01584.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00624.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01224.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00204.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00924.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00228.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00156.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00120.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01596.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00912.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01632.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01211.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01643.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00947.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00683.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01175.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00359.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01259.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00995.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01955.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01307.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00239.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00515.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00191.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00815.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00299.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00383.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01583.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00623.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01223.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00203.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00923.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00227.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00155.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00119.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01595.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00911.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01631.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01209.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01641.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00945.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00681.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01173.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00357.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01257.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00993.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01953.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01305.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00237.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00513.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00189.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00813.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00297.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00381.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01581.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00621.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01221.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00201.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00921.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00225.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00153.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00117.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01593.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00909.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01629.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01220.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01304.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00944.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00680.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01184.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00356.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01268.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00992.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01256.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01316.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00236.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00512.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00188.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00812.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00296.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00380.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01592.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00620.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01928.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00200.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00920.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00224.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00152.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00116.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01604.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00908.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01640.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01213.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01297.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00937.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00673.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01177.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00349.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01261.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00985.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01249.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01309.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00229.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00505.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00181.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00805.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00289.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00373.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01585.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00613.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01921.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00193.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00913.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00217.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00145.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00109.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01597.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00901.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01633.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00721.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00661.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01765.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00361.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01693.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01441.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01777.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01897.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00025.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01201.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01513.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00817.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01573.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00541.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00313.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01717.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01021.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01153.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01129.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01218.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01302.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00942.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00678.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01182.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00354.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01266.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00990.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01254.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01314.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00234.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00510.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00186.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00810.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00294.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00378.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01590.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00618.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01926.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00198.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00918.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00222.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00150.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00114.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01602.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00906.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01638.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00726.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00666.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01770.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00366.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01698.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01446.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01782.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01902.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00030.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01206.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01518.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00822.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01578.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00546.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00318.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01722.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01026.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01158.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01134.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01214.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01298.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00938.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00674.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01178.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00350.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01262.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00986.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01250.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01310.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00230.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00506.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00182.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00806.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00290.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00374.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01586.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00614.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01922.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00194.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00914.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00218.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00146.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00110.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01598.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00902.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01634.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00722.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00662.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01766.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00362.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01694.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01442.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01778.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01898.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00026.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01202.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01514.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00818.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01574.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00542.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00314.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01718.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01022.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01154.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01130.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01210.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01642.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00946.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00682.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01174.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00358.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01258.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00994.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01954.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01306.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00238.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00514.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00190.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00814.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00298.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00382.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01582.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01219.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01303.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00943.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00679.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01183.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00355.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01267.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00991.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01255.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01315.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00235.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00511.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00187.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00811.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00295.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00379.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01591.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01215.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01299.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00939.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00675.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01179.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00351.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01263.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00987.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01251.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01311.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00231.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00507.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00183.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00807.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00291.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00375.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00603.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_00069.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01137.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00602.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00024.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01373.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00706.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00338.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01568.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00137.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01248.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01942.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00488.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01969.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01114.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01856.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00604.java,VARIABLE_ERROR,Variables,Float precision loss,CONCEPTUAL
+SYN_VAR_00457.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_01605.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01291.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01242.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_01368.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01952.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01389.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00761.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_00403.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01439.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_01536.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_01775.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00211.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01630.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01319.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00607.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_01448.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_00534.java,VARIABLE_ERROR,Variables,Reversed assignment,LOGIC
+SYN_VAR_00406.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_01692.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00869.java,VARIABLE_ERROR,Variables,Integer division truncation,CONCEPTUAL
+SYN_VAR_01967.java,VARIABLE_ERROR,Variables,Wrapper class equality,CONCEPTUAL
+SYN_VAR_00033.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_01238.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_01615.java,VARIABLE_ERROR,Variables,Uninitialized variable,SYNTAX
+SYN_VAR_00157.java,VARIABLE_ERROR,Variables,Wrong initialization value,LOGIC
+SYN_VAR_00720.java,VARIABLE_ERROR,Variables,Char implicit cast math,CONCEPTUAL
+SYN_VAR_00034.java,VARIABLE_ERROR,Variables,Type mismatch assignment,SYNTAX
+SYN_VAR_00074.java,VARIABLE_ERROR,Variables,Overwrite instead of update,LOGIC
+SYN_VAR_00585.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_VAR_00699.java,VARIABLE_ERROR,Variables,Shadowing local variable,SYNTAX
+SYN_VAR_01868.java,VARIABLE_ERROR,Variables,String concatenation instead of addition,CONCEPTUAL
+SYN_VAR_01149.java,VARIABLE_ERROR,Variables,Post-increment in assignment,CONCEPTUAL
+SYN_ARRAY_01217.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01301.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00941.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00677.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01181.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00353.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01265.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00989.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01253.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01313.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00233.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00509.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00185.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00809.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00293.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00377.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01589.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00617.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01925.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00197.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00917.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00221.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00149.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00113.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01601.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00905.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01637.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00725.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00665.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01769.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00365.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01697.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01445.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01781.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01901.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00029.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01205.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01517.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00821.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01577.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_00545.java,ARRAY_ERROR,Arrays,Comparing arrays with ==,CONCEPTUAL
+SYN_ARRAY_01211.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01643.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00947.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00683.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01175.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00359.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01259.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00995.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01955.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01307.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00239.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00515.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00191.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00815.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00299.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00383.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01583.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00623.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01223.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00203.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00923.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00227.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00155.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00119.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01595.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00911.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01631.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00731.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00671.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01763.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00371.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01691.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01439.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01031.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01895.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00035.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01427.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01355.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00827.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01607.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_00551.java,ARRAY_ERROR,Arrays,Object array default values,CONCEPTUAL
+SYN_ARRAY_01213.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01297.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00937.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00673.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01177.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00349.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01261.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00985.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01249.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01309.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00229.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00505.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00181.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00805.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00289.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00373.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01585.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00613.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01921.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00193.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00913.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00217.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00145.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00109.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01597.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00901.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01633.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00721.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00661.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01765.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00361.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01693.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01441.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01777.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01897.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00025.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01201.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01513.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_00817.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01573.java,ARRAY_ERROR,Arrays,Array assignment reference copy,CONCEPTUAL
+SYN_ARRAY_01219.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01303.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00943.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00679.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01183.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00355.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01267.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00991.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01255.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01315.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00235.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00511.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00187.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00811.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00295.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00379.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01591.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00619.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01927.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00199.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00919.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00223.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00151.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00115.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01603.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00907.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01639.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00727.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00667.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01771.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00367.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01699.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01447.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01783.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01903.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00031.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01207.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01519.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_00823.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01579.java,ARRAY_ERROR,Arrays,Printing array directly,CONCEPTUAL
+SYN_ARRAY_01212.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01644.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00948.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00684.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01176.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00360.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01260.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00996.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01956.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01308.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00240.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00516.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00192.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00816.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00300.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00384.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01584.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00624.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01224.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00204.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00924.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00228.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00156.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00120.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01596.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00912.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01632.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00732.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00672.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01764.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00372.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01692.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01440.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01032.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01896.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00036.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01428.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01356.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00828.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01608.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00552.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00324.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01716.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01020.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01152.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01128.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00444.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01320.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00276.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01092.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01620.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01140.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00144.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00804.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01548.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00084.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00336.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01776.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01728.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00468.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00504.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00060.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01680.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00396.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00792.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01344.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00840.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00132.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01188.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01512.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00012.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01488.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01392.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00780.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00540.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01164.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00348.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00492.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01872.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00312.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00288.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01500.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00984.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00960.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00480.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01860.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01044.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01416.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01944.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01668.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00576.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01524.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00744.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00888.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00408.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01380.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01476.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01752.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00756.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01980.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01920.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01272.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00648.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00072.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01452.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00048.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01848.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00600.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00432.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00972.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00936.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00420.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00564.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00096.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00528.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00852.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01536.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01332.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01104.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01008.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01788.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01812.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01080.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00108.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01908.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01368.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00168.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00720.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01704.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00216.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00876.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01740.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01656.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01836.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00768.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00660.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01296.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_00612.java,ARRAY_ERROR,Arrays,Incorrect swap data loss,LOGIC
+SYN_ARRAY_01214.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01298.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00938.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00674.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01178.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00350.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01262.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00986.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01250.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01310.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00230.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00506.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_00182.java,ARRAY_ERROR,Arrays,Array length as index,RUNTIME
+SYN_ARRAY_01216.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01300.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00940.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00676.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01180.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00352.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01264.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00988.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01252.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01312.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00232.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00508.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_00184.java,ARRAY_ERROR,Arrays,Negative array index,RUNTIME
+SYN_ARRAY_01209.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01641.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00945.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00681.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01173.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00357.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01257.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00993.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01953.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01305.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00237.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_00513.java,ARRAY_ERROR,Arrays,Hardcoded out of bounds index,RUNTIME
+SYN_ARRAY_01220.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01304.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00944.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00680.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01184.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00356.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01268.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00992.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01256.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01316.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00236.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_00512.java,ARRAY_ERROR,Arrays,Negative array size,RUNTIME
+SYN_ARRAY_01210.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01642.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00946.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00682.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01174.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00358.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01258.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00994.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01954.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01306.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00238.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00514.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00190.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00814.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00298.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_00382.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01582.java,ARRAY_ERROR,Arrays,Array access on non-array,SYNTAX
+SYN_ARRAY_01215.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01299.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00939.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00675.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01179.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00351.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01263.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00987.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01251.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01311.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00231.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00507.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00183.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00807.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00291.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_00375.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01587.java,ARRAY_ERROR,Arrays,Method call on array length,SYNTAX
+SYN_ARRAY_01218.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_01302.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00942.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00678.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_01182.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00354.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_01266.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00990.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_01254.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_01314.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00234.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00510.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00186.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00810.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00294.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_ARRAY_00378.java,ARRAY_ERROR,Arrays,Array constant initialization without new,SYNTAX
+SYN_METHOD_01211.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01643.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00947.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00683.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01175.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00359.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01259.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00995.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01955.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01307.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00239.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00515.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00191.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00815.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00299.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00383.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01583.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00623.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01223.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00203.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00923.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00227.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00155.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00119.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01595.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00911.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01631.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00731.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00671.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01763.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00371.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01691.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01439.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01031.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01895.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00035.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01427.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01355.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00827.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01607.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00551.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00323.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01715.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01019.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01151.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01127.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00443.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01319.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00275.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01091.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01619.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01139.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00143.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_00803.java,METHOD_ERROR,Methods,Overloading ambiguous types,CONCEPTUAL
+SYN_METHOD_01213.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01297.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00937.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00673.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01177.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00349.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01261.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00985.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01249.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01309.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00229.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00505.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00181.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00805.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00289.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00373.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01585.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00613.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01921.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00193.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00913.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00217.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00145.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00109.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01597.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00901.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01633.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00721.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00661.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01765.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00361.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01693.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01441.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01777.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01897.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00025.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01201.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01513.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00817.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01573.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00541.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00313.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01717.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01021.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01153.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01129.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00433.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01417.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00265.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01429.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01621.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01141.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00133.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_00793.java,METHOD_ERROR,Methods,Pass array reference by value,CONCEPTUAL
+SYN_METHOD_01215.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01299.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00939.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00675.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01179.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00351.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01263.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00987.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01251.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01311.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00231.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00507.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00183.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00807.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00291.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00375.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01587.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00615.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01923.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00195.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00915.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00219.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00147.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00111.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01599.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00903.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01635.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00723.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00663.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01767.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00363.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01695.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01443.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01779.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01899.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00027.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01203.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01515.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00819.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01575.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00543.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00315.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01719.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01023.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01155.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01131.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00435.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01419.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00267.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01431.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01623.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01143.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00135.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_00795.java,METHOD_ERROR,Methods,Pass by value primitive misunderstanding,CONCEPTUAL
+SYN_METHOD_01214.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01298.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00938.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00674.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01178.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00350.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01262.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00986.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01250.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01310.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00230.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00506.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00182.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00806.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00290.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00374.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01586.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00614.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01922.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00194.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00914.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00218.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00146.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00110.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01598.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00902.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01634.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00722.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00662.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01766.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00362.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01694.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01442.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01778.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01898.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00026.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01202.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01514.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00818.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01574.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00542.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00314.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01718.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01022.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01154.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01130.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00434.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01418.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00266.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01430.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01622.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01142.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00134.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00794.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01166.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00074.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00326.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01754.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01730.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00458.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00494.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00050.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01682.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00386.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00782.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01346.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00830.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_00122.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01862.java,METHOD_ERROR,Methods,Ignored parameter,LOGIC
+SYN_METHOD_01212.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01644.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00948.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00684.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01176.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00360.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01260.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00996.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01956.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01308.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00240.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00516.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00192.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00816.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00300.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00384.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01584.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00624.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01224.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00204.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00924.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00228.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00156.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00120.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01596.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00912.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01632.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00732.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00672.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01764.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00372.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01692.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01440.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01032.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01896.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00036.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01428.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01356.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00828.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01608.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00552.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00324.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01716.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01020.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01152.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01128.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00444.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01320.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00276.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01092.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01620.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01140.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00144.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00804.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01548.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00084.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00336.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01776.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01728.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00468.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00504.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00060.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01680.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00396.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00792.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01344.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00840.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_00132.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01188.java,METHOD_ERROR,Methods,Early return in loop,LOGIC
+SYN_METHOD_01220.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01304.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00944.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00680.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01184.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00356.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01268.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00992.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01256.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01316.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00236.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00512.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00188.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00812.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00296.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00380.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01592.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00620.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01928.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00200.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00920.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00224.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00152.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00116.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01604.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00908.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01640.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00728.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00668.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01772.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00368.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01700.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01448.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01784.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01904.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00032.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01208.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01520.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00824.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01580.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00548.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00320.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01724.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01028.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01160.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01136.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00440.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01424.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_00272.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01436.java,METHOD_ERROR,Methods,Infinite recursion,RUNTIME
+SYN_METHOD_01210.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_01642.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_00946.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_00682.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_01174.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_00358.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_01258.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_00994.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_01954.java,METHOD_ERROR,Methods,Method inside method,SYNTAX
+SYN_METHOD_01217.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_01301.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_00941.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_00677.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_01181.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_00353.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_01265.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_00989.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_01253.java,METHOD_ERROR,Methods,Wrong parameter order,SYNTAX
+SYN_METHOD_01218.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_01302.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_00942.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_00678.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_01182.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_00354.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_01266.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_00990.java,METHOD_ERROR,Methods,Assigning void return,SYNTAX
+SYN_METHOD_01216.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_01300.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_00940.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_00676.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_01180.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_00352.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_01264.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_00988.java,METHOD_ERROR,Methods,Missing return statement,SYNTAX
+SYN_METHOD_01209.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_01641.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_00945.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_00681.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_01173.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_00357.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_01257.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_00993.java,METHOD_ERROR,Methods,Calling non-static method from static,SYNTAX
+SYN_METHOD_01219.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_01303.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_00943.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_00679.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_01183.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_00355.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_01267.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_METHOD_00991.java,METHOD_ERROR,Methods,Missing parentheses on method call,SYNTAX
+SYN_CORRECT_01861.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00354.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01334.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00906.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01290.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01274.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00939.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01732.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00066.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01324.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00057.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01293.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01119.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00585.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00375.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00276.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00747.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00129.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01647.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01853.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00675.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01665.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01982.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01084.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01923.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00100.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01180.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00965.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00793.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00030.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00629.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00945.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00573.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00908.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01081.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00451.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01610.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01291.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01079.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00255.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00125.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01928.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00252.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00586.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01569.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00825.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00508.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00890.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00071.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01609.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01533.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00248.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01451.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00213.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00910.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01742.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01245.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01697.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01183.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00362.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01474.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00679.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01622.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01090.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01988.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01848.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00988.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01513.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00112.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01488.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01454.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00384.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01396.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01055.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00756.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00325.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01624.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00788.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00369.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01820.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00070.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00858.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01484.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01556.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01692.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01475.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01799.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00479.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00282.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01648.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01557.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01730.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00211.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00298.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01885.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01834.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00652.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01234.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01503.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01932.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00917.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00994.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00430.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01371.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00240.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00880.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00621.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00257.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00612.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00545.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00772.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01420.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01042.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01790.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00760.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00383.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01104.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00974.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00353.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01606.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01826.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01037.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01108.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00495.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00394.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01547.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00465.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00887.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01194.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00367.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01894.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01874.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00745.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00530.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00803.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01224.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01979.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01906.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01700.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01545.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01314.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00307.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01667.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00863.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01567.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00531.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00655.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01260.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00234.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00121.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01698.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00950.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00618.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01179.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00308.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00136.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00555.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01674.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00584.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01641.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00671.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00835.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00110.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01165.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01960.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01465.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01729.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01243.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00212.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01768.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01121.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00680.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01951.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01839.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00412.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01325.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00783.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01346.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00875.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01653.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01279.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00786.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01819.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01199.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00808.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00713.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01991.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01660.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01191.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01226.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00603.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00271.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01385.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00232.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00050.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00463.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01106.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00856.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00694.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01552.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01873.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00527.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00174.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00721.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00415.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00238.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01473.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01336.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01064.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00024.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01767.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00064.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00290.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00189.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00702.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01815.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01138.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00355.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00417.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01246.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00931.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00197.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00580.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01135.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01814.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01935.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00434.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00101.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01655.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00395.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01939.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00221.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01676.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01498.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01785.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00345.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01028.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00889.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01351.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00553.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00744.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01542.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00539.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00907.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01395.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00116.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00830.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01938.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00809.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01311.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01005.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00306.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01101.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00480.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01424.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01076.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00571.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00619.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01898.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01266.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00079.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01912.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00033.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01538.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01034.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01563.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00352.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00164.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00204.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01054.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01365.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01967.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00496.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01625.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01966.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01963.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00611.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00433.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01492.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00219.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01931.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01466.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00631.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01382.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01302.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00060.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00299.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01711.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00074.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00163.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01275.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01594.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01434.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01613.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00592.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00317.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00046.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01720.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01832.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00428.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00582.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00077.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01917.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01415.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00781.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01920.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01174.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01320.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00938.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00031.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01092.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01616.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01230.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00975.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01085.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00515.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01551.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01568.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01811.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01574.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00045.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01687.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00169.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00304.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00991.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00556.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01925.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00608.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01619.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00758.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00439.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00583.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01519.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00528.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00343.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01737.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00368.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00186.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01117.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01755.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01426.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00301.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01904.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00833.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00544.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01601.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00351.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01933.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01511.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00979.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00176.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00483.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01413.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01611.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00124.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00600.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01795.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01746.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01379.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01186.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00486.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00332.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00789.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00195.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00638.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00472.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01714.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00323.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01197.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00267.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01544.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01804.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00068.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01738.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01593.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01564.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00481.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01757.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01913.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01441.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01461.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00888.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00423.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01675.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01450.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00765.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00520.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01432.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00614.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01531.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01783.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01659.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00454.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00731.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00535.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00966.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01285.java,CORRECT,General,No error,NONE
+SYN_CORRECT_01740.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00262.java,CORRECT,General,No error,NONE
+SYN_CORRECT_00536.java,CORRECT,General,No error,NONE

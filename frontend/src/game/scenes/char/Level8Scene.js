@@ -1,38 +1,17 @@
-/**
- * Level8Scene — "Character Workshop: Char Refinement" (Tuning Phase)
- * ===================================================================
- * Mechanic: Factory assembly line — validate, categorize, pattern-match
- *
- *  WAVE STRUCTURE (progressive difficulty):
- *   Waves  1-10: Basic Validation (valid/invalid, 4s timer)
- *   Waves 11-20: Category Sorting + Pattern challenges (3s)
- *   Waves 21-30: Special / Escape chars + Pattern challenges (3s)
- *   Waves 31-40: Rapid-fire categorisation (2s)
- *   Waves 41-50: Master mode — everything combined (1.5s)
- *
- *  MECHANICS:
- *   1. Validation Scanner — is this a valid char?  ✓/✗
- *   2. Category Sorting   — drag/click to correct bin
- *   3. Pattern Matching    — sequence / case / type / quote challenges
- *   4. Rapid Fire          — triggered after 10 consecutive correct
- *   5. Escape Detective    — identify escape-sequence meanings
- *
- * Schema Theory: Tuning — deepening char understanding through repetition
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const ACCURACY_THRESHOLD = 85;
-const MAX_LIVES = 3;
+const MAX_LIVES = 5;
 const TARGET_PROCESSED = 50;
 
-/* ───────── Char pools ───────── */
 const VALID_UPPERCASE = ["'A'","'B'","'C'","'D'","'E'","'F'","'G'","'H'","'K'","'M'","'N'","'P'","'R'","'S'","'T'","'W'","'X'","'Z'"];
 const VALID_LOWERCASE = ["'a'","'b'","'c'","'d'","'e'","'f'","'g'","'h'","'k'","'m'","'n'","'p'","'r'","'s'","'t'","'w'","'x'","'z'"];
 const VALID_DIGITS    = ["'0'","'1'","'2'","'3'","'4'","'5'","'6'","'7'","'8'","'9'"];
@@ -98,7 +77,6 @@ const ESCAPE_CHALLENGES = [
   { char: "'\\''", answer: "Single Quote", options: ["Double Quote","Single Quote","Tab","Backslash"], preview: "It\\'s valid!", explanation: "\\' lets you store a literal single quote" },
 ];
 
-/* ───────── Helper ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -119,12 +97,16 @@ function getCategory(val) {
   return null;
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 8 SCENE — Character Workshop Factory
- * ═══════════════════════════════════════════════════════════════ */
 export class Level8Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level8Scene" });
+  }
+
+  init() {
+    this.wrongAnswers = 0;
+    this.lives = MAX_LIVES;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
   }
 
   create() {
@@ -140,7 +122,6 @@ export class Level8Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.score = 0;
     this.lives = MAX_LIVES;
     this.combo = 0;
@@ -180,9 +161,6 @@ export class Level8Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  FACTORY BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawFactoryBackground() {
     const gfx = this.add.graphics().setDepth(0);
     const top = 0x1a1a2e;
@@ -229,9 +207,6 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     const make = (name, color, r) => {
       if (this.textures.exists(name)) return;
@@ -249,9 +224,6 @@ export class Level8Scene extends Phaser.Scene {
     make("factorySpark", 0xffa500, 3);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
     this.correctPart = this.add.particles(0, 0, "greenSpark", {
       speed: { min: 80, max: 250 }, scale: { start: 1.2, end: 0 },
@@ -280,9 +252,6 @@ export class Level8Scene extends Phaser.Scene {
     }).setDepth(160);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CONVEYOR BELT (animated tile sprite drawn programmatically)
-   * ═══════════════════════════════════════════════════════════════ */
   _createConveyorBelt() {
     if (!this.textures.exists("beltTile")) {
       const g = this.add.graphics();
@@ -327,9 +296,6 @@ export class Level8Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSPECTION ZONE (center circle with scanning beams)
-   * ═══════════════════════════════════════════════════════════════ */
   _createInspectionZone() {
     this.inspectionGfx = this.add.graphics().setDepth(10);
 
@@ -381,9 +347,6 @@ export class Level8Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0.4).setDepth(12);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SORTING BINS (bottom row) + SCRAP chute for rejects
-   * ═══════════════════════════════════════════════════════════════ */
   _createSortingBins() {
     this.bins = {};
     const catKeys = Object.keys(CATEGORIES);
@@ -397,7 +360,6 @@ export class Level8Scene extends Phaser.Scene {
     const binY = H - 55;
     const maxFillVis = 18;
 
-    /* ── SCRAP / REJECT chute (invalid items correctly rejected) ── */
     const scrapX = leftEdge + scrapW / 2;
     const scrapContainer = this.add.container(scrapX, binY).setDepth(50);
     const scrapBody = this.add.rectangle(0, 0, scrapW, binH, 0x991b1b, 0.35);
@@ -586,9 +548,6 @@ export class Level8Scene extends Phaser.Scene {
     return this.phase === "sort" || this.phase === "rapidfire";
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -691,10 +650,8 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.88).setDepth(200);
 
     const panelG = this.add.graphics().setDepth(201);
@@ -735,7 +692,7 @@ export class Level8Scene extends Phaser.Scene {
       color: "#f1c40f", align: "center", fontStyle: "bold", lineSpacing: 5,
     }).setOrigin(0.5).setDepth(202);
 
-    const warn = this.add.text(W / 2, 490, "⚠ 3 lives — wrong answers cost lives!", {
+    const warn = this.add.text(W / 2, 490, "⚠ 5 lives — wrong answers cost lives!", {
       fontFamily: "Arial", fontSize: "11px", color: "#e74c3c",
     }).setOrigin(0.5).setDepth(202);
 
@@ -761,9 +718,6 @@ export class Level8Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -771,9 +725,6 @@ export class Level8Scene extends Phaser.Scene {
     this._nextWave();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  WAVE SYSTEM
-   * ═══════════════════════════════════════════════════════════════ */
   _getTimerDuration() {
     if (this.waveNumber <= 10) return 7000;
     if (this.waveNumber <= 20) return 6000;
@@ -815,9 +766,6 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWN CHARACTER for Validation
-   * ═══════════════════════════════════════════════════════════════ */
   _pickCharForWave() {
     const validPools = [VALID_UPPERCASE, VALID_LOWERCASE, VALID_DIGITS, VALID_SYMBOLS];
     if (this.waveNumber > 20) validPools.push(VALID_SPECIAL, VALID_SPACES);
@@ -940,9 +888,6 @@ export class Level8Scene extends Phaser.Scene {
     this._startTimer(this._getTimerDuration(), () => this._onTimerExpired());
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  VALIDATION HANDLER
-   * ═══════════════════════════════════════════════════════════════ */
   _handleValidation(playerSaidValid) {
     this._stopTimer();
     const char = this._currentChar;
@@ -983,9 +928,6 @@ export class Level8Scene extends Phaser.Scene {
     this.time.delayedCall(correct ? 600 : 1200, () => this._nextWave());
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SORT PHASE — categorize the validated char
-   * ═══════════════════════════════════════════════════════════════ */
   _enterSortPhase(char) {
     this._clearCurrentElements();
     this.phase = "sort";
@@ -1070,9 +1012,6 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PATTERN CHALLENGE
-   * ═══════════════════════════════════════════════════════════════ */
   _showPatternChallenge() {
     this._clearCurrentElements();
     this.phase = "pattern";
@@ -1267,9 +1206,6 @@ export class Level8Scene extends Phaser.Scene {
     this.time.delayedCall(correct ? 800 : 1500, () => this._nextWave());
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  RAPID FIRE MODE
-   * ═══════════════════════════════════════════════════════════════ */
   _startRapidFire() {
     this._clearCurrentElements();
     this.rapidFireActive = true;
@@ -1372,9 +1308,6 @@ export class Level8Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CORRECT / WRONG HANDLERS
-   * ═══════════════════════════════════════════════════════════════ */
   _onCorrect(message, basePoints) {
     this.correctAnswers++;
     this.combo++;
@@ -1404,6 +1337,7 @@ export class Level8Scene extends Phaser.Scene {
 
   _onWrong(message) {
     this.wrongAnswers++;
+    if (this.wrongAnswers === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.consecutiveCorrect = 0;
     this.lives--;
@@ -1425,6 +1359,25 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
+  async runBehavioralCheck() {
+    const attempts_count = this.totalProcessed;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAnswers;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level8Scene: /api/wellbeing/predict-struggle unreachable", e);
+    }
+  }
+
   _onTimerExpired() {
     this._stopTimer();
     this._onWrong("⏰ Time's up! Too slow!");
@@ -1433,9 +1386,6 @@ export class Level8Scene extends Phaser.Scene {
     this._updateHUD();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TIMER
-   * ═══════════════════════════════════════════════════════════════ */
   _startTimer(duration, onExpire) {
     this.timerBarBg.setAlpha(1);
     this.timerBarFill.setAlpha(1);
@@ -1466,9 +1416,6 @@ export class Level8Scene extends Phaser.Scene {
     this.timerBarFill.setAlpha(0);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UI HELPERS
-   * ═══════════════════════════════════════════════════════════════ */
   _makeActionButton(x, y, label, color, callback) {
     const bg = this.add.rectangle(x, y, 160, 48, color, 0.85).setDepth(70);
     bg.setStrokeStyle(2, Phaser.Display.Color.IntegerToColor(color).brighten(30).color, 0.8);
@@ -1544,10 +1491,8 @@ export class Level8Scene extends Phaser.Scene {
     this.currentElements = [];
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL COMPLETE
-   * ═══════════════════════════════════════════════════════════════ */
   _levelComplete() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this._stopTimer();
     this._clearCurrentElements();
@@ -1688,10 +1633,8 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  GAME OVER
-   * ═══════════════════════════════════════════════════════════════ */
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     this._stopTimer();
     this._clearCurrentElements();
@@ -1759,9 +1702,6 @@ export class Level8Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  END BUTTON FACTORY
-   * ═══════════════════════════════════════════════════════════════ */
   _createEndButton(x, y, text, color, callback) {
     const bg = this.add.rectangle(x, y, 200, 44, color, 1).setDepth(202);
     bg.setStrokeStyle(2, Phaser.Display.Color.IntegerToColor(color).brighten(30).color);
@@ -1780,9 +1720,6 @@ export class Level8Scene extends Phaser.Scene {
     bg.on("pointerup", callback);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
     /* Conveyor belt scroll */
     if (this.belt?.active) {
@@ -1809,9 +1746,6 @@ export class Level8Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     this._stopTimer();
     this._clearCurrentElements();

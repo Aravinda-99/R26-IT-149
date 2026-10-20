@@ -1,15 +1,24 @@
+# Environment files
+.env
+*.env
+backend/.env
+frontend/.env
+
+# Firebase & Secret Keys
+serviceAccountKey.json
+backend/serviceAccountKey.json
+backend/firebase/serviceAccountKey.json
+firebase-debug.log
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 venv/
+.venv/
 env/
-.env
-
-# Firebase
-serviceAccountKey.json
-firebase-debug.log
+backend/venv/
 
 # IDE
 .vscode/
@@ -22,15 +31,34 @@ firebase-debug.log
 Thumbs.db
 desktop.ini
 
-# Node (if any build tools are added later)
+# Node & Frontend
 node_modules/
+frontend/node_modules/
 package-lock.json
+frontend/package-lock.json
+frontend/dist/
 
 # Logs
 *.log
 
+# ML & Datasets
 analytics-ml/fer_env/
 analytics-ml/dataset/
-
 analytics-ml/dataset_ferplus/
 analytics-ml/dataset_merged/
+# Local runtime auth/user data - do not commit real users or password hashes
+backend/data/registered_users.json
+backend/data/registered_users.local.backup.json
+backend/data/*.local.backup.json
+
+# Component 4 local runtime data
+# These files are written while using the app locally. Some may already be
+# tracked as seed/sample data, so also use `git update-index --skip-worktree`
+# locally when you do not want runtime changes to appear in commits.
+backend/data/schema_mastery/*.json
+backend/ml/component4_schema_mastery/question_bank/local_storage/*.json
+!backend/ml/component4_schema_mastery/question_bank/local_storage/seed_questions.json
+
+
+# Component 2 research-only Model 3 variants (uncalibrated / with_runner); regenerate with backend/scripts/train_final_c2.py
+backend/ml/component2_error_detection/research_models/

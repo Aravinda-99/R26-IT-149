@@ -1,89 +1,109 @@
 /**
- * ProgressTracker — Firebase / localStorage Persistence
- * ======================================================
- * Saves and loads game progress. Uses Firestore when authenticated,
- * falls back to localStorage otherwise.
+ * ProgressTracker — Backend-mediated Persistence (with LocalStorage Fallback)
+ * ==============================================================================
+ * Saves and loads game progress via the Flask backend's
+ * /api/gamification/state routes (backed by the Firebase Admin SDK).
+ *
+ * Resilience: if a backend save fails (network issue, quota limits, etc.),
+ * we do NOT alert the user — we log a warning and stash the state under
+ * `cq_pending_save_{uid}` in localStorage. The next loadProgress() call
+ * recovers it, uses it as the authoritative state, and silently re-syncs
+ * it with the backend in the background.
  */
-
-import { db, auth } from "../config/firebase.js";
-
-let _firestore = null;
-let _setDoc = null;
-let _getDoc = null;
-let _doc = null;
-
-// Lazy-load Firestore methods to avoid blocking if Firebase isn't ready
-async function ensureFirestore() {
-  if (_setDoc) return true;
-  try {
-    const mod = await import("firebase/firestore");
-    _setDoc = mod.setDoc;
-    _getDoc = mod.getDoc;
-    _doc = mod.doc;
-    _firestore = db;
-    return !!_firestore;
-  } catch {
-    return false;
-  }
-}
+import { GameStateAPI } from "../api/api.js";
+import { getCurrentUser } from "../utils/auth.js";
 
 function getCurrentUserId() {
   try {
-    return auth?.currentUser?.uid || null;
+    return getCurrentUser()?.uid || null;
   } catch {
     return null;
   }
 }
 
-const STORAGE_KEY = "codequest_game_progress";
+function pendingSaveKey(uid) {
+  return `cq_pending_save_${uid}`;
+}
 
 export const ProgressTracker = {
 
   /**
-   * Save the full game state.
+   * Save the full game state. Falls back to localStorage (silently — no
+   * alert()) if the backend write fails, so nothing is lost.
    */
   async saveProgress(state) {
-
-    // Try Firestore
     const uid = getCurrentUserId();
     if (!uid) return;
 
+    const key = pendingSaveKey(uid);
     try {
-      const ready = await ensureFirestore();
-      if (!ready) return;
-      await _setDoc(_doc(_firestore, "players", uid), {
-        ...state,
-        savedAt: new Date().toISOString(),
-      }, { merge: true });
-    } catch (err) {
-      console.warn("[ProgressTracker] Firestore save failed:", err.message);
+      await GameStateAPI.saveState({ uid, state, savedAt: new Date().toISOString() });
+      // Backend save succeeded — clear any stale fallback from an earlier
+      // failed attempt so we don't resurrect old data on a future load.
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    } catch (e) {
+      console.warn("[ProgressTracker] Backend save failed — falling back to localStorage:", e);
+      try {
+        localStorage.setItem(key, JSON.stringify({ uid, state, savedAt: new Date().toISOString() }));
+      } catch (storageErr) {
+        console.error("[ProgressTracker] LocalStorage fallback also failed:", storageErr);
+      }
     }
   },
 
   /**
-   * Load progress — prefers Firestore, falls back to localStorage.
+   * Load progress from the backend, recovering and prioritizing any pending
+   * local save left behind by a previously-failed saveProgress() call.
    */
   async loadProgress() {
     const uid = getCurrentUserId();
+    if (!uid) return null;
 
-    // Try Firestore first
-    if (uid) {
-      try {
-        const ready = await ensureFirestore();
-        if (ready) {
-          const snap = await _getDoc(_doc(_firestore, "players", uid));
-          if (snap.exists()) {
-            return snap.data();
-          } else {
-            return "NEW_USER";
-          }
-        }
-      } catch (err) {
-        console.warn("[ProgressTracker] Firestore load failed:", err.message);
-      }
+    const key = pendingSaveKey(uid);
+
+    // 1. Always try the backend first.
+    let backendData = null;
+    let backendReachable = true;
+    try {
+      backendData = await GameStateAPI.loadState(uid);
+    } catch (e) {
+      backendReachable = false;
+      console.error("[ProgressTracker] Failed to load progress from backend:", e);
     }
 
-    return null;
+    // 2. Check for a pending local save left behind by an earlier failed save.
+    let pending = null;
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) pending = JSON.parse(raw);
+    } catch (e) {
+      console.warn("[ProgressTracker] Failed to parse pending local save:", e);
+    }
+
+    if (pending && pending.state) {
+      // A pending local save means the most recent save attempt failed —
+      // it's more up to date than whatever the backend currently has, so
+      // it wins. Use it now; silently re-sync it with the backend in the
+      // background and only clear it once that actually succeeds.
+      console.warn("[ProgressTracker] Recovered a pending local save (last backend save had failed) — using it and re-syncing in the background.");
+
+      GameStateAPI.saveState({
+        uid,
+        state: pending.state,
+        savedAt: pending.savedAt || new Date().toISOString(),
+      }).then(() => {
+        try { localStorage.removeItem(key); } catch { /* ignore */ }
+        console.warn("[ProgressTracker] Pending local save re-synced with backend successfully.");
+      }).catch((e) => {
+        console.warn("[ProgressTracker] Re-sync of pending local save failed — will retry on next load:", e);
+      });
+
+      return pending.state;
+    }
+
+    // 3. No pending local save — trust the backend result.
+    if (!backendReachable) return null;
+    return backendData ? backendData.state : "NEW_USER";
   },
 
   /**
@@ -97,18 +117,16 @@ export const ProgressTracker = {
   },
 
   /**
-   * Clear all saved progress.
+   * Clear all saved progress (used by the Menu's "Reset" button).
    */
   async clearProgress() {
-
     const uid = getCurrentUserId();
     if (!uid) return;
-
     try {
-      const ready = await ensureFirestore();
-      if (!ready) return;
-      const { deleteDoc } = await import("firebase/firestore");
-      await deleteDoc(_doc(_firestore, "players", uid));
-    } catch { /* ignore */ }
+      await GameStateAPI.deleteState(uid);
+    } catch (e) {
+      console.error("[ProgressTracker] Failed to clear progress on backend:", e);
+    }
+    try { localStorage.removeItem(pendingSaveKey(uid)); } catch { /* ignore */ }
   },
 };

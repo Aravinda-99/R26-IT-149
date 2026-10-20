@@ -1,24 +1,8 @@
-/**
- * Level 27 — "The Control Room" (String Methods: Restructuring Phase)
- * ======================================================================
- * The learner restructures the length() schema by CONSTRUCTING complete
- * code solutions — no multiple choice. Blocks are dragged into slots in a
- * code skeleton; RUN genuinely evaluates the assembled program against
- * live test strings inside a masked "observation window" test machine.
- *
- * Six missions integrate length() with conditionals, arithmetic, comparison
- * operators, and for-loops. A small classification + evaluation engine
- * (_classifyBlock / _evaluateSequence) actually computes results from
- * whatever blocks the player placed — wrong builds produce their real
- * wrong outcomes (reversed arithmetic, off-by-one loop crashes, genuine
- * "compile errors" for invalid syntax) rather than being looked up from a
- * correct/incorrect table.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -41,9 +25,6 @@ const MACHINE_CX = OX + OW / 2, MACHINE_CY = OY + OH / 2 + 8;
 
 const TUTORIAL_KEY = "level27_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Mission configuration
-// ─────────────────────────────────────────────────────────────────
 const MISSIONS = [
   { mission: 1, title: "The Password Gate",
     brief: "Security wants the vault door to unlock only when the password has at least 8 characters. Build the check.",
@@ -208,10 +189,6 @@ export class Level27Scene extends Phaser.Scene {
     this._bubble = null;
     this._dragHoverSlotKey = null;
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level25Scene";
   }
 
@@ -250,11 +227,6 @@ export class Level27Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -270,10 +242,6 @@ export class Level27Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l27_dot")) {
@@ -350,10 +318,6 @@ export class Level27Scene extends Phaser.Scene {
       if (p.y > 630) { p.y = 0; p.x = Phaser.Math.Between(20, 1260); }
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS
-  // ══════════════════════════════════════════════════════════════
 
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
@@ -484,7 +448,6 @@ export class Level27Scene extends Phaser.Scene {
     side(x, y + h, x, y);
   }
 
-  /** Re-lays out blocks currently placed in a slot, left to right. */
   _relayoutSlot(slotId) {
     const def = this.slotDefs[slotId];
     const placed = this.slotContents[slotId] || [];
@@ -499,10 +462,6 @@ export class Level27Scene extends Phaser.Scene {
     this._drawSlotPlaceholder(slotId);
     this.mirrorCodeToMachineFace();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -564,9 +523,6 @@ export class Level27Scene extends Phaser.Scene {
       if (!this.paletteBlocks.find((b) => b.container === obj) || this.inputLocked) return;
       obj.setDepth(60);
       this.tweens.add({ targets: obj, scale: 1.1, duration: 100 });
-      // if this block was already sitting in a slot, pull it out mechanically first —
-      // otherwise re-dragging a placed block would leave a stale duplicate entry
-      // in slotContents while the block is also placed elsewhere (or back here).
       const prevSlot = obj.getData("placedIn");
       obj.setData("_cameFromSlot", prevSlot || null);
       if (prevSlot) {
@@ -630,8 +586,6 @@ export class Level27Scene extends Phaser.Scene {
     } else {
       const home = obj.getData("home");
       this.tweens.add({ targets: obj, x: home.x, y: home.y, duration: 250, ease: "Back.easeOut" });
-      // self-correction: a tagged (wrong) block that came out of a slot and landed back
-      // in the open palette (not into another slot) before any run this mission.
       const cameFrom = obj.getData("_cameFromSlot");
       if (cameFrom && obj.getData("tag") && this.runCount === this._runCountAtMissionStart) {
         this.selfCorrectionCount++;
@@ -662,8 +616,6 @@ export class Level27Scene extends Phaser.Scene {
     blockObj.on("pointerout", () => { if (!this.inputLocked) draw(C_CYAN); });
   }
 
-  /** Mechanical removal only — self-correction accounting lives in _finishBlockDrag,
-   *  since only landing back in the open palette (not another slot) counts as a correction. */
   removeBlockFromSlot(blockObj) {
     const slotId = blockObj.getData("placedIn");
     if (!slotId) return;
@@ -705,10 +657,6 @@ export class Level27Scene extends Phaser.Scene {
     this.machineFace.setText(text || "...");
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const c = this.add.container(585, 640).setDepth(30);
     const g = this.add.graphics();
@@ -744,10 +692,6 @@ export class Level27Scene extends Phaser.Scene {
     this.runButton.t.setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // OBSERVATION WINDOW & TEST MACHINE
-  // ══════════════════════════════════════════════════════════════
 
   createObservationWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -861,10 +805,6 @@ export class Level27Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -872,8 +812,8 @@ export class Level27Scene extends Phaser.Scene {
     g.lineStyle(1, 0x1a2535, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE CONTROL ROOM", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 36, "Restructuring Phase — String Methods: length()", { font: "13px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE CONTROL ROOM", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — String Methods: length()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -883,8 +823,8 @@ export class Level27Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -926,10 +866,6 @@ export class Level27Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — senior engineer variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
     const g = this.add.graphics();
@@ -954,8 +890,8 @@ export class Level27Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1003,10 +939,6 @@ export class Level27Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1041,7 +973,7 @@ export class Level27Scene extends Phaser.Scene {
 
   createAnnotation(x, y, text, colorHex, arrowTarget = null) {
     const c = this.add.container(0, 0).setDepth(70).setAlpha(0);
-    const txt = this.add.text(x, y, text, { font: "bold 15px Arial", color: colorHex }).setOrigin(0.5);
+    const txt = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5);
     c.add(txt);
     if (arrowTarget) {
       const g = this.add.graphics();
@@ -1055,10 +987,6 @@ export class Level27Scene extends Phaser.Scene {
     this.tweens.add({ targets: c, alpha: 1, duration: 300 });
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   startMission(index) {
     if (!this._alive || this.gameEnded) return;
@@ -1089,10 +1017,6 @@ export class Level27Scene extends Phaser.Scene {
     this.slotContents = {};
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CLASSIFICATION & EVALUATION ENGINE
-  // ══════════════════════════════════════════════════════════════
-
   _classifyBlock(code) {
     let m;
     if ((m = code.match(/^([a-zA-Z_]\w*)\.length\(\)$/))) return { role: "lengthCall", var: m[1], code };
@@ -1118,7 +1042,6 @@ export class Level27Scene extends Phaser.Scene {
     return { error: "Invalid operand." };
   }
 
-  /** Evaluates a 1-3 token sequence built by the player. varResolver(name) -> string value. */
   _evaluateSequence(tokens, varResolver, resultType) {
     const classified = tokens.map((t) => this._classifyBlock(t.code));
 
@@ -1177,7 +1100,6 @@ export class Level27Scene extends Phaser.Scene {
     return { compileError: true, message: "Unrecognized loop condition." };
   }
 
-  /** Collects every wrong (tagged) block currently used across all slots. */
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -1188,10 +1110,6 @@ export class Level27Scene extends Phaser.Scene {
     }
     return used;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN SEQUENCE
-  // ══════════════════════════════════════════════════════════════
 
   async onRunPressed() {
     if (this.inputLocked) return;
@@ -1380,23 +1298,6 @@ export class Level27Scene extends Phaser.Scene {
     walker.destroy();
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1416,8 +1317,6 @@ export class Level27Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level27Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1441,18 +1340,14 @@ export class Level27Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || (compileErr && compileErr.tag) || null;
 
     const proceed = async () => {
-      // Trigger the natural ML check if the user has failed 3 times
       if (this.missionRunsFailed === 3) {
         await this.runBehavioralCheck();
 
-        // Wait up to 1.5s for the 1Hz polling loop to catch the flag
         let waitTime = 0;
         while (!GameManager.interventionInFlight && waitTime < 1500) {
           await this.delay(100);
@@ -1484,10 +1379,6 @@ export class Level27Scene extends Phaser.Scene {
     this.updateRunButtonState();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // FEEDBACK / SCORING
-  // ══════════════════════════════════════════════════════════════
-
   onHintPressed() {
     if (this.inputLocked) return;
     this.missionHintUsed = true;
@@ -1509,16 +1400,12 @@ export class Level27Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1584,6 +1471,7 @@ export class Level27Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 34, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1602,11 +1490,8 @@ export class Level27Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1629,6 +1514,7 @@ export class Level27Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1719,10 +1605,10 @@ export class Level27Scene extends Phaser.Scene {
       bg.lineBetween(20 + Math.cos(a) * 6, Math.sin(a) * 6, 20 + Math.cos(a) * 9, Math.sin(a) * 9);
     }
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 528, "length() MASTERY", { font: "bold 16px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 546, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2300 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 555, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 555, "NEXT: charAt() →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {

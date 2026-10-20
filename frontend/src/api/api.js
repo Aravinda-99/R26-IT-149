@@ -4,15 +4,15 @@
  * Vite proxy sends /api/* requests to Flask at localhost:5000.
  */
 
-const API_BASE = "/api";
-const DEV_FALLBACK_BASE = "http://localhost:5001/api";
+const IS_DEV = typeof import.meta !== "undefined" && import.meta.env?.DEV;
+const DEV_FALLBACK_BASE = "http://localhost:5000/api";
+const API_BASE = IS_DEV ? DEV_FALLBACK_BASE : "/api";
 
 function shouldTryDevFallback(response, endpoint) {
     // If the Vite proxy isn't active/misconfigured, requests to /api/* may 404 on :3000.
     // In dev, retry directly against the Flask server.
     try {
-        const isDev = typeof import.meta !== "undefined" && import.meta.env?.DEV;
-        if (!isDev) return false;
+        if (!IS_DEV) return false;
         if (!response || response.status !== 404) return false;
         if (!endpoint?.startsWith("/")) return false;
         return true;
@@ -21,16 +21,29 @@ function shouldTryDevFallback(response, endpoint) {
     }
 }
 
-async function apiRequest(endpoint, method = "GET", body = null) {
+// timeoutMs (optional): abort the request after this long; the promise rejects.
+async function apiRequest(endpoint, method = "GET", body = null, { timeoutMs, authToken } = {}) {
     const options = {
         method,
         headers: { "Content-Type": "application/json" },
     };
+    if (authToken) options.headers.Authorization = `Bearer ${authToken}`;
     if (body) options.body = JSON.stringify(body);
+    const controller = timeoutMs ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    if (controller) options.signal = controller.signal;
 
-    let response = await fetch(`${API_BASE}${endpoint}`, options);
-    if (shouldTryDevFallback(response, endpoint)) {
-        response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+    let response;
+    try {
+        response = await fetch(`${API_BASE}${endpoint}`, options);
+        if (shouldTryDevFallback(response, endpoint)) {
+            response = await fetch(`${DEV_FALLBACK_BASE}${endpoint}`, options);
+        }
+    } catch (err) {
+        if (err?.name === "AbortError") throw new Error(`Request timed out after ${timeoutMs / 1000}s (${endpoint})`);
+        throw err;
+    } finally {
+        if (timer) clearTimeout(timer);
     }
 
     const text = await response.text();
@@ -60,14 +73,22 @@ export const AdaptiveAPI = {
 
 // --- Component 2: Error Detector ---
 export const ErrorAPI = {
-    analyze:          (data)   => apiRequest("/errors/analyze", "POST", data),
-    getLatest:        (userId) => apiRequest(`/errors/latest/${userId}`),
-    getHistory:       (userId) => apiRequest(`/errors/history/${userId}`),
-    getSummary:       (userId) => apiRequest(`/errors/summary/${userId}`),
+    analyze: (data) => apiRequest("/errors/analyze", "POST", data),
+    getLatest: (userId) => apiRequest(`/errors/latest/${userId}`),
+    getHistory: (userId) => apiRequest(`/errors/history/${userId}`),
+    getSummary: (userId) => apiRequest(`/errors/summary/${userId}`),
+    saveTopMisconception: (data) => apiRequest("/errors/top-misconception", "POST", data),
     // Feature 1 — Error Progression Analytics
-    getAnalytics:     (userId) => apiRequest(`/errors/analytics/${userId}`),
+    getAnalytics: (userId) => apiRequest(`/errors/analytics/${userId}`),
     // Feature 3 — Personalized Learning Report
-    getLearningReport:(userId) => apiRequest(`/errors/learning-report/${userId}`),
+    getLearningReport: (userId) => apiRequest(`/errors/learning-report/${userId}`),
+    // Per-question pre-test explanation (EN / Sinhala / Singlish): cache, live LLM or template.
+    // The backend answers with a template when the LLM fails, so 25 s is only hit if it is unreachable.
+    explain: (data) => apiRequest("/errors/explain", "POST", data, { timeoutMs: 25000 }),
+    // Java sandbox: compile (10 s) + run (5 s) on the backend; tests run in parallel
+    runCode: (data) => apiRequest("/errors/run", "POST", data, { timeoutMs: 30000 }),
+    runTests: (data) => apiRequest("/errors/run-tests", "POST", data, { timeoutMs: 45000 }),
+    getSandboxTests: (questionId) => apiRequest(`/errors/sandbox-tests/${questionId}`, "GET", null, { timeoutMs: 15000 }),
 };
 
 // --- Component 3: Gamification ---
@@ -76,6 +97,13 @@ export const GamificationAPI = {
     submitScore: (data) => apiRequest("/gamification/submit-score", "POST", data),
     getLeaderboard: () => apiRequest("/gamification/leaderboard"),
     getProfile: (userId) => apiRequest(`/gamification/profile/${userId}`),
+};
+
+// --- Game State Persistence (backend-mediated; replaces direct Firestore client writes) ---
+export const GameStateAPI = {
+    saveState: (data) => apiRequest("/gamification/state", "POST", data),
+    loadState: (userId) => apiRequest(`/gamification/state/${userId}`, "GET"),
+    deleteState: (userId) => apiRequest(`/gamification/state/${userId}`, "DELETE"),
 };
 
 // --- Component 4: Mastery Tracker & Schema Mastery ---
@@ -89,22 +117,64 @@ export const MasteryAPI = {
     predictSchemaMastery: (data) => apiRequest("/schema-mastery/predict", "POST", data),
 };
 
+async function rosterRequest(path, method = "GET") {
+    let session, user;
+    try {
+        session = JSON.parse(sessionStorage.getItem("codequest_roster_session") || "null");
+        user = JSON.parse(localStorage.getItem("codequest_user") || "null");
+    } catch {}
+    if (!session?.token || session.uid !== (user?.uid || user?.id)) {
+        throw new Error("Please sign in to the Faculty Portal again to manage the student roster.");
+    }
+    return apiRequest(`/schema-mastery${path}`, method, null, { authToken: session.token });
+}
+
 export const SchemaMasteryAPI = {
+    getArchivedStudents: () => rosterRequest("/roster/archived"),
+    archiveStudent: (studentId) => rosterRequest(`/roster/${encodeURIComponent(studentId)}/archive`, "POST"),
+    restoreStudent: (studentId) => rosterRequest(`/roster/${encodeURIComponent(studentId)}/restore`, "POST"),
+    getLLMStatus: () => apiRequest("/schema-mastery/llm/status"),
+    getQuestionStats: () => apiRequest("/schema-mastery/questions/stats"),
     predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),
     generateQuestions: (data) => apiRequest("/schema-mastery/questions/generate", "POST", data),
     getPendingQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/pending${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
+    getQuestionBank: (concept = "", activeOnly = false) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    getRejectedQuestions: (concept = "") => apiRequest(`/schema-mastery/questions/rejected${concept ? `?concept=${encodeURIComponent(concept)}` : ""}`),
     updateQuestion: (questionId, data) => apiRequest(`/schema-mastery/questions/${questionId}`, "PUT", data),
     approveQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/approve`, "POST", data),
     rejectQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reject`, "POST", data),
-    getQuestionBank: (concept = "", activeOnly = true) => apiRequest(`/schema-mastery/question-bank?active_only=${activeOnly}${concept ? `&concept=${encodeURIComponent(concept)}` : ""}`),
+    reactivateQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}/reactivate`, "POST", data),
+    deleteQuestion: (questionId, data = {}) => apiRequest(`/schema-mastery/questions/${questionId}`, "DELETE", data),
     getPostTestQuestions: (params = {}) => {
-        const studentId = params.student_id || params.studentId || "STU001";
-        const concept = params.concept || params.concept_name || "Loops";
+        const studentId = params.student_id || params.studentId || "";
+        const concept = params.concept || params.concept_name || "";
         const errorType = params.error_type || params.errorType || "";
         const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
+    getPostTestResults: (filters = {}) => {
+        const params = new URLSearchParams();
+        Object.entries(filters || {}).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") params.set(key, value);
+        });
+        const query = params.toString();
+        return apiRequest(`/schema-mastery/post-test/results${query ? `?${query}` : ""}`);
+    },
+    getLatestPostTestResult: (studentId) => apiRequest(`/schema-mastery/post-test/results/latest/${encodeURIComponent(studentId)}`),
+    getFlowContext: (studentId, sessionId = "") => {
+        const params = new URLSearchParams({ student_id: studentId });
+        if (sessionId) params.set("session_id", sessionId);
+        return apiRequest(`/schema-mastery/context?${params.toString()}`);
+    },
+    getCurrentContext: (studentId) => {
+        return apiRequest(`/schema-mastery/context/current?student_id=${encodeURIComponent(studentId)}`);
+    },
+    saveSessionContext: (data) => apiRequest("/schema-mastery/context/save", "POST", data),
+    saveComponent1: (data) => apiRequest("/schema-mastery/session/component1", "POST", data),
+    saveComponent2: (data) => apiRequest("/schema-mastery/session/component2", "POST", data),
+    saveComponent3: (data) => apiRequest("/schema-mastery/session/component3", "POST", data),
+    resetSessionContext: (studentId) => apiRequest("/schema-mastery/context/reset", "POST", { student_id: studentId }),
 };
 
 // --- Wellbeing / Struggle Detection ---
@@ -114,8 +184,10 @@ export const WellbeingAPI = {
 
 // --- Component 5: Auth ---
 export const AuthAPI = {
+    login: (credentials) => apiRequest("/auth/login", "POST", credentials),
     register: (data) => apiRequest("/auth/register", "POST", data),
     getProfile: (userId) => apiRequest(`/auth/profile/${userId}`),
+    getMe: (userId = "") => apiRequest(`/auth/me${userId ? `?uid=${encodeURIComponent(userId)}` : ""}`),
     verifyToken: (idToken) => apiRequest("/auth/verify-token", "POST", { id_token: idToken }),
 };
 

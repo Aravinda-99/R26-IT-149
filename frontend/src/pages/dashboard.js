@@ -7,6 +7,33 @@
 
 import { MasteryAPI, AdaptiveAPI } from "../api/api.js";
 
+// Short-lived client cache (60 seconds) to prevent redundant queries on tab switch / hot reload
+const CACHE_TTL_MS = 60 * 1000;
+const dashboardCache = {
+    students: { data: null, timestamp: 0 },
+    status: {},
+};
+
+async function getCachedStudents() {
+    const now = Date.now();
+    if (dashboardCache.students.data && (now - dashboardCache.students.timestamp < CACHE_TTL_MS)) {
+        return dashboardCache.students.data;
+    }
+    const data = await MasteryAPI.getStudents();
+    dashboardCache.students = { data, timestamp: now };
+    return data;
+}
+
+async function getCachedStatus(studentId) {
+    const now = Date.now();
+    if (dashboardCache.status[studentId] && (now - dashboardCache.status[studentId].timestamp < CACHE_TTL_MS)) {
+        return dashboardCache.status[studentId].data;
+    }
+    const data = await MasteryAPI.getStatus(studentId);
+    dashboardCache.status[studentId] = { data, timestamp: now };
+    return data;
+}
+
 function normalizeStudent(s = {}) {
     const studentId = s.studentId ?? s.student_id ?? s.user_id ?? s.id ?? "";
     const studentName =
@@ -47,7 +74,7 @@ export async function renderDashboard(container) {
 async function loadDashboardStudents() {
     const select = document.getElementById("dashboard-student-select");
     try {
-        const data = await MasteryAPI.getStudents();
+        const data = await getCachedStudents();
         const students = (data.students || []).map(normalizeStudent).filter(s => s.studentId);
 
         if (students.length === 0) {
@@ -78,7 +105,7 @@ async function loadDashboardData(studentId) {
     content.innerHTML = `<div style="text-align: center; padding: 2rem;"><div class="spinner"></div></div>`;
 
     try {
-        const data = await MasteryAPI.getStatus(studentId);
+        const data = await getCachedStatus(studentId);
         if (!data.found) {
             content.innerHTML = `<p style="color: var(--accent-orange); text-align: center;">No data found</p>`;
             return;
@@ -180,9 +207,9 @@ async function loadDashboardData(studentId) {
                     <h3 class="dashboard-card-title">Mastery by Concept</h3>
                     <div class="dashboard-bar-chart" id="dashboard-bar-chart">
                         ${conceptEntries.map(([key, c]) => {
-                            const pct = (c.mastery_score * 100).toFixed(1);
-                            const name = conceptNames[key] || key;
-                            return `
+            const pct = (c.mastery_score * 100).toFixed(1);
+            const name = conceptNames[key] || key;
+            return `
                                 <div class="dashboard-bar-row">
                                     <div class="dashboard-bar-label">${name}</div>
                                     <div class="dashboard-bar-track">
@@ -191,7 +218,7 @@ async function loadDashboardData(studentId) {
                                     <div class="dashboard-bar-value" style="color: ${c.color}">${pct}%</div>
                                 </div>
                             `;
-                        }).join("")}
+        }).join("")}
                     </div>
                 </div>
 
@@ -200,18 +227,18 @@ async function loadDashboardData(studentId) {
                     <h3 class="dashboard-card-title">Schema State Overview</h3>
                     <div class="dashboard-state-grid">
                         ${conceptEntries.map(([key, c]) => {
-                            const name = conceptNames[key] || key;
-                            const pctVal = (c.mastery_score * 100).toFixed(0);
-                            // Determine trend icon based on history if available
-                            let trendIcon = "";
-                            if (c.history && c.history.length >= 2) {
-                                const prev = c.history[c.history.length - 2];
-                                const curr = c.mastery_score;
-                                if (curr > prev) trendIcon = `<span class="dashboard-trend trend-up" title="Improving">↑</span>`;
-                                else if (curr < prev) trendIcon = `<span class="dashboard-trend trend-down" title="Declining">↓</span>`;
-                                else trendIcon = `<span class="dashboard-trend trend-stable" title="Stable">→</span>`;
-                            }
-                            return `
+            const name = conceptNames[key] || key;
+            const pctVal = (c.mastery_score * 100).toFixed(0);
+            // Determine trend icon based on history if available
+            let trendIcon = "";
+            if (c.history && c.history.length >= 2) {
+                const prev = c.history[c.history.length - 2];
+                const curr = c.mastery_score;
+                if (curr > prev) trendIcon = `<span class="dashboard-trend trend-up" title="Improving">↑</span>`;
+                else if (curr < prev) trendIcon = `<span class="dashboard-trend trend-down" title="Declining">↓</span>`;
+                else trendIcon = `<span class="dashboard-trend trend-stable" title="Stable">→</span>`;
+            }
+            return `
                                 <div class="dashboard-state-row">
                                     <span class="dashboard-state-name">${name}</span>
                                     <div class="dashboard-state-right">
@@ -221,7 +248,7 @@ async function loadDashboardData(studentId) {
                                     </div>
                                 </div>
                             `;
-                        }).join("")}
+        }).join("")}
                     </div>
 
                     <!-- State Legend -->
@@ -241,9 +268,9 @@ async function loadDashboardData(studentId) {
                     <p class="dashboard-review-desc">These concepts require further practice or a diagnostic post-test to validate understanding.</p>
                     <div class="dashboard-review-list">
                         ${needsReview.map(([key, c]) => {
-                            const name = conceptNames[key] || key;
-                            const pct = (c.mastery_score * 100).toFixed(1);
-                            return `
+            const name = conceptNames[key] || key;
+            const pct = (c.mastery_score * 100).toFixed(1);
+            return `
                                 <div class="dashboard-review-item" style="--review-color: ${c.color}">
                                     <div class="dashboard-review-info">
                                         <strong>${name}</strong>
@@ -268,7 +295,7 @@ async function loadDashboardData(studentId) {
                                     </div>
                                 </div>
                             `;
-                        }).join("")}
+        }).join("")}
                     </div>
                 </div>
             ` : `
@@ -297,9 +324,9 @@ async function loadDashboardData(studentId) {
                         </thead>
                         <tbody>
                             ${conceptEntries.map(([key, c]) => {
-                                const name = conceptNames[key] || key;
-                                const b = c.breakdown;
-                                return `
+            const name = conceptNames[key] || key;
+            const b = c.breakdown;
+            return `
                                     <tr>
                                         <td><strong>${name}</strong></td>
                                         <td style="color: ${c.color}; font-weight: 700;">${(c.mastery_score * 100).toFixed(1)}%</td>
@@ -310,7 +337,7 @@ async function loadDashboardData(studentId) {
                                         <td><span class="posttest-state-badge" data-state="${c.schema_state}">${c.schema_state}</span></td>
                                     </tr>
                                 `;
-                            }).join("")}
+        }).join("")}
                         </tbody>
                     </table>
                 </div>

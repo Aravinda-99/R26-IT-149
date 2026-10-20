@@ -1,24 +1,13 @@
-/**
- * Level10Scene — "String Discovery: Message Garden Collector" (Accretion Phase)
- * ===============================================================================
- * Mechanic: Garden adventure collecting message flowers (strings)
- * - Player controls a basket avatar through a magical garden
- * - Valid STRING flowers drift down — COLLECT them!
- * - CHAR flowers and invalid data also drift — AVOID them!
- * - Collect 30 valid strings with ≥85% accuracy to pass
- * - Key learning: Strings use DOUBLE quotes vs Chars use single quotes
- *
- * Schema Theory: Accretion — introducing STRING concepts through discovery
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { WellbeingAPI } from "../../../api/api.js";
+import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
-const W = 800;
-const H = 600;
+const W = 1280;
+const H = 720;
 const TARGET_COLLECT = 30;
 const ACCURACY_THRESHOLD = 85;
 const MAX_FLOWERS = 8;
@@ -31,14 +20,12 @@ const OXYGEN_REWARD = 3;
 const SPAWN_INTERVAL = 2000;
 const VALID_CHANCE = 0.70;
 
-/* ───────── String Pools (VALID - double quotes) ───────── */
 const STRINGS_TEXT = ['"Hello"', '"World"', '"Code"', '"Fun"', '"Java"', '"Python"'];
 const STRINGS_NUMBER = ['"123"', '"456"', '"0"', '"99"', '"2024"'];
 const STRINGS_EMPTY = ['""'];
 const STRINGS_SPACES = ['" "', '"Hi "', '" World"'];
 const STRINGS_SYMBOLS = ['"!"', '"#Code"', '"@User"', '"Hello!"', '"Hi?"'];
 
-/* ───────── Invalid Data (to avoid) ───────── */
 const INVALID_CHARS = ["'A'", "'z'", "'5'", "'@'", "' '"];
 const INVALID_NUMBERS = [123, 42, 7];
 const INVALID_EMPTY = ["''"];
@@ -59,7 +46,6 @@ const INVALID_CATEGORIES = [
   { pool: INVALID_NO_QUOTES, color: 0xff4444, label: "No Quotes", type: "noquote" },
 ];
 
-/* ───────── Helpers ───────── */
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -126,12 +112,15 @@ function getInvalidTip(value, type) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-/* ═══════════════════════════════════════════════════════════════
- *  LEVEL 10 SCENE — Message Garden Collector
- * ═══════════════════════════════════════════════════════════════ */
 export class Level10Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level10Scene" });
+  }
+
+  init() {
+    this.wrongAttempts = 0;
+    if (GameManager.fusionEngine) GameManager.fusionEngine.resetForNewLevel();
+    GameManager.interventionInFlight = false;
   }
 
   create() {
@@ -147,7 +136,6 @@ export class Level10Scene extends Phaser.Scene {
 
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.stringsCollected = 0;
     this.totalAttempts = 0;
     this.wrongAttempts = 0;
@@ -190,9 +178,6 @@ export class Level10Scene extends Phaser.Scene {
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  GARDEN BACKGROUND
-   * ═══════════════════════════════════════════════════════════════ */
   _drawGardenBackground() {
     /* Sky gradient */
     const gfx = this.add.graphics().setDepth(0);
@@ -203,7 +188,6 @@ export class Level10Scene extends Phaser.Scene {
       const t = i / steps;
       const c = lerpColor(topColor, botColor, t);
       gfx.fillStyle(c, 1);
-      // FORCE the width to be W * 5, starting at -W * 2
       gfx.fillRect(-W * 2, Math.floor((H * i) / steps), W * 5, Math.ceil(H / steps) + 1);
     }
 
@@ -250,9 +234,6 @@ export class Level10Scene extends Phaser.Scene {
     signContainer.add([signPost, signBoard, signText]);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════════════════════ */
   _generateTextures() {
     const make = (name, color, r) => {
       if (this.textures.exists(name)) return;
@@ -269,9 +250,6 @@ export class Level10Scene extends Phaser.Scene {
     make("confettiSpark", 0xffd700, 4);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PARTICLES
-   * ═══════════════════════════════════════════════════════════════ */
   _createParticles() {
     this.collectParticles = this.add.particles(0, 0, "greenSpark", {
       speed: { min: 80, max: 250 },
@@ -302,9 +280,6 @@ export class Level10Scene extends Phaser.Scene {
     }).setDepth(160);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  AMBIENT BUTTERFLIES
-   * ═══════════════════════════════════════════════════════════════ */
   _createAmbientButterflies() {
     for (let i = 0; i < 5; i++) {
       const butterfly = this.add.text(
@@ -325,9 +300,6 @@ export class Level10Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  PLAYER (BASKET)
-   * ═══════════════════════════════════════════════════════════════ */
   _createPlayer() {
     this.player = this.add.container(W / 2, H - 80).setDepth(50);
 
@@ -374,9 +346,6 @@ export class Level10Scene extends Phaser.Scene {
     this.player.body.setMaxSpeed(200);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
@@ -451,9 +420,6 @@ export class Level10Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp + 10);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  CATEGORY TRACKER
-   * ═══════════════════════════════════════════════════════════════ */
   _createCategoryTracker() {
     const dp = 100;
     const baseY = H - 110;
@@ -504,10 +470,8 @@ export class Level10Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     const overlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(200);
 
     const panelG = this.add.graphics().setDepth(201);
@@ -583,16 +547,12 @@ export class Level10Scene extends Phaser.Scene {
     btnBg.on("pointerout", hoverOff);
     btnBg.on("pointerup", dismissAndStart);
 
-    /* Label sits above the rectangle — make the whole label clickable too */
     btnTxt.setInteractive({ useHandCursor: true });
     btnTxt.on("pointerover", hoverOn);
     btnTxt.on("pointerout", hoverOff);
     btnTxt.on("pointerup", dismissAndStart);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  START GAME
-   * ═══════════════════════════════════════════════════════════════ */
   _startGame() {
     this.gameStarted = true;
     this.startTime = this.time.now;
@@ -600,9 +560,6 @@ export class Level10Scene extends Phaser.Scene {
     this._scheduleSpawn();
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SPAWNING
-   * ═══════════════════════════════════════════════════════════════ */
   _scheduleSpawn() {
     if (this.isComplete) return;
     this.spawnTimer = this.time.delayedCall(SPAWN_INTERVAL, () => {
@@ -732,9 +689,6 @@ export class Level10Scene extends Phaser.Scene {
     this.flowers.push(container);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  FLOWER COLLECTION
-   * ═══════════════════════════════════════════════════════════════ */
   _onCollectFlower(container) {
     if (this.isComplete || !container.active) return;
     container.active = false;
@@ -797,6 +751,7 @@ export class Level10Scene extends Phaser.Scene {
   _onWrongCollect(cx, cy, value, displayText, invalidType) {
     this.totalAttempts++;
     this.wrongAttempts++;
+    if (this.wrongAttempts === 3) this.runBehavioralCheck();
     this.combo = 0;
     this.score = Math.max(0, this.score - 10);
 
@@ -825,9 +780,25 @@ export class Level10Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  RIPPLE EFFECT
-   * ═══════════════════════════════════════════════════════════════ */
+  async runBehavioralCheck() {
+    const attempts_count = this.totalAttempts;
+    const time_taken_seconds = (this.time.now - this.startTime) / 1000;
+    const misconception_repeat_count = this.wrongAttempts;
+    const combo_breaks = 0;
+
+    try {
+      const { prediction } = await WellbeingAPI.predictStruggle({
+        attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks,
+      });
+      if (this.isComplete) return;
+      const features = { attempts_count, time_taken_seconds, misconception_repeat_count, combo_breaks };
+      const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
+      GameManager.fusionEngine.checkBehavioral(effectivePrediction);
+    } catch (e) {
+      console.warn("Level10Scene: /api/wellbeing/predict-struggle unreachable", e);
+    }
+  }
+
   _createRippleEffect(x, y, color, startAlpha) {
     const ripple = this.add.circle(x, y, 10, color, 0).setDepth(45);
     ripple.setStrokeStyle(2, color, startAlpha);
@@ -845,9 +816,6 @@ export class Level10Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  HUD UPDATES
-   * ═══════════════════════════════════════════════════════════════ */
   _updateHUD() {
     if (this.scoreText && this.scoreText.active) {
       this.scoreText.setText(`STRINGS: ${this.stringsCollected} / ${TARGET_COLLECT}`);
@@ -903,9 +871,6 @@ export class Level10Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  POPUPS & TOOLTIPS
-   * ═══════════════════════════════════════════════════════════════ */
   _showPopup(x, y, text, color) {
     const popup = this.add.text(x, y, text, {
       fontFamily: "Arial",
@@ -942,9 +907,6 @@ export class Level10Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  LEVEL END
-   * ═══════════════════════════════════════════════════════════════ */
   _checkLevelEnd() {
     const accuracy = this.totalAttempts > 0
       ? Math.round(((this.totalAttempts - this.wrongAttempts) / this.totalAttempts) * 100)
@@ -953,6 +915,7 @@ export class Level10Scene extends Phaser.Scene {
   }
 
   _levelComplete(accuracy) {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.spawnTimer) this.spawnTimer.destroy();
 
@@ -1113,6 +1076,7 @@ export class Level10Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.spawnTimer) this.spawnTimer.destroy();
 
@@ -1165,10 +1129,12 @@ export class Level10Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update(time, delta) {
+    if (GameManager.interventionInFlight) {
+      if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
+      return;
+    }
+
     if (!this.gameStarted || this.isComplete) return;
 
     const dt = delta / 1000;
@@ -1192,7 +1158,6 @@ export class Level10Scene extends Phaser.Scene {
       vy *= 0.707;
     }
 
-    /* Basket is a Container — velocity must be set on the Arcade body */
     if (this.player.body) {
       this.player.body.setVelocity(vx, vy);
     }
@@ -1231,9 +1196,6 @@ export class Level10Scene extends Phaser.Scene {
     this.oxygenBarFill.setFillStyle(oxyColor);
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════════════════════ */
   shutdown() {
     if (this.spawnTimer) this.spawnTimer.destroy();
     this.flowers = [];

@@ -33,7 +33,9 @@ def init_firebase():
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
 
-    return firestore.client()
+    client = firestore.client()
+    print("Firebase db initialized: True")
+    return client
 
 
 # Shared Firestore client (None if offline)

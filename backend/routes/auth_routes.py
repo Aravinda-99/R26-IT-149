@@ -1,72 +1,156 @@
 """
 Authentication Routes
 =====================
-Handles user registration and login via Firebase Auth.
-Token verification is done server-side using Firebase Admin SDK.
+Handles user login, student registration, profile fetching, and token verification.
 """
 
-from flask import Blueprint, request, jsonify, abort
-from firebase.firebase_service import db
-from middleware.error_handler import require_json
-from datetime import datetime, timezone
+from flask import Blueprint, request, jsonify
+from services.auth_service import AuthService
+from services.user_storage_service import UserStorageService
 
 auth_bp = Blueprint("auth", __name__)
 
 
+@auth_bp.route("/login", methods=["POST"])
+def login():
+    """
+    Authenticates a user with email and password.
+    Returns sanitized user profile and auth token.
+    """
+    data = request.get_json(silent=True) or {}
+    email = data.get("email")
+    password = data.get("password")
+    required_role = data.get("required_role")
+
+    if not email or not password:
+        return jsonify({
+            "success": False,
+            "error": "Please enter both email and password."
+        }), 400
+
+    user_profile, err = AuthService.authenticate_user(email, password, required_role=required_role)
+    if err or not user_profile:
+        return jsonify({
+            "success": False,
+            "error": err or "Invalid email or password."
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "message": "Login successful",
+        "user": user_profile,
+        "token": f"cq_token_{user_profile['uid']}",
+        "roster_token": _teacher_roster_token(user_profile),
+    }), 200
+
+
+def _teacher_roster_token(profile):
+    if profile.get("role") not in ("teacher", "admin"):
+        return None
+    from services.student_roster_service import StudentRosterService
+    return StudentRosterService.issue_token(profile)
+
+
 @auth_bp.route("/register", methods=["POST"])
-@require_json("uid", "email", "display_name")
-def register_user():
-    """Create user profile in Firestore after Firebase Auth registration."""
-    data = request.get_json()
-    uid = data["uid"]
-    profile = {
-        "display_name": data["display_name"],
-        "email": data["email"],
-        "total_xp": 0,
-        "games_played": 0,
-        "badges": [],
-        "created_at": datetime.now(timezone.utc).isoformat(),
-    }
+def register():
+    """
+    Public student registration endpoint.
+    Strictly creates student accounts with hashed passwords.
+    """
+    data = request.get_json(silent=True) or {}
+    name = data.get("name") or data.get("display_name")
+    email = data.get("email")
+    password = data.get("password")
 
-    if db:
-        db.collection("user_profiles").document(uid).set(profile)
-    else:
-        print(f"[OFFLINE] Would create profile for {uid}")
+    # If password is provided, use secure student registration
+    if password:
+        profile, err = AuthService.register_student(name, email, password)
+        if err or not profile:
+            return jsonify({
+                "success": False,
+                "error": err or "Registration failed."
+            }), 400
 
-    return jsonify({"message": "User registered", "user_id": uid}), 201
+        return jsonify({
+            "success": True,
+            "message": "Account created successfully",
+            "user": profile,
+            "token": f"cq_token_{profile['uid']}"
+        }), 201
+
+    # Legacy profile sync from Firebase client registration
+    if not data.get("uid") or not email:
+        return jsonify({"success": False, "error": "Missing uid or email"}), 400
+
+    profile = UserStorageService.save_user(data)
+    sanitized = UserStorageService.sanitize_user(profile)
+    return jsonify({
+        "success": True,
+        "message": "User registered",
+        "user_id": sanitized["uid"],
+        "user": sanitized,
+        "profile": sanitized
+    }), 201
+
+
+@auth_bp.route("/me", methods=["GET"])
+def get_current_session_user():
+    """
+    Returns current authenticated user profile based on query parameter or header.
+    """
+    user_id = request.args.get("uid") or request.args.get("user_id")
+    auth_header = request.headers.get("Authorization", "")
+    if not user_id and auth_header.startswith("Bearer cq_token_"):
+        user_id = auth_header.replace("Bearer cq_token_", "").strip()
+
+    if not user_id:
+        return jsonify({"success": False, "error": "No active session"}), 401
+
+    profile = AuthService.get_or_create_runtime_profile(user_id)
+    if not profile:
+        return jsonify({"success": False, "error": "User profile not found"}), 404
+
+    return jsonify({
+        "success": True,
+        "user": profile
+    }), 200
 
 
 @auth_bp.route("/profile/<user_id>", methods=["GET"])
 def get_user_profile(user_id):
-    """Fetch a user profile from Firestore."""
-    if not db:
-        return jsonify({
-            "user_id": user_id,
-            "display_name": "Offline User",
-            "email": "",
-            "total_xp": 0,
-            "games_played": 0,
-            "badges": [],
-        })
+    """Fetch a user profile by ID."""
+    profile = AuthService.get_or_create_runtime_profile(user_id)
+    if not profile:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(profile), 200
 
-    doc = db.collection("user_profiles").document(user_id).get()
-    if not doc.exists:
-        abort(404, description="User not found")
 
-    profile = doc.to_dict()
-    profile["user_id"] = user_id
-    return jsonify(profile)
+@auth_bp.route("/users", methods=["GET"])
+@auth_bp.route("/students", methods=["GET"])
+def get_all_registered_users():
+    """Fetch all real registered students/users."""
+    all_users = UserStorageService.get_all_users()
+    students = UserStorageService.get_all_students()
+    
+    return jsonify({
+        "success": True,
+        "count": len(students),
+        "users": all_users,
+        "students": students,
+    }), 200
 
 
 @auth_bp.route("/verify-token", methods=["POST"])
-@require_json("id_token")
 def verify_token():
     """Verify a Firebase ID token server-side."""
-    import firebase_admin.auth as firebase_auth
+    data = request.get_json(silent=True) or {}
+    id_token = data.get("id_token")
+    if not id_token:
+        return jsonify({"valid": False, "error": "Missing id_token"}), 400
 
-    data = request.get_json()
     try:
-        decoded = firebase_auth.verify_id_token(data["id_token"])
-        return jsonify({"valid": True, "uid": decoded["uid"], "email": decoded.get("email", "")})
+        import firebase_admin.auth as firebase_auth
+        decoded = firebase_auth.verify_id_token(id_token)
+        return jsonify({"valid": True, "uid": decoded["uid"], "email": decoded.get("email", "")}), 200
     except Exception as e:
         return jsonify({"valid": False, "error": str(e)}), 401

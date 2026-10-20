@@ -1,0 +1,67 @@
+{
+  "final_rows": 5976,
+  "reason_group": {
+    "METHOD_RETURN_ISSUE": 480,
+    "METHOD_PARAMETER_USAGE_ISSUE": 480,
+    "CORRECT_NO_ERROR": 720,
+    "ARRAY_BOUNDARY_INDEX_ISSUE": 480,
+    "METHOD_SIGNATURE_ISSUE": 480,
+    "LOOP_CONTROL_FLOW_ISSUE": 480,
+    "LOOP_BOUNDARY_ISSUE": 456,
+    "LOOP_UPDATE_ISSUE": 480,
+    "VARIABLE_CALCULATION_ISSUE": 480,
+    "ARRAY_TRAVERSAL_ISSUE": 480,
+    "LOOP_CONDITION_ISSUE": 480,
+    "VARIABLE_ASSIGNMENT_ISSUE": 480
+  },
+  "label": {
+    "METHOD_ERROR": 1440,
+    "CORRECT": 720,
+    "ARRAY_ERROR": 960,
+    "LOOP_ERROR": 1896,
+    "VARIABLE_ERROR": 960
+  },
+  "form": {
+    "body": 2031,
+    "full": 1549,
+    "minimal": 2396
+  },
+  "outcome": {
+    "COMPILE_ERROR": 1521,
+    "WRONG_OUTPUT": 2914,
+    "EXPECTED_OUTPUT": 720,
+    "RUNTIME_EXCEPTION": 404,
+    "NON_TERMINATING": 417
+  },
+  "families": 44,
+  "source_type": {
+    "logic": 4264,
+    "fill_in_blank": 1712
+  },
+  "dropped": {
+    "VARIABLE_WRONG_CALCULATION | equivalent_mutant_or_unexpected_compile_error": 133,
+    "LOOP_WRONG_CONDITION | equivalent_mutant_or_unexpected_compile_error": 77,
+    "METHOD_WRONG_RECURSIVE_ARG | equivalent_mutant_or_unexpected_compile_error": 73,
+    "ARRAY_SKIPPED_ELEMENT | equivalent_mutant_or_unexpected_compile_error": 60,
+    "METHOD_IGNORED_PARAMETER | equivalent_mutant_or_unexpected_compile_error": 47,
+    "ARRAY_WRONG_TRAVERSAL | equivalent_mutant_or_unexpected_compile_error": 41,
+    "METHOD_WRONG_BASE_CASE | equivalent_mutant_or_unexpected_compile_error": 31,
+    "VARIABLE_WRONG_ASSIGNMENT | equivalent_mutant_or_unexpected_compile_error": 18,
+    "VARIABLE_INTEGER_DIVISION | equivalent_mutant_or_unexpected_compile_error": 18,
+    "ARRAY_OUT_OF_BOUNDS | equivalent_mutant_or_unexpected_compile_error": 13,
+    "VARIABLE_OVERWRITTEN_VALUE | equivalent_mutant_or_unexpected_compile_error": 12,
+    "LOOP_OFF_BY_ONE | equivalent_mutant_or_unexpected_compile_error": 11,
+    "ARRAY_LENGTH_AS_INDEX | equivalent_mutant_or_unexpected_compile_error": 10,
+    "LOOP_WRONG_COUNTER_DIRECTION | equivalent_mutant_or_unexpected_compile_error": 7,
+    "VARIABLE_INVALID_OPERATOR | expected_compile_error_but_compiled": 7,
+    "ARRAY_WRONG_INDEX_VARIABLE | equivalent_mutant_or_unexpected_compile_error": 7,
+    "LOOP_MISSING_UPDATE | equivalent_mutant_or_unexpected_compile_error": 5,
+    "VARIABLE_INVALID_TYPE | equivalent_mutant_or_unexpected_compile_error": 5,
+    "VARIABLE_SELF_ASSIGNMENT | equivalent_mutant_or_unexpected_compile_error": 5,
+    "VARIABLE_WRONG_INITIALIZATION | equivalent_mutant_or_unexpected_compile_error": 3,
+    "LOOP_CONTINUE_SKIP_UPDATE | equivalent_mutant_or_unexpected_compile_error": 2,
+    "METHOD_WRONG_CALL | equivalent_mutant_or_unexpected_compile_error": 2,
+    "LOOP_WRONG_JUMP | equivalent_mutant_or_unexpected_compile_error": 1,
+    "LOOP_EARLY_BREAK | equivalent_mutant_or_unexpected_compile_error": 1
+  }
+}

@@ -1,25 +1,7 @@
-/**
- * Level 22 — "Memory Vault" (Arrays: Accretion Phase)
- * ====================================================
- * Teaches Java array fundamentals through a high-security data vault metaphor:
- *  - zero-based indexing, element access with [index]
- *  - the .length property, last valid index = length - 1
- *  - out-of-bounds awareness, building/modifying arrays
- *
- * 12 rounds across 4 challenge types:
- *  A. Find the Value  (rounds 1-3)  — option bubbles OR click the cell
- *  B. Find the Index  (rounds 4-6)  — click the correct storage cell
- *  C. Array Properties (rounds 7-9) — length / last index / arr[length-1]
- *  D. Build the Array (rounds 10-12) — drag values into cells
- *
- * The scene is authored in a 1280x720 world space (per design spec). The
- * shared game canvas is 800x600 (Scale.NONE), so the main camera is zoomed
- * to letterbox-fit the vault into whatever canvas size is active.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -35,11 +17,7 @@ const HEX_RED = "#f44336", HEX_GRAY = "#78909c";
 
 const TUTORIAL_KEY = "level22_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Round configuration
-// ─────────────────────────────────────────────────────────────────
 const ROUNDS = [
-  // ── Type A: Find the Value ──
   { round: 1, type: "find_value", arrayName: "arr", arrayType: "int[]",
     values: [10, 20, 30, 40, 50], question: "What is arr[0]?",
     targetIndex: 0, correctValue: 10, options: [10, 20, 50, 0], concept: "first_element" },
@@ -50,7 +28,6 @@ const ROUNDS = [
     values: [5, 15, 25, 35], question: "What is arr[2]?",
     targetIndex: 2, correctValue: 25, options: [15, 25, 35, 2], concept: "middle_access" },
 
-  // ── Type B: Find the Index ──
   { round: 4, type: "find_index", arrayName: "arr", arrayType: "int[]",
     values: [42, 17, 88, 63, 31], question: "At which index is the value 88?",
     targetValue: 88, correctIndex: 2, concept: "value_to_index" },
@@ -61,7 +38,6 @@ const ROUNDS = [
     values: [7, 3, 9, 1, 5, 8], question: "At which index is the LAST element?",
     targetValue: 8, correctIndex: 5, concept: "last_is_length_minus_1" },
 
-  // ── Type C: Array Properties ──
   { round: 7, type: "property", arrayName: "scores", arrayType: "int[]",
     values: [85, 92, 78, 95, 88], question: "What is scores.length?",
     options: [4, 5, 6], correctAnswer: 5, concept: "length_property",
@@ -75,7 +51,6 @@ const ROUNDS = [
     options: [10, 20, 30], correctAnswer: 30, concept: "dynamic_last_element",
     feedbackAnimation: "show_evaluation_steps" },
 
-  // ── Type D: Build the Array ──
   { round: 10, type: "build", arrayName: "x", arrayType: "int[]",
     targetValues: [3, 7, 1, 9], question: "Build the array: int[] x = {3, 7, 1, 9};",
     availableValues: [3, 7, 1, 9, 4, 0], concept: "array_construction" },
@@ -87,9 +62,6 @@ const ROUNDS = [
     availableValues: [0, 1, 1, 2, 3, 4, 5], concept: "full_construction" },
 ];
 
-// ─────────────────────────────────────────────────────────────────
-// Bit's feedback messages, keyed by round concept
-// ─────────────────────────────────────────────────────────────────
 const FEEDBACK = {
   first_element:          "The first element is at index [0], not [1]! Arrays always start counting from zero.",
   last_element:           "The last element is at index [length - 1]. For a 5-element array, that's index [4], not [5].",
@@ -140,7 +112,6 @@ export class Level22Scene extends Phaser.Scene {
     this._alive = true;
     this.events.once("shutdown", () => { this._alive = false; });
 
-    // The vault is authored at 1280x720; letterbox-fit into the real canvas.
     const cam = this.cameras.main;
     const zoom = Math.min(this.scale.width / W, this.scale.height / H);
     cam.setZoom(zoom);
@@ -172,10 +143,6 @@ export class Level22Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
 
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l22_dot")) {
@@ -268,10 +235,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -316,7 +279,6 @@ export class Level22Scene extends Phaser.Scene {
     this.monitorValueTexts = [];
   }
 
-  /** Rebuild the syntax-highlighted declaration display in the HUD monitor. */
   updateArrayMonitor(type, name, values) {
     if (this.monitorGroup) { this.monitorGroup.destroy(); this.monitorGroup = null; }
     this.monitorValueTexts = [];
@@ -341,7 +303,6 @@ export class Level22Scene extends Phaser.Scene {
     this.monitorGroup = c;
   }
 
-  /** Flash a value inside the monitor (used when a value is placed in Build rounds). */
   flashMonitorValue(i) {
     const t = this.monitorValueTexts[i];
     if (!t) return;
@@ -352,10 +313,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // STORAGE CELLS — the array representation
-  // ══════════════════════════════════════════════════════════════
-
   getCellPosition(index) {
     const n = this.cellCount || 1;
     const totalW = n * CELL_W + (n - 1) * CELL_GAP;
@@ -363,7 +320,6 @@ export class Level22Scene extends Phaser.Scene {
     return { x: startX + index * (CELL_W + CELL_GAP) + CELL_W / 2, y: CELL_Y };
   }
 
-  /** Create/replace the whole cell row. `values` may contain null for empty cells. */
   buildCellRow(values) {
     this.clearCellRow();
     this.cellCount = values.length;
@@ -413,7 +369,6 @@ export class Level22Scene extends Phaser.Scene {
     side(x, y + h, x, y);
   }
 
-  /** state: 'default' | 'highlighted' | 'correct' | 'error' | 'drop_target' */
   setCellState(i, state) {
     const cell = this.cells[i];
     if (!cell || !cell.container.active) return;
@@ -478,7 +433,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  /** One-shot success effect on a cell (green flash, scale, ✓ pop). */
   flashCellCorrect(i) {
     const cell = this.cells[i];
     if (!cell) return;
@@ -495,7 +449,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  /** One-shot error effect on a cell (red flash, shake, ✗ pop). */
   flashCellError(i) {
     const cell = this.cells[i];
     if (!cell) return;
@@ -539,7 +492,6 @@ export class Level22Scene extends Phaser.Scene {
     }
   }
 
-  /** Bracket pulse feedback (Round 7). */
   pulseBracket(colorHex) {
     if (!this.lengthBracket) return;
     const { g, txt } = this.lengthBracket;
@@ -553,7 +505,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  /** Ghost cell at [length] — visually teaches ArrayIndexOutOfBounds. */
   showOutOfBounds() {
     this.hideOutOfBounds();
     const n = this.cellCount;
@@ -593,7 +544,6 @@ export class Level22Scene extends Phaser.Scene {
     this.cells = [];
   }
 
-  /** Fade out old cells, fade in a new row. */
   rebuildCells(values) {
     return new Promise((res) => {
       const old = this.cells.map((c) => c.container);
@@ -613,10 +563,6 @@ export class Level22Scene extends Phaser.Scene {
       else buildNew();
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — robot mascot & speech
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(W + 80, 340).setDepth(60);
@@ -640,7 +586,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  /** Show speech bubble + typewrite text. Resolves after typing finishes. Bubble stays until hideBubble(). */
   bitSay(text) {
     this.hideBubble();
     const inner = this.add.text(0, 0, text, {
@@ -691,7 +636,6 @@ export class Level22Scene extends Phaser.Scene {
     this.tweens.add({ targets: b, alpha: 0, scale: 0.8, duration: 150, onComplete: () => b.destroy() });
   }
 
-  /** Bit slides in from the right, delivers a message, waits for click (or 3.5s), slides out. */
   async showBitFeedback(message) {
     await this.bitSlideTo(1060, 520);
     if (!this._alive) return;
@@ -701,10 +645,6 @@ export class Level22Scene extends Phaser.Scene {
     this.hideBubble();
     await this.bitSlideTo(W + 80, 520, 250);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -908,11 +848,6 @@ export class Level22Scene extends Phaser.Scene {
     return els;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ANNOTATIONS / FLOATING TEXT / EFFECTS
-  // ══════════════════════════════════════════════════════════════
-
-  /** Text label with optional downward arrow pointing at arrowTarget {x,y}. */
   createAnnotation(x, y, text, colorHex, arrowTarget = null) {
     const c = this.add.container(0, 0).setDepth(25).setAlpha(0);
     const txt = this.add.text(x, y, text, { font: "bold 14px Arial", color: colorHex }).setOrigin(0.5);
@@ -955,10 +890,6 @@ export class Level22Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GAMEPLAY — round system
-  // ══════════════════════════════════════════════════════════════
 
   async startRound(index) {
     if (!this._alive || this.gameEnded) return;
@@ -1006,9 +937,6 @@ export class Level22Scene extends Phaser.Scene {
     this.roundEls = [];
   }
 
-  // ── Question card ────────────────────────────────────────────
-
-  /** Tokenize question text so code fragments get monospace syntax coloring. */
   _parseQuestion(q) {
     const tokens = [];
     const re = /([A-Za-z_]\w*\.length(?:\s*-\s*1)?|[A-Za-z_]\w*\[[^\]]*\]|\{[^}]*\}|\b\d+\b)/g;
@@ -1064,8 +992,6 @@ export class Level22Scene extends Phaser.Scene {
     this.roundEls.push(card);
     this.questionCard = card;
   }
-
-  // ── Option bubbles (Types A & C) ─────────────────────────────
 
   showOptionBubbles(options, onSelect) {
     const opts = Phaser.Utils.Array.Shuffle(options.slice());
@@ -1126,8 +1052,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  // ── Cell clicking (Types A & B) ──────────────────────────────
-
   enableCellClicking(handler) {
     this.cells.forEach((cell, i) => {
       cell.container.setSize(CELL_W, CELL_H);
@@ -1158,10 +1082,6 @@ export class Level22Scene extends Phaser.Scene {
       cell.container.setScale(1);
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CHALLENGE TYPE SETUPS
-  // ══════════════════════════════════════════════════════════════
 
   setupFindValue(cfg) {
     // Both interaction modes: option bubbles AND clickable cells
@@ -1242,10 +1162,6 @@ export class Level22Scene extends Phaser.Scene {
     this.createDraggableValues([cfg.newValue], cfg);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PROPERTY FEEDBACK ANIMATIONS (Type C)
-  // ══════════════════════════════════════════════════════════════
-
   async showPropertyFeedbackAnimation(kind, cfg) {
     if (kind === "highlight_bracket") {
       this.pulseBracket(HEX_GREEN);
@@ -1279,10 +1195,6 @@ export class Level22Scene extends Phaser.Scene {
       await this.delay(500);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // DRAG & DROP (Type D)
-  // ══════════════════════════════════════════════════════════════
 
   setupDragEvents() {
     this.input.on("dragstart", (pointer, obj) => {
@@ -1335,7 +1247,6 @@ export class Level22Scene extends Phaser.Scene {
     });
   }
 
-  /** During drag: highlight the nearest valid (empty) cell within 50px. */
   onValueDrag(obj) {
     let best = -1, bestDist = 50;
     this.cells.forEach((cell, i) => {
@@ -1472,10 +1383,6 @@ export class Level22Scene extends Phaser.Scene {
     this.onCorrectAnswer(cfg, { skipCenterText: true });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION
-  // ══════════════════════════════════════════════════════════════
-
   onCorrectAnswer(cfg, opts = {}) {
     if (this.gameEnded) return;
     this.inputLocked = true;
@@ -1533,7 +1440,6 @@ export class Level22Scene extends Phaser.Scene {
     this._retryRound(cfg);
   }
 
-  /** Reset states and re-arm the same question for another attempt. */
   _retryRound(cfg) {
     this.cells.forEach((c, i) => {
       this.setCellState(i, "default");
@@ -1550,10 +1456,6 @@ export class Level22Scene extends Phaser.Scene {
     }
     this.inputLocked = false;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORE / COMBO / LIVES
-  // ══════════════════════════════════════════════════════════════
 
   updateScore(points) {
     this.score += points;
@@ -1596,7 +1498,6 @@ export class Level22Scene extends Phaser.Scene {
     this.time.delayedCall(600, () => p.destroy());
   }
 
-  /** Returns true when out of lives. */
   loseLife() {
     this.lives = Math.max(0, this.lives - 1);
     const icon = this.lifeIcons[this.lives];
@@ -1604,11 +1505,8 @@ export class Level22Scene extends Phaser.Scene {
     return this.lives <= 0;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1650,6 +1548,7 @@ export class Level22Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1781,7 +1680,6 @@ export class Level22Scene extends Phaser.Scene {
       });
     }
 
-    // badge — circle with a row of 5 tiny "array cell" squares
     const badge = this.add.container(640, 460).setDepth(91).setAlpha(0);
     const bg = this.add.graphics();
     bg.fillStyle(0x1a1a2e, 1);
@@ -1804,7 +1702,6 @@ export class Level22Scene extends Phaser.Scene {
     this._makeButton(750, 590, "NEXT: Index Interceptor →", 260, 46, {
       fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff",
     }, () => {
-      // Level 23 isn't built yet — return to the menu
       if (this.scene.get("Level23Scene")) this.scene.start("Level23Scene");
       else this.scene.start("MenuScene");
     });

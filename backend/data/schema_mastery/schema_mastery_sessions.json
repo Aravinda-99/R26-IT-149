@@ -1,0 +1,523 @@
+{
+  "STU_VERIFY_FLOW_999": {
+    "session_id": "SESS_36835AD1",
+    "student_id": "STU_VERIFY_FLOW_999",
+    "student_name": "Test Learner 999",
+    "student_email": "test999@codequest.edu",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.4,
+      "attempt_count": 2,
+      "time_taken_seconds": 95,
+      "completed_at": "2026-08-31T16:51:46.900319+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.85,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Index out of bounds due to loop terminating at <= length instead of < length",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T16:51:46.921059+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "arrays",
+      "recommended_game_name": "Array Index Rescue Game",
+      "completed_at": "2026-08-31T16:51:46.935365+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.6,
+      "mastery_level": "Needs More Practice",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-08-31T16:52:24.586667+00:00"
+    },
+    "current_stage": "MASTERY_EVALUATED",
+    "created_at": "2026-08-31T16:51:46.888127+00:00",
+    "updated_at": "2026-08-31T16:52:24.586667+00:00",
+    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "error_pattern_score": 0.85,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "user_1788163279658": {
+    "session_id": "SESS_F83364AF",
+    "student_id": "user_1788163279658",
+    "student_name": "Anjana Nikesh",
+    "student_email": "anjanaimesh700@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Loops",
+      "weak_concept": "Loops",
+      "pre_test_score": 0.16,
+      "attempt_count": 1,
+      "time_taken_seconds": 23,
+      "completed_at": "2026-08-31T18:08:25.663850+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.61,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T18:48:56.684381+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.4,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-08-31T16:58:09.390893+00:00"
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-08-31T15:56:01.094442+00:00",
+    "updated_at": "2026-08-31T18:48:56.684381+00:00",
+    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "error_pattern_score": 0.61,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "YOUR_STUDENT_ID": {
+    "session_id": "SESS_7AFA3D0F",
+    "student_id": "YOUR_STUDENT_ID",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": false,
+      "concept_name": null,
+      "weak_concept": null,
+      "pre_test_score": null,
+      "attempt_count": 0,
+      "time_taken_seconds": 0,
+      "completed_at": null
+    },
+    "component_2": {
+      "completed": false,
+      "error_type": null,
+      "error_pattern_score": null,
+      "error_reason": null,
+      "completed_at": null
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "PRE_TEST_PENDING",
+    "created_at": "2026-08-31T17:06:09.345439+00:00",
+    "updated_at": "2026-08-31T17:06:09.345439+00:00"
+  },
+  "fjd3iU5IH3SCZ5F10X1uwbZoKBG3": {
+    "session_id": "SESS_2E5A26F2",
+    "student_id": "fjd3iU5IH3SCZ5F10X1uwbZoKBG3",
+    "student_name": "jhon",
+    "student_email": "jhon@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.24,
+      "attempt_count": 1,
+      "time_taken_seconds": 14,
+      "completed_at": "2026-08-31T21:25:43.170547+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.44,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T22:53:05.081842+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-08-31T20:14:02.794169+00:00",
+    "updated_at": "2026-08-31T22:53:05.081842+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.44,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "MdcC1SDeHwN4CVRiQjMEolrnU6h1": {
+    "session_id": "SESS_BFF71510",
+    "student_id": "MdcC1SDeHwN4CVRiQjMEolrnU6h1",
+    "student_name": "Sahan",
+    "student_email": "sahan@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Variables",
+      "weak_concept": "Variables",
+      "pre_test_score": 0.36,
+      "attempt_count": 1,
+      "time_taken_seconds": 19,
+      "completed_at": "2026-08-31T22:55:58.500860+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.48,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-08-31T22:56:31.354073+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "stringmethods",
+      "recommended_game_name": "String Methods Wing",
+      "completed_at": "2026-08-31T22:56:36.033159+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "UNDERSTANDING_CHECK_READY",
+    "created_at": "2026-08-31T22:07:51.491823+00:00",
+    "updated_at": "2026-08-31T22:56:36.033159+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.48,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "tN9qpvlfCiexLDIRRdPIrXCQUOA2": {
+    "session_id": "SESS_C9EC1859",
+    "student_id": "tN9qpvlfCiexLDIRRdPIrXCQUOA2",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.16,
+      "attempt_count": 1,
+      "time_taken_seconds": 19,
+      "completed_at": "2026-10-19T18:49:16.465939+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_SIGNATURE_ISSUE",
+      "error_pattern_score": 0.66,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-19T19:26:49.877700+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "integer",
+      "recommended_game_name": "Variable Tracker Arena",
+      "completed_at": "2026-09-01T01:59:29.824661+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.3667,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-10-19T18:51:28.698225+00:00"
+    },
+    "current_stage": "MASTERY_EVALUATED",
+    "created_at": "2026-09-01T01:58:10.512177+00:00",
+    "updated_at": "2026-10-19T19:26:49.877700+00:00",
+    "error_type": "METHOD_SIGNATURE_ISSUE",
+    "error_pattern_score": 0.66,
+    "error_pattern_score_source": "component2_confidence",
+    "assessment_target": {
+      "concept_name": "Methods",
+      "error_type": "METHOD_SIGNATURE_ISSUE",
+      "error_pattern_score": 0.66,
+      "error_reason": "The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.",
+      "pre_test_completed_at": "2026-10-19T18:49:16.465939+00:00"
+    }
+  },
+  "student_001": {
+    "session_id": "SESS_E12517DF",
+    "student_id": "student_001",
+    "student_name": "Student 001",
+    "student_email": "student001@codequest.lk",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Operators",
+      "weak_concept": "Operators",
+      "pre_test_score": 0.2,
+      "attempt_count": 1,
+      "time_taken_seconds": 17,
+      "completed_at": "2026-10-19T18:33:29.308005+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.64,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-19T18:47:25.136317+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "arrays",
+      "recommended_game_name": "Array Index Rescue Game",
+      "completed_at": "2026-10-19T18:34:55.796035+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "UNDERSTANDING_CHECK_READY",
+    "created_at": "2026-10-19T17:54:22.728053+00:00",
+    "updated_at": "2026-10-19T18:47:25.136317+00:00",
+    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "error_pattern_score": 0.64,
+    "error_pattern_score_source": "component2_confidence",
+    "assessment_target": {
+      "concept_name": "Arrays",
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.64,
+      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "pre_test_completed_at": "2026-10-19T18:33:29.308005+00:00"
+    }
+  },
+  "VYOdumtUHxNlwubHtcZq4OtpvHD3": {
+    "session_id": "SESS_8E7C5DAD",
+    "student_id": "VYOdumtUHxNlwubHtcZq4OtpvHD3",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.63,
+      "attempt_count": 1,
+      "time_taken_seconds": 49,
+      "completed_at": "2026-10-19T11:21:27.284415+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "VARIABLE_CALCULATION_ISSUE",
+      "error_pattern_score": 0.39,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Confusion with operators or misunderstanding the semantic meaning of the variables (e.g., discounts reduce total).",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-19T12:33:46.748659+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-10-18T08:56:31.937149+00:00",
+    "updated_at": "2026-10-19T12:33:46.748659+00:00",
+    "error_type": "VARIABLE_CALCULATION_ISSUE",
+    "error_pattern_score": 0.39,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "user_1792509662465": {
+    "session_id": "SESS_7FC178CF",
+    "student_id": "user_1792509662465",
+    "student_name": "Janith Wijesinha",
+    "student_email": "janith@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.17,
+      "attempt_count": 1,
+      "time_taken_seconds": 23,
+      "completed_at": "2026-10-20T15:53:02.818805+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.66,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-20T15:58:59.530799+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "whileloops",
+      "recommended_game_name": "Condition Guard",
+      "completed_at": "2026-10-20T15:51:52.180763+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.3667,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-10-20T15:56:22.178112+00:00"
+    },
+    "current_stage": "MASTERY_EVALUATED",
+    "created_at": "2026-10-20T15:41:13.962746+00:00",
+    "updated_at": "2026-10-20T15:58:59.530799+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.66,
+    "error_pattern_score_source": "component2_confidence",
+    "assessment_target": {
+      "concept_name": "Methods",
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.66,
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "pre_test_completed_at": "2026-10-20T15:53:02.818805+00:00"
+    }
+  },
+  "user_1788166926551": {
+    "session_id": "SESS_7B1680C1",
+    "student_id": "user_1788166926551",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": false,
+      "concept_name": null,
+      "weak_concept": null,
+      "pre_test_score": null,
+      "attempt_count": 0,
+      "time_taken_seconds": 0,
+      "completed_at": null
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "CORRECT_NO_ERROR",
+      "error_pattern_score": 0.62,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "The learner correctly applies the required logic.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-19T07:02:21.191540+00:00"
+    },
+    "component_3": {
+      "completed": true,
+      "recommended_game_id": "float",
+      "recommended_game_name": "Precision Lab",
+      "completed_at": "2026-10-19T07:10:35.081017+00:00"
+    },
+    "component_4": {
+      "unlocked": true,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "UNDERSTANDING_CHECK_READY",
+    "created_at": "2026-10-19T07:02:14.771611+00:00",
+    "updated_at": "2026-10-19T07:10:35.081017+00:00",
+    "error_type": "CORRECT_NO_ERROR",
+    "error_pattern_score": 0.62,
+    "error_pattern_score_source": "component2_confidence"
+  },
+  "j0F02GK6XzcEYviXhwXUnFV8u4r1": {
+    "session_id": "SESS_F619DED7",
+    "student_id": "j0F02GK6XzcEYviXhwXUnFV8u4r1",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Loops",
+      "weak_concept": "Loops",
+      "pre_test_score": 0.53,
+      "attempt_count": 1,
+      "time_taken_seconds": 67,
+      "completed_at": "2026-10-20T11:05:27.713002+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "LOOP_CONDITION_ISSUE",
+      "error_pattern_score": 0.44,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "The learner may not realize the condition must evaluate to true for the loop to start and false for it to end.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-20T11:06:48.979833+00:00"
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-10-20T11:00:51.551918+00:00",
+    "updated_at": "2026-10-20T11:06:48.979833+00:00",
+    "error_type": "LOOP_CONDITION_ISSUE",
+    "error_pattern_score": 0.44,
+    "error_pattern_score_source": "component2_confidence"
+  }
+}

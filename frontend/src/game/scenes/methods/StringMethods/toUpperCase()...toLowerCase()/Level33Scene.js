@@ -1,29 +1,8 @@
-/**
- * Level 33 — "The Foundry" (String Methods: Restructuring Phase — Trilogy
- * + Nine-Level Arc Finale)
- * ===========================================================================
- * The learner restructures the case-conversion + immutability schema by
- * CONSTRUCTING complete programs — no multiple choice. The Foundry unifies
- * three trilogy machines (scanner/counter from L25-27, claw from L28-30,
- * press from L31-32) on one production line, driven entirely by the
- * player's code. Missions 1, 5, and 6 deliberately REOPEN and REBUILD
- * earlier Level 30 missions — restructuring made literal: old solutions
- * are revisited and upgraded, not just superseded.
- *
- * A genuine per-mission interpreter (_interpretMissionN) tracks TYPE
- * through method chains (String -> String for case methods, String -> char
- * for charAt, and a method call on a char is a compile error) and computes
- * real results from whatever blocks were placed — never a lookup table.
- * Wrong builds produce their authentic wrong outcomes: an unsaved case
- * conversion really does leave the original untouched; normalizing the
- * wrong direction really does zero out every match; a fixed loop index
- * really does repeat the same character.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -34,7 +13,6 @@ const HEX_CYAN = "#00e5ff", HEX_AMBER = "#ffd740", HEX_GREEN = "#00e676";
 const HEX_RED = "#f44336", HEX_GRAY = "#78909c", HEX_MAGENTA = "#ff4081";
 const HEX_PURPLE = "#8c7ae6", HEX_ORANGE = "#ff9800";
 
-// Layout geometry (matches Level 27/30's construction layout)
 const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
@@ -52,9 +30,6 @@ const TICKER_Y = OY + OH - 18;
 
 const TUTORIAL_KEY = "level33_tutorial_done";
 
-// ─────────────────────────────────────────────────────────────────
-// Mission configuration
-// ─────────────────────────────────────────────────────────────────
 const MISSIONS = [
   { mission: 1, title: "The Open-Door Gate", blueprint: true,
     brief: 'Remember the Gatekeeper? It rejected "x42" — a valid worker with a lowercase badge! Rebuild it so \'X\' and \'x\' BOTH open the door.',
@@ -204,10 +179,6 @@ export class Level33Scene extends Phaser.Scene {
     this._bubble = null;
     this._dragHoverSlotKey = null;
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level31Scene";
   }
 
@@ -249,11 +220,6 @@ export class Level33Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -270,10 +236,6 @@ export class Level33Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l33_dot")) {
@@ -367,10 +329,6 @@ export class Level33Scene extends Phaser.Scene {
     if (/[a-zA-Z]/.test(ch)) return { display: ch, color: HEX_CYAN, isSpace: false };
     return { display: ch, color: HEX_ORANGE, isSpace: false };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27/30 construction, reused verbatim)
-  // ══════════════════════════════════════════════════════════════
 
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
@@ -496,13 +454,6 @@ export class Level33Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (Level 27/30 drag system, reused verbatim — including
-  // the drag-lifecycle fix: a block is removed from its slot at
-  // dragstart, before it can be dropped anywhere else, so re-dragging a
-  // placed block never leaves a stale duplicate slotContents entry.)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -665,10 +616,6 @@ export class Level33Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN, 0.06).setDepth(29);
@@ -708,10 +655,6 @@ export class Level33Scene extends Phaser.Scene {
     this.runButton.c.disableInteractive();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW + PRODUCTION LINE STATIONS
-  // ══════════════════════════════════════════════════════════════
-
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x080a10, 1);
@@ -730,12 +673,10 @@ export class Level33Scene extends Phaser.Scene {
   }
 
   createStations() {
-    // three small station icons; each glows when its machine is active
     this.stationCase = this._buildStationIcon(STATION_CASE_X, STATION_Y, "case");
     this.stationPress = this._buildStationIcon(STATION_PRESS_X, STATION_Y, "press");
     this.stationClaw = this._buildStationIcon(STATION_CLAW_X, STATION_Y, "claw");
 
-    // shared tile row — represents whichever string is currently "in play"
     this.tileRowContainer = this.add.container(0, 0);
     this.rigLayer.add([this.stationCase.c, this.stationPress.c, this.stationClaw.c, this.tileRowContainer]);
   }
@@ -867,10 +808,6 @@ export class Level33Scene extends Phaser.Scene {
     this.tweens.add({ targets: this.counterDial.c, scale: 1.2, duration: 100, yoyo: true });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
-
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0a0e14, 1);
@@ -933,10 +870,6 @@ export class Level33Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -944,8 +877,8 @@ export class Level33Scene extends Phaser.Scene {
     g.lineStyle(1, 0x21262d, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE FOUNDRY", { font: "bold 15px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — toUpperCase() / toLowerCase()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE FOUNDRY", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — toUpperCase() / toLowerCase()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -955,8 +888,8 @@ export class Level33Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -993,10 +926,6 @@ export class Level33Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — foundry master variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(90, 610).setDepth(60);
     const g = this.add.graphics();
@@ -1025,8 +954,8 @@ export class Level33Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1074,10 +1003,6 @@ export class Level33Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1114,7 +1039,7 @@ export class Level33Scene extends Phaser.Scene {
 
   createAnnotation(x, y, text, colorHex, arrowTarget = null) {
     const c = this.add.container(0, 0).setDepth(70).setAlpha(0);
-    const txt = this.add.text(x, y, text, { font: "bold 13px Arial", color: colorHex }).setOrigin(0.5);
+    const txt = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5);
     c.add(txt);
     if (arrowTarget) {
       const g = this.add.graphics();
@@ -1128,10 +1053,6 @@ export class Level33Scene extends Phaser.Scene {
     this.tweens.add({ targets: c, alpha: 1, duration: 300 });
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1204,10 +1125,6 @@ export class Level33Scene extends Phaser.Scene {
     this.missionElements = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, type-tracking through chains
-  // ══════════════════════════════════════════════════════════════
-
   _evalIndexExpr(expr, i, len) {
     expr = expr.trim();
     if (/^-?\d+$/.test(expr)) return parseInt(expr, 10);
@@ -1223,7 +1140,6 @@ export class Level33Scene extends Phaser.Scene {
     return { crash: false, ch: str[idx] };
   }
 
-  /** Resolves a normalization/chain block into {mode:'upper'|'lower'|null, empty, compileError, tag}. */
   _classifyNormBlock(code) {
     if (code === ".toLowerCase()" || code === "s.toLowerCase()" || code === "label.toLowerCase()") return { mode: "lower" };
     if (code === ".toUpperCase()" || code === "s.toUpperCase()") return { mode: "upper" };
@@ -1251,7 +1167,7 @@ export class Level33Scene extends Phaser.Scene {
     const result = input.toLowerCase();
     if (lhsBlock.code === "label =") return { value: result, stored: result, saved: true };
     if (lhsBlock.code === "(nothing)") return { value: result, stored: input, saved: false, discarded: true };
-    return { value: result, stored: input, saved: false, captured: "tmp" }; // String tmp =
+    return { value: result, stored: input, saved: false, captured: "tmp" };
   }
 
   _interpretMission3(blocks, input) {
@@ -1344,10 +1260,6 @@ export class Level33Scene extends Phaser.Scene {
     }
     return used;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
 
   async onRunPressed() {
     if (this.inputLocked) return;
@@ -1502,27 +1414,6 @@ export class Level33Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION / FEEDBACK
-  // ══════════════════════════════════════════════════════════════
-
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1542,8 +1433,6 @@ export class Level33Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level33Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1564,8 +1453,6 @@ export class Level33Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || (compileErr && compileErr.tag) || null;
@@ -1607,16 +1494,12 @@ export class Level33Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1689,6 +1572,7 @@ export class Level33Scene extends Phaser.Scene {
   }
 
   createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 30, alpha: 0, duration: 900, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1707,11 +1591,8 @@ export class Level33Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1736,13 +1617,14 @@ export class Level33Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(33, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(32, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("case_methods_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level33_results", JSON.stringify({
@@ -1816,10 +1698,10 @@ export class Level33Scene extends Phaser.Scene {
     bg.lineBetween(-6, 0, -2, 5);
     bg.lineBetween(-2, 5, 8, -6);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 465, "CASE METHODS MASTERY", { font: "bold 15px Arial", color: HEX_AMBER }).setOrigin(0.5).setDepth(91).setAlpha(0);
     const badgeSub = this.add.text(640, 482, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 2200 });
+    this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
     const ribbon = this.add.graphics().setDepth(91).setAlpha(0);
     ribbon.fillStyle(0x1a1a2e, 1);

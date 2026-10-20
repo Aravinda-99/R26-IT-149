@@ -1,27 +1,151 @@
 /**
  * Auth State Manager
  * ==================
- * Manages Firebase Auth state and provides current user info.
+ * Manages authenticated user session, role resolution, and profile synchronization.
  */
 
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { GameManager } from "../game/GameManager.js";
+import { AuthAPI } from "../api/api.js";
 
 let currentUser = null;
 let authListeners = [];
+let authInitialized = false;
+let sessionVersion = 0;
 
+function mergeBackendProfile(localUser, backendProfile) {
+    if (!backendProfile) return localUser;
+    if (backendProfile.auth_source === "runtime_fallback") {
+        return {
+            ...backendProfile,
+            ...localUser,
+            uid: localUser?.uid || backendProfile.uid,
+            id: localUser?.id || backendProfile.id || backendProfile.uid,
+            user_id: localUser?.user_id || backendProfile.user_id || backendProfile.uid,
+            student_id: localUser?.student_id || backendProfile.student_id || backendProfile.uid,
+            role: localUser?.role || backendProfile.role || "student",
+        };
+    }
+    return { ...localUser, ...backendProfile };
+}
+
+// Initialize cached user from local storage
+try {
+    const saved = localStorage.getItem("codequest_user");
+    if (saved) {
+        currentUser = JSON.parse(saved);
+    }
+} catch (e) {
+    console.warn("Failed to load local auth session:", e);
+}
+
+/**
+ * Attaches auth initialization and returns a Promise that resolves once
+ * whichever path actually applies (cached backend profile, or the Firebase
+ * fallback) has fully settled — including GameManager.syncWithFirebase(),
+ * so callers (main.js) never proceed to render before real gamification
+ * state (XP/score/badges) has had a chance to load.
+ */
 export function initAuthListener() {
-    const auth = getAuth();
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        
-        if (user) {
-            await GameManager.syncWithFirebase();
+    return new Promise((resolve) => {
+        // 1. If we have a cached user, verify/hydrate from the backend profile
+        // and sync their gamification state. This is the PRIMARY path for
+        // users authenticated via the custom backend auth system — they may
+        // have no corresponding Firebase Auth session at all, so this can't
+        // depend on onAuthStateChanged firing.
+        if (currentUser?.uid || currentUser?.id) {
+            const uid = currentUser.uid || currentUser.id;
+            const version = sessionVersion;
+            AuthAPI.getProfile(uid)
+                .then(async (freshProfile) => {
+                    if (version !== sessionVersion) return resolve(currentUser);
+                    if (freshProfile && (freshProfile.uid || freshProfile.id)) {
+                        currentUser = mergeBackendProfile(currentUser, freshProfile);
+                        localStorage.setItem("codequest_user", JSON.stringify(currentUser));
+                    }
+                    await GameManager.syncWithFirebase();
+                    authInitialized = true;
+                    notifyListeners();
+                    resolve(currentUser);
+                })
+                .catch(() => {
+                    // Backend unreachable / profile fetch failed — don't hang
+                    // the app waiting on it; resolve with whatever's cached.
+                    authInitialized = true;
+                    notifyListeners();
+                    resolve(currentUser);
+                });
         } else {
-            GameManager.resetAll();
+            // Wait for Firebase's initial state before rendering a legacy session.
+            authInitialized = false;
         }
 
-        authListeners.forEach((cb) => cb(user));
+        // 2. Firebase Auth State Listener — kept as a fallback for accounts
+        // that do have a real Firebase session (e.g. the legacy client-side
+        // Firebase flow).
+        try {
+            const auth = getAuth();
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    // Backend logins can have a different UID from Firebase Auth.
+                    // A leftover Firebase account must not replace that session.
+                    const cachedUid = currentUser?.uid || currentUser?.id;
+                    if (cachedUid) return;
+                    const version = sessionVersion;
+                    const firebaseProfile = {
+                        uid: user.uid,
+                        id: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email?.split("@")[0] || "Learner",
+                        name: user.displayName || user.email?.split("@")[0] || "Learner",
+                        role: "student",
+                        joinedAt: new Date().toISOString(),
+                    };
+                    let restoredProfile;
+                    try {
+                        const profile = await AuthAPI.getProfile(user.uid);
+                        if (profile && profile.uid) {
+                            restoredProfile = mergeBackendProfile(firebaseProfile, profile);
+                        } else {
+                            restoredProfile = firebaseProfile;
+                        }
+                    } catch (e) {
+                        restoredProfile = firebaseProfile;
+                    }
+                    if (version !== sessionVersion) return resolve(currentUser);
+                    currentUser = restoredProfile;
+                    localStorage.setItem("codequest_user", JSON.stringify(currentUser));
+                    await GameManager.syncWithFirebase();
+                } else {
+                    // The backend hydration path owns cached sessions, including
+                    // its initial render. Firebase null does not mean logged out.
+                    if (currentUser?.uid || currentUser?.id) return;
+                    if (!localStorage.getItem("codequest_user")) {
+                        currentUser = null;
+                        GameManager.resetAll();
+                    }
+                }
+
+                authInitialized = true;
+                notifyListeners();
+                resolve(currentUser);
+            });
+        } catch (err) {
+            // Firebase client SDK offline or uninitialized — the backend
+            // path above is still what matters; just make sure we don't
+            // leave the promise hanging if it somehow hasn't resolved yet.
+            resolve(currentUser);
+        }
+    });
+}
+
+function notifyListeners() {
+    authListeners.forEach((cb) => {
+        try {
+            cb(currentUser);
+        } catch (e) {
+            console.warn("Auth listener error:", e);
+        }
     });
 }
 
@@ -31,16 +155,45 @@ export function onAuthChange(callback) {
 }
 
 export function getCurrentUser() {
+    if (!currentUser) {
+        try {
+            const saved = localStorage.getItem("codequest_user");
+            if (saved) currentUser = JSON.parse(saved);
+        } catch (e) {}
+    }
     return currentUser;
 }
 
+export function getUserRole() {
+    const user = getCurrentUser();
+    return user?.role || "student";
+}
+
+export function setCurrentUser(user) {
+    sessionVersion++;
+    currentUser = user;
+    if (user) {
+        localStorage.setItem("codequest_user", JSON.stringify(user));
+    } else {
+        localStorage.removeItem("codequest_user");
+    }
+    notifyListeners();
+}
+
 export async function logout() {
-    const auth = getAuth();
-    await signOut(auth);
+    sessionVersion++;
+    try {
+        const auth = getAuth();
+        await signOut(auth);
+    } catch (e) {}
     currentUser = null;
+    localStorage.removeItem("codequest_user");
+    sessionStorage.clear();
+    notifyListeners();
 }
 
 export async function getIdToken() {
     if (!currentUser) return null;
-    return currentUser.getIdToken();
+    if (currentUser.getIdToken) return currentUser.getIdToken();
+    return `cq_token_${currentUser.uid || currentUser.id}`;
 }

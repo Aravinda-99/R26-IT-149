@@ -1,29 +1,9 @@
-/**
- * Level 58 — "The Distance Hall" (Math Methods: Accretion Phase —
- * abs())
- * ===========================================================================
- * Opens the abs() trilogy. The L56 number-line rail is promoted to the
- * hall's centerpiece: a grand Measuring Rail with a movable Zero
- * Obelisk. A value drops as a star-marker at its true position; the
- * measuring beam extends from the obelisk to the marker; the beam's
- * LENGTH — always positive — detaches and descends as Math.abs(x)'s
- * return value. The difference-distance pattern (Math.abs(a - b)) gets
- * its own dual-beam choreography: the main beam measures the
- * difference from zero while a second gold beam, drawn directly
- * between the two original markers, confirms the same length is the
- * gap between them.
- *
- * The evaluator is honest: abs(x) must emerge from x<0?-x:x, never
- * string manipulation; inner arithmetic (a - b) resolves before the
- * beam ever measures; abs(-3)+abs(4) genuinely runs TWO separate
- * measurements before adding.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { addTutorialReplayButton } from "../../../../TutorialReplayButton.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -38,9 +18,6 @@ const PLINTH_X = 640, PLINTH_Y = 470;
 const SLATE_X = 940, SLATE_Y = 130, SLATE_W = 300, SLATE_H = 290;
 const TUTORIAL_KEY = "level58_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, type: "predict",
     source: ["int d = Math.abs(-8);"],
@@ -286,10 +263,6 @@ export class Level58Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — BACKGROUND & HALL INTERIOR
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l58_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -402,14 +375,15 @@ export class Level58Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "italic 13px Georgia", color: colorHex, wordWrap: { width: 300 }, align: "center" }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "italic 18px Georgia", color: colorHex, wordWrap: { width: 380 }, align: "center" }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(2200, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 320 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1400) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
@@ -427,10 +401,6 @@ export class Level58Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // THE MEASURING RAIL (hero visual)
-  // ══════════════════════════════════════════════════════════════
 
   createMeasuringRail() {
     const postG = this.add.graphics().setDepth(3);
@@ -612,7 +582,6 @@ export class Level58Scene extends Phaser.Scene {
     this._plinthChip = chip;
   }
 
-  /** The full §2.3 choreography for a single Math.abs(x) measurement. */
   async runMeasurement(value, type, opts = {}) {
     let marker;
     if (opts.varName) marker = await this.ensureVarMarker(opts.varName, value, type);
@@ -645,8 +614,6 @@ export class Level58Scene extends Phaser.Scene {
     return { value: length, type };
   }
 
-  /** The full §2.5 choreography for Math.abs(a - b) — the difference-
-   * distance pattern, including the gold between-beam confirmation. */
   async runDifferenceMeasurement(aRes, bRes) {
     const av = Number(aRes.value), bv = Number(bRes.value);
     const diff = av - bv;
@@ -740,8 +707,6 @@ export class Level58Scene extends Phaser.Scene {
     this._varContainers = [];
   }
 
-  // ── rejections ──
-
   async markerShudder(value, type, varName) {
     const marker = (varName && this._varMarkers[varName]) ? this._varMarkers[varName] : await this.dropMarker(value, type);
     await this.delay(100);
@@ -773,10 +738,6 @@ export class Level58Scene extends Phaser.Scene {
     this.time.delayedCall(1100, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 220, onComplete: () => stamp.destroy() }); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RESULT PLINTH
-  // ══════════════════════════════════════════════════════════════
-
   createResultPlinth() {
     const chute = this.add.graphics().setDepth(6);
     chute.lineStyle(2, C_BRASS, 0.5);
@@ -787,10 +748,6 @@ export class Level58Scene extends Phaser.Scene {
     plinthG.fillCircle(PLINTH_X, PLINTH_Y, 24);
     plinthG.strokeCircle(PLINTH_X, PLINTH_Y, 24);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SURVEYOR'S SLATE
-  // ══════════════════════════════════════════════════════════════
 
   createSurveyorsSlate() {
     const g = this.add.graphics().setDepth(10);
@@ -841,10 +798,6 @@ export class Level58Scene extends Phaser.Scene {
     const display = type === "double" ? Number(value).toFixed(1) : String(value);
     this.resultText.setFontSize(14).setText(display).setColor(type === "double" ? HEX_ORANGE : HEX_GOLD);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SOURCE DISPLAY & EXPRESSION MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createSourceDisplay() {
     this.sourceContainer = this.add.container(0, 0).setDepth(15);
@@ -899,10 +852,6 @@ export class Level58Scene extends Phaser.Scene {
 
   updateExpressionMonitor(text) { this.exprMonitorText.setText(text); }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x060810, 0.93);
@@ -910,12 +859,12 @@ export class Level58Scene extends Phaser.Scene {
     g.lineStyle(1, 0x2a3654, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE DISTANCE HALL", { font: "bold 16px Georgia", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Accretion Phase — Math Methods: abs()", { font: "12px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 14, "THE DISTANCE HALL", { font: "bold 18px Georgia", color: "#b0bec5" }).setDepth(50);
+    this.add.text(20, 38, "Accretion Phase — Math Methods: abs()", { font: "18px Arial", color: "#546e7a" }).setDepth(50);
 
-    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(50);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(50);
+    this.comboText = this.add.text(960, 32, "×1", { font: "bold 18px Arial", color: HEX_GOLD }).setOrigin(1, 0.5).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -926,10 +875,6 @@ export class Level58Scene extends Phaser.Scene {
       this.lifeIcons.push(lg);
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — SURVEYOR VARIANT
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(1090, 520).setDepth(60);
@@ -968,8 +913,8 @@ export class Level58Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1016,10 +961,6 @@ export class Level58Scene extends Phaser.Scene {
     await Promise.race([this.waitForClick(), this.delay(maxMs)]);
     this.hideBubble();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1094,10 +1035,6 @@ export class Level58Scene extends Phaser.Scene {
     this.startRound(0);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   _extractNumbers(strOrArr) {
     const text = Array.isArray(strOrArr) ? strOrArr.join(" ") : String(strOrArr || "");
     const matches = text.match(/-?\d+\.?\d*/g) || [];
@@ -1153,10 +1090,6 @@ export class Level58Scene extends Phaser.Scene {
     this.roundElements.push(c);
     return c;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B — PREDICT
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config) {
     this.updateSourceDisplay(config.source);
@@ -1240,10 +1173,6 @@ export class Level58Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — SURVEYOR COMMAND
-  // ══════════════════════════════════════════════════════════════
 
   setupCommand(config) {
     this.renderCommandSkeleton(config);
@@ -1624,11 +1553,6 @@ export class Level58Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HONEST EVALUATOR — Math.abs(x) int+double, the difference-distance
-  // pattern, sums of measurements, println/equality/ternary
-  // ══════════════════════════════════════════════════════════════
-
   _splitTopPM(expr) {
     const parts = [];
     let cur = "", depth = 0, opForNext = "+";
@@ -1680,9 +1604,6 @@ export class Level58Scene extends Phaser.Scene {
     return { ok: false, crash: "eval" };
   }
 
-  /** Math.abs(argExpr) — dispatches to the difference-distance
-   * choreography when the argument is a genuine "a - b" difference,
-   * otherwise the standard single-value measurement. */
   async evalAbsCall(argExpr, vars) {
     const t = argExpr.trim();
     const parts = this._splitTopPM(t);
@@ -1706,10 +1627,6 @@ export class Level58Scene extends Phaser.Scene {
     return this._evalSimpleValue(t, vars);
   }
 
-  /** Combines +/- separated terms (each possibly its own Math.abs(...)
-   * measurement) into one value. Each intermediate measurement's chip
-   * is consumed (faded) immediately so only the FINAL combined value
-   * is left at the plinth for delivery — never orphaned. */
   async evalExpr(expr, vars) {
     const parts = this._splitTopPM(expr);
     if (parts.length === 0) return { ok: false, crash: "eval" };
@@ -1833,10 +1750,6 @@ export class Level58Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SCORING, LIVES, COMBO
-  // ══════════════════════════════════════════════════════════════
-
   getComboMultiplier() { if (this.combo >= 5) return 3; if (this.combo >= 3) return 2; return 1; }
 
   scoreForAttempt(timeMs) {
@@ -1878,15 +1791,6 @@ export class Level58Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1916,11 +1820,8 @@ export class Level58Scene extends Phaser.Scene {
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1947,6 +1848,7 @@ export class Level58Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -2051,9 +1953,9 @@ export class Level58Scene extends Phaser.Scene {
     for (let i = 0; i < 8; i++) { const r = i % 2 === 0 ? 7 : 3; const a = (Math.PI / 4) * i - Math.PI / 2; pts.push(16 + Math.cos(a) * r, 4 + Math.sin(a) * r); }
     bg.fillPoints(pts, true);
     badge.add(bg);
-    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 1950 });
+    this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 505, "abs() SCHEMA ACQUIRED", { font: "bold 15px Georgia", color: HEX_GOLD }).setOrigin(0.5).setDepth(91).setAlpha(0);
-    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 2100 });
+    this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
     this._makeButton(500, 545, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
     this._makeButton(760, 545, "NEXT: The Survey Sprint →", 280, 44, { fill: 0x00733a, stroke: C_GREEN_BRIGHT, textColor: "#ffffff" }, () => {

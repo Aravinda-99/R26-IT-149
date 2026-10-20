@@ -1,26 +1,11 @@
-/**
- * Level3Scene — "Integer Escape Facility" (Restructuring Phase)
- * ==============================================================
- * Perspective: Top-down 2D puzzle room
- * Environment: High-tech facility with 3 locked gates + security terminals
- * Mechanic: Arrow-key robot movement, interact with terminals to solve
- *           int-based logic puzzles. Strictly int-only — no loops/arrays.
- *
- * Terminal 1: Direct Assignment (type a valid integer)
- * Terminal 2: Arithmetic Application (calculate int result)
- * Terminal 3: Validation & Constraint (pick the safe int load)
- *
- * Schema Theory: Restructuring — applying int knowledge in context
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
-/* ───────── Constants ───────── */
 const W = 1280;
 const H = 720;
 const TILE = 40;
@@ -69,9 +54,6 @@ export class Level3Scene extends Phaser.Scene {
     GameManager.interventionInFlight = false;
   }
 
-  /* ═══════════════════════════════════════════════
-   *  CREATE
-   * ═══════════════════════════════════════════════ */
   create() {
     const cam = this.cameras.main;
     const updateCamera = () => {
@@ -86,7 +68,6 @@ export class Level3Scene extends Phaser.Scene {
     cam.setBackgroundColor("#060b18");
     this.physics.world.gravity.y = 0;
 
-    /* ── State ── */
     this.gatesOpen = [false, false, false];
     this.isComplete = false;
     this.overlayActive = false;
@@ -94,26 +75,21 @@ export class Level3Scene extends Phaser.Scene {
     this.wrongAttempts = 0;
     this.lives = MAX_LIVES;
     this.levelStartTime = this.time.now;
+    this.currentTerminalDom = null;
+    this.overlayEls = null;
 
-    /* ── Textures ── */
     this._genTex();
 
-    /* ── Particles ── */
     this._createParticles();
 
-    /* ── Draw facility ── */
     this._drawFacility();
 
-    /* ── Create physics bodies ── */
     this._createPhysicsBodies();
 
-    /* ── Player robot ── */
     this._createRobot();
 
-    /* ── HUD ── */
     this._createHUD();
 
-    /* ── Controls ── */
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys({
       up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -123,20 +99,15 @@ export class Level3Scene extends Phaser.Scene {
     });
     this.interactKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
 
-    /* ── UIScene label ── */
     const uiScene = this.scene.get("UIScene");
     if (uiScene && uiScene.setLevelLabel) {
       uiScene.setLevelLabel("Level 3: Restructuring — Integer Escape Facility!");
     }
     if (uiScene && uiScene.setLivesVisible) uiScene.setLivesVisible(false);
 
-    /* ── Instruction overlay ── */
     this._showInstruction();
   }
 
-  /* ═══════════════════════════════════════════════
-   *  TEXTURES
-   * ═══════════════════════════════════════════════ */
   _genTex() {
     const mk = (key, color) => {
       if (this.textures.exists(key)) return;
@@ -168,9 +139,6 @@ export class Level3Scene extends Phaser.Scene {
     }).setDepth(80);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  DRAW FACILITY
-   * ═══════════════════════════════════════════════ */
   _drawFacility() {
     const gfx = this.add.graphics().setDepth(1);
 
@@ -208,7 +176,6 @@ export class Level3Scene extends Phaser.Scene {
       color: "#a78bfa", fontStyle: "bold",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── Draw the 3 gate walls (vertical barriers) ──
     this.gateGraphics = [];
     this.gateLabels = [];
     GATES.forEach((g, i) => {
@@ -236,7 +203,6 @@ export class Level3Scene extends Phaser.Scene {
       this.gateLabels.push(lbl);
     });
 
-    // ── Draw terminals ──
     this.terminalSprites = [];
     TERMINALS.forEach((t, i) => {
       // Terminal box
@@ -257,7 +223,6 @@ export class Level3Scene extends Phaser.Scene {
       });
     });
 
-    // ── EXIT zone ──
     this.exitRect = this.add.rectangle(
       EXIT_ZONE.x, EXIT_ZONE.y, EXIT_ZONE.w, EXIT_ZONE.h, COL_EXIT, 0.25
     ).setDepth(2);
@@ -269,22 +234,17 @@ export class Level3Scene extends Phaser.Scene {
       fontSize: "20px", color: "#a78bfa",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── START label ──
     this.add.text(340, 370, "START\n  ↓", {
       fontFamily: "monospace", fontSize: "10px", color: "#475569",
       align: "center",
     }).setOrigin(0.5).setDepth(5);
 
-    // ── Prompt text ──
     this.promptText = this.add.text(W / 2, 580, "Walk to a 💻 Terminal and press [E] to interact", {
       fontFamily: "Arial", fontSize: "13px", color: "#64748b",
       fontStyle: "italic",
     }).setOrigin(0.5).setDepth(10);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  PHYSICS BODIES — walls + gates
-   * ═══════════════════════════════════════════════ */
   _createPhysicsBodies() {
     this.wallGroup = this.physics.add.staticGroup();
 
@@ -319,9 +279,6 @@ export class Level3Scene extends Phaser.Scene {
     this.wallGroup.add(wall);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  PLAYER ROBOT
-   * ═══════════════════════════════════════════════ */
   _createRobot() {
     const startX = 340;
     const startY = 400;
@@ -366,13 +323,9 @@ export class Level3Scene extends Phaser.Scene {
       .setDepth(21);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  HUD
-   * ═══════════════════════════════════════════════ */
   _createHUD() {
     const dp = 100;
 
-    // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 40 - i * 35, 78, "❤️", {
@@ -403,10 +356,8 @@ export class Level3Scene extends Phaser.Scene {
     }).setOrigin(0.5).setAlpha(0).setDepth(dp);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  INSTRUCTION OVERLAY
-   * ═══════════════════════════════════════════════ */
   _showInstruction() {
+    PanelFit.arm(this);
     this.overlayActive = true;
     const els = [];
     const d = 200;
@@ -472,9 +423,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  UPDATE — robot movement + terminal detection
-   * ═══════════════════════════════════════════════ */
   update() {
     if (this.isComplete || this.overlayActive || GameManager.interventionInFlight) {
       if (this.robot && this.robot.body) {
@@ -483,7 +431,6 @@ export class Level3Scene extends Phaser.Scene {
       return;
     }
 
-    /* ── Movement ── */
     const left = this.cursors.left.isDown || this.wasd.left.isDown;
     const right = this.cursors.right.isDown || this.wasd.right.isDown;
     const up = this.cursors.up.isDown || this.wasd.up.isDown;
@@ -506,7 +453,6 @@ export class Level3Scene extends Phaser.Scene {
       else if (vy > 0) this.robotDir.setAngle(180);
     }
 
-    /* ── Detect proximity to terminals ── */
     let nearTerminal = -1;
     TERMINALS.forEach((t, i) => {
       const dist = Phaser.Math.Distance.Between(this.robot.x, this.robot.y, t.x, t.y);
@@ -527,7 +473,6 @@ export class Level3Scene extends Phaser.Scene {
       this.interactPrompt.setAlpha(0);
     }
 
-    /* ── Check EXIT zone ── */
     if (this.gatesOpen[0] && this.gatesOpen[1] && this.gatesOpen[2]) {
       const dx = Math.abs(this.robot.x - EXIT_ZONE.x);
       const dy = Math.abs(this.robot.y - EXIT_ZONE.y);
@@ -537,11 +482,9 @@ export class Level3Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════
-   *  TERMINAL OVERLAY — puzzle UI
-   * ═══════════════════════════════════════════════ */
   _openTerminalOverlay(index) {
     if (this.overlayActive || this.gatesOpen[index]) return;
+    this._closeTerminal();
     this.overlayActive = true;
     this.robot.body.setVelocity(0, 0);
 
@@ -552,9 +495,21 @@ export class Level3Scene extends Phaser.Scene {
     }
   }
 
-  /* ── Terminal 1: Direct Assignment ── */
+  _closeTerminal() {
+    if (this.overlayEls) {
+      this.overlayEls.forEach(e => { if (e) e.destroy(); });
+      this.overlayEls = null;
+    }
+    if (this.currentTerminalDom) {
+      this.currentTerminalDom.destroy();
+      this.currentTerminalDom = null;
+    }
+    this.overlayActive = false;
+  }
+
   _terminal1() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -589,12 +544,12 @@ export class Level3Scene extends Phaser.Scene {
 
     // DOM input field
     const inputEl = this.add.dom(W / 2, 280).createFromHTML(
-      `<input type="text" id="t1-input" placeholder="a = ?" 
+      `<input type="text" id="t1-input" placeholder="a = ?"
        style="width:220px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
     ).setDepth(d + 3);
-    els.push(inputEl);
+    this.currentTerminalDom = inputEl;
 
     // Error text
     const errTxt = this.add.text(W / 2, 320, "", {
@@ -619,15 +574,14 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
 
     btnBg.setInteractive({ useHandCursor: true });
     btnBg.on("pointerover", () => btnBg.setFillStyle(0x0891b2));
     btnBg.on("pointerout", () => btnBg.setFillStyle(0x0e7490));
     btnBg.on("pointerup", () => {
-      const inputField = document.getElementById("t1-input");
+      const inputField = this.currentTerminalDom?.getChildByID("t1-input");
       if (!inputField) return;
       const val = inputField.value.trim();
 
@@ -640,26 +594,25 @@ export class Level3Scene extends Phaser.Scene {
         this._updateLives();
         if (this.wrongAttempts === 3) this.runBehavioralCheck();
         if (this.lives <= 0) {
-           els.forEach(e => e.destroy());
+           this._closeTerminal();
            this.time.delayedCall(500, () => this._gameOver());
         }
         return;
       }
 
-      els.forEach(e => e.destroy());
       this._gateOpen(0, "int a = 7; // 7 + 10 = 17 ✓");
     });
 
     // Focus the input after a tiny delay
     this.time.delayedCall(100, () => {
-      const inp = document.getElementById("t1-input");
+      const inp = this.currentTerminalDom?.getChildByID("t1-input");
       if (inp) inp.focus();
     });
   }
 
-  /* ── Terminal 2: Arithmetic Application ── */
   _terminal2() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -694,12 +647,12 @@ export class Level3Scene extends Phaser.Scene {
 
     // DOM input
     const inputEl = this.add.dom(W / 2, 290).createFromHTML(
-      `<input type="text" id="t2-input" placeholder="y = ?" 
+      `<input type="text" id="t2-input" placeholder="y = ?"
        style="width:180px; padding:10px 16px; font-size:18px; font-family:'Courier New',monospace;
        background:#0a1628; color:#22d3ee; border:2px solid #334155; border-radius:6px;
        text-align:center; outline:none;" />`
     ).setDepth(d + 3);
-    els.push(inputEl);
+    this.currentTerminalDom = inputEl;
 
     // Error text
     const errTxt = this.add.text(W / 2, 330, "", {
@@ -726,15 +679,14 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
 
     btnBg.setInteractive({ useHandCursor: true });
     btnBg.on("pointerover", () => btnBg.setFillStyle(0x0891b2));
     btnBg.on("pointerout", () => btnBg.setFillStyle(0x0e7490));
     btnBg.on("pointerup", () => {
-      const inp = document.getElementById("t2-input");
+      const inp = this.currentTerminalDom?.getChildByID("t2-input");
       if (!inp) return;
       const val = inp.value.trim();
 
@@ -746,25 +698,24 @@ export class Level3Scene extends Phaser.Scene {
         this._updateLives();
         if (this.wrongAttempts === 3) this.runBehavioralCheck();
         if (this.lives <= 0) {
-           els.forEach(e => e.destroy());
+           this._closeTerminal();
            this.time.delayedCall(500, () => this._gameOver());
         }
         return;
       }
 
-      els.forEach(e => e.destroy());
       this._gateOpen(1, "int y = 8; // 4 * 8 = 32 ✓");
     });
 
     this.time.delayedCall(100, () => {
-      const inp = document.getElementById("t2-input");
+      const inp = this.currentTerminalDom?.getChildByID("t2-input");
       if (inp) inp.focus();
     });
   }
 
-  /* ── Terminal 3: Validation & Constraint ── */
   _terminal3() {
     const els = [];
+    this.overlayEls = els;
     const d = 200;
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.85).setDepth(d);
     els.push(ov);
@@ -838,7 +789,6 @@ export class Level3Scene extends Phaser.Scene {
       });
       bg.on("pointerup", () => {
         if (opt.value === "15") {
-          els.forEach(e => e.destroy());
           this._gateOpen(2, "int bonus = 15; // 85 + 15 = 100 ✓");
         } else {
           errTxt.setText(`❌ ${opt.hint}`);
@@ -848,7 +798,7 @@ export class Level3Scene extends Phaser.Scene {
           this._updateLives();
           if (this.wrongAttempts === 3) this.runBehavioralCheck();
           if (this.lives <= 0) {
-             els.forEach(e => e.destroy());
+             this._closeTerminal();
              this.time.delayedCall(500, () => this._gameOver());
           }
         }
@@ -866,16 +816,12 @@ export class Level3Scene extends Phaser.Scene {
 
     cancelBg.setInteractive({ useHandCursor: true });
     cancelBg.on("pointerup", () => {
-      els.forEach(e => e.destroy());
-      this.overlayActive = false;
+      this._closeTerminal();
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  GATE OPEN
-   * ═══════════════════════════════════════════════ */
   _gateOpen(index, codeStr) {
-    this.overlayActive = false;
+    this._closeTerminal();
     this.gatesOpen[index] = true;
 
     // Score
@@ -896,8 +842,10 @@ export class Level3Scene extends Phaser.Scene {
     }
 
     // Label
-    this.gateLabels[index].setText(`🔓 GATE ${index + 1}`);
-    this.gateLabels[index].setColor("#4ade80");
+    if (this.gateLabels[index]) {
+      this.gateLabels[index].setText(`🔓 GATE ${index + 1}`);
+      this.gateLabels[index].setColor("#4ade80");
+    }
 
     // Remove physics collider for that gate
     if (this.gateColliders[index]) {
@@ -914,8 +862,10 @@ export class Level3Scene extends Phaser.Scene {
     }
 
     // HUD status
-    this.gateStatusTexts[index].setText(`Gate ${index + 1}: 🔓`);
-    this.gateStatusTexts[index].setColor("#4ade80");
+    if (this.gateStatusTexts[index]) {
+      this.gateStatusTexts[index].setText(`Gate ${index + 1}: 🔓`);
+      this.gateStatusTexts[index].setColor("#4ade80");
+    }
 
     // Particles
     this.successPart.emitParticleAt(GATES[index].x, GATES[index].y + 40, 25);
@@ -942,9 +892,6 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   addLife() {
-    // BitMenu already calls GameManager.addLife() for the global count before
-    // calling this — only touch local state here, or the global count would
-    // be incremented twice per bonus life (matches Level1Scene's convention).
     if (this.lives < MAX_LIVES) {
       this.lives++;
       this._updateLives();
@@ -952,8 +899,9 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
-    this.overlayActive = false;
+    this._closeTerminal();
     if (this.robot && this.robot.body) this.robot.body.setVelocity(0, 0);
 
     this.cameras.main.shake(500, 0.025);
@@ -984,8 +932,9 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
   async runBehavioralCheck() {
+    this._closeTerminal();
+
     const attempts_count = this.wrongAttempts;
     const time_taken_seconds = (this.time.now - this.levelStartTime) / 1000;
     const misconception_repeat_count = this.wrongAttempts;
@@ -1030,9 +979,6 @@ export class Level3Scene extends Phaser.Scene {
     this.promptText.setAlpha(1);
   }
 
-  /* ═══════════════════════════════════════════════
-   *  ESCAPE — level complete!
-   * ═══════════════════════════════════════════════ */
   _escape() {
     if (this.isComplete) return;
     this.isComplete = true;
@@ -1061,6 +1007,7 @@ export class Level3Scene extends Phaser.Scene {
   }
 
   _showVictory() {
+    PanelFit.arm(this);
     const d = 200;
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.9).setDepth(d);
 
@@ -1115,9 +1062,6 @@ export class Level3Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════
-   *  SHUTDOWN
-   * ═══════════════════════════════════════════════ */
   shutdown() {
     this.gatesOpen = [false, false, false];
     // Restore lives visibility for other levels

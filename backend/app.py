@@ -33,6 +33,13 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(wellbeing_bp, url_prefix="/api/wellbeing")
 
+    # --- Seed Default Verified Users ---
+    try:
+        from scripts.seed_users import seed_default_users
+        seed_default_users()
+    except Exception as e:
+        print(f"[WARN] User seeding failed: {e}")
+
     # --- Health Check ---
     @app.route("/api/health")
     def health():

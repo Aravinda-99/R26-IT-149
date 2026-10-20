@@ -1,12 +1,8 @@
-/**
- * Level14Scene — "Calculation Arena" (Tuning Phase)
- * Combat arena where correct answers deal damage to enemies.
- * 5 waves × 6 enemies = 30 battles covering all operator types.
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -87,8 +83,6 @@ export class Level14Scene extends Phaser.Scene {
 
   _drawArena() {
     const gfx = this.add.graphics().setDepth(0);
-    // Stretched width: start at -W*2, span W*5 (Y span untouched — it
-    // already correctly tiles 0..H)
     for (let i = 0; i < 60; i++) { const t = i / 60; gfx.fillStyle(lerpColor(0x1a0a0a, 0x0a0a1a, t), 1); gfx.fillRect(-W * 2, Math.floor(H * i / 60), W * 5, Math.ceil(H / 60) + 1); }
     // Floor (Stretched)
     const fg = this.add.graphics().setDepth(1);
@@ -163,6 +157,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showIntro() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0a0a, 0.98); pg.fillRoundedRect(W / 2 - 280, 70, 560, 440, 16);
@@ -303,6 +298,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showGameOver() {
+    PanelFit.arm(this);
     this._clear();
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     this.add.text(W / 2, H / 2 - 30, "💀 Defeated!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
@@ -316,6 +312,7 @@ export class Level14Scene extends Phaser.Scene {
   }
 
   _showResults() {
+    PanelFit.arm(this);
     this._clear();
     const acc = this.battlesDone > 0 ? Math.round((this.battlesWon / this.battlesDone) * 100) : 0;
     const passed = acc >= 60;

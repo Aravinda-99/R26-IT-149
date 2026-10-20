@@ -1,0 +1,1299 @@
+{
+  "version": 1,
+  "sources": {
+    "question": "frontend/src/learningPathGen/data.js",
+    "reason_group": "backend/services/error_service.py ErrorService._get_reason_details",
+    "concept_note": "backend/ml/component2_error_detection/rag/concept_notes.py"
+  },
+  "counts": {
+    "question": 40,
+    "reason_group": 12,
+    "concept_note": 40
+  },
+  "chunks": [
+    {
+      "id": "question:1",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 1,
+      "text": "Pre-test question 1 (Variables, easy): Fill in the blank to correctly declare an integer variable named age:\nCode template: {BLANK} age = 25;\nCorrect code: int age = 25;\nOptions: int | Int | integer | void\nCorrect option: int\nExplanation: Java uses lowercase 'int' as the primitive integer type keyword.",
+      "meta": {
+        "id": 1,
+        "topic": "Variables",
+        "difficulty": "easy",
+        "question": "Fill in the blank to correctly declare an integer variable named age:",
+        "codeTemplate": "{BLANK} age = 25;",
+        "options": [
+          "int",
+          "Int",
+          "integer",
+          "void"
+        ],
+        "correct_option": "int",
+        "explanation": "Java uses lowercase 'int' as the primitive integer type keyword."
+      }
+    },
+    {
+      "id": "question:2",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 2,
+      "text": "Pre-test question 2 (Variables, easy): Fill in the blank with a valid Java variable name:\nCode template: int {BLANK} = 10;\nCorrect code: int _count = 10;\nOptions: _count | 2count | my-var | class\nCorrect option: _count\nExplanation: _count is valid. Variable names cannot start with a digit, contain hyphens, or use reserved keywords like 'class'.",
+      "meta": {
+        "id": 2,
+        "topic": "Variables",
+        "difficulty": "easy",
+        "question": "Fill in the blank with a valid Java variable name:",
+        "codeTemplate": "int {BLANK} = 10;",
+        "options": [
+          "_count",
+          "2count",
+          "my-var",
+          "class"
+        ],
+        "correct_option": "_count",
+        "explanation": "_count is valid. Variable names cannot start with a digit, contain hyphens, or use reserved keywords like 'class'."
+      }
+    },
+    {
+      "id": "question:3",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 3,
+      "text": "Pre-test question 3 (Variables, medium): Fill in the blank to declare a variable that stores true or false:\nCode template: {BLANK} isActive = true;\nCorrect code: boolean isActive = true;\nOptions: boolean | bool | Boolean | bit\nCorrect option: boolean\nExplanation: Java's primitive boolean type stores true/false. 'Boolean' (uppercase) is the wrapper class, and 'bool' isn't a Java keyword.",
+      "meta": {
+        "id": 3,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "Fill in the blank to declare a variable that stores true or false:",
+        "codeTemplate": "{BLANK} isActive = true;",
+        "options": [
+          "boolean",
+          "bool",
+          "Boolean",
+          "bit"
+        ],
+        "correct_option": "boolean",
+        "explanation": "Java's primitive boolean type stores true/false. 'Boolean' (uppercase) is the wrapper class, and 'bool' isn't a Java keyword."
+      }
+    },
+    {
+      "id": "question:4",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 4,
+      "text": "Pre-test question 4 (Variables, medium): Fill in the blank so the condition correctly checks if score equals 10 (rather than assigning it):\nCode template: int score = 10; if (score {BLANK} 10) { System.out.println(\"Match\"); }\nCorrect code: int score = 10; if (score == 10) { System.out.println(\"Match\"); }\nOptions: == | = | === | equals\nCorrect option: ==\nExplanation: == compares two values. A single = is assignment, not comparison, and isn't valid as a boolean condition here.",
+      "meta": {
+        "id": 4,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "Fill in the blank so the condition correctly checks if score equals 10 (rather than assigning it):",
+        "codeTemplate": "int score = 10; if (score {BLANK} 10) { System.out.println(\"Match\"); }",
+        "options": [
+          "==",
+          "=",
+          "===",
+          "equals"
+        ],
+        "correct_option": "==",
+        "explanation": "== compares two values. A single = is assignment, not comparison, and isn't valid as a boolean condition here."
+      }
+    },
+    {
+      "id": "question:5",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 5,
+      "text": "Pre-test question 5 (Variables, hard): Fill in the blank so that b ends up 10 while a becomes 11 afterward:\nCode template: int a = 10; int b = {BLANK}; System.out.println(a + \" \" + b);\nCorrect code: int a = 10; int b = a++; System.out.println(a + \" \" + b);\nOptions: a++ | ++a | a + 1 | a\nCorrect option: a++\nExplanation: a++ is post-increment: b receives the current value of a (10) first, then a becomes 11.",
+      "meta": {
+        "id": 5,
+        "topic": "Variables",
+        "difficulty": "hard",
+        "question": "Fill in the blank so that b ends up 10 while a becomes 11 afterward:",
+        "codeTemplate": "int a = 10; int b = {BLANK}; System.out.println(a + \" \" + b);",
+        "options": [
+          "a++",
+          "++a",
+          "a + 1",
+          "a"
+        ],
+        "correct_option": "a++",
+        "explanation": "a++ is post-increment: b receives the current value of a (10) first, then a becomes 11."
+      }
+    },
+    {
+      "id": "question:26",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 26,
+      "text": "Pre-test question 26 (Variables, hard): Fill in the blank so the program prints 3.5 (not 3.0):\nCode template: int a = 7; int b = 2; double result = {BLANK}; System.out.println(result);\nCorrect code: int a = 7; int b = 2; double result = (double) a / b; System.out.println(result);\nOptions: (double) a / b | (double) (a / b) | a / b | (int) a / b\nCorrect option: (double) a / b\nExplanation: (double) a / b casts a to 7.0 first, so the division is done in double: 7.0 / 2 = 3.5. In (double) (a / b), the integer division 7 / 2 = 3 happens first, giving 3.0.",
+      "meta": {
+        "id": 26,
+        "topic": "Variables",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 3.5 (not 3.0):",
+        "codeTemplate": "int a = 7; int b = 2; double result = {BLANK}; System.out.println(result);",
+        "options": [
+          "(double) a / b",
+          "(double) (a / b)",
+          "a / b",
+          "(int) a / b"
+        ],
+        "correct_option": "(double) a / b",
+        "explanation": "(double) a / b casts a to 7.0 first, so the division is done in double: 7.0 / 2 = 3.5. In (double) (a / b), the integer division 7 / 2 = 3 happens first, giving 3.0."
+      }
+    },
+    {
+      "id": "question:6",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 6,
+      "text": "Pre-test question 6 (Operators, easy): What does the % operator do in Java?\nOptions: Calculates percentage | Returns the remainder of division | Divides two numbers | Multiplies two numbers\nCorrect option: Returns the remainder of division\nExplanation: % is the modulus operator — it returns the remainder after division.",
+      "meta": {
+        "id": 6,
+        "topic": "Operators",
+        "difficulty": "easy",
+        "question": "What does the % operator do in Java?",
+        "codeTemplate": null,
+        "options": [
+          "Calculates percentage",
+          "Returns the remainder of division",
+          "Divides two numbers",
+          "Multiplies two numbers"
+        ],
+        "correct_option": "Returns the remainder of division",
+        "explanation": "% is the modulus operator — it returns the remainder after division."
+      }
+    },
+    {
+      "id": "question:7",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 7,
+      "text": "Pre-test question 7 (Operators, easy): What is the result of 10 == 10 in Java?\nOptions: 10 | 0 | true | false\nCorrect option: true\nExplanation: == is the equality operator and returns a boolean. 10 == 10 evaluates to true.",
+      "meta": {
+        "id": 7,
+        "topic": "Operators",
+        "difficulty": "easy",
+        "question": "What is the result of 10 == 10 in Java?",
+        "codeTemplate": null,
+        "options": [
+          "10",
+          "0",
+          "true",
+          "false"
+        ],
+        "correct_option": "true",
+        "explanation": "== is the equality operator and returns a boolean. 10 == 10 evaluates to true."
+      }
+    },
+    {
+      "id": "question:8",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 8,
+      "text": "Pre-test question 8 (Operators, medium): What is the output of System.out.println(7 % 3);?\nOptions: 2 | 1 | 3 | 0\nCorrect option: 1\nExplanation: 7 divided by 3 is 2 remainder 1. So 7 % 3 = 1.",
+      "meta": {
+        "id": 8,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "What is the output of System.out.println(7 % 3);?",
+        "codeTemplate": null,
+        "options": [
+          "2",
+          "1",
+          "3",
+          "0"
+        ],
+        "correct_option": "1",
+        "explanation": "7 divided by 3 is 2 remainder 1. So 7 % 3 = 1."
+      }
+    },
+    {
+      "id": "question:9",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 9,
+      "text": "Pre-test question 9 (Operators, medium): What does && mean in Java?\nOptions: Bitwise AND | String concatenation | Logical AND — both conditions must be true | Logical OR — at least one must be true\nCorrect option: Logical AND — both conditions must be true\nExplanation: && is the logical AND operator. Both sides must be true for the overall expression to be true.",
+      "meta": {
+        "id": 9,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "What does && mean in Java?",
+        "codeTemplate": null,
+        "options": [
+          "Bitwise AND",
+          "String concatenation",
+          "Logical AND — both conditions must be true",
+          "Logical OR — at least one must be true"
+        ],
+        "correct_option": "Logical AND — both conditions must be true",
+        "explanation": "&& is the logical AND operator. Both sides must be true for the overall expression to be true."
+      }
+    },
+    {
+      "id": "question:10",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 10,
+      "text": "Pre-test question 10 (Operators, hard): What is the output of: int x = 5; System.out.println(x > 3 ? \"big\" : \"small\");\nOptions: big | small | true | Compile error\nCorrect option: big\nExplanation: This is the ternary operator. Since 5 > 3 is true, the result is \"big\".",
+      "meta": {
+        "id": 10,
+        "topic": "Operators",
+        "difficulty": "hard",
+        "question": "What is the output of: int x = 5; System.out.println(x > 3 ? \"big\" : \"small\");",
+        "codeTemplate": null,
+        "options": [
+          "big",
+          "small",
+          "true",
+          "Compile error"
+        ],
+        "correct_option": "big",
+        "explanation": "This is the ternary operator. Since 5 > 3 is true, the result is \"big\"."
+      }
+    },
+    {
+      "id": "question:27",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 27,
+      "text": "Pre-test question 27 (Operators, hard): What is the output of: int x = 5; int y = x++ + ++x; System.out.println(y);\nOptions: 12 | 11 | 10 | 13\nCorrect option: 12\nExplanation: x++ returns 5 and then x becomes 6. ++x makes x 7 and returns 7. So y = 5 + 7 = 12.",
+      "meta": {
+        "id": 27,
+        "topic": "Operators",
+        "difficulty": "hard",
+        "question": "What is the output of: int x = 5; int y = x++ + ++x; System.out.println(y);",
+        "codeTemplate": null,
+        "options": [
+          "12",
+          "11",
+          "10",
+          "13"
+        ],
+        "correct_option": "12",
+        "explanation": "x++ returns 5 and then x becomes 6. ++x makes x 7 and returns 7. So y = 5 + 7 = 12."
+      }
+    },
+    {
+      "id": "question:11",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 11,
+      "text": "Pre-test question 11 (Loops, easy): Fill in the blank so this loop counts i from 0 up to 9:\nCode template: for (int i = 0; {BLANK} < 10; i++) { System.out.println(i); }\nCorrect code: for (int i = 0; i < 10; i++) { System.out.println(i); }\nOptions: i | j | 10 | n\nCorrect option: i\nExplanation: The loop condition must test the same variable (i) that was declared and is being incremented.",
+      "meta": {
+        "id": 11,
+        "topic": "Loops",
+        "difficulty": "easy",
+        "question": "Fill in the blank so this loop counts i from 0 up to 9:",
+        "codeTemplate": "for (int i = 0; {BLANK} < 10; i++) { System.out.println(i); }",
+        "options": [
+          "i",
+          "j",
+          "10",
+          "n"
+        ],
+        "correct_option": "i",
+        "explanation": "The loop condition must test the same variable (i) that was declared and is being incremented."
+      }
+    },
+    {
+      "id": "question:12",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 12,
+      "text": "Pre-test question 12 (Loops, easy): Fill in the blank to create a loop that always runs its body at least once:\nCode template: int i = 0; {BLANK} { System.out.println(\"run\"); } while (i < 0);\nCorrect code: int i = 0; do { System.out.println(\"run\"); } while (i < 0);\nOptions: do | while | for | if\nCorrect option: do\nExplanation: do-while checks its condition after executing the body, so it always runs at least once.",
+      "meta": {
+        "id": 12,
+        "topic": "Loops",
+        "difficulty": "easy",
+        "question": "Fill in the blank to create a loop that always runs its body at least once:",
+        "codeTemplate": "int i = 0; {BLANK} { System.out.println(\"run\"); } while (i < 0);",
+        "options": [
+          "do",
+          "while",
+          "for",
+          "if"
+        ],
+        "correct_option": "do",
+        "explanation": "do-while checks its condition after executing the body, so it always runs at least once."
+      }
+    },
+    {
+      "id": "question:13",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 13,
+      "text": "Pre-test question 13 (Loops, medium): Fill in the blank so this loop terminates after printing 0 1 2:\nCode template: int i = 0; while (i < 3) { System.out.print(i + \" \"); {BLANK}; }\nCorrect code: int i = 0; while (i < 3) { System.out.print(i + \" \"); i++; }\nOptions: i++ | i-- | i | continue\nCorrect option: i++\nExplanation: Without incrementing i, the loop condition (i < 3) never becomes false — i++ is required to make progress.",
+      "meta": {
+        "id": 13,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "Fill in the blank so this loop terminates after printing 0 1 2:",
+        "codeTemplate": "int i = 0; while (i < 3) { System.out.print(i + \" \"); {BLANK}; }",
+        "options": [
+          "i++",
+          "i--",
+          "i",
+          "continue"
+        ],
+        "correct_option": "i++",
+        "explanation": "Without incrementing i, the loop condition (i < 3) never becomes false — i++ is required to make progress."
+      }
+    },
+    {
+      "id": "question:14",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 14,
+      "text": "Pre-test question 14 (Loops, medium): Fill in the blank so the loop stops immediately once i equals 3:\nCode template: for (int i = 0; i < 5; i++) { if (i == 3) { {BLANK}; } System.out.print(i); }\nCorrect code: for (int i = 0; i < 5; i++) { if (i == 3) { break; } System.out.print(i); }\nOptions: break | sleep | wait | pause\nCorrect option: break\nExplanation: break exits the nearest enclosing loop immediately.",
+      "meta": {
+        "id": 14,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "Fill in the blank so the loop stops immediately once i equals 3:",
+        "codeTemplate": "for (int i = 0; i < 5; i++) { if (i == 3) { {BLANK}; } System.out.print(i); }",
+        "options": [
+          "break",
+          "sleep",
+          "wait",
+          "pause"
+        ],
+        "correct_option": "break",
+        "explanation": "break exits the nearest enclosing loop immediately."
+      }
+    },
+    {
+      "id": "question:15",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 15,
+      "text": "Pre-test question 15 (Loops, hard): Fill in the blank so the output is \"0 2 \" (i = 1 is skipped, not printed):\nCode template: for (int i = 0; i < 3; i++) { if (i == 1) { {BLANK}; } System.out.print(i + \" \"); }\nCorrect code: for (int i = 0; i < 3; i++) { if (i == 1) { continue; } System.out.print(i + \" \"); }\nOptions: continue | break | return | exit\nCorrect option: continue\nExplanation: continue skips only the rest of the current iteration (the print), unlike break which would exit the loop entirely.",
+      "meta": {
+        "id": 15,
+        "topic": "Loops",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the output is \"0 2 \" (i = 1 is skipped, not printed):",
+        "codeTemplate": "for (int i = 0; i < 3; i++) { if (i == 1) { {BLANK}; } System.out.print(i + \" \"); }",
+        "options": [
+          "continue",
+          "break",
+          "return",
+          "exit"
+        ],
+        "correct_option": "continue",
+        "explanation": "continue skips only the rest of the current iteration (the print), unlike break which would exit the loop entirely."
+      }
+    },
+    {
+      "id": "question:28",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 28,
+      "text": "Pre-test question 28 (Loops, hard): Fill in the blank so the program prints 6:\nCode template: int count = 0; for (int i = 0; i < 3; i++) { for (int j = {BLANK}; j < 3; j++) { count++; } } System.out.println(count);\nCorrect code: int count = 0; for (int i = 0; i < 3; i++) { for (int j = i; j < 3; j++) { count++; } } System.out.println(count);\nOptions: i | 0 | i + 1 | 3\nCorrect option: i\nExplanation: With j starting at i, the inner loop runs 3 + 2 + 1 = 6 times. Starting at 0 gives 9, i + 1 gives 3, and 3 gives 0.",
+      "meta": {
+        "id": 28,
+        "topic": "Loops",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 6:",
+        "codeTemplate": "int count = 0; for (int i = 0; i < 3; i++) { for (int j = {BLANK}; j < 3; j++) { count++; } } System.out.println(count);",
+        "options": [
+          "i",
+          "0",
+          "i + 1",
+          "3"
+        ],
+        "correct_option": "i",
+        "explanation": "With j starting at i, the inner loop runs 3 + 2 + 1 = 6 times. Starting at 0 gives 9, i + 1 gives 3, and 3 gives 0."
+      }
+    },
+    {
+      "id": "question:16",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 16,
+      "text": "Pre-test question 16 (Arrays, easy): Fill in the blank to correctly declare an integer array:\nCode template: int{BLANK} arr = new int[5];\nCorrect code: int[] arr = new int[5];\nOptions: [] | () | {} | <>\nCorrect option: []\nExplanation: Square brackets after the type declare an array: int[] arr = new int[5];",
+      "meta": {
+        "id": 16,
+        "topic": "Arrays",
+        "difficulty": "easy",
+        "question": "Fill in the blank to correctly declare an integer array:",
+        "codeTemplate": "int{BLANK} arr = new int[5];",
+        "options": [
+          "[]",
+          "()",
+          "{}",
+          "<>"
+        ],
+        "correct_option": "[]",
+        "explanation": "Square brackets after the type declare an array: int[] arr = new int[5];"
+      }
+    },
+    {
+      "id": "question:17",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 17,
+      "text": "Pre-test question 17 (Arrays, easy): Fill in the blank to correctly access the FIRST element of the array:\nCode template: int[] arr = {10, 20, 30}; System.out.println(arr[{BLANK}]);\nCorrect code: int[] arr = {10, 20, 30}; System.out.println(arr[0]);\nOptions: 0 | 1 | -1 | arr.length\nCorrect option: 0\nExplanation: Java arrays are zero-indexed — the first element is always at index 0.",
+      "meta": {
+        "id": 17,
+        "topic": "Arrays",
+        "difficulty": "easy",
+        "question": "Fill in the blank to correctly access the FIRST element of the array:",
+        "codeTemplate": "int[] arr = {10, 20, 30}; System.out.println(arr[{BLANK}]);",
+        "options": [
+          "0",
+          "1",
+          "-1",
+          "arr.length"
+        ],
+        "correct_option": "0",
+        "explanation": "Java arrays are zero-indexed — the first element is always at index 0."
+      }
+    },
+    {
+      "id": "question:18",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 18,
+      "text": "Pre-test question 18 (Arrays, medium): Fill in the blank so this loop prints every element without going out of bounds:\nCode template: int[] arr = new int[5]; for (int i = 0; i {BLANK} arr.length; i++) { System.out.println(arr[i]); }\nCorrect code: int[] arr = new int[5]; for (int i = 0; i < arr.length; i++) { System.out.println(arr[i]); }\nOptions: < | <= | > | ==\nCorrect option: <\nExplanation: Valid indices run from 0 to arr.length - 1. Using <= would read one index past the end of the array.",
+      "meta": {
+        "id": 18,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "Fill in the blank so this loop prints every element without going out of bounds:",
+        "codeTemplate": "int[] arr = new int[5]; for (int i = 0; i {BLANK} arr.length; i++) { System.out.println(arr[i]); }",
+        "options": [
+          "<",
+          "<=",
+          ">",
+          "=="
+        ],
+        "correct_option": "<",
+        "explanation": "Valid indices run from 0 to arr.length - 1. Using <= would read one index past the end of the array."
+      }
+    },
+    {
+      "id": "question:19",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 19,
+      "text": "Pre-test question 19 (Arrays, medium): Fill in the blank to correctly get the number of elements the array can hold:\nCode template: int[] arr = new int[7]; System.out.println(arr.{BLANK});\nCorrect code: int[] arr = new int[7]; System.out.println(arr.length);\nOptions: length | length() | size | count\nCorrect option: length\nExplanation: Arrays expose length as a property (no parentheses) — unlike String's length() method.",
+      "meta": {
+        "id": 19,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "Fill in the blank to correctly get the number of elements the array can hold:",
+        "codeTemplate": "int[] arr = new int[7]; System.out.println(arr.{BLANK});",
+        "options": [
+          "length",
+          "length()",
+          "size",
+          "count"
+        ],
+        "correct_option": "length",
+        "explanation": "Arrays expose length as a property (no parentheses) — unlike String's length() method."
+      }
+    },
+    {
+      "id": "question:20",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 20,
+      "text": "Pre-test question 20 (Arrays, hard): Fill in the blank so sum correctly accumulates the total of all array elements:\nCode template: int[] nums = {1,2,3,4,5}; int sum = 0; for (int n : nums) { sum {BLANK} n; } System.out.println(sum);\nCorrect code: int[] nums = {1,2,3,4,5}; int sum = 0; for (int n : nums) { sum += n; } System.out.println(sum);\nOptions: += | = | *= | -=\nCorrect option: +=\nExplanation: += adds each element into the running total. Using = would overwrite sum with just the last element instead of accumulating.",
+      "meta": {
+        "id": 20,
+        "topic": "Arrays",
+        "difficulty": "hard",
+        "question": "Fill in the blank so sum correctly accumulates the total of all array elements:",
+        "codeTemplate": "int[] nums = {1,2,3,4,5}; int sum = 0; for (int n : nums) { sum {BLANK} n; } System.out.println(sum);",
+        "options": [
+          "+=",
+          "=",
+          "*=",
+          "-="
+        ],
+        "correct_option": "+=",
+        "explanation": "+= adds each element into the running total. Using = would overwrite sum with just the last element instead of accumulating."
+      }
+    },
+    {
+      "id": "question:29",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 29,
+      "text": "Pre-test question 29 (Arrays, hard): Fill in the blank so changing b does NOT change a (the program should print 1):\nCode template: int[] a = {1, 2, 3}; int[] b = {BLANK}; b[0] = 99; System.out.println(a[0]);\nCorrect code: int[] a = {1, 2, 3}; int[] b = a.clone(); b[0] = 99; System.out.println(a[0]);\nOptions: a.clone() | a | (int[]) a | b\nCorrect option: a.clone()\nExplanation: a.clone() creates a new array with the same values. Using a or (int[]) a copies only the reference, so both variables point to the same array and a[0] becomes 99.",
+      "meta": {
+        "id": 29,
+        "topic": "Arrays",
+        "difficulty": "hard",
+        "question": "Fill in the blank so changing b does NOT change a (the program should print 1):",
+        "codeTemplate": "int[] a = {1, 2, 3}; int[] b = {BLANK}; b[0] = 99; System.out.println(a[0]);",
+        "options": [
+          "a.clone()",
+          "a",
+          "(int[]) a",
+          "b"
+        ],
+        "correct_option": "a.clone()",
+        "explanation": "a.clone() creates a new array with the same values. Using a or (int[]) a copies only the reference, so both variables point to the same array and a[0] becomes 99."
+      }
+    },
+    {
+      "id": "question:21",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 21,
+      "text": "Pre-test question 21 (Methods, easy): Fill in the blank to send a value back from this method:\nCode template: static int getFive() { {BLANK} 5; }\nCorrect code: static int getFive() { return 5; }\nOptions: return | print | output | give\nCorrect option: return\nExplanation: The return keyword exits the method and passes a value back to the caller.",
+      "meta": {
+        "id": 21,
+        "topic": "Methods",
+        "difficulty": "easy",
+        "question": "Fill in the blank to send a value back from this method:",
+        "codeTemplate": "static int getFive() { {BLANK} 5; }",
+        "options": [
+          "return",
+          "print",
+          "output",
+          "give"
+        ],
+        "correct_option": "return",
+        "explanation": "The return keyword exits the method and passes a value back to the caller."
+      }
+    },
+    {
+      "id": "question:22",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 22,
+      "text": "Pre-test question 22 (Methods, easy): Fill in the blank so this method compiles correctly (it never returns a value):\nCode template: static {BLANK} printHello() { System.out.println(\"Hello\"); }\nCorrect code: static void printHello() { System.out.println(\"Hello\"); }\nOptions: void | int | return | null\nCorrect option: void\nExplanation: void means the method does not return any value.",
+      "meta": {
+        "id": 22,
+        "topic": "Methods",
+        "difficulty": "easy",
+        "question": "Fill in the blank so this method compiles correctly (it never returns a value):",
+        "codeTemplate": "static {BLANK} printHello() { System.out.println(\"Hello\"); }",
+        "options": [
+          "void",
+          "int",
+          "return",
+          "null"
+        ],
+        "correct_option": "void",
+        "explanation": "void means the method does not return any value."
+      }
+    },
+    {
+      "id": "question:23",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 23,
+      "text": "Pre-test question 23 (Methods, medium): Fill in the blank so add(3, {BLANK}) prints 7:\nCode template: static int add(int a, int b) { return a + b; } System.out.println(add(3, {BLANK}));\nCorrect code: static int add(int a, int b) { return a + b; } System.out.println(add(3, 4));\nOptions: 4 | four | \"4\" | IV\nCorrect option: 4\nExplanation: add() expects two int arguments. 3 + 4 = 7 — the other options aren't valid int literals.",
+      "meta": {
+        "id": 23,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "Fill in the blank so add(3, {BLANK}) prints 7:",
+        "codeTemplate": "static int add(int a, int b) { return a + b; } System.out.println(add(3, {BLANK}));",
+        "options": [
+          "4",
+          "four",
+          "\"4\"",
+          "IV"
+        ],
+        "correct_option": "4",
+        "explanation": "add() expects two int arguments. 3 + 4 = 7 — the other options aren't valid int literals."
+      }
+    },
+    {
+      "id": "question:24",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 24,
+      "text": "Pre-test question 24 (Methods, medium): Fill in the blank so the recursion has a base case that stops it:\nCode template: static int mystery(int n) { if (n == 1) { return {BLANK}; } return n + mystery(n - 1); }\nCorrect code: static int mystery(int n) { if (n == 1) { return 1; } return n + mystery(n - 1); }\nOptions: 1 | 0 | n | mystery(n)\nCorrect option: 1\nExplanation: The base case must return a fixed value (1) rather than recursing further, or the recursion never stops.",
+      "meta": {
+        "id": 24,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "Fill in the blank so the recursion has a base case that stops it:",
+        "codeTemplate": "static int mystery(int n) { if (n == 1) { return {BLANK}; } return n + mystery(n - 1); }",
+        "options": [
+          "1",
+          "0",
+          "n",
+          "mystery(n)"
+        ],
+        "correct_option": "1",
+        "explanation": "The base case must return a fixed value (1) rather than recursing further, or the recursion never stops."
+      }
+    },
+    {
+      "id": "question:25",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 25,
+      "text": "Pre-test question 25 (Methods, hard): Fill in the blank so each recursive call moves toward the base case (n == 1):\nCode template: static int mystery(int n) { if (n == 1) { return 1; } return n + mystery({BLANK}); }\nCorrect code: static int mystery(int n) { if (n == 1) { return 1; } return n + mystery(n - 1); }\nOptions: n - 1 | n | n + 1 | 1\nCorrect option: n - 1\nExplanation: Each call must decrease n so it eventually reaches the base case. Calling mystery(n) again would recurse forever.",
+      "meta": {
+        "id": 25,
+        "topic": "Methods",
+        "difficulty": "hard",
+        "question": "Fill in the blank so each recursive call moves toward the base case (n == 1):",
+        "codeTemplate": "static int mystery(int n) { if (n == 1) { return 1; } return n + mystery({BLANK}); }",
+        "options": [
+          "n - 1",
+          "n",
+          "n + 1",
+          "1"
+        ],
+        "correct_option": "n - 1",
+        "explanation": "Each call must decrease n so it eventually reaches the base case. Calling mystery(n) again would recurse forever."
+      }
+    },
+    {
+      "id": "question:30",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 30,
+      "text": "Pre-test question 30 (Methods, hard): Fill in the blank so the program prints 50:\nCode template: static int change(int x) { x = 50; return x; } int n = 10; {BLANK}; System.out.println(n);\nCorrect code: static int change(int x) { x = 50; return x; } int n = 10; n = change(n); System.out.println(n);\nOptions: n = change(n) | change(n) | change(n) = n | int n = change(n)\nCorrect option: n = change(n)\nExplanation: Java passes primitives by value, so change(n) alone only changes the method's copy and n stays 10. The returned value must be assigned back: n = change(n).",
+      "meta": {
+        "id": 30,
+        "topic": "Methods",
+        "difficulty": "hard",
+        "question": "Fill in the blank so the program prints 50:",
+        "codeTemplate": "static int change(int x) { x = 50; return x; } int n = 10; {BLANK}; System.out.println(n);",
+        "options": [
+          "n = change(n)",
+          "change(n)",
+          "change(n) = n",
+          "int n = change(n)"
+        ],
+        "correct_option": "n = change(n)",
+        "explanation": "Java passes primitives by value, so change(n) alone only changes the method's copy and n stays 10. The returned value must be assigned back: n = change(n)."
+      }
+    },
+    {
+      "id": "question:31",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 31,
+      "text": "Pre-test question 31 (Variables, medium): A delivery application stores a package's weight as a decimal number. Which declaration correctly creates a variable that can later be updated?\nCode template: public class DeliveryApp {\n    public static void main(String[] args) {\n        {BLANK}\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}\nCorrect code: public class DeliveryApp {\n    public static void main(String[] args) {\n        double packageWeight = 2.5;\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}\nOptions: double packageWeight = 2.5; | final double packageWeight = 2.5; | int packageWeight = 2.5; | String packageWeight = 2.5;\nCorrect option: double packageWeight = 2.5;\nExplanation: A double stores decimal values and can be reassigned. A final variable cannot be reassigned after initialization.",
+      "meta": {
+        "id": 31,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "A delivery application stores a package's weight as a decimal number. Which declaration correctly creates a variable that can later be updated?",
+        "codeTemplate": "public class DeliveryApp {\n    public static void main(String[] args) {\n        {BLANK}\n        packageWeight = 4.75;\n        System.out.println(packageWeight);\n    }\n}",
+        "options": [
+          "double packageWeight = 2.5;",
+          "final double packageWeight = 2.5;",
+          "int packageWeight = 2.5;",
+          "String packageWeight = 2.5;"
+        ],
+        "correct_option": "double packageWeight = 2.5;",
+        "explanation": "A double stores decimal values and can be reassigned. A final variable cannot be reassigned after initialization."
+      }
+    },
+    {
+      "id": "question:32",
+      "type": "question",
+      "concept": "Variables",
+      "question_id": 32,
+      "text": "Pre-test question 32 (Variables, medium): A weather application needs to display a temperature reading with its decimal precision preserved. Which declaration correctly stores the calculated reading?\nCode template: public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        {BLANK}\n        System.out.println(averageTemp);\n    }\n}\nCorrect code: public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        double averageTemp = (morningTemp + eveningTemp) / 2;\n        System.out.println(averageTemp);\n    }\n}\nOptions: double averageTemp = (morningTemp + eveningTemp) / 2; | int averageTemp = (morningTemp + eveningTemp) / 2; | boolean averageTemp = morningTemp > eveningTemp; | char averageTemp = 'A';\nCorrect option: double averageTemp = (morningTemp + eveningTemp) / 2;\nExplanation: The double type preserves the fractional part of the calculated average. The expression evaluates to a double because both temperature variables are doubles.",
+      "meta": {
+        "id": 32,
+        "topic": "Variables",
+        "difficulty": "medium",
+        "question": "A weather application needs to display a temperature reading with its decimal precision preserved. Which declaration correctly stores the calculated reading?",
+        "codeTemplate": "public class WeatherStation {\n    public static void main(String[] args) {\n        double morningTemp = 23.6;\n        double eveningTemp = 19.2;\n        {BLANK}\n        System.out.println(averageTemp);\n    }\n}",
+        "options": [
+          "double averageTemp = (morningTemp + eveningTemp) / 2;",
+          "int averageTemp = (morningTemp + eveningTemp) / 2;",
+          "boolean averageTemp = morningTemp > eveningTemp;",
+          "char averageTemp = 'A';"
+        ],
+        "correct_option": "double averageTemp = (morningTemp + eveningTemp) / 2;",
+        "explanation": "The double type preserves the fractional part of the calculated average. The expression evaluates to a double because both temperature variables are doubles."
+      }
+    },
+    {
+      "id": "question:33",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 33,
+      "text": "Pre-test question 33 (Operators, medium): A game awards 12 points for each completed mission and a fixed bonus of 8 points. A player completes 3 missions. Which expression correctly calculates the total points using Java's operator precedence?\nOptions: 12 * 3 + 8 | 12 * (3 + 8) | (12 + 8) * 3 | 12 + 3 * 8\nCorrect option: 12 * 3 + 8\nExplanation: Multiplication has higher precedence than addition, so 12 * 3 is evaluated first. Adding the bonus gives 44 points.",
+      "meta": {
+        "id": 33,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "A game awards 12 points for each completed mission and a fixed bonus of 8 points. A player completes 3 missions. Which expression correctly calculates the total points using Java's operator precedence?",
+        "codeTemplate": null,
+        "options": [
+          "12 * 3 + 8",
+          "12 * (3 + 8)",
+          "(12 + 8) * 3",
+          "12 + 3 * 8"
+        ],
+        "correct_option": "12 * 3 + 8",
+        "explanation": "Multiplication has higher precedence than addition, so 12 * 3 is evaluated first. Adding the bonus gives 44 points."
+      }
+    },
+    {
+      "id": "question:34",
+      "type": "question",
+      "concept": "Operators",
+      "question_id": 34,
+      "text": "Pre-test question 34 (Operators, medium): A digital library allows access when a member has a valid subscription OR possesses a temporary access pass. Which Java expression correctly represents this requirement?\nOptions: hasSubscription || hasTemporaryPass | hasSubscription && hasTemporaryPass | hasSubscription & hasTemporaryPass | !hasSubscription && !hasTemporaryPass\nCorrect option: hasSubscription || hasTemporaryPass\nExplanation: The || operator evaluates to true when at least one condition is true. It also short-circuits when the first condition is true.",
+      "meta": {
+        "id": 34,
+        "topic": "Operators",
+        "difficulty": "medium",
+        "question": "A digital library allows access when a member has a valid subscription OR possesses a temporary access pass. Which Java expression correctly represents this requirement?",
+        "codeTemplate": null,
+        "options": [
+          "hasSubscription || hasTemporaryPass",
+          "hasSubscription && hasTemporaryPass",
+          "hasSubscription & hasTemporaryPass",
+          "!hasSubscription && !hasTemporaryPass"
+        ],
+        "correct_option": "hasSubscription || hasTemporaryPass",
+        "explanation": "The || operator evaluates to true when at least one condition is true. It also short-circuits when the first condition is true."
+      }
+    },
+    {
+      "id": "question:35",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 35,
+      "text": "Pre-test question 35 (Loops, medium): A fitness application displays a countdown from 5 to 1. Which loop condition correctly includes 1 but stops before displaying 0?\nCode template: public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; {BLANK}; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}\nCorrect code: public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; secondsLeft >= 1; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}\nOptions: secondsLeft >= 1 | secondsLeft > 1 | secondsLeft >= 0 | secondsLeft == 1\nCorrect option: secondsLeft >= 1\nExplanation: The condition secondsLeft >= 1 keeps the loop running from 5 through 1. Once secondsLeft becomes 0, the loop terminates.",
+      "meta": {
+        "id": 35,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "A fitness application displays a countdown from 5 to 1. Which loop condition correctly includes 1 but stops before displaying 0?",
+        "codeTemplate": "public class WorkoutTimer {\n    public static void main(String[] args) {\n        for (int secondsLeft = 5; {BLANK}; secondsLeft--) {\n            System.out.println(secondsLeft);\n        }\n    }\n}",
+        "options": [
+          "secondsLeft >= 1",
+          "secondsLeft > 1",
+          "secondsLeft >= 0",
+          "secondsLeft == 1"
+        ],
+        "correct_option": "secondsLeft >= 1",
+        "explanation": "The condition secondsLeft >= 1 keeps the loop running from 5 through 1. Once secondsLeft becomes 0, the loop terminates."
+      }
+    },
+    {
+      "id": "question:36",
+      "type": "question",
+      "concept": "Loops",
+      "question_id": 36,
+      "text": "Pre-test question 36 (Loops, medium): A warehouse system processes shipment batches numbered 2, 4, 6, and 8. Which update expression correctly visits only these batch numbers?\nCode template: public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; {BLANK}) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}\nCorrect code: public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; batchNumber += 2) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}\nOptions: batchNumber += 2 | batchNumber *= 2 | batchNumber += 3 | batchNumber -= 2\nCorrect option: batchNumber += 2\nExplanation: Increasing batchNumber by 2 produces the sequence 2, 4, 6, and 8. The loop ends when the next value exceeds 8.",
+      "meta": {
+        "id": 36,
+        "topic": "Loops",
+        "difficulty": "medium",
+        "question": "A warehouse system processes shipment batches numbered 2, 4, 6, and 8. Which update expression correctly visits only these batch numbers?",
+        "codeTemplate": "public class ShipmentProcessor {\n    public static void main(String[] args) {\n        for (int batchNumber = 2; batchNumber <= 8; {BLANK}) {\n            System.out.println(\"Processing batch \" + batchNumber);\n        }\n    }\n}",
+        "options": [
+          "batchNumber += 2",
+          "batchNumber *= 2",
+          "batchNumber += 3",
+          "batchNumber -= 2"
+        ],
+        "correct_option": "batchNumber += 2",
+        "explanation": "Increasing batchNumber by 2 produces the sequence 2, 4, 6, and 8. The loop ends when the next value exceeds 8."
+      }
+    },
+    {
+      "id": "question:37",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 37,
+      "text": "Pre-test question 37 (Arrays, medium): A cinema application stores seat availability as boolean values. Which expression correctly checks whether the third seat is available?\nCode template: public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if ({BLANK}) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}\nCorrect code: public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if (availableSeats[2]) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}\nOptions: availableSeats[2] | availableSeats[3] | availableSeats[1] | availableSeats[4]\nCorrect option: availableSeats[2]\nExplanation: Java arrays use zero-based indexing, so the third element is accessed using index 2. Its value is true, meaning the seat is available.",
+      "meta": {
+        "id": 37,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "A cinema application stores seat availability as boolean values. Which expression correctly checks whether the third seat is available?",
+        "codeTemplate": "public class CinemaBooking {\n    public static void main(String[] args) {\n        boolean[] availableSeats = {true, false, true, false, true};\n        if ({BLANK}) {\n            System.out.println(\"Seat available\");\n        } else {\n            System.out.println(\"Seat occupied\");\n        }\n    }\n}",
+        "options": [
+          "availableSeats[2]",
+          "availableSeats[3]",
+          "availableSeats[1]",
+          "availableSeats[4]"
+        ],
+        "correct_option": "availableSeats[2]",
+        "explanation": "Java arrays use zero-based indexing, so the third element is accessed using index 2. Its value is true, meaning the seat is available."
+      }
+    },
+    {
+      "id": "question:38",
+      "type": "question",
+      "concept": "Arrays",
+      "question_id": 38,
+      "text": "Pre-test question 38 (Arrays, medium): A sensor system stores five readings in an array. Which statement correctly prints every reading on a separate line using an enhanced for-loop?\nCode template: int[] readings = {45, 32, 67, 12, 89};\nfor ({BLANK}) {\n    System.out.println(val);\n}\nCorrect code: int[] readings = {45, 32, 67, 12, 89};\nfor (int val : readings) {\n    System.out.println(val);\n}\nOptions: int val : readings | int val = readings | readings : int val | int val; readings\nCorrect option: int val : readings\nExplanation: The enhanced for-loop syntax is for (type variable : array). Each iteration assigns the next element to val automatically.",
+      "meta": {
+        "id": 38,
+        "topic": "Arrays",
+        "difficulty": "medium",
+        "question": "A sensor system stores five readings in an array. Which statement correctly prints every reading on a separate line using an enhanced for-loop?",
+        "codeTemplate": "int[] readings = {45, 32, 67, 12, 89};\nfor ({BLANK}) {\n    System.out.println(val);\n}",
+        "options": [
+          "int val : readings",
+          "int val = readings",
+          "readings : int val",
+          "int val; readings"
+        ],
+        "correct_option": "int val : readings",
+        "explanation": "The enhanced for-loop syntax is for (type variable : array). Each iteration assigns the next element to val automatically."
+      }
+    },
+    {
+      "id": "question:39",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 39,
+      "text": "Pre-test question 39 (Methods, medium): A shopping application needs a reusable method that calculates the discounted price of an item. Which method declaration correctly accepts two double arguments and produces a double result?\nCode template: public class ShoppingCart {\n    {BLANK}\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}\nCorrect code: public class ShoppingCart {\n    public static double calculateDiscount(double price, double discountRate) {\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}\nOptions: public static double calculateDiscount(double price, double discountRate) { | public static int calculateDiscount(double price, double discountRate) { | public static double calculateDiscount(int price, int discountRate) { | public double calculateDiscount(double price, double discountRate) {\nCorrect option: public static double calculateDiscount(double price, double discountRate) {\nExplanation: The method must be static to be called directly from main and must accept two double parameters. Its double result preserves decimal precision.",
+      "meta": {
+        "id": 39,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "A shopping application needs a reusable method that calculates the discounted price of an item. Which method declaration correctly accepts two double arguments and produces a double result?",
+        "codeTemplate": "public class ShoppingCart {\n    {BLANK}\n        double discountAmount = price * discountRate;\n        return price - discountAmount;\n    }\n\n    public static void main(String[] args) {\n        double finalPrice = calculateDiscount(500.0, 0.10);\n        System.out.println(finalPrice);\n    }\n}",
+        "options": [
+          "public static double calculateDiscount(double price, double discountRate) {",
+          "public static int calculateDiscount(double price, double discountRate) {",
+          "public static double calculateDiscount(int price, int discountRate) {",
+          "public double calculateDiscount(double price, double discountRate) {"
+        ],
+        "correct_option": "public static double calculateDiscount(double price, double discountRate) {",
+        "explanation": "The method must be static to be called directly from main and must accept two double parameters. Its double result preserves decimal precision."
+      }
+    },
+    {
+      "id": "question:40",
+      "type": "question",
+      "concept": "Methods",
+      "question_id": 40,
+      "text": "Pre-test question 40 (Methods, medium): A ticketing system has two methods named formatTicket, one accepting a String and another accepting an int. Which method call selects the version that accepts a String?\nCode template: public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = {BLANK};\n        System.out.println(ticketLabel);\n    }\n}\nCorrect code: public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = formatTicket(\"VIP-202\");\n        System.out.println(ticketLabel);\n    }\n}\nOptions: formatTicket(\"VIP-202\") | formatTicket(202) | formatTicket(Integer.valueOf(202)) | formatTicket((int) 202.5)\nCorrect option: formatTicket(\"VIP-202\")\nExplanation: Java selects overloaded methods based on the argument types. Passing a String selects formatTicket(String), while the other options select formatTicket(int).",
+      "meta": {
+        "id": 40,
+        "topic": "Methods",
+        "difficulty": "medium",
+        "question": "A ticketing system has two methods named formatTicket, one accepting a String and another accepting an int. Which method call selects the version that accepts a String?",
+        "codeTemplate": "public class TicketSystem {\n    public static String formatTicket(String ticketCode) {\n        return \"Ticket: \" + ticketCode;\n    }\n\n    public static String formatTicket(int ticketNumber) {\n        return \"Number: \" + ticketNumber;\n    }\n\n    public static void main(String[] args) {\n        String ticketLabel = {BLANK};\n        System.out.println(ticketLabel);\n    }\n}",
+        "options": [
+          "formatTicket(\"VIP-202\")",
+          "formatTicket(202)",
+          "formatTicket(Integer.valueOf(202))",
+          "formatTicket((int) 202.5)"
+        ],
+        "correct_option": "formatTicket(\"VIP-202\")",
+        "explanation": "Java selects overloaded methods based on the argument types. Passing a String selects formatTicket(String), while the other options select formatTicket(int)."
+      }
+    },
+    {
+      "id": "reason_group:VARIABLE_ASSIGNMENT_ISSUE",
+      "type": "reason_group",
+      "concept": "Variables",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Reason group VARIABLE_ASSIGNMENT_ISSUE (Variables).\nReason: A variable is assigned to itself, left uninitialized, or updated incorrectly.\nMisconception: Assigning 'x = x;' has no effect, and reading an uninitialized variable is illegal in Java.\nFix: Assign a distinct, correct value to the variable, e.g., 'x = 5;' or 'x = y;'.\nAnalogy: Assigning a box to itself doesn't change what's inside. Put something new in the box!"
+    },
+    {
+      "id": "reason_group:VARIABLE_CALCULATION_ISSUE",
+      "type": "reason_group",
+      "concept": "Variables",
+      "reason_group": "VARIABLE_CALCULATION_ISSUE",
+      "text": "Reason group VARIABLE_CALCULATION_ISSUE (Variables).\nReason: A mathematical calculation is logically flawed. Review your use of operators.\nMisconception: Confusion with operators or misunderstanding the semantic meaning of the variables (e.g., discounts reduce total).\nFix: Check your math operators. If computing a discount, use subtraction '-'. If computing tax, use addition and multiplication.\nAnalogy: Math in Java is just like math in school. If a discount makes things cheaper, use a minus sign, not a plus sign!"
+    },
+    {
+      "id": "reason_group:LOOP_BOUNDARY_ISSUE",
+      "type": "reason_group",
+      "concept": "Loops",
+      "reason_group": "LOOP_BOUNDARY_ISSUE",
+      "text": "Reason group LOOP_BOUNDARY_ISSUE (Loops).\nReason: The loop executes one time too many or one time too few.\nMisconception: Confusing '<=' with '<' in loop conditions leads to off-by-one errors.\nFix: Change '<=' to '<' if you are trying to iterate 'n' times starting from 0.\nAnalogy: If you start running at 0 and want to run 5 laps, you stop before you reach 5. Using '<=' means you'll run an extra lap!"
+    },
+    {
+      "id": "reason_group:LOOP_CONDITION_ISSUE",
+      "type": "reason_group",
+      "concept": "Loops",
+      "reason_group": "LOOP_CONDITION_ISSUE",
+      "text": "Reason group LOOP_CONDITION_ISSUE (Loops).\nReason: The condition controlling the loop is incorrect, preventing it from running or stopping.\nMisconception: The learner may not realize the condition must evaluate to true for the loop to start and false for it to end.\nFix: Make sure your loop condition accurately reflects when the loop should terminate.\nAnalogy: A loop condition is a bouncer at a club. If it says 'true', you go in. If it says 'false', you stop."
+    },
+    {
+      "id": "reason_group:LOOP_UPDATE_ISSUE",
+      "type": "reason_group",
+      "concept": "Loops",
+      "reason_group": "LOOP_UPDATE_ISSUE",
+      "text": "Reason group LOOP_UPDATE_ISSUE (Loops).\nReason: The loop counter is never updated, causing an infinite loop.\nMisconception: Forgetting to increment or decrement the loop variable inside or at the end of the loop.\nFix: Ensure the loop variable changes. Add 'i++' or 'i--' so the condition eventually becomes false.\nAnalogy: If you don't take a step forward in a race, you'll never reach the finish line. Always update your counter!"
+    },
+    {
+      "id": "reason_group:LOOP_CONTROL_FLOW_ISSUE",
+      "type": "reason_group",
+      "concept": "Loops",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "Reason group LOOP_CONTROL_FLOW_ISSUE (Loops).\nReason: The loop has a while(true) or similar construct with no break, causing an infinite loop.\nMisconception: Forgetting to provide an exit path out of a continuous loop block.\nFix: Add a 'break;' statement when the desired condition is met.\nAnalogy: An infinite loop is like being stuck on a merry-go-round. You need a 'break' to get off!"
+    },
+    {
+      "id": "reason_group:ARRAY_BOUNDARY_INDEX_ISSUE",
+      "type": "reason_group",
+      "concept": "Arrays",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "Reason group ARRAY_BOUNDARY_INDEX_ISSUE (Arrays).\nReason: The code accesses an array index that is out of bounds (e.g. array.length).\nMisconception: A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.\nFix: Subtract 1 from the length when accessing the last element: array[array.length - 1].\nAnalogy: Java arrays start counting at 0. So an array with 5 items has lockers 0, 1, 2, 3, and 4. Locker 5 doesn't exist!"
+    },
+    {
+      "id": "reason_group:ARRAY_TRAVERSAL_ISSUE",
+      "type": "reason_group",
+      "concept": "Arrays",
+      "reason_group": "ARRAY_TRAVERSAL_ISSUE",
+      "text": "Reason group ARRAY_TRAVERSAL_ISSUE (Arrays).\nReason: The code improperly loops through or updates an array's elements.\nMisconception: Learners often struggle to match loop counters to array indices, skipping elements or crashing.\nFix: Check your loop bounds. Usually, it should be 'for (int i = 0; i < array.length; i++)'.\nAnalogy: When walking through an array, make sure your steps match the locker numbers perfectly, from 0 to the end."
+    },
+    {
+      "id": "reason_group:METHOD_SIGNATURE_ISSUE",
+      "type": "reason_group",
+      "concept": "Methods",
+      "reason_group": "METHOD_SIGNATURE_ISSUE",
+      "text": "Reason group METHOD_SIGNATURE_ISSUE (Methods).\nReason: The code suggests an issue with method arguments, parameters, or how the method is called.\nMisconception: The learner may misunderstand that method calls must match the method declaration in number, order, and type of arguments.\nFix: Compare the method call with the method declaration and make sure the arguments match the parameters.\nAnalogy: A method call must give the method the exact inputs it expects. If the method asks for one value, giving two values will cause an error."
+    },
+    {
+      "id": "reason_group:METHOD_RETURN_ISSUE",
+      "type": "reason_group",
+      "concept": "Methods",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "Reason group METHOD_RETURN_ISSUE (Methods).\nReason: The method does not return a value when it should, or returns a value in a void method.\nMisconception: Misunderstanding the difference between printing a value and returning it, or between void and typed methods.\nFix: If the method says it returns an 'int', make sure you have a 'return' statement with a number.\nAnalogy: A 'return' is like handing a completed test back to the teacher. Don't just show it, give it back!"
+    },
+    {
+      "id": "reason_group:METHOD_PARAMETER_USAGE_ISSUE",
+      "type": "reason_group",
+      "concept": "Methods",
+      "reason_group": "METHOD_PARAMETER_USAGE_ISSUE",
+      "text": "Reason group METHOD_PARAMETER_USAGE_ISSUE (Methods).\nReason: The method appears to ignore or incorrectly use one of its parameters.\nMisconception: The learner may not understand how parameter values should be used inside the method body.\nFix: Trace each parameter inside the method and check whether it contributes correctly to the returned result.\nAnalogy: If a vending machine asks for two coins, giving it one coin won't give you a snack. Match the ingredients exactly!"
+    },
+    {
+      "id": "reason_group:CORRECT_NO_ERROR",
+      "type": "reason_group",
+      "concept": "General",
+      "reason_group": "CORRECT_NO_ERROR",
+      "text": "Reason group CORRECT_NO_ERROR (General).\nReason: No common beginner error pattern was detected.\nMisconception: The learner correctly applies the required logic.\nFix: Everything looks good. You can continue to the next challenge.\nAnalogy: Great job. Your code follows the expected logic for this concept."
+    },
+    {
+      "id": "concept_note:VARIABLE_TYPE_MISMATCH",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_TYPE_MISMATCH",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Type keywords are case-sensitive (VARIABLE_TYPE_MISMATCH -> VARIABLE_ASSIGNMENT_ISSUE).\nJava type names must be spelled exactly: int, double, boolean, char are lowercase primitive types. Int, integer, bool or bit are not Java types, so javac reports 'cannot find symbol'. void is only for methods that return nothing; a variable can never have type void. Boolean (capital B) is a wrapper class: it compiles, but a quiz asking for the primitive type expects boolean."
+    },
+    {
+      "id": "concept_note:VARIABLE_INVALID_TYPE",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_INVALID_TYPE",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Use a real Java type in a declaration (VARIABLE_INVALID_TYPE -> VARIABLE_ASSIGNMENT_ISSUE).\nA declaration has the form type name = value; and the type must be a real Java type such as int, double, boolean, char or String. Made-up or wrongly capitalised types (Int, integer, bool) do not exist. Pick the type that matches the value: whole numbers use int, true/false uses boolean."
+    },
+    {
+      "id": "concept_note:VARIABLE_INVALID_NAME",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_INVALID_NAME",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Rules for identifiers (variable names) (VARIABLE_INVALID_NAME -> VARIABLE_ASSIGNMENT_ISSUE).\nA Java identifier may contain letters, digits, _ and $, but it cannot start with a digit (2count is invalid). It cannot contain a hyphen or spaces (my-var is read as my minus var). It cannot be a reserved keyword such as class, int, for or return. _count and count2 are valid names."
+    },
+    {
+      "id": "concept_note:VARIABLE_ASSIGN_VS_COMPARE",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_ASSIGN_VS_COMPARE",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "= assigns, == compares (VARIABLE_ASSIGN_VS_COMPARE -> VARIABLE_ASSIGNMENT_ISSUE).\nA single = stores a value into a variable (score = 10). A double == checks whether two values are equal and gives true or false. An if condition needs a boolean, so if (score = 10) does not compile in Java: 'int cannot be converted to boolean'. Use if (score == 10) to compare."
+    },
+    {
+      "id": "concept_note:VARIABLE_INVALID_OPERATOR",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_INVALID_OPERATOR",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Java has no === operator (VARIABLE_INVALID_OPERATOR -> VARIABLE_ASSIGNMENT_ISSUE).\n=== is a JavaScript operator; Java only has == for comparing primitive values. Writing score equals 10 is also not valid syntax; .equals() is a method used on objects like Strings, as in a.equals(b). For two int values, always write a == b."
+    },
+    {
+      "id": "concept_note:VARIABLE_WRONG_ASSIGNMENT",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_WRONG_ASSIGNMENT",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Assign the value you actually need (VARIABLE_WRONG_ASSIGNMENT -> VARIABLE_ASSIGNMENT_ISSUE).\nAn assignment copies the right-hand side into the variable on the left. If the right-hand side is the wrong expression, the variable silently holds a wrong value and later output is wrong. Increment forms differ: b = a++ gives b the old value of a and then increases a; b = ++a increases a first, so b gets the new value; b = a + 1 changes only b and b = a changes neither."
+    },
+    {
+      "id": "concept_note:VARIABLE_SELF_ASSIGNMENT",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_SELF_ASSIGNMENT",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "x = x does nothing (VARIABLE_SELF_ASSIGNMENT -> VARIABLE_ASSIGNMENT_ISSUE).\nAssigning a variable to itself (x = x;) leaves its value unchanged, so the intended update never happens. Usually the student meant to use another variable or an expression such as x = x + 1 or x = y."
+    },
+    {
+      "id": "concept_note:VARIABLE_UNINITIALIZED",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_UNINITIALIZED",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Local variables must be initialised (VARIABLE_UNINITIALIZED -> VARIABLE_ASSIGNMENT_ISSUE).\nJava does not give local variables a default value. Reading one before assigning it gives the compile error 'variable might not have been initialized'. Give it a starting value when you declare it, for example int sum = 0;."
+    },
+    {
+      "id": "concept_note:VARIABLE_WRONG_INITIALIZATION",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_WRONG_INITIALIZATION",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "Choose the right starting value (VARIABLE_WRONG_INITIALIZATION -> VARIABLE_ASSIGNMENT_ISSUE).\nThe first value of a variable matters. A sum or counter usually starts at 0, a product starts at 1, and a maximum often starts at the first array element. Starting a sum at 1 makes every result one too big."
+    },
+    {
+      "id": "concept_note:VARIABLE_OVERWRITTEN_VALUE",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_OVERWRITTEN_VALUE",
+      "reason_group": "VARIABLE_ASSIGNMENT_ISSUE",
+      "text": "= overwrites, += accumulates (VARIABLE_OVERWRITTEN_VALUE -> VARIABLE_ASSIGNMENT_ISSUE).\nsum = n replaces the old value of sum with n, so after a loop sum only holds the last element. sum += n means sum = sum + n and keeps a running total. Swapping two variables also needs a temporary variable, or one value is lost."
+    },
+    {
+      "id": "concept_note:VARIABLE_WRONG_CALCULATION",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_WRONG_CALCULATION",
+      "reason_group": "VARIABLE_CALCULATION_ISSUE",
+      "text": "Use the operator the problem asks for (VARIABLE_WRONG_CALCULATION -> VARIABLE_CALCULATION_ISSUE).\n+ adds, - subtracts, * multiplies, / divides and % gives the remainder. Using the wrong one (for example adding a discount instead of subtracting it) compiles fine but gives the wrong answer. Check the formula with small numbers by hand."
+    },
+    {
+      "id": "concept_note:VARIABLE_INTEGER_DIVISION",
+      "type": "concept_note",
+      "concept": "Variables",
+      "fine_reason": "VARIABLE_INTEGER_DIVISION",
+      "reason_group": "VARIABLE_CALCULATION_ISSUE",
+      "text": "int / int drops the decimal part (VARIABLE_INTEGER_DIVISION -> VARIABLE_CALCULATION_ISSUE).\nWhen both operands are int, / does integer division: 7 / 2 is 3, not 3.5. To get a decimal result, make one operand a double, for example 7 / 2.0 or (double) a / b."
+    },
+    {
+      "id": "concept_note:LOOP_OFF_BY_ONE",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_OFF_BY_ONE",
+      "reason_group": "LOOP_BOUNDARY_ISSUE",
+      "text": "< versus <= in a loop condition (LOOP_OFF_BY_ONE -> LOOP_BOUNDARY_ISSUE).\nfor (int i = 0; i < n; i++) runs exactly n times (i = 0 .. n-1). Using i <= n runs one extra time. Starting at 1 instead of 0 runs one time too few. Trace the first and last value of i to check the count."
+    },
+    {
+      "id": "concept_note:LOOP_WRONG_CONDITION",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_WRONG_CONDITION",
+      "reason_group": "LOOP_CONDITION_ISSUE",
+      "text": "The loop condition must test the loop variable (LOOP_WRONG_CONDITION -> LOOP_CONDITION_ISSUE).\nThe condition decides when the loop stops, so it must use the variable that the loop changes. If the loop updates i but the condition tests j, n or a constant like 10 < 10, the loop never runs, never stops, or does not compile because j does not exist."
+    },
+    {
+      "id": "concept_note:LOOP_MISSING_UPDATE",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_MISSING_UPDATE",
+      "reason_group": "LOOP_UPDATE_ISSUE",
+      "text": "A loop needs an update step (LOOP_MISSING_UPDATE -> LOOP_UPDATE_ISSUE).\nIf the loop variable never changes, the condition stays true forever and the program hangs in an infinite loop. A while loop must update its counter inside the body, for example i++;. A plain i; statement does nothing and does not even compile."
+    },
+    {
+      "id": "concept_note:LOOP_WRONG_COUNTER_DIRECTION",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_WRONG_COUNTER_DIRECTION",
+      "reason_group": "LOOP_UPDATE_ISSUE",
+      "text": "Move the counter towards the stopping value (LOOP_WRONG_COUNTER_DIRECTION -> LOOP_UPDATE_ISSUE).\nIf the condition is i < 3, the counter must grow (i++) to reach 3. Writing i-- moves away from the limit, so the loop never ends. Counting down needs the opposite pair: i-- with a condition like i >= 0."
+    },
+    {
+      "id": "concept_note:LOOP_CONTINUE_SKIP_UPDATE",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_CONTINUE_SKIP_UPDATE",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "continue skips the rest of the body (LOOP_CONTINUE_SKIP_UPDATE -> LOOP_CONTROL_FLOW_ISSUE).\ncontinue jumps straight to the next iteration, so every statement after it in the body is skipped for that iteration. In a while loop, if the counter update comes after continue, it is skipped too and the loop can run forever. continue is not a way to update the counter."
+    },
+    {
+      "id": "concept_note:LOOP_EARLY_BREAK",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_EARLY_BREAK",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "break ends the whole loop (LOOP_EARLY_BREAK -> LOOP_CONTROL_FLOW_ISSUE).\nbreak exits the nearest loop immediately, and no further iterations run. A break placed too early, or without the right if condition, stops the loop before it has done its job."
+    },
+    {
+      "id": "concept_note:LOOP_EARLY_BREAK_MISSING",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_EARLY_BREAK_MISSING",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "Stop the loop when the goal is reached (LOOP_EARLY_BREAK_MISSING -> LOOP_CONTROL_FLOW_ISSUE).\nWhen a loop must stop as soon as something happens (for example i == 3), put break inside that if block. Without break, or with continue instead, the loop keeps running and does extra work."
+    },
+    {
+      "id": "concept_note:LOOP_WRONG_KEYWORD",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_WRONG_KEYWORD",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "do-while runs the body at least once (LOOP_WRONG_KEYWORD -> LOOP_CONTROL_FLOW_ISSUE).\nA do-while loop is written do { body } while (condition); and it checks the condition after the body, so the body always runs once. Only the keyword do can start this form; while, for or if in that position do not compile or behave differently."
+    },
+    {
+      "id": "concept_note:LOOP_INVALID_JUMP_KEYWORD",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_INVALID_JUMP_KEYWORD",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "Java's loop jump keywords (LOOP_INVALID_JUMP_KEYWORD -> LOOP_CONTROL_FLOW_ISSUE).\nJava has only break (leave the loop), continue (skip to the next iteration) and return (leave the method). Words like sleep, wait, pause or exit are not statements in Java, so writing them alone gives a compile error."
+    },
+    {
+      "id": "concept_note:LOOP_WRONG_JUMP",
+      "type": "concept_note",
+      "concept": "Loops",
+      "fine_reason": "LOOP_WRONG_JUMP",
+      "reason_group": "LOOP_CONTROL_FLOW_ISSUE",
+      "text": "break, continue or return? (LOOP_WRONG_JUMP -> LOOP_CONTROL_FLOW_ISSUE).\nUse continue to skip just one iteration, break to stop the loop completely, and return to leave the whole method. Using break where continue is needed stops printing early; using return inside main ends the program."
+    },
+    {
+      "id": "concept_note:ARRAY_INVALID_DECLARATION",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_INVALID_DECLARATION",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "Declare arrays with square brackets (ARRAY_INVALID_DECLARATION -> ARRAY_BOUNDARY_INDEX_ISSUE).\nAn array type is written with square brackets: int[] arr = new int[5];. () is for method calls, {} is for blocks and array initial values, and <> is for generics, so int() or int{} is not a valid type."
+    },
+    {
+      "id": "concept_note:ARRAY_OUT_OF_BOUNDS",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_OUT_OF_BOUNDS",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "Valid indexes are 0 to length - 1 (ARRAY_OUT_OF_BOUNDS -> ARRAY_BOUNDARY_INDEX_ISSUE).\nAn array of size n has indexes 0, 1, ..., n-1. Index -1 or index n does not exist, so Java throws ArrayIndexOutOfBoundsException at run time. The first element is arr[0], the last is arr[arr.length - 1]."
+    },
+    {
+      "id": "concept_note:ARRAY_LENGTH_AS_INDEX",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_LENGTH_AS_INDEX",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "arr[arr.length] is always out of bounds (ARRAY_LENGTH_AS_INDEX -> ARRAY_BOUNDARY_INDEX_ISSUE).\narr.length is the number of elements, which is one more than the last index. arr[arr.length] therefore always throws ArrayIndexOutOfBoundsException. Use arr[arr.length - 1] for the last element and arr[0] for the first."
+    },
+    {
+      "id": "concept_note:ARRAY_WRONG_INDEX_VARIABLE",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_WRONG_INDEX_VARIABLE",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "Index with the right position (ARRAY_WRONG_INDEX_VARIABLE -> ARRAY_BOUNDARY_INDEX_ISSUE).\nArrays are zero-indexed: arr[1] is the second element, not the first. Using the wrong index, or the index i itself instead of arr[i], reads the wrong value even though the code compiles."
+    },
+    {
+      "id": "concept_note:ARRAY_WRONG_LENGTH_SYNTAX",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_WRONG_LENGTH_SYNTAX",
+      "reason_group": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "text": "Array length is a field: arr.length (ARRAY_WRONG_LENGTH_SYNTAX -> ARRAY_BOUNDARY_INDEX_ISSUE).\nFor arrays, length is a field and has no brackets: arr.length. Strings use a method with brackets: s.length(). arr.length(), arr.size or arr.count do not exist for arrays and do not compile."
+    },
+    {
+      "id": "concept_note:ARRAY_WRONG_TRAVERSAL",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_WRONG_TRAVERSAL",
+      "reason_group": "ARRAY_TRAVERSAL_ISSUE",
+      "text": "Visit every element exactly once (ARRAY_WRONG_TRAVERSAL -> ARRAY_TRAVERSAL_ISSUE).\nThe standard traversal is for (int i = 0; i < arr.length; i++) and reads arr[i]. Stepping by 2, reading arr[0] every time, or comparing with the wrong operator in the condition visits the wrong elements or none at all."
+    },
+    {
+      "id": "concept_note:ARRAY_SKIPPED_ELEMENT",
+      "type": "concept_note",
+      "concept": "Arrays",
+      "fine_reason": "ARRAY_SKIPPED_ELEMENT",
+      "reason_group": "ARRAY_TRAVERSAL_ISSUE",
+      "text": "Don't skip the first or last element (ARRAY_SKIPPED_ELEMENT -> ARRAY_TRAVERSAL_ISSUE).\nStarting the loop at 1 skips arr[0]; stopping at i < arr.length - 1 skips the last element. To process every element start at 0 and use i < arr.length."
+    },
+    {
+      "id": "concept_note:METHOD_MISSING_RETURN_KEYWORD",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_MISSING_RETURN_KEYWORD",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "return sends a value back (METHOD_MISSING_RETURN_KEYWORD -> METHOD_RETURN_ISSUE).\nA method with a return type such as int must end with return value;. Words like print, output or give are not Java keywords, so print 5; does not compile. Printing shows a value on screen; returning hands it back to the caller."
+    },
+    {
+      "id": "concept_note:METHOD_VOID_RETURNS_VALUE",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_VOID_RETURNS_VALUE",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "void means no return value (METHOD_VOID_RETURNS_VALUE -> METHOD_RETURN_ISSUE).\nA method declared void returns nothing, so it may not contain return value;. A method that only prints should be void. If you write int as the return type, the method must return an int on every path."
+    },
+    {
+      "id": "concept_note:METHOD_WRONG_RETURN_TYPE",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_WRONG_RETURN_TYPE",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "The return type must match (METHOD_WRONG_RETURN_TYPE -> METHOD_RETURN_ISSUE).\nThe type before the method name says what it returns. A printing method declared int fails with 'missing return statement'. return and null are not types, so static return printHello() or static null printHello() does not compile."
+    },
+    {
+      "id": "concept_note:METHOD_MISSING_RETURN",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_MISSING_RETURN",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "Every path must return a value (METHOD_MISSING_RETURN -> METHOD_RETURN_ISSUE).\nIn a non-void method, javac checks that every path through the method ends with a return. If one branch of an if has no return, you get 'missing return statement'."
+    },
+    {
+      "id": "concept_note:METHOD_WRONG_RETURN_OPERATION",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_WRONG_RETURN_OPERATION",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "Return the right expression (METHOD_WRONG_RETURN_OPERATION -> METHOD_RETURN_ISSUE).\nA method can compile and still return the wrong result, for example return a - b inside a method called add. Check the returned expression against what the method name and task promise."
+    },
+    {
+      "id": "concept_note:METHOD_ARGUMENT_MISMATCH",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_ARGUMENT_MISMATCH",
+      "reason_group": "METHOD_SIGNATURE_ISSUE",
+      "text": "Arguments must match parameters (METHOD_ARGUMENT_MISMATCH -> METHOD_SIGNATURE_ISSUE).\nA call must pass exactly as many arguments as the method has parameters, each of a compatible type. add(int a, int b) needs two ints, as in add(3, 4). Passing \"4\" (a String) or four (an undefined name) does not compile."
+    },
+    {
+      "id": "concept_note:METHOD_WRONG_CALL",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_WRONG_CALL",
+      "reason_group": "METHOD_SIGNATURE_ISSUE",
+      "text": "int literals have no quotes (METHOD_WRONG_CALL -> METHOD_SIGNATURE_ISSUE).\n4 is an int literal, \"4\" is a String and four is just an unknown name. A parameter of type int only accepts int values, so add(3, \"4\") gives 'incompatible types: String cannot be converted to int'. Roman numerals like IV are not numbers in Java."
+    },
+    {
+      "id": "concept_note:METHOD_PARAMETER_ORDER_ERROR",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_PARAMETER_ORDER_ERROR",
+      "reason_group": "METHOD_SIGNATURE_ISSUE",
+      "text": "Arguments are matched by position (METHOD_PARAMETER_ORDER_ERROR -> METHOD_SIGNATURE_ISSUE).\nJava matches arguments to parameters by order: the first argument goes to the first parameter. Swapping them, as in divide(b, a), compiles but computes the wrong result when the order matters."
+    },
+    {
+      "id": "concept_note:METHOD_IGNORED_PARAMETER",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_IGNORED_PARAMETER",
+      "reason_group": "METHOD_PARAMETER_USAGE_ISSUE",
+      "text": "Use the parameters you receive (METHOD_IGNORED_PARAMETER -> METHOD_PARAMETER_USAGE_ISSUE).\nParameters carry the input of a method. If the body ignores a parameter or uses a constant instead, the method gives the same answer for every input."
+    },
+    {
+      "id": "concept_note:METHOD_WRONG_BASE_CASE",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_WRONG_BASE_CASE",
+      "reason_group": "METHOD_RETURN_ISSUE",
+      "text": "Recursion needs a correct base case (METHOD_WRONG_BASE_CASE -> METHOD_RETURN_ISSUE).\nA recursive method needs a base case that returns a fixed value without calling itself, otherwise the calls never stop and you get StackOverflowError. For mystery(n) = n + mystery(n - 1) with base case n == 1 the base value is 1. Returning mystery(n) there recurses forever; returning 0 gives a sum that is 1 too small; returning n is valid Java and returns 1 here because n == 1."
+    },
+    {
+      "id": "concept_note:METHOD_WRONG_RECURSIVE_ARG",
+      "type": "concept_note",
+      "concept": "Methods",
+      "fine_reason": "METHOD_WRONG_RECURSIVE_ARG",
+      "reason_group": "METHOD_PARAMETER_USAGE_ISSUE",
+      "text": "Each recursive call must move towards the base case (METHOD_WRONG_RECURSIVE_ARG -> METHOD_PARAMETER_USAGE_ISSUE).\nThe argument of a recursive call must get closer to the base case, for example mystery(n - 1) when the base case is n == 1. mystery(n) or mystery(n + 1) never reaches it and causes StackOverflowError; mystery(1) jumps straight to the base case and gives the wrong sum."
+    }
+  ]
+}
