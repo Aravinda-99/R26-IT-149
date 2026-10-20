@@ -3,7 +3,6 @@ import { createGameConfig } from "./GameConfig.js";
 import { GameManager } from "./GameManager.js";
 import { WebcamCapture } from "./ml/WebcamCapture.js";
 import { EmotionDetector } from "./ml/EmotionDetector.js";
-import { FatigueDetector } from "./ml/FatigueDetector.js";
 import { showBreakSuggestion } from "./BitIntervention.js";
 import { showBitMenu } from "./BitMenu.js";
 
@@ -82,7 +81,7 @@ export function destroyGame() {
 }
 
 /**
- * Starts the webcam + emotion/fatigue detectors and polls them once a
+ * Starts the webcam + emotion detector and polls it once a
  * second, feeding results into GameManager.fusionEngine and broadcasting
  * a "fusionAction" event whenever it decides something other than 'NONE'.
  */
@@ -95,7 +94,7 @@ function startFusionLoop() {
   (async () => {
     try {
       await WebcamCapture.start();
-      await Promise.all([EmotionDetector.load(), FatigueDetector.load()]);
+      await EmotionDetector.load();
     } catch (e) {
       console.error("FusionEngine: failed to start webcam/ML detectors:", e);
       return;
@@ -106,12 +105,10 @@ function startFusionLoop() {
 
     fusionLoopHandle = setInterval(async () => {
       const emotion = await EmotionDetector.detect();
-      const ear = await FatigueDetector.detect();
 
       const faceTriggered = GameManager.fusionEngine.updateFaceFrame(emotion);
-      const fatigueTriggered = GameManager.fusionEngine.updateFatigueFrame(ear);
 
-      const decision = GameManager.fusionEngine.decideAction(faceTriggered, fatigueTriggered);
+      const decision = GameManager.fusionEngine.decideAction(faceTriggered);
       if (decision.action !== "NONE") {
         GameManager._emit("fusionAction", decision);
       }
@@ -151,7 +148,7 @@ async function handleFusionAction({ action, message }) {
 
   GameManager.interventionInFlight = true;
   try {
-    if (action === "BREAK_SUGGESTION_FATIGUE" || action === "BREAK_SUGGESTION_EMOTION") {
+    if (action === "BREAK_SUGGESTION_EMOTION") {
       await showBreakSuggestion(scene, message);
     } else if (action === "BIT_MENU" || action === "BIT_MENU_URGENT") {
       const choice = await showBitMenu(scene, { urgent: action === "BIT_MENU_URGENT" });

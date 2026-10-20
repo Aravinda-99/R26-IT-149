@@ -1401,9 +1401,9 @@ export class Level25Scene extends Phaser.Scene {
    * attempt history and asks the backend's Isolation Forest model whether
    * this looks like typical or struggling play. Wired into FusionEngine so
    * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
+   * the emotion/behavioural signals. Never throws — a failed/unreachable
    * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
+   * emotion detection keep working on their own regardless.
    */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
