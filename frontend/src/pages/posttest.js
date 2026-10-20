@@ -1,14 +1,9 @@
-/**
- * Post-Test Page — Component 4: Schema Mastery Validation (MCQ)
- * =============================================================
- * Concept-specific 15-question post-test check taken after gamified lessons.
- * Gated by prerequisites (Component 1 Pre-Test, Component 2 Error Feedback, Component 3 Game Practice).
- * Consumes real multi-component telemetry for Random Forest ML mastery inference.
- */
+// Component 4: concept-specific post-test and saved mastery results.
 
 import { SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
 import { lessonHref } from "./student/ProfileMastery.js";
+import { createAssessmentTimer } from "../utils/assessment-timer.js";
 
 // ── State ───────────────────────────────────────────────────────────
 let currentStudentId = null;
@@ -26,7 +21,7 @@ let currentErrorReason = "";
 let questions = [];
 let currentQuestionIndex = 0;
 let selectedAnswers = {};
-let startTime = null;
+const assessmentTimer = createAssessmentTimer();
 
 const conceptDisplayNames = {
     variables: "Variables & Data Types",
@@ -134,7 +129,7 @@ export async function renderPostTest(container, opts = {}) {
 
         selectedAnswers = {};
         currentQuestionIndex = 0;
-        startTime = Date.now();
+        assessmentTimer.reset();
 
         renderStartScreen(container);
 
@@ -426,6 +421,7 @@ async function loadQuestionsAndStart(container) {
     `;
 
     try {
+        // 155api/api.js -> schema_mastery_routes.py:get_post_test_questions (saved bank).
         const res = await SchemaMasteryAPI.getPostTestQuestions({
             concept: currentAssessmentConcept,
             student_id: currentStudentId,
@@ -454,9 +450,10 @@ async function loadQuestionsAndStart(container) {
         selectedAnswers = {};
         currentQuestionIndex = 0;
         currentSessionId = res.session_id || currentSessionId;
-        startTime = Date.now();
+        assessmentTimer.reset();
 
         renderQuestionScreen(container, 0);
+        assessmentTimer.resume();
 
     } catch (err) {
         container.innerHTML = `
@@ -603,11 +600,10 @@ function renderQuestionScreen(container, index) {
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. Submit Post-Test & Render Results
-// ─────────────────────────────────────────────────────────────────────────────
+// Submit answers and display the backend result.
 async function submitPostTest(container) {
-    const elapsedSeconds = Math.max(15, Math.round((Date.now() - startTime) / 1000));
+    // Exclude request latency and the error screen from assessment duration.
+    const elapsedSeconds = assessmentTimer.pause();
     const answersPayload = Object.entries(selectedAnswers).map(([qid, opt]) => ({
         question_id: qid,
         selected_option: opt,
@@ -617,7 +613,7 @@ async function submitPostTest(container) {
         <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
             <div class="spinner" style="margin-bottom: 1.5rem;"></div>
             <h3 style="color: var(--text-primary); font-weight: 600;">Evaluating Understanding Check...</h3>
-            <p style="margin-top: 0.5rem;">Analyzing answer qualities and computing Random Forest Schema Mastery...</p>
+            <p style="margin-top: 0.5rem;">Evaluating your assessment answers...</p>
         </div>
     `;
 
@@ -634,6 +630,7 @@ async function submitPostTest(container) {
             answers: answersPayload,
         };
 
+        // api/api.js -> POST /api/schema-mastery/post-test/submit.
         const result = await SchemaMasteryAPI.submitPostTest(payload);
         if (!result.success) throw new Error(result.error || "Could not evaluate this assessment.");
         renderResultScreen(container, result);
@@ -644,13 +641,14 @@ async function submitPostTest(container) {
                 <button class="btn btn-primary" id="resubmit-btn"><i class="fa-solid fa-rotate"></i> Retry Submission</button>
             </div>
         `;
-        document.getElementById("resubmit-btn")?.addEventListener("click", () => renderQuestionScreen(container, currentQuestionIndex));
+        document.getElementById("resubmit-btn")?.addEventListener("click", () => {
+            renderQuestionScreen(container, currentQuestionIndex);
+            assessmentTimer.resume();
+        });
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. Post-Test Result Screen (Student-Safe White Theme)
-// ─────────────────────────────────────────────────────────────────────────────
+// Display the returned level and next action; prediction runs in the backend.
 function renderResultScreen(container, res) {
     const understandingLevel = res.mastery_level || "Needs More Practice";
     const isDone = res.next_action === "DONE";

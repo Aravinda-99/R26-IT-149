@@ -1,13 +1,4 @@
-"""
-Component 4: Schema Mastery ML & Question Bank Routes
-=====================================================
-Endpoints for:
-  - Teacher LLM-assisted draft question generation, review, edit, approval, and rejection
-  - Approved question bank inspection
-  - Student post-test question generation (blueprint-based, answer-safe)
-  - Student post-test submission, scoring, and ML schema mastery prediction
-  - Direct ML schema mastery prediction API
-"""
+"""Component 4 routes for question review, post-tests and mastery prediction."""
 
 import json
 from flask import Blueprint, jsonify, request
@@ -353,10 +344,7 @@ def get_approved_bank():
 # ─────────────────────────────────────────────────────────────────────────────
 @schema_mastery_bp.route("/post-test/questions", methods=["GET"])
 def get_post_test_questions():
-    """
-    Selects 15 approved questions using blueprint & student history.
-    Does NOT reveal correct_option or option_quality.
-    """
+    """Select approved questions without exposing answer keys or quality labels."""
     student_id = request.args.get("student_id", "STU001")
     concept = request.args.get("concept") or request.args.get("concept_name")
     error_type = request.args.get("error_type")
@@ -372,21 +360,16 @@ def get_post_test_questions():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 8. Student Post-Test Submission & ML Prediction
-# ─────────────────────────────────────────────────────────────────────────────
+# Post-test submission from frontend/src/pages/posttest.js.
 @schema_mastery_bp.route("/post-test/submit", methods=["POST"])
 def submit_post_test():
-    """
-    Grading and ML schema mastery evaluation.
-    Computes answer quality counts, queries the Random Forest pipeline,
-    and returns mastery_level and next_action.
-    """
+    """Grade answers and return the saved mastery prediction."""
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
         return jsonify({"success": False, "error": "Request body must be valid JSON"}), 400
 
     try:
+        # 403 - schema_post_test_service.py:grade_and_predict builds the ML inputs.
         result = SchemaPostTestService.grade_and_predict(data)
         return jsonify(result), 200
     except Exception as e:

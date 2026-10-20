@@ -1,45 +1,65 @@
-# Component 4: Schema Mastery ML Evaluation & Benchmark Artifacts
+# Component 4 Timing Ablation
 
-This directory contains evaluation charts, confusion matrices, feature importance plots, cross-validation stability diagrams, and benchmark artifacts for **Component 4 (Schema Mastery Tracker / Post-Learning Understanding Validation)**.
+Active model: time_excluded_v1, Logistic Regression pipeline.
+Dataset: unchanged 24,032 records, 506 students, original future_success labels.
+Validation: five student-disjoint StratifiedGroupKFold splits, seed 42;
+imputation/scaling are fitted within folds. No hyperparameter search was used.
 
----
+| Model | Mean accuracy | Mean macro F1 |
+| --- | ---: | ---: |
+| Historical deployed RF (metadata) | 98.5137% | 0.980448 |
+| Refit RF with original inputs (diagnostic) | 98.7176% | 0.983078 |
+| Time-excluded LR (selected) | 98.1566% | 0.975725 |
+| Time-excluded RF | 97.2270% | 0.964127 |
+| Score >= 0.65 baseline | 76.5022% | 0.503659 |
 
-## 📊 Confirmed Component 4 Evaluation Charts
+Historical and refit RF differ slightly; the old pickle came from another
+scikit-learn runtime, and the revised experiment independently clones fold
+pipelines. Do not present the historical number as a freshly reproduced metric.
+Current metadata stores runtime version, dataset hash and fold metrics.
 
-All active charts in this directory were generated directly by:
-- **Generating Script**: [`ml/component4_schema_mastery/scripts/train_schema_mastery_model.py`](file:///c:/Users/BRAVO/OneDrive/Documents/R26-IT-149/backend/ml/component4_schema_mastery/scripts/train_schema_mastery_model.py)
-- **Dataset Used**: [`ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv`](file:///c:/Users/BRAVO/OneDrive/Documents/R26-IT-149/backend/ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv) (24,032 student-problem sessions across 506 unique students)
-- **Primary Model**: [`ml/component4_schema_mastery/models/schema_mastery_pipeline.pkl`](file:///c:/Users/BRAVO/OneDrive/Documents/R26-IT-149/backend/ml/component4_schema_mastery/models/schema_mastery_pipeline.pkl) (Random Forest Classifier + ColumnTransformer Pipeline)
-- **Validation Methodology**: 5-Fold `StratifiedGroupKFold` grouped strictly by `student_id` to prevent data leakage across student sessions.
-- **Status**: **CONFIRMED COMPONENT 4 ARTIFACTS**
+## What changed
 
----
+Total MCQ time previously entered a model trained on a synthetic duration:
+min(600, max(45, program_attempts*45 + compile_errors*15)). That is not a valid
+per-question time budget. The candidate models exclude elapsed time entirely.
+Counts are scaled to ten-answer equivalents inside the pipeline; all training
+records already have ten answers, so their values and labels are unchanged.
 
-### Chart Descriptions & Metric Interpretations
+The 14-correct/1-nearly-correct regression case (pre-score .57, error score .68,
+one attempt) now returns probability about .9895 and DONE at every tested duration.
+This is an uncalibrated probability, not 98.95% accuracy or verified mastery.
+No probability override, label rewrite or threshold adjustment is used.
 
-| File Name | Chart Description | Metric / Clinical Insight | Status |
-|---|---|---|---|
-| **`model_comparison_chart.png`** | Compares Rule-Based Baseline vs. Logistic Regression vs. Random Forest across 5 evaluation metrics (Accuracy, Balanced Accuracy, Macro F1, Macro Precision, Macro Recall). | Shows the Random Forest ML pipeline achieving **98.79% Balanced Accuracy** and **98.04% Macro F1**, outperforming the rule-based baseline (53.58% Balanced Accuracy). | **Confirmed Component 4** |
-| **`confusion_matrices.png`** | Out-of-fold confusion matrices for the Rule-Based Baseline, Logistic Regression, and Random Forest models across Class 0 (*Needs Practice / Learn Again*) and Class 1 (*Mastered / Done*). | Validates low false positive and false negative rates for learner mastery classification under student-grouped cross-validation. | **Confirmed Component 4** |
-| **`per_class_f1_comparison.png`** | Compares per-class F1 performance across models for both Class 0 (*Needs Practice*) and Class 1 (*Mastered*). | Highlights how ML models maintain high classification performance even on minority class distributions compared to deterministic thresholds. | **Confirmed Component 4** |
-| **`feature_importance.png`** | Top feature importances extracted from the fitted Random Forest classifier (Gini impurity reduction) across one-hot encoded and normalized numeric features. | Highlights key predictive signals: `post_test_score`, `error_pattern_score`, `time_taken_seconds`, `attempt_count`, and `pre_test_score`. | **Confirmed Component 4** |
-| **`cv_stability_chart.png`** | Fold-by-fold performance tracking (Folds 1–5) for Macro F1 and Balanced Accuracy. | Confirms model generalization stability across independent student folds without overfitting (standard deviation < 0.003). | **Confirmed Component 4** |
+## Research limits
 
----
+The target is still an engineered formula containing timing/retry assumptions,
+not an independently observed outcome. Training question qualities and concept
+labels are proxies. Training retries/error recovery are not the same as live
+pre-test attempts/detector confidence. The ablation fixes direct timing sensitivity
+but does not eliminate these limitations. High proxy-label CV accuracy must not
+be presented as educational effectiveness. Real teacher-assessed CodeQuest outcomes,
+an untouched student test set and probability calibration remain necessary.
 
-## 🗄️ Archived / Unverified Files (`old_or_unverified/`)
+Selection used mean macro F1, not the screenshot case, which is a regression
+probe rather than independent validation. Selection CV is not a final held-out
+test. Recommendations can still vary with pre-score, attempts and error evidence.
 
-The directory `old_or_unverified/` contains legacy charts and a notebook (`final_data_details.ipynb`) that were previously located in the backend root:
-- **Origin**: Generated using `data/final_dataset_ready.csv` (94,818 rows, features: `avg_attempts`, `avg_time_sec`, `engagement_score`, `difficulty`, targets: `Maintain`, `Promote`, `Demote`).
-- **Component Affiliation**: Belonged to **Component 1 (Adaptive Learning)**.
-- **Status**: **UNVERIFIED FOR COMPONENT 4 / MOVED TO ARCHIVE**. Preserved safely for historical reference without polluting Component 4 artifacts.
+## Reproduce
 
----
+From backend, diagnostic evaluation (does not overwrite active artifacts):
 
-## 🔄 Command to Regenerate Component 4 Evaluation Charts
-
-From the `backend/` root directory:
-```bash
-python ml/component4_schema_mastery/scripts/train_schema_mastery_model.py
+```powershell
+.\venv\Scripts\python.exe -B ml/component4_schema_mastery/scripts/evaluate_timing_ablation.py
 ```
-This single command re-evaluates the dataset via 5-fold `StratifiedGroupKFold`, serializes the trained model and metadata, and exports all 5 updated charts directly into this directory.
+
+Train/select the active time-excluded pipeline and regenerate charts:
+
+```powershell
+.\venv\Scripts\python.exe -B ml/component4_schema_mastery/scripts/train_schema_mastery_model.py
+.\venv\Scripts\python.exe -B -m unittest discover -s ml/component4_schema_mastery/tests -p test_timing_model.py -v
+```
+
+The five charts compare proxy-label metrics. feature_importance.png describes
+the comparison RF, not deployed LR. timing_ablation.json retains all tested
+variants and duration probes. No chart measures actual learning effectiveness.

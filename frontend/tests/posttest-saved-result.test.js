@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { createAssessmentTimer } from "../src/utils/assessment-timer.js";
 
 const source = await readFile(new URL("../src/pages/posttest.js", import.meta.url), "utf8");
 
@@ -13,6 +14,7 @@ async function savedPage(records, requestedId = "arrays-old") {
         document: { getElementById: () => null },
     });
     const mocks = {
+        "../utils/assessment-timer.js": { createAssessmentTimer },
         "../api/api.js": { SchemaMasteryAPI: {
             getPostTestResults: async (filters) => { calls.push(filters); return { success: true, results: records }; },
             getCurrentContext: () => { throw new Error("Saved result must not start a new assessment"); },

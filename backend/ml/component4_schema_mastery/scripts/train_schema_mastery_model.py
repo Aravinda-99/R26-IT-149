@@ -20,7 +20,9 @@ Usage:
 """
 
 import os
+import sys
 import json
+import hashlib
 import joblib
 import numpy as np
 import pandas as pd
@@ -29,7 +31,9 @@ matplotlib.use("Agg")  # Non-interactive backend for headless execution
 import matplotlib.pyplot as plt
 
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+from sklearn.impute import SimpleImputer
+from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -47,6 +51,8 @@ from sklearn.metrics import (
 # Paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+sys.path.insert(0, os.path.abspath(os.path.join(ROOT_DIR, "..", "..")))
+from ml.component4_schema_mastery.inference_features import MODEL_VERSION, scale_answer_counts
 DATA_PATH = os.path.join(ROOT_DIR, "datasets", "processed", "schema_mastery_dataset.csv")
 MODELS_DIR = os.path.join(ROOT_DIR, "models")
 EVAL_DIR = os.path.join(ROOT_DIR, "evaluation")
@@ -110,7 +116,6 @@ numeric_cols = [
 
 for col in numeric_cols:
     df[col] = pd.to_numeric(df[col], errors="coerce")
-    df[col] = df[col].fillna(df[col].median())
 
 df["concept_name"] = df["concept_name"].fillna("General Programming").astype(str)
 df["error_type"] = df["error_type"].fillna("UNKNOWN_ERROR").astype(str)
@@ -134,7 +139,6 @@ categorical_features = ["concept_name", "error_type"]
 numeric_features = [
     "pre_test_score",
     "attempt_count",
-    "time_taken_seconds",
     "error_pattern_score",
     "post_test_correct_count",
     "post_test_nearly_correct_count",
@@ -150,17 +154,19 @@ groups = df["student_id"]
 preprocessor = ColumnTransformer(
     transformers=[
         ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
-        ("num", StandardScaler(), numeric_features),
+        ("num", Pipeline([("impute", SimpleImputer(strategy="median")), ("scale", StandardScaler())]), numeric_features),
     ]
 )
 
 models = {
     "logistic_regression": Pipeline(steps=[
-        ("preprocess", preprocessor),
+        ("answer_scale", FunctionTransformer(scale_answer_counts, validate=False)),
+        ("preprocess", clone(preprocessor)),
         ("model", LogisticRegression(max_iter=1000, class_weight="balanced", random_state=42)),
     ]),
     "random_forest": Pipeline(steps=[
-        ("preprocess", preprocessor),
+        ("answer_scale", FunctionTransformer(scale_answer_counts, validate=False)),
+        ("preprocess", clone(preprocessor)),
         ("model", RandomForestClassifier(
             n_estimators=120,
             max_depth=8,
@@ -214,8 +220,9 @@ for model_name, pipeline in models.items():
         X_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
         X_val, y_val = X.iloc[val_idx], y.iloc[val_idx]
         
-        pipeline.fit(X_train, y_train)
-        y_val_pred = pipeline.predict(X_val)
+        assert set(groups.iloc[train_idx]).isdisjoint(set(groups.iloc[val_idx]))
+        fitted = clone(pipeline).fit(X_train, y_train)
+        y_val_pred = fitted.predict(X_val)
         oof_preds[val_idx] = y_val_pred
         
         acc = accuracy_score(y_val, y_val_pred)
@@ -263,10 +270,29 @@ print(f"\n[OK] Best Performing Model: {best_model_name}")
 best_pipeline = models[best_model_name]
 print(f"\nTraining {best_model_name} on full dataset (N={len(df)})...")
 best_pipeline.fit(X, y)
+best_pipeline.schema_mastery_version = MODEL_VERSION
+if best_model_name != "random_forest":
+    models["random_forest"].fit(X, y)
 
 joblib.dump(best_pipeline, MODEL_PATH)
 
 metadata = {
+    "model_version": MODEL_VERSION,
+    "sklearn_version": __import__("sklearn").__version__,
+    "dataset_sha256": hashlib.sha256(open(DATA_PATH, "rb").read()).hexdigest(),
+    "source_labels_recomputed": False,
+    "estimator_features": categorical_features + numeric_features,
+    "excluded_features": {"time_taken_seconds": "Synthetic run/compile duration is incompatible with live MCQ elapsed time."},
+    "answer_count_scaling": "Counts scaled to ten-answer equivalents inside the saved pipeline; scores and stored counts unchanged.",
+    "selection_rule": "Highest mean student-grouped CV macro F1 among time-excluded LR and RF, with original hyperparameters.",
+    "limitations": [
+        "future_success is an engineered evidence label, not an observed future outcome.",
+        "Original labels still encode speed/retry assumptions even though inference ignores elapsed time.",
+        "Compile-error recovery and program retries differ from live error confidence and pre-test attempts.",
+        "Concept labels and question-quality counts are proxies; CodeQuest transfer remains unvalidated.",
+        "Probabilities are not calibrated mastery confidence; CV accuracy is not educational effectiveness.",
+        "Selection CV is not an untouched final test. The historical failure case is a regression probe.",
+    ],
     "best_model": best_model_name,
     "dataset_path": "ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv",
     "dataset_rows": int(len(df)),
@@ -277,6 +303,7 @@ metadata = {
     "validation_method": f"StratifiedGroupKFold grouped by student_id, n_splits={n_splits}",
     "baseline_results": baseline_results,
     "model_results": model_results,
+    "fold_scores": cv_fold_scores,
 }
 
 with open(META_PATH, "w") as f:
@@ -404,8 +431,8 @@ print(f"[OK] Generated: {chart3_path}")
 
 # Chart 4: Random Forest Feature Importance
 chart4_path = os.path.join(EVAL_DIR, "feature_importance.png")
-rf_model = best_pipeline.named_steps["model"]
-prep = best_pipeline.named_steps["preprocess"]
+rf_model = models["random_forest"].named_steps["model"]
+prep = models["random_forest"].named_steps["preprocess"]
 
 cat_enc = prep.named_transformers_["cat"]
 cat_names = list(cat_enc.get_feature_names_out(categorical_features))

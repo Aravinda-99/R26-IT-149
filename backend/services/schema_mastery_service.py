@@ -1,10 +1,4 @@
-"""
-Component 4: Schema Mastery Service
-===================================
-Business logic and ML prediction pipeline for Schema Mastery (Component 4).
-Loads the trained Random Forest / scikit-learn pipeline to predict student
-mastery probability, mastery level, and recommended next action.
-"""
+"""Component 4 ML inference, probability-to-level mapping and safe fallback."""
 
 import os
 import json
@@ -43,6 +37,7 @@ def load_model():
 
     if os.path.exists(MODEL_PATH):
         try:
+            # Load and cache schema_mastery_pipeline.pkl (preprocessing + classifier).
             _model = joblib.load(MODEL_PATH)
             print(f"[OK] Component 4 Schema Mastery model loaded from {MODEL_PATH}")
             return _model
@@ -105,13 +100,7 @@ def normalize_score(val):
 
 
 def probability_to_level(prob: float) -> str:
-    """
-    Maps mastery probability to understanding level:
-      >= 0.85 -> Strong Understanding
-      >= 0.70 -> Good Progress
-      >= 0.50 -> Needs More Practice
-      < 0.50  -> Learn Again
-    """
+    """Map predicted probability to a level using 0.85, 0.70 and 0.50 thresholds."""
     try:
         p = float(prob)
     except (ValueError, TypeError):
@@ -128,11 +117,7 @@ def probability_to_level(prob: float) -> str:
 
 
 def level_to_action(level: str) -> str:
-    """
-    Maps understanding level to next action:
-      'Strong Understanding' / 'Good Progress' -> DONE
-      'Needs More Practice' / 'Learn Again'   -> LEARN_AGAIN
-    """
+    """Strong Understanding / Good Progress -> DONE; otherwise LEARN_AGAIN."""
     if level in ("Strong Understanding", "Good Progress"):
         return "DONE"
     return "LEARN_AGAIN"
@@ -143,11 +128,12 @@ def clean_input_data(data: dict) -> dict:
     if not isinstance(data, dict):
         data = {}
 
+    duration = data.get("time_taken_seconds", data.get("time_taken", 60.0))
     return {
         "concept_name": str(data.get("concept_name", "General Programming")),
         "pre_test_score": normalize_score(data.get("pre_test_score", 0.5)),
         "attempt_count": int(data.get("attempt_count", 1) or 1),
-        "time_taken_seconds": float(data.get("time_taken_seconds", data.get("time_taken", 60.0)) or 60.0),
+        "time_taken_seconds": float(duration if duration is not None else 60.0),
         "error_type": str(data.get("error_type", "UNKNOWN_ERROR")),
         "error_pattern_score": normalize_score(data.get("error_pattern_score", 0.5)),
         "post_test_correct_count": int(data.get("post_test_correct_count", 0) or 0),
@@ -159,10 +145,7 @@ def clean_input_data(data: dict) -> dict:
 
 
 def fallback_predict(data: dict) -> dict:
-    """
-    Heuristic rule-based fallback calculation when the ML model
-    is unavailable or prediction fails.
-    """
+    """Use a weighted fallback only when ML loading or inference fails."""
     if not isinstance(data, dict):
         data = {}
 
@@ -184,10 +167,7 @@ def fallback_predict(data: dict) -> dict:
 
 
 def predict_schema_mastery(data: dict) -> dict:
-    """
-    Main prediction entry point for Schema Mastery.
-    Uses trained ML pipeline to predict mastery probability, level, and next action.
-    """
+    """Predict success probability, then map it to mastery level and next action."""
     if not isinstance(data, dict):
         return fallback_predict({})
 
@@ -200,6 +180,7 @@ def predict_schema_mastery(data: dict) -> dict:
         df_input = pd.DataFrame([cleaned])[FEATURE_COLUMNS]
 
         if hasattr(model, "predict_proba"):
+            # The pipeline scales answer counts and excludes elapsed time.
             probs = model.predict_proba(df_input)[0]
             classes = list(model.classes_)
             pos_idx = classes.index(1) if 1 in classes else 1
@@ -217,6 +198,8 @@ def predict_schema_mastery(data: dict) -> dict:
             "mastery_level": level,
             "next_action": action,
             "model_used": "schema_mastery_pipeline",
+            "model_version": getattr(model, "schema_mastery_version", "legacy"),
+            "model_name": type(model.named_steps["model"]).__name__,
         }
 
     except Exception as e:

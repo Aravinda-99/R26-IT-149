@@ -152,6 +152,7 @@ export const SchemaMasteryAPI = {
         const query = `student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}${errorType ? `&error_type=${encodeURIComponent(errorType)}` : ""}`;
         return apiRequest(`/schema-mastery/post-test/questions?${query}`);
     },
+    // 372Flask handler: backend/routes/schema_mastery_routes.py:submit_post_test.
     submitPostTest: (data) => apiRequest("/schema-mastery/post-test/submit", "POST", data),
     getPostTestResults: (filters = {}) => {
         const params = new URLSearchParams();

@@ -382,28 +382,28 @@
     "student_email": "janith@gmail.com",
     "component_1": {
       "completed": true,
-      "concept_name": "Arrays",
-      "weak_concept": "Arrays",
-      "pre_test_score": 0.17,
+      "concept_name": "Methods",
+      "weak_concept": "Methods",
+      "pre_test_score": 0.3,
       "attempt_count": 1,
-      "time_taken_seconds": 23,
-      "completed_at": "2026-10-20T15:53:02.818805+00:00"
+      "time_taken_seconds": 19.0,
+      "completed_at": "2026-10-20T16:05:05.434351+00:00"
     },
     "component_2": {
       "completed": true,
-      "error_type": "METHOD_RETURN_ISSUE",
-      "error_pattern_score": 0.66,
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.61,
       "error_pattern_score_source": "component2_confidence",
-      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
       "dominant_error_count": null,
       "total_error_count": null,
-      "completed_at": "2026-10-20T15:58:59.530799+00:00"
+      "completed_at": "2026-10-20T17:26:46.832000+00:00"
     },
     "component_3": {
       "completed": true,
-      "recommended_game_id": "whileloops",
-      "recommended_game_name": "Condition Guard",
-      "completed_at": "2026-10-20T15:51:52.180763+00:00"
+      "recommended_game_id": "integer",
+      "recommended_game_name": "Variable Tracker Arena",
+      "completed_at": "2026-10-20T16:07:00.193232+00:00"
     },
     "component_4": {
       "unlocked": true,
@@ -414,18 +414,18 @@
       "next_action": "LEARN_AGAIN",
       "completed_at": "2026-10-20T15:56:22.178112+00:00"
     },
-    "current_stage": "MASTERY_EVALUATED",
+    "current_stage": "UNDERSTANDING_CHECK_READY",
     "created_at": "2026-10-20T15:41:13.962746+00:00",
-    "updated_at": "2026-10-20T15:58:59.530799+00:00",
-    "error_type": "METHOD_RETURN_ISSUE",
-    "error_pattern_score": 0.66,
+    "updated_at": "2026-10-20T17:26:46.832000+00:00",
+    "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+    "error_pattern_score": 0.61,
     "error_pattern_score_source": "component2_confidence",
     "assessment_target": {
-      "concept_name": "Methods",
-      "error_type": "METHOD_RETURN_ISSUE",
-      "error_pattern_score": 0.66,
-      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
-      "pre_test_completed_at": "2026-10-20T15:53:02.818805+00:00"
+      "concept_name": "Arrays",
+      "error_type": "ARRAY_BOUNDARY_INDEX_ISSUE",
+      "error_pattern_score": 0.61,
+      "error_reason": "A common mistake is thinking the highest index is equal to the array's length, when it is actually length - 1.",
+      "pre_test_completed_at": "2026-10-20T16:05:05.434351+00:00"
     }
   },
   "user_1788166926551": {
@@ -520,6 +520,31 @@
     "error_pattern_score": 0.44,
     "error_pattern_score_source": "component2_confidence"
   },
+
+  "user_1792522764494": {
+    "session_id": "SESS_5403F1A9",
+    "student_id": "user_1792522764494",
+    "student_name": "Shaminda Imesh",
+    "student_email": "shaminda@gmail.com",
+    "component_1": {
+      "completed": true,
+      "concept_name": "Arrays",
+      "weak_concept": "Arrays",
+      "pre_test_score": 0.57,
+      "attempt_count": 1,
+      "time_taken_seconds": 120.0,
+      "completed_at": "2026-10-20T19:35:03.011203+00:00"
+    },
+    "component_2": {
+      "completed": true,
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.68,
+      "error_pattern_score_source": "component2_confidence",
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "dominant_error_count": null,
+      "total_error_count": null,
+      "completed_at": "2026-10-20T20:09:31.497360+00:00"
+=======
   "nOu4rObBoYYm3rHwcBnHFWNFly02": {
     "session_id": "SESS_708A25D3",
     "student_id": "nOu4rObBoYYm3rHwcBnHFWNFly02",
@@ -540,6 +565,7 @@
       "error_pattern_score": null,
       "error_reason": null,
       "completed_at": null
+
     },
     "component_3": {
       "completed": false,
@@ -548,6 +574,29 @@
       "completed_at": null
     },
     "component_4": {
+
+      "unlocked": true,
+      "post_test_started": true,
+      "post_test_completed": true,
+      "post_test_score": 0.5333,
+      "mastery_level": "Learn Again",
+      "next_action": "LEARN_AGAIN",
+      "completed_at": "2026-10-20T19:48:11.933945+00:00"
+    },
+    "current_stage": "GAME_LESSON_READY",
+    "created_at": "2026-10-20T19:35:02.905896+00:00",
+    "updated_at": "2026-10-20T20:09:31.497360+00:00",
+    "error_type": "METHOD_RETURN_ISSUE",
+    "error_pattern_score": 0.68,
+    "error_pattern_score_source": "component2_confidence",
+    "assessment_target": {
+      "concept_name": "Methods",
+      "error_type": "METHOD_RETURN_ISSUE",
+      "error_pattern_score": 0.68,
+      "error_reason": "Misunderstanding the difference between printing a value and returning it, or between void and typed methods.",
+      "pre_test_completed_at": "2026-10-20T19:35:03.011203+00:00"
+    }
+=======
       "unlocked": false,
       "post_test_started": false,
       "post_test_completed": false,
@@ -559,5 +608,6 @@
     "current_stage": "PRE_TEST_PENDING",
     "created_at": "2026-10-20T16:23:21.975683+00:00",
     "updated_at": "2026-10-20T16:23:21.975683+00:00"
+
   }
 }
