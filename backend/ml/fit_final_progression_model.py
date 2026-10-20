@@ -1,34 +1,5 @@
-"""
-Component 1 — Model B (progression): evaluate + fit the deployed model
-=======================================================================
-Method A (unweighted GB + tuned class multipliers) tied the persistence
-baseline in compare_progression_methods.py and is deployed as the live
-progression decision, with persistence reported as the baseline. We do
-NOT claim that it beats the baseline.
+// Component 1 — Model B (progression): evaluate + fit the deployed model
 
-REDUCED FEATURES (Method B): accuracy, avg_time_sec.
-avg_attempts is dropped: the quiz measures it as answer changes, while
-ASSISTments measures tries until correct. This was found by the validity
-grid check on quiz-like inputs, BEFORE the reduced model was evaluated.
-
-TIME FLOOR: avg_time_sec is raised to the training data's 5th percentile
-in training and at prediction (the model has almost no rows below it).
-In CV the floor is computed from each outer training fold.
-
-1. Evaluate on the SAME 5 StratifiedGroupKFold folds (by user_id):
-     reduced Method A  vs  persistence
-   (nested multiplier tuning on the outer training fold only)
-2. DECISION RULE (fixed before results were seen) — non-inferiority:
-     deploy if mean_F1(B) >= mean_F1(persistence) - max(std_B, std_persistence)
-   Otherwise stop: nothing is saved.
-3. If deployable: tune multipliers on all data (same inner CV), refit GB
-   on all data, save models.progression_model.ThresholdedGBClassifier
-   (with its time floor) to ml_models/model_b.pkl, and record everything
-   in ml/progression_results.json.
-
-Usage (from backend/):
-    python ml/fit_final_progression_model.py
-"""
 
 import json
 import os

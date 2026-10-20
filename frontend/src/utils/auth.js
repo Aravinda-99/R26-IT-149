@@ -11,6 +11,7 @@ import { AuthAPI } from "../api/api.js";
 let currentUser = null;
 let authListeners = [];
 let authInitialized = false;
+let sessionVersion = 0;
 
 function mergeBackendProfile(localUser, backendProfile) {
     if (!backendProfile) return localUser;
@@ -54,10 +55,12 @@ export function initAuthListener() {
         // depend on onAuthStateChanged firing.
         if (currentUser?.uid || currentUser?.id) {
             const uid = currentUser.uid || currentUser.id;
+            const version = sessionVersion;
             AuthAPI.getProfile(uid)
                 .then(async (freshProfile) => {
+                    if (version !== sessionVersion) return resolve(currentUser);
                     if (freshProfile && (freshProfile.uid || freshProfile.id)) {
-                        currentUser = { ...currentUser, ...freshProfile };
+                        currentUser = mergeBackendProfile(currentUser, freshProfile);
                         localStorage.setItem("codequest_user", JSON.stringify(currentUser));
                     }
                     await GameManager.syncWithFirebase();
@@ -73,14 +76,8 @@ export function initAuthListener() {
                     resolve(currentUser);
                 });
         } else {
-            // No cached session at all — nothing to hydrate or sync yet.
-            // Resolve immediately rather than penalizing every logged-out
-            // visit with the Firebase check's latency; the listener below
-            // still runs and will notify/resolve again later if it turns
-            // out there IS a real Firebase session (a resolved promise's
-            // resolve() calls are harmless no-ops).
-            authInitialized = true;
-            resolve(currentUser);
+            // Wait for Firebase's initial state before rendering a legacy session.
+            authInitialized = false;
         }
 
         // 2. Firebase Auth State Listener — kept as a fallback for accounts
@@ -90,43 +87,46 @@ export function initAuthListener() {
             const auth = getAuth();
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
+                    // Backend logins can have a different UID from Firebase Auth.
+                    // A leftover Firebase account must not replace that session.
+                    const cachedUid = currentUser?.uid || currentUser?.id;
+                    if (cachedUid) return;
+                    const version = sessionVersion;
+                    const firebaseProfile = {
+                        uid: user.uid,
+                        id: user.uid,
+                        email: user.email,
+                        displayName: user.displayName || user.email?.split("@")[0] || "Learner",
+                        name: user.displayName || user.email?.split("@")[0] || "Learner",
+                        role: "student",
+                        joinedAt: new Date().toISOString(),
+                    };
+                    let restoredProfile;
                     try {
                         const profile = await AuthAPI.getProfile(user.uid);
                         if (profile && profile.uid) {
-                            currentUser = profile;
+                            restoredProfile = mergeBackendProfile(firebaseProfile, profile);
                         } else {
-                            const role = (user.email && (user.email.includes("teacher") || user.email.includes("admin"))) ? "teacher" : "student";
-                            currentUser = {
-                                uid: user.uid,
-                                id: user.uid,
-                                email: user.email,
-                                displayName: user.displayName || user.email?.split("@")[0] || "Learner",
-                                name: user.displayName || user.email?.split("@")[0] || "Learner",
-                                role: role,
-                                joinedAt: new Date().toISOString(),
-                            };
+                            restoredProfile = firebaseProfile;
                         }
                     } catch (e) {
-                        const role = (user.email && (user.email.includes("teacher") || user.email.includes("admin"))) ? "teacher" : "student";
-                        currentUser = {
-                            uid: user.uid,
-                            id: user.uid,
-                            email: user.email,
-                            displayName: user.displayName || user.email?.split("@")[0] || "Learner",
-                            name: user.displayName || user.email?.split("@")[0] || "Learner",
-                            role: role,
-                            joinedAt: new Date().toISOString(),
-                        };
+                        restoredProfile = firebaseProfile;
                     }
+                    if (version !== sessionVersion) return resolve(currentUser);
+                    currentUser = restoredProfile;
                     localStorage.setItem("codequest_user", JSON.stringify(currentUser));
                     await GameManager.syncWithFirebase();
                 } else {
+                    // The backend hydration path owns cached sessions, including
+                    // its initial render. Firebase null does not mean logged out.
+                    if (currentUser?.uid || currentUser?.id) return;
                     if (!localStorage.getItem("codequest_user")) {
                         currentUser = null;
                         GameManager.resetAll();
                     }
                 }
 
+                authInitialized = true;
                 notifyListeners();
                 resolve(currentUser);
             });
@@ -170,6 +170,7 @@ export function getUserRole() {
 }
 
 export function setCurrentUser(user) {
+    sessionVersion++;
     currentUser = user;
     if (user) {
         localStorage.setItem("codequest_user", JSON.stringify(user));
@@ -180,6 +181,7 @@ export function setCurrentUser(user) {
 }
 
 export async function logout() {
+    sessionVersion++;
     try {
         const auth = getAuth();
         await signOut(auth);

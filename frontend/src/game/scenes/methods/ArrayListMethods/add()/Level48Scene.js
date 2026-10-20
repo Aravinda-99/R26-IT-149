@@ -1,35 +1,9 @@
-/**
- * Level 48 — "The Reading Room" (ArrayList Methods: Restructuring Phase —
- * add() trilogy finale; the ArrayList Wing's first complete trilogy)
- * ===========================================================================
- * The learner CONSTRUCTS complete list-building programs — no multiple
- * choice. Reuses the L27→L45 code-canvas/parts-bin/RUN architecture. The
- * rig window hosts a 55%-scale L46/L47 bookshelf + list-state panel, plus
- * cross-wing cameos (Scanner tape, typed containers, case press, output
- * ticker) that light up only when the player's ACTUAL code exercises them.
- *
- * A genuine generic mini-interpreter (never scripted) executes the
- * assembled program: sequential statements, variable declarations,
- * Scanner.nextLine consumption, a real for-loop (M4, iteration-by-
- * iteration with manifest beats), both add() forms with honest insertion
- * shift/IOOBE semantics, String case methods, and println with Java's
- * real ArrayList toString ("[ANA, BEN]" — no quotes). Wrong builds yield
- * their REAL outcomes on the shelf and in the report.
- *
- * DESIGN NOTE — Mission 3 palette (resolved before writing any code): the
- * spec's draft distractor waitlist.add(4, "Vip") was described as "legal
- * but wrong position", but on a size-3 list index 4 is OUT OF RANGE — real
- * Java throws IndexOutOfBoundsException, contradicting the intended
- * lesson. The distractor is therefore add(3, "Vip") — genuinely legal
- * (index == size appends, the L47 Wave-2 boundary rule) and genuinely
- * wrong-position — keeping the evaluator honest AND the pedagogy intact.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -56,9 +30,6 @@ const RX = 760, RY = 345, RW = 460, RH = 125;
 const BX = 760, BY = 490, BW = 460, BH = 130;
 const TUTORIAL_KEY = "level48_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Reading List",
     brief: "The month's reading list needs three titles in order: first \"Dune\", then \"Emma\", then \"Ivanhoe\". Final shelf: [Dune, Emma, Ivanhoe]",
@@ -257,10 +228,6 @@ export class Level48Scene extends Phaser.Scene {
     this._firstRunMetricsRecorded = {};
     this.tapeState = [];
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level46Scene";
     this.currentList = [];
     this.currentListType = null;
@@ -311,11 +278,6 @@ export class Level48Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -332,10 +294,6 @@ export class Level48Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — the grand reading room
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l48_dot")) {
@@ -489,7 +447,6 @@ export class Level48Scene extends Phaser.Scene {
     this.quietSignBg.strokeRoundedRect(842, 48, 96, 24, 4);
   }
 
-  /** Flip illusion: scale-x 1 → 0 → 1 with text swap mid-flip. */
   flipQuietSign(state) {
     if (this._quietState === state) return;
     this._quietState = state;
@@ -549,10 +506,6 @@ export class Level48Scene extends Phaser.Scene {
     side(x, y, x + w, y); side(x + w, y, x + w, y + h);
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (L27→L45 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
@@ -686,10 +639,6 @@ export class Level48Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (drag system, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -847,10 +796,6 @@ export class Level48Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -889,10 +834,6 @@ export class Level48Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — mini bookshelf + list state panel + cameos
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -953,7 +894,6 @@ export class Level48Scene extends Phaser.Scene {
   }
 
   createMiniCrossWingCameos() {
-    // Scanner tape (top strip) — dark until a mission loads input
     this.tapeContainer = this.add.container(0, 0);
     this.rigLayer.add(this.tapeContainer);
     this.tapeState = [];
@@ -975,7 +915,6 @@ export class Level48Scene extends Phaser.Scene {
     this.pressLayer.add([pg, pl, this.pressText]);
     this.rigLayer.add(this.pressLayer);
 
-    // output ticker (M6) — slim console strip along the bottom edge
     this.tickerLayer = this.add.container(0, 0).setVisible(false);
     const tg = this.add.graphics();
     tg.fillStyle(0x050914, 0.9);
@@ -1049,8 +988,6 @@ export class Level48Scene extends Phaser.Scene {
     if (this.tickerText) this.tickerText.setText("").setFontSize(9);
   }
 
-  // ── Mini Scanner tape (L34–36 lineage, compact) ──
-
   _classifyChar(ch) {
     if (ch === " ") return "space";
     if (ch === "\n") return "newline";
@@ -1105,10 +1042,6 @@ export class Level48Scene extends Phaser.Scene {
     await this.delay(70);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // MINI BOOKS — append / insert / reject (honest, trace-driven)
-  // ══════════════════════════════════════════════════════════════
-
   _shelfY(idx) { return MS_BASE_Y - Math.min(idx, 6) * MS_STEP; }
 
   _makeMiniBook(value) {
@@ -1158,7 +1091,6 @@ export class Level48Scene extends Phaser.Scene {
     this.rigLayer.add(glow);
     this.tweens.add({ targets: glow, alpha: 0, duration: 400, delay: 200, onComplete: () => glow.destroy() });
 
-    // books at >= index slide up one shelf; the new book flies in
     const shifting = this.shelfBookSprites.slice(index);
     const shiftP = new Promise((res) => {
       if (shifting.length === 0) { res(); return; }
@@ -1247,7 +1179,6 @@ export class Level48Scene extends Phaser.Scene {
     this.panelIndexText.setText(this.currentList.map((_, i) => `[${i}]`).join(" "));
   }
 
-  /** Java's real ArrayList toString: [a, b, c] — no quotes on Strings. */
   _listToString() {
     return `[${this.currentList.map((e) => String(e.value)).join(", ")}]`;
   }
@@ -1278,10 +1209,6 @@ export class Level48Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MANIFEST STRIP / TEST REPORT / MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createManifestStrip() {
     const g = this.add.graphics().setDepth(14);
@@ -1361,10 +1288,6 @@ export class Level48Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0704, 0.93);
@@ -1372,8 +1295,8 @@ export class Level48Scene extends Phaser.Scene {
     g.lineStyle(1, 0x3a2618, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE READING ROOM", { font: "bold 15px Georgia", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — add()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE READING ROOM", { font: "bold 18px Georgia", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — add()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1383,8 +1306,8 @@ export class Level48Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -1408,8 +1331,6 @@ export class Level48Scene extends Phaser.Scene {
   }
 
   _drawHexes() {
-    // Kill leftover pulse tweens first (L45 lesson — the infinite
-    // alpha-yoyo would otherwise keep running on completed hexes).
     this.missionHexes.forEach(({ g }) => { this.tweens.killTweensOf(g); g.setAlpha(1); });
     this.missionHexes.forEach(({ g, x, y }, i) => {
       g.clear();
@@ -1422,10 +1343,6 @@ export class Level48Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — Reading Room Curator variant (cape, gloves, spectacles, key)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1469,8 +1386,8 @@ export class Level48Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1524,7 +1441,8 @@ export class Level48Scene extends Phaser.Scene {
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 25, alpha: 0, duration: 800, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1547,10 +1465,6 @@ export class Level48Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(1000, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1587,10 +1501,6 @@ export class Level48Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1662,10 +1572,6 @@ export class Level48Scene extends Phaser.Scene {
     this.missionElements = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PROGRAM ASSEMBLY & SUBSTITUTION
-  // ══════════════════════════════════════════════════════════════
-
   _substitute(mission, test) {
     const decls = {};
     mission.skeleton.forEach((line) => {
@@ -1683,9 +1589,6 @@ export class Level48Scene extends Phaser.Scene {
     return decls;
   }
 
-  /** Builds the substituted program: one item per skeleton line, slot
-   * tokens replaced by the assembled block codes, test values inlined.
-   * Item indices match the rendered skeleton lines (for highlighting). */
   buildProgramItems(mission, assembled, test) {
     return mission.skeleton.map((rawLine) => {
       let text = rawLine;
@@ -1740,10 +1643,6 @@ export class Level48Scene extends Phaser.Scene {
     return parts;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPILE CHECK — run never starts on a compile error (L27 rule)
-  // ══════════════════════════════════════════════════════════════
-
   compileCheckProgram(items, assembled, mission) {
     const declared = new Set(["sc"]);
     let listName = null;
@@ -1757,7 +1656,6 @@ export class Level48Scene extends Phaser.Scene {
 
     const checkIdent = (id, slotId) => {
       if (declared.has(id) || id === listName || (inLoop && id === "i")) return null;
-      // declared later in the program → order bug; never declared → unquoted literal
       const laterDecl = new RegExp(`String\\s+${id}\\s*=`).test(fullText);
       return failFor(slotId, laterDecl ? "wrong_variable_used" : "unquoted_string_literal");
     };
@@ -1824,10 +1722,6 @@ export class Level48Scene extends Phaser.Scene {
     }
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — sequential, honest, trace-driven
-  // ══════════════════════════════════════════════════════════════
 
   evalExpr(expr, decls) {
     const t = expr.trim();
@@ -1980,10 +1874,6 @@ export class Level48Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN PIPELINE
-  // ══════════════════════════════════════════════════════════════
-
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -2035,7 +1925,6 @@ export class Level48Scene extends Phaser.Scene {
     const wrongBlocksUsed = this._collectWrongBlocksUsed();
     this.flipQuietSign("session");
 
-    // compile check — the run never starts on a compile error
     const compileItems = this.buildProgramItems(mission, assembled, mission.tests[0]);
     const compileResult = this.compileCheckProgram(compileItems, assembled, mission);
     if (!compileResult.ok) {
@@ -2089,23 +1978,6 @@ export class Level48Scene extends Phaser.Scene {
     return { match, crashed: !runResult.ok };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -2127,8 +1999,6 @@ export class Level48Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level48Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -2150,8 +2020,6 @@ export class Level48Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.flipQuietSign("quiet");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
     const feedbackTag = compileTag || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag);
 
@@ -2199,16 +2067,12 @@ export class Level48Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2242,7 +2106,6 @@ export class Level48Scene extends Phaser.Scene {
       this.tweens.add({ targets: hx.g, alpha: 0.4, duration: 150, yoyo: true, repeat: 2 });
     }
     const mission = MISSIONS[this.currentMission];
-    // legal-but-unidiomatic build (M4's add(i, "Ledger")) gets its note
     const usedAlsoCorrectInsertion = Object.values(this.getAssembledCode()).flat().some((b) => b.tag === "unnecessary_insertion");
     if (usedAlsoCorrectInsertion) {
       await this.bitSay(MISCONCEPTION_FEEDBACK.unnecessary_insertion);
@@ -2279,11 +2142,8 @@ export class Level48Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -2291,7 +2151,6 @@ export class Level48Scene extends Phaser.Scene {
     this.hideBubble();
     this.verdictLamp.setFillStyle(0x333333);
 
-    // the room closes: sign fades, windows darken, lamp dies, globe stops
     this.tweens.killTweensOf(this.quietSignText);
     this.tweens.add({ targets: this.quietSignText, alpha: 0.08, duration: 700 });
     this._windowCones.forEach((c) => this.tweens.add({ targets: c, alpha: 0, duration: 800 }));
@@ -2314,13 +2173,14 @@ export class Level48Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(48, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(47, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_add_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level48_results", JSON.stringify({
@@ -2408,7 +2268,6 @@ export class Level48Scene extends Phaser.Scene {
       this.tweens.add({ targets: s, scale: 1, duration: 250, delay: 1500 + i * 200, ease: earned ? "Back.easeOut" : "Cubic.easeOut" });
     }
 
-    // TRILOGY BADGE — bookshelf (L46), candle (L47), master key (L48)
     const badge = this.add.container(640, 432).setDepth(91).setAlpha(0);
     const bg = this.add.graphics();
     bg.fillStyle(0x1a1a2e, 1);
@@ -2435,7 +2294,6 @@ export class Level48Scene extends Phaser.Scene {
     const badgeSub = this.add.text(640, 494, "Accretion ✓  Tuning ✓  Restructuring ✓", { font: "12px Arial", color: "#78909c" }).setOrigin(0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: [badgeLbl, badgeSub], alpha: 1, duration: 300, delay: 0 });
 
-    // ArrayList Wing progress
     const wingLbl = this.add.text(640, 512, "ARRAYLIST WING — 1 of 3 trilogies complete", { font: "bold 13px Georgia", color: "#8c7ae6" }).setOrigin(0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: wingLbl, alpha: 1, duration: 300, delay: 2300 });
     const bar = this.add.graphics().setDepth(91).setAlpha(0);

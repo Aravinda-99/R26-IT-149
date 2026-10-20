@@ -240,6 +240,8 @@ function persistAttemptSummary(studentId, attempt, summary, mistakes, labels, st
         const res = store.peek(item);
         const payload = {
             student_id: studentId,
+            concept_name: mistakes.topConcept || mistakes.plan[0]?.concept,
+            context_scope: "top_misconception",
             error_type: mistakes.topReason,
             error_reason: c2.explanation?.misconception || c2.explanation?.reason || res?.explanation?.summary_en || "",
         };

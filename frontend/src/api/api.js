@@ -22,11 +22,12 @@ function shouldTryDevFallback(response, endpoint) {
 }
 
 // timeoutMs (optional): abort the request after this long; the promise rejects.
-async function apiRequest(endpoint, method = "GET", body = null, { timeoutMs } = {}) {
+async function apiRequest(endpoint, method = "GET", body = null, { timeoutMs, authToken } = {}) {
     const options = {
         method,
         headers: { "Content-Type": "application/json" },
     };
+    if (authToken) options.headers.Authorization = `Bearer ${authToken}`;
     if (body) options.body = JSON.stringify(body);
     const controller = timeoutMs ? new AbortController() : null;
     const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
@@ -116,7 +117,22 @@ export const MasteryAPI = {
     predictSchemaMastery: (data) => apiRequest("/schema-mastery/predict", "POST", data),
 };
 
+async function rosterRequest(path, method = "GET") {
+    let session, user;
+    try {
+        session = JSON.parse(sessionStorage.getItem("codequest_roster_session") || "null");
+        user = JSON.parse(localStorage.getItem("codequest_user") || "null");
+    } catch {}
+    if (!session?.token || session.uid !== (user?.uid || user?.id)) {
+        throw new Error("Please sign in to the Faculty Portal again to manage the student roster.");
+    }
+    return apiRequest(`/schema-mastery${path}`, method, null, { authToken: session.token });
+}
+
 export const SchemaMasteryAPI = {
+    getArchivedStudents: () => rosterRequest("/roster/archived"),
+    archiveStudent: (studentId) => rosterRequest(`/roster/${encodeURIComponent(studentId)}/archive`, "POST"),
+    restoreStudent: (studentId) => rosterRequest(`/roster/${encodeURIComponent(studentId)}/restore`, "POST"),
     getLLMStatus: () => apiRequest("/schema-mastery/llm/status"),
     getQuestionStats: () => apiRequest("/schema-mastery/questions/stats"),
     predict: (data) => apiRequest("/schema-mastery/predict", "POST", data),

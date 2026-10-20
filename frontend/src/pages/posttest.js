@@ -8,6 +8,7 @@
 
 import { SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
+import { lessonHref } from "./student/ProfileMastery.js";
 
 // ── State ───────────────────────────────────────────────────────────
 let currentStudentId = null;
@@ -59,6 +60,25 @@ export async function renderPostTest(container, opts = {}) {
 
     currentStudentId = user.uid || user.id;
 
+    const resultId = new URLSearchParams(window.location.hash.split("?")[1] || "").get("result_id");
+    if (resultId) {
+        const resultRoute = window.location.hash;
+        container.innerHTML = `<p role="status" style="padding:2rem;">Loading saved result...</p>`;
+        try {
+            const response = await SchemaMasteryAPI.getPostTestResults({ student_id: currentStudentId });
+            if (window.location.hash !== resultRoute) return;
+            if (!response.success || !Array.isArray(response.results)) throw new Error("Results unavailable");
+            const result = response.results.find(record => record.result_id === resultId && String(record.student_id) === String(currentStudentId));
+            if (!result) throw new Error("Result not found");
+            renderResultScreen(container, result);
+        } catch {
+            if (window.location.hash !== resultRoute) return;
+            container.innerHTML = `<div style="padding:2rem;"><p role="alert">Could not load this saved result.</p>
+                <a href="#/student/profile" class="btn btn-outline"><i class="fa-solid fa-arrow-left"></i> Back to Profile</a></div>`;
+        }
+        return;
+    }
+
     // Loading indicator while validating prerequisites
     container.innerHTML = `
         <div style="text-align: center; padding: 5rem 1rem; color: var(--text-secondary);">
@@ -73,7 +93,7 @@ export async function renderPostTest(container, opts = {}) {
         contextRes = await ensurePostTestContext(contextRes, user);
 
         const c1 = contextRes?.pre_test || contextRes?.component_1 || {};
-        const c2 = contextRes?.error_pattern || contextRes?.component_2 || {};
+        const c2 = { ...(contextRes?.error_pattern || contextRes?.component_2 || {}), ...(contextRes?.assessment_target || {}) };
 
         const hasPreTestData =
             Boolean(c1.completed &&
@@ -103,7 +123,7 @@ export async function renderPostTest(container, opts = {}) {
         // ── Prerequisites Satisfied: Load Real Context ─────────────────────────
         currentSessionId = contextRes.session_id;
         currentConcept = c1.concept_name || c1.weak_concept;
-        currentWeakConcept = c1.weak_concept || currentConcept;
+        currentWeakConcept = contextRes?.assessment_target?.concept_name || c1.weak_concept || currentConcept;
         currentAssessmentConcept = currentWeakConcept || currentConcept;
         currentPreTestScore = typeof c1.pre_test_score === "number" ? c1.pre_test_score : 0.50;
         currentAttemptCount = c1.attempt_count || 1;
@@ -209,7 +229,7 @@ async function recoverContextFromAvailableData(studentId) {
     const quizResults = readSessionJson("quiz-results");
     const latestError = readSessionJson("latest_error_analysis");
     const weakFromQuiz = getWeakConceptFromBreakdown(quizResults?.topicBreakdown);
-    const bankConcept = progress?.targetConcept || weakFromQuiz || await getQuestionBankConcept();
+    const bankConcept = progress?.targetConcept || weakFromQuiz;
     const errorLabel =
         latestError?.reason_group_final ||
         latestError?.reason_group ||
@@ -240,16 +260,6 @@ async function recoverContextFromAvailableData(studentId) {
 function readProgressForStudent(studentId) {
     const direct = readLocalJson(`cq_progress_${studentId}`);
     if (direct?.targetConcept || direct?.preTestCompleted) return direct;
-
-    try {
-        for (let i = 0; i < localStorage.length; i += 1) {
-            const key = localStorage.key(i);
-            if (!key || !key.startsWith("cq_progress_")) continue;
-            const value = readLocalJson(key);
-            if (value?.targetConcept || value?.preTestCompleted) return value;
-        }
-    } catch (e) {}
-
     return {};
 }
 
@@ -284,21 +294,6 @@ function getWeakConceptFromBreakdown(topicBreakdown = {}) {
         }
     });
     return selected;
-}
-
-async function getQuestionBankConcept() {
-    try {
-        const res = await SchemaMasteryAPI.getQuestionBank("", true);
-        const counts = {};
-        (res?.questions || []).forEach((q) => {
-            const concept = q.concept_name;
-            if (!concept) return;
-            counts[concept] = (counts[concept] || 0) + 1;
-        });
-        return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
-    } catch (e) {
-        return null;
-    }
 }
 
 function normalizeScore(value) {
@@ -343,7 +338,7 @@ function renderPostTestSetupIssue(container, message) {
 // 1. Post-Test Start Screen (Consuming Real Learning Context)
 // ─────────────────────────────────────────────────────────────────────────────
 function renderStartScreen(container) {
-    const conceptTitle = conceptDisplayNames[currentConcept] || currentConcept;
+    const conceptTitle = conceptDisplayNames[currentAssessmentConcept] || currentAssessmentConcept;
     const weakConceptTitle = conceptDisplayNames[currentWeakConcept] || currentWeakConcept;
 
     container.innerHTML = `
@@ -394,7 +389,7 @@ function renderStartScreen(container) {
                     <div style="background: var(--bg-subtle); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color);">
                         <span style="font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Assessment Size</span>
                         <div style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-top: 0.25rem;">
-                            15 Questions
+                            Up to 15 Questions
                         </div>
                     </div>
                 </div>
@@ -449,6 +444,12 @@ async function loadQuestionsAndStart(container) {
             return;
         }
 
+        const returnedConcept = res.concept_name || currentAssessmentConcept;
+        if (res.questions.some(q => String(q.concept_name).toLowerCase() !== String(returnedConcept).toLowerCase())) {
+            throw new Error("Received questions for a different learning concept. Please reload the understanding check.");
+        }
+        currentAssessmentConcept = returnedConcept;
+        currentWeakConcept = returnedConcept;
         questions = res.questions;
         selectedAnswers = {};
         currentQuestionIndex = 0;
@@ -634,6 +635,7 @@ async function submitPostTest(container) {
         };
 
         const result = await SchemaMasteryAPI.submitPostTest(payload);
+        if (!result.success) throw new Error(result.error || "Could not evaluate this assessment.");
         renderResultScreen(container, result);
     } catch (err) {
         container.innerHTML = `
@@ -700,7 +702,7 @@ function renderResultScreen(container, res) {
                     ${escapeHtml(understandingLevel)}
                 </h1>
                 <p style="font-size: 1rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
-                    ${conceptDisplayNames[currentAssessmentConcept] || currentAssessmentConcept}
+                    ${escapeHtml(conceptDisplayNames[res.concept_name] || res.concept_name || currentAssessmentConcept || "")}
                 </p>
 
                 <!-- Student Outcome Box -->
@@ -771,7 +773,7 @@ function renderResultScreen(container, res) {
                 <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
                     ${isDone
             ? `<a href="#/student/dashboard" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-check"></i> Continue Learning</a>`
-            : `<a href="#/student/games" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Reinforce with Game Lessons</a>`
+            : `<a href="${lessonHref(res.concept_name || currentAssessmentConcept)}" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;"><i class="fa-solid fa-rotate-left"></i> Reinforce with Game Lessons</a>`
         }
                     <a href="#/student/profile" class="btn btn-outline btn-lg" style="padding: 0.85rem 2rem; font-weight: 700;">
                         <i class="fa-solid fa-user"></i> View Profile
@@ -780,7 +782,7 @@ function renderResultScreen(container, res) {
             </div>
 
             <!-- Expandable Review -->
-            <div>
+            <div ${res.results?.length ? "" : 'class="hidden"'}>
                 <button class="btn btn-outline" id="toggle-review-btn" style="width: 100%; text-align: left; padding: 1rem; background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 600;"><i class="fa-solid fa-list-check" style="margin-right: 0.5rem; color: var(--primary);"></i> Review Answers & Explanations</span>
                     <i class="fa-solid fa-chevron-down" id="review-chevron"></i>

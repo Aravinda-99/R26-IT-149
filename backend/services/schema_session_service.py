@@ -82,6 +82,32 @@ def _normalize_score(val):
     return max(0.0, min(1.0, round(num, 4)))
 
 
+def normalize_concept(value):
+    text = str(value or "").strip().lower()
+    for concept in ("Variables", "Operators", "Loops", "Arrays", "Methods"):
+        if text == concept.lower() or text.startswith(concept.lower() + " &"):
+            return concept
+    return None
+
+
+def assessment_target_for_session(session):
+    """Resolve the learning target without replacing the original pre-test result."""
+    c1 = session.get("component_1", {})
+    target = session.get("assessment_target", {})
+    if target.get("pre_test_completed_at") == c1.get("completed_at") and normalize_concept(target.get("concept_name")):
+        return target
+    c2 = session.get("component_2", {})
+    prefix = str(c2.get("error_type") or "").upper().split("_")[0]
+    concept = {
+        "ARRAY": "Arrays", "INDEX": "Arrays", "LOOP": "Loops",
+        "METHOD": "Methods", "VARIABLE": "Variables", "TYPE": "Variables",
+        "OPERATOR": "Operators",
+    }.get(prefix)
+    concept = concept or normalize_concept(c2.get("concept_name")) or normalize_concept(c1.get("weak_concept")) or normalize_concept(c1.get("concept_name"))
+    return {"concept_name": concept, "error_type": c2.get("error_type"),
+            "error_pattern_score": c2.get("error_pattern_score")}
+
+
 def calculate_error_pattern_score(error_analysis_result: dict) -> dict:
     """
     Calculates or extracts the normalized error_pattern_score (0.0 to 1.0)
@@ -366,6 +392,7 @@ class SchemaSessionService:
                 "time_taken_seconds": round(duration, 1),
                 "completed_at": _now_iso(),
             }
+            session.pop("assessment_target", None)
 
             # If component 2 is not completed, advance stage to ERROR_FEEDBACK_READY
             if not session["component_2"].get("completed"):
@@ -413,6 +440,17 @@ class SchemaSessionService:
                 "total_error_count": score_meta.get("total_error_count"),
                 "completed_at": _now_iso(),
             }
+
+            if data.get("context_scope") == "top_misconception":
+                concept = normalize_concept(data.get("concept_name"))
+                if concept:
+                    session["assessment_target"] = {
+                        "concept_name": concept,
+                        "error_type": error_type,
+                        "error_pattern_score": error_pattern_score,
+                        "error_reason": error_reason,
+                        "pre_test_completed_at": session.get("component_1", {}).get("completed_at"),
+                    }
 
             # Top-level convenience mirrors for Component 4
             session["error_type"] = error_type
@@ -548,6 +586,7 @@ class SchemaSessionService:
             "component_2": c2,
             "component_3": c3,
             "component_4": c4,
+            "assessment_target": assessment_target_for_session(session),
             "created_at": session.get("created_at"),
             "updated_at": session.get("updated_at"),
         }

@@ -12,8 +12,14 @@
 
 import { SchemaMasteryAPI, MasteryAPI } from "../../api/api.js";
 import { getCurrentUser } from "../../utils/auth.js";
+import { mergeTeacherStudents, visiblePostTestResults } from "./TeacherStudentResults.js";
+import { wireArchiveButtons, renderArchivedStudents } from "./TeacherRoster.js";
+
+let dashboardEvents = null;
 
 export async function renderTeacherDashboard(container) {
+    dashboardEvents?.abort();
+    dashboardEvents = new AbortController();
     const user = getCurrentUser();
     const teacherName = user?.name || user?.displayName || "Educator";
 
@@ -32,6 +38,7 @@ export async function renderTeacherDashboard(container) {
                     <p class="ea-subtitle" style="color: #64748B; margin: 0.3rem 0 0 0; font-size: 0.9rem;">Manage curriculum question items, review AI questions, and monitor real registered student telemetry.</p>
                 </div>
                 <div class="ea-header-actions" style="display: flex; gap: 0.6rem;">
+                    <button class="btn btn-outline" id="tea-refresh-results"><i class="fa-solid fa-rotate-right"></i> Refresh</button>
                     <a href="#/teacher/questions/generate" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.88rem; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 0.45rem; background: #2563EB; color: #FFFFFF; text-decoration: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);">
                         <i class="fa-solid fa-plus-circle"></i> Generate Question Bank
                     </a>
@@ -46,7 +53,7 @@ export async function renderTeacherDashboard(container) {
                         <i class="fa-solid fa-user-graduate"></i>
                     </div>
                     <div class="ea-metric-info">
-                        <span class="ea-metric-label" style="font-size: 0.8rem; font-weight: 600; color: #64748B; display: block;">Registered Students</span>
+                        <span class="ea-metric-label" style="font-size: 0.8rem; font-weight: 600; color: #64748B; display: block;">Active Students</span>
                         <h3 class="ea-metric-val" id="tea-stat-students" style="font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0.1rem 0;">...</h3>
                         <span class="ea-metric-sub" style="font-size: 0.74rem; color: #7C3AED; font-weight: 600;">Real database users</span>
                     </div>
@@ -97,13 +104,23 @@ export async function renderTeacherDashboard(container) {
                 </div>
             </div>
 
+            <section class="teacher-archived-students" style="padding:0.5rem 0;">
+                <details>
+                    <summary style="cursor:pointer;font-weight:700;">Archived Students <span id="tea-archived-count"></span></summary>
+                    <div id="tea-archived-students" style="margin-top:1rem;"><p>Loading archived students...</p></div>
+                </details>
+            </section>
+
             <!-- Component 4 Post-Test Results -->
             <div class="card teacher-posttest-section" style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: 16px; padding: 1.75rem; box-shadow: var(--shadow-sm);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
                     <div>
                         <h2 style="font-size: 1.2rem; font-weight: 800; color: #0F172A; margin: 0 0 0.2rem 0;">Post-Test Analytics</h2>
-                        <p style="font-size: 0.84rem; color: #64748B; margin: 0;">Completed Component 4 understanding checks saved locally even when Firestore is unavailable.</p>
+                        <p style="font-size: 0.84rem; color: #64748B; margin: 0;">Completed understanding checks and student learning outcomes.</p>
                     </div>
+                    <label style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.84rem;cursor:pointer;">
+                        <input type="checkbox" id="tea-show-archived-results"> Show archived students
+                    </label>
                 </div>
 
                 <div id="tea-posttest-results-container">
@@ -155,13 +172,80 @@ export async function renderTeacherDashboard(container) {
         </div>
     `;
 
+    const dashboard = container.querySelector(".teacher-dashboard");
+    const refreshButton = container.querySelector("#tea-refresh-results");
+    let rosterStudents = [];
+    let archivedStudents = [];
+    let rosterRevision = 0;
+    let savedResults = [];
+    let resultsLoaded = false;
+    let archivesLoaded = false;
+    const showArchivedResults = container.querySelector("#tea-show-archived-results");
+    showArchivedResults?.addEventListener("change", renderAnalytics);
+
+    function renderAnalytics() {
+        if (!dashboard?.isConnected || !resultsLoaded || !archivesLoaded) return;
+        renderPostTestResultsTable(visiblePostTestResults(savedResults, archivedStudents, Boolean(showArchivedResults?.checked)));
+    }
+
+    function renderRosterState() {
+        if (!dashboard?.isConnected) return;
+        const students = mergeTeacherStudents([rosterStudents], [], archivedStudents);
+        const count = container.querySelector("#tea-stat-students");
+        if (count) count.textContent = students.length;
+        renderStudentsTable(students);
+        const studentRows = container.querySelector("#tea-students-container");
+        if (studentRows) wireArchiveButtons(studentRows, students, applyRosterChange);
+        const archiveContainer = container.querySelector("#tea-archived-students");
+        if (archiveContainer) renderArchivedStudents(archiveContainer, archivedStudents, applyRosterChange);
+        const archiveCount = container.querySelector("#tea-archived-count");
+        if (archiveCount) archiveCount.textContent = `(${archivedStudents.length})`;
+        renderAnalytics();
+    }
+
+    function applyRosterChange(record) {
+        if (!record?.student_id) return;
+        rosterRevision++;
+        archivedStudents = archivedStudents.filter(s => s.student_id !== record.student_id);
+        if (record.archived) archivedStudents = [record, ...archivedStudents];
+        else if (!rosterStudents.some(s => String(s.studentId) === String(record.student_id))) {
+            rosterStudents.push({ studentId: record.student_id, studentName: record.name, email: record.email });
+        }
+        renderRosterState();
+    }
+    refreshButton?.addEventListener("click", loadDashboardData);
+    // Refresh on returning to the teacher tab, without background polling.
+    window.addEventListener("focus", () => {
+        if (dashboard?.isConnected) loadDashboardData();
+    }, { signal: dashboardEvents.signal });
+    await loadDashboardData();
+
+    async function loadDashboardData() {
+    if (refreshButton?.disabled) return;
+    if (refreshButton) refreshButton.disabled = true;
+    const requestRevision = rosterRevision;
     // Fetch live counts & real registered students from DB
     try {
-        const [statsRes, masteryRes, authUsersRes, postTestRes] = await Promise.allSettled([
+        const [statsRes, masteryRes, authUsersRes, postTestRes, archiveRes] = await Promise.allSettled([
             SchemaMasteryAPI.getQuestionStats(),
             MasteryAPI.getStudents(),
             fetch("/api/auth/users").then(r => r.json()).catch(() => ({ students: [] })),
-            SchemaMasteryAPI.getPostTestResults(),
+            SchemaMasteryAPI.getPostTestResults().then(response => {
+                if (dashboard?.isConnected && response.success && Array.isArray(response.results)) {
+                    savedResults = response.results;
+                    resultsLoaded = true;
+                    renderAnalytics();
+                }
+                return response;
+            }),
+            SchemaMasteryAPI.getArchivedStudents().then(response => {
+                if (dashboard?.isConnected && response.success && Array.isArray(response.students)) {
+                    if (requestRevision === rosterRevision) archivedStudents = response.students;
+                    archivesLoaded = true;
+                    renderAnalytics();
+                }
+                return response;
+            }),
         ]);
 
         const stats = (statsRes.status === "fulfilled" && statsRes.value) ? statsRes.value : {};
@@ -170,7 +254,11 @@ export async function renderTeacherDashboard(container) {
         
         const masteryStudents = (masteryRes.status === "fulfilled" && masteryRes.value) ? (Array.isArray(masteryRes.value) ? masteryRes.value : (masteryRes.value.students || [])) : [];
         const authStudents = (authUsersRes.status === "fulfilled" && authUsersRes.value?.students) ? authUsersRes.value.students : [];
-        const postTestResults = (postTestRes.status === "fulfilled" && postTestRes.value?.results) ? postTestRes.value.results : [];
+        const postTestResults = (postTestRes.status === "fulfilled" && postTestRes.value?.success && Array.isArray(postTestRes.value.results)) ? postTestRes.value.results : [];
+        if (!dashboard?.isConnected) return;
+        if (archiveRes.status !== "fulfilled" || !archiveRes.value?.success || !Array.isArray(archiveRes.value.students)) {
+            throw new Error(archiveRes.reason?.message || "Could not load student roster visibility. Please sign in to the Faculty Portal again.");
+        }
 
         // Local storage registered students
         let localStudents = [];
@@ -184,86 +272,49 @@ export async function renderTeacherDashboard(container) {
             localStudents.push(activeUser);
         }
 
-        // Merge all real students by id / email (Zero data loss)
-        const studentMap = new Map();
-
-        // 1. Add auth students
-        authStudents.forEach(s => {
-            const key = s.email || s.uid || s.id || s.studentId;
-            if (key) studentMap.set(key, { ...s, studentId: s.uid || s.id || key, studentName: s.display_name || s.name || key });
-        });
-
-        // 2. Add mastery students (merges telemetry)
-        masteryStudents.forEach(s => {
-            const key = s.email || s.studentId || s.uid || s.id;
-            if (key) {
-                const existing = studentMap.get(key) || {};
-                studentMap.set(key, { ...existing, ...s });
-            }
-        });
-
-        // 3. Add local students
-        localStudents.forEach(s => {
-            const key = s.email || s.uid || s.id;
-            if (key) {
-                const existing = studentMap.get(key) || {};
-                studentMap.set(key, {
-                    ...existing,
-                    studentId: s.uid || s.id || key,
-                    studentName: s.name || s.displayName || s.display_name || existing.studentName || "Student",
-                    email: s.email || existing.email,
-                    created_at: s.joinedAt || s.created_at || existing.created_at,
-                    ...s
-                });
-            }
-        });
-
-        postTestResults.forEach(r => {
-            const key = r.student_email || r.student_id;
-            if (key) {
-                const existing = studentMap.get(key) || {};
-                studentMap.set(key, {
-                    ...existing,
-                    studentId: r.student_id || existing.studentId || key,
-                    studentName: r.student_name || existing.studentName || r.student_id || "Student",
-                    email: r.student_email || existing.email,
-                    overall_mastery: r.post_test_score ?? existing.overall_mastery ?? 0,
-                    overall_state: r.learning_status || existing.overall_state || "Post-Test Submitted",
-                    conceptName: r.concept_name,
-                    postTestCompleted: true,
-                    masteryLevel: r.mastery_level,
-                    nextAction: r.next_action,
-                    created_at: r.created_at || existing.created_at,
-                });
-            }
-        });
-
-        const students = Array.from(studentMap.values()).filter(s => s && (s.studentId || s.id || s.email));
+        // A response started before an archive/restore must not undo its confirmed state.
+        if (requestRevision === rosterRevision) {
+            rosterStudents = mergeTeacherStudents([authStudents, localStudents, masteryStudents], postTestResults);
+            archivedStudents = archiveRes.value.students;
+        }
         
         const pendingEl = document.getElementById("tea-stat-pending");
         const approvedEl = document.getElementById("tea-stat-approved");
-        const studentsCountEl = document.getElementById("tea-stat-students");
         
         if (pendingEl) pendingEl.textContent = penCount;
         if (approvedEl) approvedEl.textContent = appCount;
-        if (studentsCountEl) studentsCountEl.textContent = students.length;
-
-        renderStudentsTable(students);
-        renderPostTestResultsTable(postTestResults);
+        renderRosterState();
+        renderAnalytics();
+        if (postTestRes.status === "rejected" || !postTestRes.value?.success) {
+            const resultContainer = container.querySelector("#tea-posttest-results-container");
+            if (resultContainer) resultContainer.innerHTML = `<p role="alert">Could not load post-test results. Use Refresh to try again.</p>`;
+        }
 
     } catch (e) {
+        if (!dashboard?.isConnected) return;
+        if (requestRevision !== rosterRevision) return;
         console.warn("Failed to fetch teacher dashboard data:", e);
         const studentsContainer = document.getElementById("tea-students-container");
         if (studentsContainer) {
             studentsContainer.innerHTML = `
                 <div style="text-align: center; padding: 2.5rem 1rem; color: #64748B;">
                     <div style="font-size: 2rem; color: #94A3B8; margin-bottom: 0.5rem;"><i class="fa-solid fa-users-slash"></i></div>
-                    <p style="margin: 0; font-weight: 600; color: #0F172A;">No registered student records found in database.</p>
-                    <span style="font-size: 0.82rem; color: #64748B;">When new learners register on CodeQuest, their real database records will display here.</span>
+                    <p role="alert" style="margin: 0; font-weight: 600; color: #0F172A;">${escapeHtml(e.message || "Could not load the student roster.")}</p>
+                    <a href="#/teacher/login" class="btn btn-outline" style="margin-top:1rem;">Faculty Sign In</a>
                 </div>
             `;
         }
-        renderPostTestResultsTable([]);
+        const activeCount = container.querySelector("#tea-stat-students");
+        if (activeCount) activeCount.textContent = "--";
+        const archiveContainer = container.querySelector("#tea-archived-students");
+        if (archiveContainer) archiveContainer.innerHTML = `<p role="alert">Archived students could not be loaded. Sign in again or use Refresh.</p>`;
+        if (!archivesLoaded) {
+            const resultContainer = container.querySelector("#tea-posttest-results-container");
+            if (resultContainer) resultContainer.innerHTML = `<p role="alert">Could not load post-test visibility. Use Refresh to try again.</p>`;
+        }
+    } finally {
+        if (refreshButton) refreshButton.disabled = false;
+    }
     }
 }
 
@@ -275,7 +326,7 @@ function renderPostTestResultsTable(results) {
         container.innerHTML = `
             <div style="text-align: center; padding: 2.5rem 1rem; color: #64748B; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px;">
                 <div style="font-size: 2rem; color: #94A3B8; margin-bottom: 0.5rem;"><i class="fa-solid fa-clipboard-question"></i></div>
-                <h4 style="font-size: 0.98rem; font-weight: 700; color: #0F172A; margin: 0 0 0.25rem 0;">No post-test submissions yet.</h4>
+                <h4 style="font-size: 0.98rem; font-weight: 700; color: #0F172A; margin: 0 0 0.25rem 0;">No post-test submissions in this view.</h4>
             </div>
         `;
         return;
@@ -294,8 +345,10 @@ function renderPostTestResultsTable(results) {
                 </td>
                 <td style="padding: 0.85rem 1rem; font-size: 0.84rem; color: #0F172A;">${escapeHtml(r.concept_name || "")}</td>
                 <td style="padding: 0.85rem 1rem; font-size: 0.78rem; color: #64748B;">${escapeHtml(r.error_type || "")}</td>
+                <td style="padding: 0.85rem 1rem;">${r.pre_test_score == null ? "--" : `${Math.round(Number(r.pre_test_score) * 100)}%`}</td>
                 <td style="padding: 0.85rem 1rem; font-weight: 800; color: #2563EB;">${score}%</td>
                 <td style="padding: 0.85rem 1rem; font-size: 0.84rem; color: #0F172A;">${escapeHtml(r.mastery_level || "")}</td>
+                <td style="padding: 0.85rem 1rem;">${r.mastery_probability == null ? "--" : `${Math.round(Number(r.mastery_probability) * 100)}%`}</td>
                 <td style="padding: 0.85rem 1rem; font-size: 0.84rem; color: #0F172A;">${escapeHtml(r.learning_status || "")}</td>
                 <td style="padding: 0.85rem 1rem;">
                     <span class="badge" style="background: ${nextAction === "DONE" ? "#DCFCE7" : "#FEF3C7"}; color: ${nextAction === "DONE" ? "#16A34A" : "#D97706"}; font-weight: 700; font-size: 0.72rem; padding: 0.2rem 0.55rem; border-radius: 9999px;">${nextAction}</span>
@@ -318,8 +371,10 @@ function renderPostTestResultsTable(results) {
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Student</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Concept</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Error Type</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.72rem; color: #64748B;">Pre-test</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Score</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Mastery</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.72rem; color: #64748B;">Mastery Probability</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Status</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Next</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.72rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Submitted</th>
@@ -339,7 +394,8 @@ function renderPostTestResultsTable(results) {
             panel.innerHTML = `<div style="padding: 1rem; color: #64748B;">Loading flow context...</div>`;
             try {
                 const ctx = await SchemaMasteryAPI.getFlowContext(btn.dataset.student, btn.dataset.session);
-                panel.innerHTML = renderFlowContextPanel(ctx);
+                const result = results.find(r => r.student_id === btn.dataset.student && r.session_id === btn.dataset.session);
+                panel.innerHTML = renderFlowContextPanel(ctx, result);
             } catch (e) {
                 panel.innerHTML = `<div style="padding: 1rem; color: #B91C1C; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px;">Could not load flow context.</div>`;
             }
@@ -347,13 +403,13 @@ function renderPostTestResultsTable(results) {
     });
 }
 
-function renderFlowContextPanel(ctx) {
+function renderFlowContextPanel(ctx, result) {
     const checks = [
-        ["Pre-test score", ctx?.component_1?.pre_test_score != null],
-        ["Error type", Boolean(ctx?.component_2?.error_type)],
-        ["Error pattern score", ctx?.component_2?.error_pattern_score != null],
-        ["Game completion", Boolean(ctx?.component_3?.learning_completed)],
-        ["Post-test result", Boolean(ctx?.component_4?.post_test_found)],
+        ["Pre-test score", result?.pre_test_score != null],
+        ["Error type", Boolean(result?.error_type)],
+        ["Error pattern score", result?.error_pattern_score != null],
+        ["Current game completion", Boolean(ctx?.component_3?.completed || ctx?.component_3?.learning_completed)],
+        ["Post-test result", Boolean(result?.result_id)],
     ];
     return `
         <div style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 10px; padding: 1rem;">
@@ -378,25 +434,25 @@ function renderStudentsTable(students) {
         container.innerHTML = `
             <div style="text-align: center; padding: 2.5rem 1rem; color: #64748B; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 12px;">
                 <div style="font-size: 2rem; color: #94A3B8; margin-bottom: 0.5rem;"><i class="fa-solid fa-user-slash"></i></div>
-                <h4 style="font-size: 0.98rem; font-weight: 700; color: #0F172A; margin: 0 0 0.25rem 0;">No Registered Students Found</h4>
-                <p style="font-size: 0.84rem; color: #64748B; margin: 0; max-width: 420px; margin: 0 auto;">When students register an account and take pre-tests or post-tests, their live progression profiles will populate this roster.</p>
+                <h4 style="font-size: 0.98rem; font-weight: 700; color: #0F172A; margin: 0 0 0.25rem 0;">No Active Students</h4>
+                <p style="font-size: 0.84rem; color: #64748B; margin: 0; max-width: 420px; margin: 0 auto;">New students appear here. Removed students can be restored from Archived Students below.</p>
             </div>
         `;
         return;
     }
 
     const rows = students.map((s, idx) => {
-        const name = s.studentName || s.name || s.display_name || "Learner";
-        const email = s.email || "Registered Student";
-        const id = s.studentId || s.user_id || s.id || `STU-${idx + 1}`;
+        const name = escapeHtml(s.studentName || s.name || s.display_name || "Learner");
+        const email = escapeHtml(s.email || "Registered Student");
+        const id = String(s.studentId || s.user_id || s.id || `STU-${idx + 1}`);
         const initial = name.charAt(0).toUpperCase();
         const masteryPct = s.overall_mastery !== undefined ? Math.round((Number(s.overall_mastery) > 1 ? Number(s.overall_mastery) : Number(s.overall_mastery) * 100)) : 0;
-        const state = s.overall_state || (masteryPct > 0 ? "Developing" : "Enrolled");
+        const state = s.postTestCompleted ? (s.masteryLevel || s.overall_state) : (s.overall_state || "Enrolled");
         
-        let stateBadge = `<span class="badge" style="background: #EFF6FF; color: #2563EB; font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px;">${state}</span>`;
-        if (state.toLowerCase().includes("master") || masteryPct >= 80) {
+        let stateBadge = `<span class="badge" style="background: #EFF6FF; color: #2563EB; font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px;">${escapeHtml(state)}</span>`;
+        if (!s.postTestCompleted && state.toLowerCase().includes("master")) {
             stateBadge = `<span class="badge" style="background: #DCFCE7; color: #16A34A; font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px;">Mastered</span>`;
-        } else if (state.toLowerCase().includes("fragile") || (masteryPct > 0 && masteryPct < 40)) {
+        } else if (!s.postTestCompleted && state.toLowerCase().includes("fragile")) {
             stateBadge = `<span class="badge" style="background: #FEF3C7; color: #D97706; font-weight: 600; font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 9999px;">Needs Practice</span>`;
         }
 
@@ -405,52 +461,60 @@ function renderStudentsTable(students) {
         return `
             <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s;">
                 <td style="padding: 0.9rem 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div style="width: 34px; height: 34px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.88rem;">
+                    <div class="teacher-roster-identity">
+                        <div class="teacher-roster-avatar" style="width: 34px; height: 34px; border-radius: 50%; background: #EFF6FF; color: #2563EB; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.88rem;">
                             ${initial}
                         </div>
                         <div>
-                            <strong style="font-size: 0.88rem; color: #0F172A; display: block;">${name}</strong>
-                            <span style="font-size: 0.75rem; color: #64748B;">ID: ${id.length > 16 ? id.substring(0, 16) + '...' : id}</span>
+                            <strong title="${name}" style="font-size: 0.88rem; color: #0F172A; display: block;">${name}</strong>
+                            <span title="${escapeHtml(id)}" style="font-size: 0.75rem; color: #64748B;">ID: ${escapeHtml(id)}</span>
                         </div>
                     </div>
                 </td>
-                <td style="padding: 0.9rem 1rem; font-size: 0.84rem; color: #64748B;">
+                <td class="teacher-roster-email" style="padding: 0.9rem 1rem; font-size: 0.84rem; color: #64748B;">
                     ${email}
                 </td>
                 <td style="padding: 0.9rem 1rem; font-size: 0.84rem; color: #64748B;">
-                    Java Foundations
+                    ${escapeHtml(s.conceptName || "Not assessed")}
                 </td>
                 <td style="padding: 0.9rem 1rem;">
                     ${stateBadge}
                 </td>
                 <td style="padding: 0.9rem 1rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <div style="width: 80px; height: 6px; background: #E2E8F0; border-radius: 9999px; overflow: hidden;">
+                    <div class="teacher-roster-score">
+                        ${s.postTestCompleted ? `<div class="teacher-roster-score-track" style="height: 6px; background: #E2E8F0; border-radius: 9999px; overflow: hidden;">
                             <div style="width: ${masteryPct}%; height: 100%; background: #2563EB; border-radius: 9999px;"></div>
-                        </div>
-                        <span style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">${masteryPct}%</span>
+                        </div>` : ""}
+                        <span style="font-size: 0.78rem; font-weight: 700; color: #0F172A;">${s.postTestCompleted ? `${masteryPct}%` : "Not taken"}</span>
                     </div>
                 </td>
-                <td style="padding: 0.9rem 1rem; text-align: right;">
-                    <a href="#/teacher/analytics" class="btn btn-outline btn-sm" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; border-radius: 6px; border: 1px solid #CBD5E1; color: #0F172A; text-decoration: none;">
-                        Inspect Telemetry
+                <td style="padding: 0.9rem 1rem; font-size:0.84rem;">${escapeHtml(s.nextAction === "DONE" ? "Continue" : s.nextAction === "LEARN_AGAIN" ? "Review Lesson" : "--")}</td>
+                <td class="teacher-roster-action-cell">
+                    <div class="teacher-roster-actions">
+                    <a href="#/teacher/analytics" class="teacher-roster-icon" title="Inspect learning analytics" aria-label="Inspect learning analytics for ${name}">
+                        <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
                     </a>
+                    <button class="teacher-roster-icon teacher-roster-archive" type="button" data-archive-student="${escapeHtml(id)}" title="Remove student from active roster" aria-label="Remove ${name} from active roster">
+                        <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
+                    </button>
+                    </div>
                 </td>
             </tr>
         `;
     }).join("");
 
     container.innerHTML = `
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <div class="teacher-roster-scroll" tabindex="0" role="region" aria-label="Active students roster">
+            <table class="teacher-roster-table">
+                <colgroup><col style="width:190px"><col style="width:176px"><col style="width:100px"><col style="width:140px"><col style="width:96px"><col style="width:80px"><col style="width:104px"></colgroup>
                 <thead>
                     <tr style="border-bottom: 1px solid #E2E8F0; background: #F8FAFC;">
                         <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Student</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Email</th>
-                        <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Track</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Concept</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
-                        <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Mastery Gain</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Post-test Score</th>
+                        <th style="padding: 0.75rem 1rem; font-size: 0.76rem; color: #64748B;">Next Step</th>
                         <th style="padding: 0.75rem 1rem; font-size: 0.76rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; text-align: right;">Action</th>
                     </tr>
                 </thead>

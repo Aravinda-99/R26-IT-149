@@ -1,26 +1,8 @@
-/**
- * Level 39 — "The Studio" (Output Methods: Restructuring Phase —
- * println() Trilogy Finale)
- * ===========================================================================
- * The learner CONSTRUCTS complete output-producing programs — no multiple
- * choice. Reuses the Level 27/30/33/36 code-canvas/parts-bin/RUN-button
- * construction architecture, with a masked rig window compacting the
- * Level 37 tower/marquee/log into a live observation pane, plus cross-wing
- * cameo stations (Scanner tape + containers from L34-36, case-method press
- * from L31-33) that light up only when a mission's code actually invokes
- * them — the rig's visual footprint IS the code's execution footprint.
- *
- * Six genuine per-mission interpreters (never scripted) compute real
- * results from whatever blocks the player placed, reusing the honest
- * left-to-right String-sticky '+' fold from L37/L38 and the corrected
- * (space-and-newline-skipping) Scanner tokenizer from L36. Mission 4 adds
- * a genuine for-loop simulator with an infinite-loop watchdog.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -35,7 +17,11 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-const LINE_H = 20;
+const LINE_H = 42;
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;
+const SLOT_PAD = 5, SLOT_HINT_PAD = 8;
+const HEX_HINT = "#7d8c9a";
+const WRAP_INDENT = 22;
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const STRIP_Y = OY + OH + 15;
@@ -51,9 +37,6 @@ const LOG_X0 = OX + 280, LOG_Y0 = OY + 35, LOG_W0 = 170;
 const PRESS_X = OX + 400, PRESS_Y = OY + 185;
 const TUTORIAL_KEY = "level39_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Announcer Line",
     brief: "The show intro reads a title from a variable and announces it. Print exactly: Now broadcasting: <show title>",
@@ -230,10 +213,6 @@ export class Level39Scene extends Phaser.Scene {
     this._dragHoverSlotKey = null;
     this._firstRunRecorded = false;
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level37Scene";
   }
 
@@ -277,11 +256,6 @@ export class Level39Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -298,10 +272,6 @@ export class Level39Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — studio
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l39_dot")) {
@@ -437,10 +407,6 @@ export class Level39Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (Level 27/30/33/36 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -484,18 +450,32 @@ export class Level39Scene extends Phaser.Scene {
     return tokens.length ? tokens : [{ t: line, c: "#e0e0e0" }];
   }
 
+  _measureText(str, style) {
+    const t = this.add.text(0, 0, str, style);
+    const w = t.width;
+    t.destroy();
+    return w;
+  }
+
+  _slotWidth(mission, def) {
+    const hintW = this._measureText(def.id, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2;
+    const partStyle = { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold" };
+    const partW = mission.palette
+      .filter((p) => p.slot === def.id)
+      .reduce((m, p) => Math.max(m, this._measureText(p.label || p.code, partStyle) + SLOT_PAD * 2), 0);
+    return Math.ceil(Math.max(hintW, partW));
+  }
+
   renderSkeleton(mission, test) {
     this.codeContainer.removeAll(true);
     this.slotDefs = {};
     mission.slots.forEach((s) => { this.slotDefs[s.id] = { ...s, rect: null }; });
 
-    mission.skeleton.forEach((rawLine, i) => {
-      const y = CODE_Y0 + i * LINE_H;
-      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "13px Courier New", color: "#3d4450" });
-      this.codeContainer.add(numT);
+    const codeStyle = (color) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color });
 
+    const lines = mission.skeleton.map((rawLine) => {
+      const segs = [];
       const parts = rawLine.split(/[§]?<slot:(\w+)>|§(\w+)/);
-      let x = CODE_X;
       for (let pi = 0; pi < parts.length; pi++) {
         const part = parts[pi];
         if (part === undefined) continue;
@@ -503,25 +483,58 @@ export class Level39Scene extends Phaser.Scene {
         const isSubToken = pi % 3 === 2;
         if (!isSlotToken && !isSubToken) {
           if (!part) continue;
-          this._syntaxTokens(part).forEach((tok) => {
-            const t = this.add.text(x, y, tok.t, { font: "bold 14px Courier New", color: tok.c });
-            this.codeContainer.add(t);
-            x += t.width;
-          });
+          this._syntaxTokens(part).forEach((tok) => segs.push({ k: "t", t: tok.t, c: tok.c, w: this._measureText(tok.t, codeStyle(tok.c)) }));
         } else if (isSubToken) {
-          const key = part;
-          const val = test && test.substitutions ? test.substitutions[key] : `§${key}`;
-          const t = this.add.text(x, y, String(val), { font: "bold 14px Courier New", color: "#546e7a" }).setAlpha(0.7);
-          this.codeContainer.add(t);
-          x += t.width;
-        } else if (isSlotToken) {
-          const slotId = part;
-          const def = this.slotDefs[slotId];
-          const w = 130;
-          def.rect = { x, y: y - 2, w, h: 17 };
-          this._drawSlotPlaceholder(slotId);
-          x += w + 6;
+          const val = String(test && test.substitutions ? test.substitutions[part] : `§${part}`);
+          segs.push({ k: "t", t: val, c: "#546e7a", dim: true, w: this._measureText(val, codeStyle("#546e7a")) });
+        } else {
+          segs.push({ k: "s", id: part, w: this._slotWidth(mission, this.slotDefs[part]) });
         }
+      }
+      return segs;
+    });
+
+    const limit = CX + CW - 14;
+    const placed = [], lineRows = [];
+    let rows = 0;
+    lines.forEach((segs) => {
+      let row = rows, x = CODE_X, rowStartX = CODE_X;
+      segs.forEach((seg, si) => {
+        if (seg.k === "s") {
+          let tail = 0;
+          for (let j = si + 1; j < segs.length && segs[j].k !== "s"; j++) tail += segs[j].w;
+          if (x > rowStartX && x + SLOT_GAP + seg.w + SLOT_GAP + tail > limit) { row++; x = CODE_X + WRAP_INDENT; rowStartX = x; }
+          if (x > rowStartX) x += SLOT_GAP;
+          placed.push({ seg, row, x });
+          x += seg.w + SLOT_GAP;
+        } else {
+          placed.push({ seg, row, x });
+          x += seg.w;
+        }
+      });
+      lineRows.push({ row: rows, n: row - rows + 1 });
+      rows = row + 1;
+    });
+
+    const rowH = Math.min(LINE_H, Math.floor((CY + CH - 8 - CODE_Y0) / Math.max(rows, 1)));
+    this._rowH = rowH;
+    this._lineRows = lineRows;
+    const rowCy = (r) => CODE_Y0 + r * rowH + rowH / 2;
+
+    lineRows.forEach((lr, li) => {
+      const numT = this.add.text(CX + 8, rowCy(lr.row), String(li + 1), { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5);
+      this.codeContainer.add(numT);
+    });
+    placed.forEach(({ seg, row, x }) => {
+      const cy = rowCy(row);
+      if (seg.k === "t") {
+        const t = this.add.text(x, cy, seg.t, codeStyle(seg.c)).setOrigin(0, 0.5);
+        if (seg.dim) t.setAlpha(0.7);
+        this.codeContainer.add(t);
+      } else {
+        const def = this.slotDefs[seg.id];
+        def.rect = { x, y: cy - SLOT_H / 2, w: seg.w, h: SLOT_H };
+        this._drawSlotPlaceholder(seg.id);
       }
     });
   }
@@ -551,7 +564,7 @@ export class Level39Scene extends Phaser.Scene {
     def.drawDash = draw;
     this.codeContainer.add(dg);
     if (!filled) {
-      const label = this.add.text(x + w / 2, y + h / 2, def.id, { font: "italic 11px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
+      const label = this.add.text(x + w / 2, y + h / 2, def.id, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic", color: HEX_HINT }).setOrigin(0.5).setDepth(22);
       def.hintLabel = label;
       this.codeContainer.add(label);
     }
@@ -561,24 +574,51 @@ export class Level39Scene extends Phaser.Scene {
     const def = this.slotDefs[slotId];
     const placed = this.slotContents[slotId] || [];
     if (!def || !def.rect) return;
-    const { x, y, h } = def.rect;
+    const { x, y, w, h } = def.rect;
     if (placed[0]) {
       const block = placed[0];
-      const bw = block.container.getData("w");
-      this.tweens.add({ targets: block.container, x: x + bw / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
+      this._fitBlockToSlot(block.container, def.rect);
+      this.tweens.add({ targets: block.container, x: x + w / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
     }
     this._drawSlotPlaceholder(slotId);
   }
 
-  highlightCodeLine(lineIndex) {
-    if (lineIndex === null || lineIndex === undefined) { this.lineHighlight.setVisible(false); return; }
-    const y = CODE_Y0 + lineIndex * LINE_H - 2;
-    this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
+  _fitBlockToSlot(c, rect) {
+    let v = c.getData("slotView");
+    if (!v) {
+      const bg0 = c.list[0], txt0 = c.list[1];
+      const txt = this.add.text(0, 0, txt0.text, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color: HEX_CYAN }).setOrigin(0.5);
+      const bg = this.add.graphics();
+      c.add([bg, txt]);
+      bg0.setVisible(false); txt0.setVisible(false);
+      v = { bg, txt, bg0, txt0, w: c.width, h: c.height };
+      c.setData("slotView", v);
+    }
+    v.bg.clear();
+    v.bg.fillStyle(0x1e1e3a, 1);
+    v.bg.fillRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    v.bg.lineStyle(2, C_CYAN, 1);
+    v.bg.strokeRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    c.setSize(rect.w, rect.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (drag system, reused verbatim from L33/L36)
-  // ══════════════════════════════════════════════════════════════
+  _releaseBlockFromSlot(c) {
+    const v = c.getData("slotView");
+    if (!v) return;
+    v.bg.destroy(); v.txt.destroy();
+    v.bg0.setVisible(true); v.txt0.setVisible(true);
+    c.setSize(v.w, v.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(v.w, v.h);
+    c.setData("slotView", null);
+  }
+
+  highlightCodeLine(lineIndex) {
+    if (lineIndex === null || lineIndex === undefined) { this.lineHighlight.setVisible(false); return; }
+    const lr = (this._lineRows || [])[lineIndex] || { row: lineIndex, n: 1 };
+    const rowH = this._rowH || LINE_H;
+    this.lineHighlight.setSize(CW - 4, lr.n * rowH).setPosition(CX + CW / 2, CODE_Y0 + (lr.row + lr.n / 2) * rowH).setVisible(true);
+  }
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -646,6 +686,7 @@ export class Level39Scene extends Phaser.Scene {
         this.slotContents[prevSlot] = (this.slotContents[prevSlot] || []).filter((b) => b.container !== obj);
         obj.setData("_cameFromSlot", prevSlot);
         obj.setData("placedIn", null);
+        this._releaseBlockFromSlot(obj);
         this._relayoutSlot(prevSlot);
         this.updateRunButtonState();
       } else {
@@ -740,10 +781,6 @@ export class Level39Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN, 0.06).setDepth(29);
@@ -782,10 +819,6 @@ export class Level39Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — mini tower/marquee/log + cross-wing cameos
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -964,9 +997,6 @@ export class Level39Scene extends Phaser.Scene {
     })));
   }
 
-  /** Corrected tokenizer (from L36): nextInt/nextDouble skip BOTH spaces
-   * and leftover newlines when hunting their token; nextLine keeps its own
-   * "consume to next newline" rule. */
   evaluateCall(cells, method) {
     let i = 0;
     const skipped = [];
@@ -992,10 +1022,6 @@ export class Level39Scene extends Phaser.Scene {
     }
     return { error: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MANIFEST STRIP / TEST REPORT / MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createManifestStrip() {
     const g = this.add.graphics().setDepth(14);
@@ -1064,10 +1090,6 @@ export class Level39Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
@@ -1075,8 +1097,8 @@ export class Level39Scene extends Phaser.Scene {
     g.lineStyle(1, 0x21262d, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE STUDIO", { font: "bold 15px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — Output Methods: println()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE STUDIO", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — Output Methods: println()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1086,8 +1108,8 @@ export class Level39Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -1124,10 +1146,6 @@ export class Level39Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — studio producer variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
     const g = this.add.graphics();
@@ -1156,8 +1174,8 @@ export class Level39Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1206,16 +1224,12 @@ export class Level39Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "bold 10px Arial", color: colorHex }).setOrigin(0.5).setDepth(20).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this.rigLayer.add(t);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(1200, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 200, onComplete: () => t.destroy() }); });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1259,10 +1273,6 @@ export class Level39Scene extends Phaser.Scene {
     this.tweens.add({ targets: t, alpha: 1, duration: 300 });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1331,10 +1341,6 @@ export class Level39Scene extends Phaser.Scene {
     this.missionElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.missionElements = [];
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest computation
-  // ══════════════════════════════════════════════════════════════
 
   interpretMission(mission, blocks, test) {
     switch (mission.mission) {
@@ -1477,10 +1483,6 @@ export class Level39Scene extends Phaser.Scene {
     return { value: lines.join("⏎"), lines: lines.map((t) => ({ text: t, type: "string" })) };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REVEAL — trace-driven, shared by all missions
-  // ══════════════════════════════════════════════════════════════
-
   async playReveal(mission, test, result) {
     this.clearMiniLog();
     this.clearMarquee();
@@ -1551,10 +1553,6 @@ export class Level39Scene extends Phaser.Scene {
     this.screenShake(0.005, 180);
     this.time.delayedCall(1200, () => { if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 250, onComplete: () => stamp.destroy() }); });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
 
   _collectWrongBlocksUsed() {
     const used = [];
@@ -1631,23 +1629,6 @@ export class Level39Scene extends Phaser.Scene {
     return match;
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1667,8 +1648,6 @@ export class Level39Scene extends Phaser.Scene {
       if (!this._alive) return;
       GameManager.fusionEngine.checkBehavioral(prediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level39Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1689,8 +1668,6 @@ export class Level39Scene extends Phaser.Scene {
     this.missionRunsFailed++;
     this.runButton.t.setText("▶ RUN");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
 
     const feedbackTag = (compileErr && compileErr.tag) || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag) || null;
@@ -1747,16 +1724,12 @@ export class Level39Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1819,7 +1792,8 @@ export class Level39Scene extends Phaser.Scene {
     }
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 25, alpha: 0, duration: 800, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1838,11 +1812,8 @@ export class Level39Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1867,13 +1838,14 @@ export class Level39Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(39, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(38, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("println_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level39_results", JSON.stringify({

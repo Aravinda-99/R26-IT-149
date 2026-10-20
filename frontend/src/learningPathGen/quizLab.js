@@ -519,12 +519,15 @@ function buildLevelCheckCard(mlResult, sessionMetrics) {
     const current = mlResult.current || sessionMetrics.current_difficulty;
     const next = mlResult.next_difficulty || current;
     const usedModel = mlResult.model_source === "model_b";
+    // Rapid guessing → result not applied (see handleLevelCheckSubmit):
+    // show a trimmed card with the next level as "Unchanged".
+    const rapid = mlResult.rapid_guessing === true;
 
     const confidenceText = mlResult.confidence !== null && mlResult.confidence !== undefined
         ? `${Math.round(mlResult.confidence)}% probability${mlResult.low_confidence ? " · low confidence" : ""}`
         : "rule-based fallback";
 
-    const levelTile = (label, level, color) => `
+    const levelTile = (label, level, color, { text = LEVEL_NAMES[level] || level, subtitle = true } = {}) => `
                 <div style="
                     background:#F8FAFC;
                     border-radius:10px;
@@ -535,9 +538,9 @@ function buildLevelCheckCard(mlResult, sessionMetrics) {
                         ${label}
                     </div>
                     <div style="font-size:1rem; font-weight:600; color:${color};">
-                        ${LEVEL_NAMES[level] || level}
+                        ${text}
                     </div>
-                    <div style="font-size:0.7rem; color:#475569; text-transform:capitalize;">${level}</div>
+                    ${subtitle ? `<div style="font-size:0.7rem; color:#475569; text-transform:capitalize;">${level}</div>` : ""}
                 </div>
     `;
 
@@ -546,23 +549,9 @@ function buildLevelCheckCard(mlResult, sessionMetrics) {
             ${cardHeader("🤖", "Level Check Result",
         "IRT placement + Gradient Boosting progression (trained on real learner outcomes)")}
 
-            ${mlResult.rapid_guessing ? `
-            <div style="
-                background:#FFFBEB;
-                border:1px solid #F59E0B;
-                color:#B45309;
-                border-radius:8px;
-                padding:8px 12px;
-                font-size:0.8rem;
-                margin-bottom:1rem;
-            ">
-                ⚠ Answers were very fast; this result may reflect guessing.
-            </div>
-            ` : ""}
-
             <!-- current level → action (confidence) → next level -->
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:0.6rem;">
-                ${levelTile("Current Level", current, "#0F172A")}
+                ${levelTile("Current Level", current, "#0F172A", { subtitle: !rapid })}
 
                 <div style="
                     background: ${colors.bg};
@@ -582,14 +571,18 @@ function buildLevelCheckCard(mlResult, sessionMetrics) {
                     </div>
                 </div>
 
-                ${levelTile("Next Level", next, "#0D9488")}
+                ${rapid
+            ? levelTile("Next Level", current, "#0D9488", { text: "Unchanged", subtitle: false })
+            : levelTile("Next Level", next, "#0D9488")}
             </div>
 
+            ${rapid ? `<div style="margin-bottom:1rem;"></div>` : `
             <div style="font-size:0.72rem; color:#64748B; text-align:center; margin-bottom:1rem;">
                 Baseline (persistence rule): ${mlResult.baseline_action || "—"}
                 ${mlResult.was_overridden ? ` · Safety layer: ${mlResult.validation_reason}` : ""}
                 ${usedModel ? "" : " · Model unavailable — persistence rule used"}
             </div>
+            `}
 
             ${statTiles([
             ["Accuracy", Math.round(sessionMetrics.accuracy * 100) + "%"],

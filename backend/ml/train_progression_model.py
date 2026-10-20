@@ -1,40 +1,5 @@
-"""
-Component 1 — Model B (progression) training & evaluation
-==========================================================
-Trains a Gradient Boosting classifier that predicts what a student's NEXT
-window of work will look like (promote / maintain / demote) from their
-CURRENT window, using backend/data/progression_dataset.csv
-(built by ml/build_progression_dataset.py from raw ASSISTments 2009-2010).
+// Component 1 — Model B (progression) training & evaluation
 
-FEATURES:  accuracy, avg_attempts, avg_time_sec
-           (difficulty is excluded — it is binned accuracy in training and
-           uses different item difficulties than the live quiz; it appears
-           only in the ablation below)
-
-EVALUATION: 5-fold StratifiedGroupKFold grouped by user_id, so no student
-appears in both the training and test folds. All models and baselines
-are scored on the SAME folds.
-
-    GB                  3 features, no sample weights
-    GB balanced         3 features, balanced sample weights
-    GB +difficulty      ablation: 4 features, no sample weights
-    GB +difficulty bal. ablation: 4 features, balanced sample weights
-    persistence         baseline: label thresholds applied to the CURRENT
-                        window's accuracy (assume next = current)
-    majority            baseline: most frequent training-fold class
-
-Reported per fold and as mean +/- std: macro-F1, per-class precision /
-recall / F1, demote recall, confusion matrix (summed over folds).
-
-The final model (3 features; weighting chosen by mean CV macro-F1) is
-refit on all data and saved to ml_models/model_b.pkl. It is fitted on a
-DataFrame with string labels, so model.feature_names_in_ and
-model.classes_ describe its inputs and outputs. ml_models/model.pkl is
-never touched.
-
-Usage (from backend/):
-    python ml/train_progression_model.py
-"""
 
 import argparse
 import json

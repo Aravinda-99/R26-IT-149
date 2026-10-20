@@ -74,7 +74,7 @@ class _WebcamCapture {
 
   /**
    * Draws the current video frame to an internal canvas and returns the
-   * pixel data — the input format ML models (ONNX/MediaPipe) expect.
+   * pixel data — the input format ML models (ONNX) expect.
    * @returns {ImageData|null}
    */
   getFrame() {

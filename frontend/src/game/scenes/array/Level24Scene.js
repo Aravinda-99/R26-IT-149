@@ -1,26 +1,7 @@
-/**
- * Level 24 — "Array Forge" (Arrays: Restructuring Phase)
- * ========================================================
- * The learner constructs complete array-manipulation programs by dragging
- * code blocks (loop headers, body statements, standalone statements) into
- * an IDE-style editor with blank slots. Clicking "Forge Data" compiles and
- * runs the program: array cells update live, a console types the output,
- * and a bespoke visual animation plays for each of 8 real-world projects.
- *
- * No multiple choice — correctness is judged by exactly matching each
- * slot's canonical block. A small expression interpreter (used only on the
- * incorrect path) evaluates whatever blocks the player actually placed, so
- * wrong answers get an authentic "actual output" (including simulated
- * ArrayIndexOutOfBoundsException crashes) for the diff view.
- *
- * Authored in a 1280x720 world space; the shared game canvas is 800x600
- * (Scale.NONE), so the main camera is zoomed to letterbox-fit the forge
- * into whatever canvas size is active (same approach as Level22/23).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -44,9 +25,6 @@ const CODE_X = EX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = EY + TAB_H + 12;
 const LINE_H = 20;
 
-// ─────────────────────────────────────────────────────────────────
-// Project configuration
-// ─────────────────────────────────────────────────────────────────
 const PROJECTS = [
   { id: 1, title: "Print All Elements", filename: "PrintAll.java",
     briefing: "Print every element of the scores array.",
@@ -300,10 +278,6 @@ export class Level24Scene extends Phaser.Scene {
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
 
-  // ══════════════════════════════════════════════════════════════
-  // SETUP — background & environment
-  // ══════════════════════════════════════════════════════════════
-
   createParticleTexture() {
     if (!this.textures.exists("l24_dot")) {
       const g = this.make.graphics({ x: 0, y: 0, add: false });
@@ -356,10 +330,6 @@ export class Level24Scene extends Phaser.Scene {
       this.tweens.add({ targets: s, fillAlpha: 0.06, duration: 5000, yoyo: true, repeat: -1 });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
 
   createHUD() {
     const g = this.add.graphics().setDepth(50);
@@ -424,10 +394,6 @@ export class Level24Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EDITOR PANEL
-  // ══════════════════════════════════════════════════════════════
-
   createEditorPanel() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -461,7 +427,6 @@ export class Level24Scene extends Phaser.Scene {
 
   createForgeButton() {
     const bx = 325, by = 500; // Centered inside the Editor Panel
-    // Increased depth to 34 to render above the tray (which is at depth 30)
     const glow = this.add.ellipse(bx, by, 196, 42, C_EMBER, 0.1).setDepth(34);
     this.tweens.add({ targets: glow, fillAlpha: 0.16, duration: 1000, yoyo: true, repeat: -1 });
 
@@ -500,8 +465,6 @@ export class Level24Scene extends Phaser.Scene {
     this.forgeButton.c.setAlpha(0.2);
     this.forgeButton.c.disableInteractive();
   }
-
-  // ── Editor row layout & rendering ──────────────────────────────
 
   _getEditorRows(project) {
     const rows = [];
@@ -641,10 +604,6 @@ export class Level24Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h);
     side(x, y + h, x, y);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // VISUAL (RIGHT) PANEL — array cells, console, result zone
-  // ══════════════════════════════════════════════════════════════
 
   createVisualPanel() {
     const g = this.add.graphics().setDepth(10);
@@ -822,10 +781,6 @@ export class Level24Scene extends Phaser.Scene {
     if (this.loopMonitor) { this.loopMonitor.c.destroy(); this.loopMonitor = null; }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK TRAY & DRAG/DROP
-  // ══════════════════════════════════════════════════════════════
-
   createBlockTray() {
     const g = this.add.graphics().setDepth(30);
     g.fillStyle(0x0a0e12, 1);
@@ -986,7 +941,6 @@ export class Level24Scene extends Phaser.Scene {
   }
 
   _layoutTrayAfterRemoval() {
-    // tray positions are fixed at creation time; hidden blocks simply stay hidden.
   }
 
   checkAllSlotsFilled() {
@@ -1010,10 +964,6 @@ export class Level24Scene extends Phaser.Scene {
 
     this.disableForgeButton();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — mascot & speech
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(W + 80, 400).setDepth(70);
@@ -1097,10 +1047,6 @@ export class Level24Scene extends Phaser.Scene {
     await this.bitSlideTo(W + 80, 400, 250);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PROJECT LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   showProjectBriefing(index) {
     this.currentProject = index;
     const project = PROJECTS[index];
@@ -1183,10 +1129,6 @@ export class Level24Scene extends Phaser.Scene {
     else this.showProjectBriefing(this.currentProject + 1);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // FORGE / EXECUTION FLOW
-  // ══════════════════════════════════════════════════════════════
-
   async onForgeData() {
     if (this._executing) return;
     this._executing = true;
@@ -1254,7 +1196,6 @@ export class Level24Scene extends Phaser.Scene {
 
   async executeCorrect(project) {
     this.showLoopMonitor();
-    // animate line-by-line highlight through the fixed pre-code quickly
     await this._flashCodeLines(0, project.preCode.length, 100);
     if (!this._alive) return;
 
@@ -1283,10 +1224,6 @@ export class Level24Scene extends Phaser.Scene {
       this.time.delayedCall(500, () => { if (this._alive && c.container.active) this.highlightCell(i, "default"); });
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // 8 PROJECT VISUAL ANIMATIONS (correct path only)
-  // ══════════════════════════════════════════════════════════════
 
   async runHighlightTraverse(project) {
     const arr = project.array.values;
@@ -1619,7 +1556,6 @@ export class Level24Scene extends Phaser.Scene {
     this.clearConsole();
     const last = arr.length - 1;
 
-    // Step 1: temp = arr[0]
     this.highlightCell(0, "cyan");
     const cell0 = this.cells[0];
     this.tweens.add({ targets: cell0.valueText, y: -15, duration: 200 });
@@ -1674,7 +1610,6 @@ export class Level24Scene extends Phaser.Scene {
     this.highlightCell(last, "default");
     await this.delay(400);
 
-    // Step 3: arr[last] = temp
     tbG.clear();
     tbG.fillStyle(0x0d1117, 1);
     tbG.lineStyle(1.5, C_CYAN, 1);
@@ -1779,10 +1714,6 @@ export class Level24Scene extends Phaser.Scene {
     this.tweens.add({ targets: banner, alpha: 1, duration: 300 });
     await this.delay(400);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENERIC EXPRESSION INTERPRETER (incorrect-path diff only)
-  // ══════════════════════════════════════════════════════════════
 
   _runProjectSim(project, placedTexts) {
     try {
@@ -1930,10 +1861,6 @@ export class Level24Scene extends Phaser.Scene {
     return "index_not_value";
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATION / FEEDBACK
-  // ══════════════════════════════════════════════════════════════
-
   onCorrectProject() {
     if (this.gameEnded) return;
     this._executing = false;
@@ -2044,11 +1971,8 @@ export class Level24Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END-OF-LEVEL
-  // ══════════════════════════════════════════════════════════════
-
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.hideBubble();

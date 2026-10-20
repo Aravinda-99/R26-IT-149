@@ -39,8 +39,16 @@ def login():
         "success": True,
         "message": "Login successful",
         "user": user_profile,
-        "token": f"cq_token_{user_profile['uid']}"
+        "token": f"cq_token_{user_profile['uid']}",
+        "roster_token": _teacher_roster_token(user_profile),
     }), 200
+
+
+def _teacher_roster_token(profile):
+    if profile.get("role") not in ("teacher", "admin"):
+        return None
+    from services.student_roster_service import StudentRosterService
+    return StudentRosterService.issue_token(profile)
 
 
 @auth_bp.route("/register", methods=["POST"])

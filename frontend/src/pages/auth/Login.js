@@ -123,6 +123,8 @@ export function renderLogin(container) {
             }
 
             // Save authenticated session
+            if (res.roster_token) sessionStorage.setItem("codequest_roster_session", JSON.stringify({ uid: user.uid || user.id, token: res.roster_token }));
+            else sessionStorage.removeItem("codequest_roster_session");
             setCurrentUser(user);
 
             // Redirect: Educator to teacher dashboard; Student to student home

@@ -1,23 +1,10 @@
-/**
- * Level6Scene — "Float Restructuring: Neon Cyber-Core" (Restructuring Phase)
- * ===========================================================================
- * Top-down 2D RPG-style level. Engineer navigates a dark tech room to solve
- * float arithmetic problems at 3 terminals. Completing all 3 restores the
- * Main Core and earns the Calculation Wizard badge.
- *
- *   Terminal 1 — Float Addition    (Power Routing)
- *   Terminal 2 — Float Subtraction (Coolant Stabilization)
- *   Terminal 3 — Float Constraints (Laser Alignment)
- *
- * Schema Theory: Restructuring — applying float logic to solve problems
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
 import { WellbeingAPI } from "../../../api/api.js";
 import { BehavioralRules } from "../../ml/BehavioralRules.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 1280;
 const H = 720;
@@ -25,9 +12,6 @@ const PLAYER_SPEED = 180;
 const TERMINAL_SIZE = 60;
 const MAX_LIVES = 5;
 
-/* ═══════════════════════════════════════════════════════════════
- *  SCENE
- * ═══════════════════════════════════════════════════════════════ */
 export class Level6Scene extends Phaser.Scene {
   constructor() {
     super({ key: "Level6Scene" });
@@ -86,9 +70,6 @@ export class Level6Scene extends Phaser.Scene {
     this._showIntro();
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  ROOM BACKGROUND
-   * ───────────────────────────────────────────────────────────── */
   _drawRoom() {
     // Dark tech-room floor
     const g = this.add.graphics().setDepth(0);
@@ -118,9 +99,6 @@ export class Level6Scene extends Phaser.Scene {
     g.strokeRect(10, 10, W - 20, H - 20);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  TEXTURES
-   * ───────────────────────────────────────────────────────────── */
   _genTextures() {
     const make = (key, color) => {
       if (this.textures.exists(key)) return;
@@ -156,9 +134,6 @@ export class Level6Scene extends Phaser.Scene {
     }
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  MAIN CORE — center of room, pulses red initially
-   * ───────────────────────────────────────────────────────────── */
   _createCore() {
     const cx = W / 2, cy = H / 2;
 
@@ -184,9 +159,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  TERMINALS — 3 interactive stations around the room
-   * ───────────────────────────────────────────────────────────── */
   _createTerminals() {
     this.terminals = [];
     const defs = [
@@ -224,9 +196,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  PLAYER
-   * ───────────────────────────────────────────────────────────── */
   _createPlayer() {
     this.player = this.physics.add.sprite(W / 2, H / 2 + 130, "engineer");
     this.player.setCollideWorldBounds(true);
@@ -248,9 +217,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  HUD
-   * ───────────────────────────────────────────────────────────── */
   _createHUD() {
     const dp = 100;
 
@@ -275,7 +241,6 @@ export class Level6Scene extends Phaser.Scene {
       fontFamily: "monospace", fontSize: "11px", color: "#475569",
     }).setOrigin(0.5).setDepth(dp);
 
-    // ── Lives (top-right) ──
     this.livesIcons = [];
     for (let i = 0; i < MAX_LIVES; i++) {
       const heart = this.add.text(W - 40 - i * 35, 115, "❤️", {
@@ -291,9 +256,6 @@ export class Level6Scene extends Phaser.Scene {
     this.scoreText.setText(`Score: ${this.score}`);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  PARTICLES
-   * ───────────────────────────────────────────────────────────── */
   _createParticles() {
     this.sparkParticles = this.add.particles(0, 0, "cyanSpark", {
       speed: { min: 60, max: 200 }, scale: { start: 1.2, end: 0 },
@@ -312,10 +274,8 @@ export class Level6Scene extends Phaser.Scene {
     }).setDepth(50);
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  INTRO OVERLAY
-   * ───────────────────────────────────────────────────────────── */
   _showIntro() {
+    PanelFit.arm(this);
     const els = [];
     const track = (e) => { els.push(e); return e; };
 
@@ -366,9 +326,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  TERMINAL INTERACTION — DOM Code Panels
-   * ═══════════════════════════════════════════════════════════════ */
   _openTerminal(idx) {
     if (this.panelOpen || this.terminals[idx].solved) return;
     this.panelOpen = true;
@@ -419,7 +376,6 @@ export class Level6Scene extends Phaser.Scene {
     }
   }
 
-  /* ─── Terminal 1: Float Addition ─── */
   _buildTerminal1Panel() {
     this._panelOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(150).setInteractive();
 
@@ -474,7 +430,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ─── Terminal 2: Float Subtraction ─── */
   _buildTerminal2Panel() {
     this._panelOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(150).setInteractive();
 
@@ -536,7 +491,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ─── Terminal 3: Float Constraints ─── */
   _buildTerminal3Panel() {
     this._panelOverlay = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.7).setDepth(150).setInteractive();
 
@@ -623,9 +577,6 @@ export class Level6Scene extends Phaser.Scene {
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  VICTORY SEQUENCE
-   * ═══════════════════════════════════════════════════════════════ */
   _victorySequence() {
     this.isComplete = true;
 
@@ -692,6 +643,7 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   _showVictoryScreen() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.82).setDepth(200);
 
     const pg = this.add.graphics().setDepth(201);
@@ -768,9 +720,6 @@ export class Level6Scene extends Phaser.Scene {
     });
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-   *  UPDATE LOOP
-   * ═══════════════════════════════════════════════════════════════ */
   update() {
     if (GameManager.interventionInFlight) {
       if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
@@ -779,7 +728,6 @@ export class Level6Scene extends Phaser.Scene {
 
     if (!this.gameStarted || this.isComplete) return;
 
-    /* ── Player movement (blocked when panel open) ── */
     if (this.panelOpen) {
       this.player.setVelocity(0, 0);
     } else {
@@ -799,12 +747,10 @@ export class Level6Scene extends Phaser.Scene {
       this.player.setVelocity(vx, vy);
     }
 
-    /* ── Player glow follows ── */
     if (this.playerGlow?.active) {
       this.playerGlow.setPosition(this.player.x, this.player.y);
     }
 
-    /* ── Hint text updates ── */
     if (this.hintTxt?.active && !this.panelOpen) {
       let nearTerminal = false;
       this.terminals.forEach(t => {
@@ -830,16 +776,12 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   addLife() {
-    // BitMenu already calls GameManager.addLife() for the global count before
-    // calling this — only touch local state here, or the global count would
-    // be incremented twice per bonus life (matches Level1Scene's convention).
     if (this.lives < MAX_LIVES) {
       this.lives++;
       this._updateLives();
     }
   }
 
-  /** ML struggle check — reports real wrong-attempt/timing stats (not rapid-fire: puzzle level). */
   async runBehavioralCheck() {
     const attempts_count = this.wrongAttempts;
     const time_taken_seconds = (this.time.now - this.startTime) / 1000;
@@ -860,6 +802,7 @@ export class Level6Scene extends Phaser.Scene {
   }
 
   _gameOver() {
+    PanelFit.arm(this);
     this.isComplete = true;
     if (this.player && this.player.body) this.player.body.setVelocity(0, 0);
     this.cameras.main.shake(500, 0.025);
