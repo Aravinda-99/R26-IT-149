@@ -1,10 +1,4 @@
-/**
- * Post-Test Page — Component 4: Schema Mastery Validation (MCQ)
- * =============================================================
- * Concept-specific 15-question post-test check taken after gamified lessons.
- * Gated by prerequisites (Component 1 Pre-Test, Component 2 Error Feedback, Component 3 Game Practice).
- * Consumes real multi-component telemetry for Random Forest ML mastery inference.
- */
+// Component 4: concept-specific post-test and saved mastery results.
 
 import { SchemaMasteryAPI } from "../api/api.js";
 import { getCurrentUser } from "../utils/auth.js";
@@ -426,6 +420,7 @@ async function loadQuestionsAndStart(container) {
     `;
 
     try {
+        // 155api/api.js -> schema_mastery_routes.py:get_post_test_questions (saved bank).
         const res = await SchemaMasteryAPI.getPostTestQuestions({
             concept: currentAssessmentConcept,
             student_id: currentStudentId,
@@ -603,9 +598,7 @@ function renderQuestionScreen(container, index) {
     });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. Submit Post-Test & Render Results
-// ─────────────────────────────────────────────────────────────────────────────
+// Submit answers and display the backend result.
 async function submitPostTest(container) {
     const elapsedSeconds = Math.max(15, Math.round((Date.now() - startTime) / 1000));
     const answersPayload = Object.entries(selectedAnswers).map(([qid, opt]) => ({
@@ -634,6 +627,7 @@ async function submitPostTest(container) {
             answers: answersPayload,
         };
 
+        // api/api.js -> POST /api/schema-mastery/post-test/submit.
         const result = await SchemaMasteryAPI.submitPostTest(payload);
         if (!result.success) throw new Error(result.error || "Could not evaluate this assessment.");
         renderResultScreen(container, result);
@@ -648,9 +642,7 @@ async function submitPostTest(container) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. Post-Test Result Screen (Student-Safe White Theme)
-// ─────────────────────────────────────────────────────────────────────────────
+// Display the returned level and next action; prediction runs in the backend.
 function renderResultScreen(container, res) {
     const understandingLevel = res.mastery_level || "Needs More Practice";
     const isDone = res.next_action === "DONE";

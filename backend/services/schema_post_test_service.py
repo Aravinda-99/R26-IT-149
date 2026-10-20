@@ -1,15 +1,4 @@
-"""
-Component 4: Post-Test Orchestration & ML Integration Service
-=============================================================
-Manages:
-  1. Blueprint-based selection of 15 approved post-test questions
-     (4 Basic + 4 Code Output + 3 Error Recognition + 2 Application + 2 Transfer)
-  2. Exclusion of previously used question_ids / equivalent_group_ids per student
-  3. Student-safe sanitization (stripping answer keys & quality labels)
-  4. Post-test grading via hidden option qualities
-  5. Multi-source evidence assembly (Component 1 + 2 + 4) and ML pipeline prediction
-  6. Mastery session and question attempt persistence
-"""
+"""Select approved post-tests, grade answers, predict mastery and save results."""
 
 import uuid
 import random
@@ -255,11 +244,7 @@ class SchemaPostTestService:
 
     @classmethod
     def grade_and_predict(cls, submission: dict) -> dict:
-        """
-        Grades submitted student answers against approved_question_bank quality labels,
-        constructs the 11-feature ML vector, and calls predict_schema_mastery.
-        Uses real Component 1 and Component 2 data from SchemaSessionService.
-        """
+        """Grade answers and combine saved session data into 11 ML features."""
         student_id = str(submission.get("student_id", "STU_ANON"))
         session_id = submission.get("session_id") or f"SES_{uuid.uuid4().hex[:8].upper()}"
 
@@ -415,7 +400,7 @@ class SchemaPostTestService:
         post_test_score = ((correct_count * 1.0) + (nearly_correct_count * 0.5)) / max(1, total_questions)
         post_test_score = round(post_test_score, 4)
 
-        # Build 11-feature ML input vector
+        # 182Saved pre-test/error data + graded answers; score is one input feature.
         ml_input = {
             "concept_name": concept_name,
             "pre_test_score": pre_test_score,
@@ -430,7 +415,7 @@ class SchemaPostTestService:
             "post_test_score": post_test_score,
         }
 
-        # Predict using trained ML pipeline
+        # schema_mastery_service.py:predict_schema_mastery runs the saved pipeline.
         ml_prediction = predict_schema_mastery(ml_input)
 
         mastery_probability = ml_prediction.get("mastery_probability", 0.5)
