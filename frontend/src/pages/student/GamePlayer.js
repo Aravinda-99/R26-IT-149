@@ -24,10 +24,7 @@ const MODULE_TITLES = {
     scannermethods: { name: "Scanner Methods Wing", category: "Methods", level: "Input Handling" },
     outputmethods: { name: "Output Methods Wing", category: "Methods", level: "Standard Output" },
     arraylistmethods: { name: "ArrayList Methods Wing", category: "Methods", level: "Dynamic Lists" },
-    mathclassmethods: { name: "Math Class Methods Wing", category: "Methods", level: "Math Utilities" },
-    arraysclassmethods: { name: "Arrays Utility Methods Wing", category: "Methods", level: "Array Utilities" },
-    typeconversionmethods: { name: "Type Conversion Wing", category: "Methods", level: "Casting & Parsing" },
-    charactermethods: { name: "Character Methods Wing", category: "Methods", level: "Char Checks & Case" }
+    mathclassmethods: { name: "Math Class Methods Wing", category: "Methods", level: "Math Utilities" }
 };
 
 export async function renderGamePlayer(container) {

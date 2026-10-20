@@ -1,33 +1,9 @@
-/**
- * Level 51 — "The Restoration Room" (ArrayList Methods: Restructuring
- * Phase — get() trilogy finale; the ArrayList Wing's second complete
- * trilogy)
- * ===========================================================================
- * The learner CONSTRUCTS complete list-READING programs — no multiple
- * choice. Reuses the L27→L48 code-canvas/parts-bin/RUN architecture. The
- * rig hosts the get-era apparatus: 50%-scale bookshelf, list-state panel,
- * the L50 Traversal Tracker, a prominent output ticker, and Scanner-tape/
- * container cameos for the cross-wing missions.
- *
- * A genuine mini-interpreter (never scripted) executes the assembled
- * program: bounds-checked gets with ghost retrievals, size() and
- * size() − 1 (the size-proof pattern), real for-loop traversals with
- * per-iteration tracker rows and the 200-iteration guard, accumulators
- * (both += and long form), the curriculum's FIRST dynamic index
- * (get(shelf) where shelf arrives from Scanner), toUpperCase via the
- * press cameo, and println with honest partial traces on mid-loop
- * crashes. Wrong builds yield their REAL outcomes — M2's hardcoded
- * get(2) genuinely passes the 3-list test and fails the 5-list test
- * (the one-green-one-red report is the mission's sharpest lesson), and
- * M4's uninitialized `int total;` is a genuine COMPILE error (Java's
- * definite-assignment rule: loop bodies may run zero times).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -54,9 +30,6 @@ const RX = 760, RY = 345, RW = 460, RH = 125;
 const BX = 760, BY = 490, BW = 460, BH = 130;
 const TUTORIAL_KEY = "level51_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Headline Report",
     brief: "The morning report announces the collection's featured title — the FIRST book. Print exactly:  Featured: <first element>",
@@ -279,10 +252,6 @@ export class Level51Scene extends Phaser.Scene {
     this._tickerLines = [];
     this._trackerRows = [];
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level49Scene";
   }
 
@@ -329,11 +298,6 @@ export class Level51Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -350,10 +314,6 @@ export class Level51Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — the restoration atelier
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l51_dot")) {
@@ -537,10 +497,6 @@ export class Level51Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (L27→L48 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -674,10 +630,6 @@ export class Level51Scene extends Phaser.Scene {
     const y = CODE_Y0 + lineIndex * LINE_H - 2;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE + DRAG (reused)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -835,10 +787,6 @@ export class Level51Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -877,10 +825,6 @@ export class Level51Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — shelf + panel + tracker + ticker + cameos
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -983,7 +927,6 @@ export class Level51Scene extends Phaser.Scene {
     this.shelfIndexPlates.forEach((p) => { p.text.setColor(HEX_GRAY); p.text.setAlpha(1); });
   }
 
-  /** Quick instant-ish append for pre-fill add lines (M1). */
   async quickAddBook(value) {
     const typeOf = this.currentListType === "Integer" ? "int" : "string";
     const entry = { value, type: typeOf };
@@ -1143,8 +1086,6 @@ export class Level51Scene extends Phaser.Scene {
     await this.delay(180);
   }
 
-  // ── Mini Scanner tape ──
-
   _classifyChar(ch) {
     if (ch === " ") return "space";
     if (ch === "\n") return "newline";
@@ -1204,8 +1145,6 @@ export class Level51Scene extends Phaser.Scene {
     await this.delay(70);
   }
 
-  // ── Ghost retrieval + crash (compact, quickened for loops) ──
-
   async retrieveGhost(index, quickened = false) {
     const entry = this.currentList[index];
     const shelfY = this._shelfY(index);
@@ -1257,10 +1196,6 @@ export class Level51Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MANIFEST / TEST REPORT / MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createManifestStrip() {
     const g = this.add.graphics().setDepth(14);
@@ -1332,10 +1267,6 @@ export class Level51Scene extends Phaser.Scene {
     this.briefContainer.add([badge, badgeNum, title, brief, hint]);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0704, 0.93);
@@ -1343,8 +1274,8 @@ export class Level51Scene extends Phaser.Scene {
     g.lineStyle(1, 0x3a2618, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE RESTORATION ROOM", { font: "bold 15px Georgia", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — get()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE RESTORATION ROOM", { font: "bold 18px Georgia", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — get()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1354,8 +1285,8 @@ export class Level51Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -1391,10 +1322,6 @@ export class Level51Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — Restoration Master variant (apron, loupe headband)
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1443,8 +1370,8 @@ export class Level51Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1498,7 +1425,8 @@ export class Level51Scene extends Phaser.Scene {
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 25, alpha: 0, duration: 800, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -1521,10 +1449,6 @@ export class Level51Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(1000, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1561,10 +1485,6 @@ export class Level51Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1651,10 +1571,6 @@ export class Level51Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPILE CHECK — the run never starts on a compile error
-  // ══════════════════════════════════════════════════════════════
-
   compileCheckProgram(items, assembled) {
     const failFor = (slotId, fallbackTag) => {
       const blockTag = slotId && assembled[slotId] && assembled[slotId][0] ? assembled[slotId][0].tag : null;
@@ -1672,8 +1588,6 @@ export class Level51Scene extends Phaser.Scene {
       if (/\.charAt\(/.test(line)) return failFor(items[idx].slotId, "charat_on_list_belief");
       if (/^int\s+\w+\s*=\s*sc\.nextLine\(\);$/.test(line)) return failFor(items[idx].slotId, "wrong_scanner_method");
 
-      // uninitialized local: `int X;` then ANY later read of X — Java's
-      // definite-assignment rule (loop bodies may run zero times)
       const bareDecl = line.match(/^int\s+(\w+);$/);
       if (bareDecl) uninitVars.push({ name: bareDecl[1], slotId: items[idx].slotId, declIdx: idx });
     }
@@ -1685,10 +1599,6 @@ export class Level51Scene extends Phaser.Scene {
     }
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — read-side semantics
-  // ══════════════════════════════════════════════════════════════
 
   _splitTopPlus(expr) {
     const parts = [];
@@ -1915,10 +1825,6 @@ export class Level51Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN PIPELINE
-  // ══════════════════════════════════════════════════════════════
-
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -2016,23 +1922,6 @@ export class Level51Scene extends Phaser.Scene {
     return { match, crashed: !runResult.ok };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -2055,8 +1944,6 @@ export class Level51Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level51Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -2078,8 +1965,6 @@ export class Level51Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.setPlaque("idle");
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
     const feedbackTag = compileTag || (wrongBlocksUsed[0] && wrongBlocksUsed[0].tag);
 
@@ -2127,16 +2012,12 @@ export class Level51Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -2200,11 +2081,8 @@ export class Level51Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -2235,13 +2113,14 @@ export class Level51Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(51, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(50, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("arraylist_get_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level51_results", JSON.stringify({
@@ -2325,7 +2204,6 @@ export class Level51Scene extends Phaser.Scene {
       this.tweens.add({ targets: s, scale: 1, duration: 250, delay: 1500 + i * 200, ease: earned ? "Back.easeOut" : "Cubic.easeOut" });
     }
 
-    // TRILOGY BADGE — magnifier (L49), hourglass (L50), loupe (L51)
     const badge = this.add.container(640, 432).setDepth(91).setAlpha(0);
     const bg = this.add.graphics();
     bg.fillStyle(0x1a1a2e, 1);

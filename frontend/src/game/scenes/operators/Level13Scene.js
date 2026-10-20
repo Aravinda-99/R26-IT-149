@@ -1,13 +1,8 @@
-/**
- * Level13Scene — "Math Magic Academy" (Accretion Phase)
- * ======================================================
- * Wizard academy where operators are spells. 5 chapters cover
- * arithmetic, comparison, logical, assignment, inc/dec operators.
- */
 import Phaser from "phaser";
 import { GameManager } from "../../GameManager.js";
 import { BadgeSystem } from "../../BadgeSystem.js";
 import { ProgressTracker } from "../../ProgressTracker.js";
+import { PanelFit } from "../../PanelFit.js";
 
 const W = 800, H = 600;
 
@@ -100,8 +95,6 @@ export class Level13Scene extends Phaser.Scene {
     for (let i = 0; i < 60; i++) {
       const t = i / 60;
       gfx.fillStyle(lerpColor(0x1a0533, 0x0f172a, t), 1);
-      // Stretched width: start at -W*2, span W*5 (Y span untouched — it
-      // already correctly tiles 0..H)
       gfx.fillRect(-W * 2, Math.floor(H * i / 60), W * 5, Math.ceil(H / 60) + 1);
     }
     // Stars (Stretched)
@@ -131,8 +124,8 @@ export class Level13Scene extends Phaser.Scene {
   _addEl(...els) { els.forEach(e => this.elements.push(e)); }
   _clear() { this.elements.forEach(e => { try { e.destroy(); } catch { } }); this.elements = []; }
 
-  // ─── INTRO ───
   _showIntro() {
+    PanelFit.arm(this);
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const pg = this.add.graphics().setDepth(201);
     pg.fillStyle(0x1a0533, 0.98); pg.fillRoundedRect(W / 2 - 300, 60, 600, 460, 16);
@@ -156,7 +149,6 @@ export class Level13Scene extends Phaser.Scene {
     bb.on("pointerup", () => { [ov, pg, t1, t2, t3, bb, bt].forEach(e => e.destroy()); this._showChapterIntro(); });
   }
 
-  // ─── CHAPTER INTRO ───
   _showChapterIntro() {
     this._clear();
     const ch = CHAPTERS[this.chapterIdx];
@@ -171,7 +163,6 @@ export class Level13Scene extends Phaser.Scene {
     this.time.delayedCall(1500, () => { [ov, bg, ic, nm, ct].forEach(e => e.destroy()); this.spellIdx = 0; this._showSpell(); });
   }
 
-  // ─── SPELL ───
   _showSpell() {
     this._clear();
     const ch = CHAPTERS[this.chapterIdx];
@@ -204,9 +195,6 @@ export class Level13Scene extends Phaser.Scene {
     const gap = Math.min(140, 560 / shuffled.length);
     const startX = W / 2 - ((shuffled.length - 1) * gap) / 2;
 
-    // Buttons shifted down 65px (from y:360 to y:425) so they clear the
-    // purple spell circle's bottom edge (centered at y:260, radius 120 →
-    // bottom edge at y:380) instead of overlapping it.
     shuffled.forEach((opt, i) => {
       const bx = startX + i * gap;
       const bg = this.add.graphics().setDepth(20);
@@ -290,6 +278,7 @@ export class Level13Scene extends Phaser.Scene {
   }
 
   _showGameOver() {
+    PanelFit.arm(this);
     this._clear();
     const ov = this.add.rectangle(W / 2, H / 2, W * 5, H * 3, 0x000000, 0.85).setDepth(200);
     const t = this.add.text(W / 2, H / 2 - 30, "💀 Training Failed!", { fontFamily: "Arial", fontSize: "28px", color: "#f87171", fontStyle: "bold" }).setOrigin(0.5).setDepth(201);
@@ -303,6 +292,7 @@ export class Level13Scene extends Phaser.Scene {
   }
 
   _showResults() {
+    PanelFit.arm(this);
     this._clear();
     const acc = this.totalSpells > 0 ? Math.round((this.correct / this.totalSpells) * 100) : 0;
     const passed = acc >= 60;

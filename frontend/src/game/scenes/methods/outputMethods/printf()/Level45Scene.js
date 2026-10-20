@@ -1,34 +1,9 @@
-/**
- * Level 45 — "The Print Floor" (Output Methods: Restructuring Phase —
- * printf() trilogy finale, OUTPUT WING SEAL — 9 levels, 3 methods complete)
- * ===========================================================================
- * The learner CONSTRUCTS complete printf()-producing programs — no multiple
- * choice. Reuses the Level 27/30/33/36/39/42 code-canvas/parts-bin/RUN-button
- * construction architecture. A masked rig window hosts a compact composing
- * bed + type case rail (Level 43/44 lineage) feeding a cursor-tracked log
- * (Level 40+ lineage). A genuine per-mission interpreter (never scripted)
- * executes exactly what the player assembled — real half-up precision
- * rounding, real type-mismatch/missing-argument crashes, real Scanner tape
- * consumption (Missions 5/6), real String case-method evaluation (Mission 6).
- *
- * DESIGN NOTE — grading rule (resolved before writing any code): some
- * missions' correct answers end with a real trailing %n (Missions 4/5/6);
- * Mission 1 explicitly accepts both a trailing-%n form and a no-trailing-%n
- * form as equally correct ("bonus" cartridge, alsoAccepted). A blanket
- * closedProperly flag (as L42 used, where every mission happened to end in
- * println()) would break one side or the other here. Resolved with a
- * single direct-join rule: match = logText === expected || logText ===
- * expected + "⏎" — a trailing newline is always optional-but-consistent,
- * which satisfies every mission's test data without special-casing, and
- * still catches Mission 4's "missing final %n" distractor (which changes
- * row COUNT, not just trailing-newline state) as a genuine text mismatch.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -42,7 +17,14 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-const LINE_H = 21;
+const LINE_H = 42;
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;
+const SLOT_PAD = 8, SLOT_HINT_PAD = 8;
+const ROW_TEXT_H = 28, ROW_SLOT_PAD = 8, ROW_BLANK_H = 20;
+const HEX_HINT = "#7d8c9a";
+const HEX_COMMENT = "#7d8c9a";                       // "/* test value */" comments: ≈5:1
+const HEX_BOILER = "#6f7f8f";
+const WRAP_INDENT = 22;
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 250;
 const BED_Y = OY + 40, RAIL_Y = OY + 72, TAPE_Y = OY + 92;
@@ -53,9 +35,6 @@ const RX = 760, RY = 345, RW = 460, RH = 125;
 const BX = 760, BY = 490, BW = 460, BH = 130;
 const TUTORIAL_KEY = "level45_tutorial_done";
 
-// ══════════════════════════════════════════════════════════════
-// MISSION CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const MISSIONS = [
   { mission: 1, title: "The Score Report",
     brief: "The scoreboard prints one line per player: '<name> scored <points> points!'",
@@ -249,10 +228,6 @@ export class Level45Scene extends Phaser.Scene {
     this._proactiveRecorded = {};
     this.tapeState = [];
     this._modalLockedInput = false;
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this drag-and-drop Restructuring-phase level with nothing
-    // to review.
     this.baseTutorialScene = "Level43Scene";
   }
 
@@ -296,11 +271,6 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Lock inputs so the player cannot drag blocks or click RUN while an ML
-    // intervention modal is open. Tracks whether WE were the one who locked
-    // it (this._modalLockedInput) so resuming here never clobbers a lock the
-    // scene's own logic set for an unrelated reason (e.g. mid run-outcome
-    // feedback) — only undo what this branch itself did.
     if (GameManager.interventionInFlight) {
       if (!this.inputLocked) this._modalLockedInput = true;
       this.inputLocked = true;
@@ -317,10 +287,6 @@ export class Level45Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND — print floor
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l45_dot")) {
@@ -451,10 +417,6 @@ export class Level45Scene extends Phaser.Scene {
     side(x + w, y + h, x, y + h); side(x, y + h, x, y);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CODE CANVAS (L27/L30/L33/L36/L39/L42 architecture, reused)
-  // ══════════════════════════════════════════════════════════════
-
   createCodeCanvas() {
     const g = this.add.graphics().setDepth(10);
     g.fillStyle(0x0d1117, 1);
@@ -492,11 +454,12 @@ export class Level45Scene extends Phaser.Scene {
           else if (/^\\[nt]$/.test(p)) tokens.push({ t: p, c: HEX_MAGENTA });
           else if (p) tokens.push({ t: p, c: HEX_CYAN });
         });
-      } else if (m[4]) tokens.push({ t: m[4], c: "#4caf50" });
-      else if (m[5]) tokens.push({ t: m[5], c: "#ffd740" });
-      else if (m[6]) tokens.push({ t: m[6], c: "#78909c" });
-      else if (m[7]) tokens.push({ t: m[7], c: "#ff8a65" });
-      else if (m[8]) tokens.push({ t: m[8], c: "#78909c" });
+      } else if (m[4]) tokens.push({ t: m[4], c: "#4fc3f7" });
+      else if (m[5]) tokens.push({ t: m[5], c: "#4caf50" });
+      else if (m[6]) tokens.push({ t: m[6], c: "#ffd740" });
+      else if (m[7]) tokens.push({ t: m[7], c: "#78909c" });
+      else if (m[8]) tokens.push({ t: m[8], c: "#ff8a65" });
+      else if (m[9]) tokens.push({ t: m[9], c: "#78909c" });
       last = m.index + m[0].length;
     }
     if (last < line.length) plain(line.slice(last));
@@ -513,39 +476,132 @@ export class Level45Scene extends Phaser.Scene {
     }
   }
 
+  _measureText(str, style) {
+    const t = this.add.text(0, 0, str, style);
+    const w = t.width;
+    t.destroy();
+    return w;
+  }
+
+  _slotDims(slotId) {
+    const def = this.slotDefs[slotId];
+    const placed = this.slotContents[slotId] || [];
+    const code = (extra) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", ...extra });
+    if (!placed[0]) {
+      if (def._emptyW === undefined) def._emptyW = Math.ceil(this._measureText(def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2);
+      return { w: def._emptyW, h: SLOT_H, wrap: 0 };
+    }
+    const label = placed[0].container.list[1].text;
+    const maxW = (CX + CW - 14) - (CODE_X + WRAP_INDENT);  // a full continuation row
+    const natural = Math.ceil(this._measureText(label, code({})));
+    if (natural + SLOT_PAD * 2 <= maxW) return { w: natural + SLOT_PAD * 2, h: SLOT_H, wrap: 0 };
+    const wrapW = maxW - SLOT_PAD * 2;
+    const t = this.add.text(0, 0, label, code({ align: "center", wordWrap: { width: wrapW, useAdvancedWrap: true } }));
+    const h = Math.ceil(t.height) + SLOT_PAD * 2;
+    t.destroy();
+    return { w: maxW, h: Math.max(SLOT_H, h), wrap: wrapW };
+  }
+
   renderSkeleton(mission) {
     this.codeContainer.removeAll(true);
     this.slotDefs = {};
     mission.slots.forEach((s) => { this.slotDefs[s.id] = { ...s, rect: null }; });
 
-    mission.skeleton.forEach((rawLine, i) => {
-      const y = CODE_Y0 + i * LINE_H;
-      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "13px Courier New", color: "#3d4450" });
-      this.codeContainer.add(numT);
+    const textStyle = (color, fontStyle) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle, color });
 
+    this._codeLines = mission.skeleton.map((rawLine, li) => {
+      const segs = [];
+      const addText = (t, c, st) => {
+        const obj = this.add.text(0, 0, t, textStyle(c, st)).setOrigin(0, 0.5);
+        this.codeContainer.add(obj);
+        segs.push({ k: "t", obj, w: obj.width });
+      };
       if (/^Scanner sc = new Scanner/.test(rawLine) || /^System\.out\.printf\("Enter/.test(rawLine) || /^String \w+ = sc\.nextLine/.test(rawLine) || /^int qty = sc\.nextInt/.test(rawLine)) {
-        const t = this.add.text(CODE_X, y, rawLine, { font: "14px Courier New", color: "#3d4450" }).setAlpha(0.6);
-        this.codeContainer.add(t);
-        return;
+        addText(rawLine, HEX_BOILER, "normal");
+      } else {
+        rawLine.split(/<slot:(\w+)>/).forEach((part, pi) => {
+          if (pi % 2 === 0) {
+            if (!part) return;
+            part.split(/(\/\*.*?\*\/)/).forEach((piece) => {
+              if (!piece) return;
+              if (/^\/\*/.test(piece)) addText(piece, HEX_COMMENT, "italic");
+              else this._syntaxTokens(piece).forEach((tok) => addText(tok.t, tok.c, "bold"));
+            });
+          } else {
+            segs.push({ k: "s", id: part });
+          }
+        });
       }
+      const num = this.add.text(CX + 8, 0, String(li + 1), { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5);
+      this.codeContainer.add(num);
+      return { segs, num };
+    });
+    this._layoutCode();
+  }
 
-      const parts = rawLine.split(/<slot:(\w+)>/);
-      let x = CODE_X;
-      parts.forEach((part, pi) => {
-        if (pi % 2 === 0) {
-          if (!part) return;
-          this._syntaxTokens(part).forEach((tok) => {
-            const t = this.add.text(x, y, tok.t, { font: "bold 14px Courier New", color: tok.c });
-            this.codeContainer.add(t);
-            x += t.width;
-          });
+  _layoutCode() {
+    if (!this._codeLines) return;
+    const limit = CX + CW - 14;
+    const rows = [];
+    const newRow = () => { const r = { items: [], hasSlot: false, slotH: 0 }; rows.push(r); return r; };
+    const lineInfo = [];
+    this._codeLines.forEach((line) => {
+      const segs = line.segs;
+      let row = newRow();
+      const first = rows.length - 1;
+      let rowStart = CODE_X, x = CODE_X;
+      const wrap = () => { row = newRow(); rowStart = CODE_X + WRAP_INDENT; x = rowStart; };
+      let i = 0;
+      while (i < segs.length) {
+        const seg = segs[i];
+        if (seg.k === "t") {
+          let j = i, runW = 0;
+          while (j < segs.length && segs[j].k === "t") { runW += segs[j].w; j++; }
+          if (x > rowStart && x + runW > limit) wrap();
+          for (let q = i; q < j; q++) { row.items.push({ seg: segs[q], x }); x += segs[q].w; }
+          i = j;
         } else {
-          const slotId = part;
-          const def = this.slotDefs[slotId];
-          const w = 200;
-          def.rect = { x, y: y - 2, w, h: 17 };
-          this._drawSlotPlaceholder(slotId);
-          x += w + 6;
+          const d = this._slotDims(seg.id);
+          seg.dims = d;
+          let tail = 0;
+          for (let j = i + 1; j < segs.length && segs[j].k === "t"; j++) tail += segs[j].w;
+          if (x > rowStart && x + SLOT_GAP + d.w + SLOT_GAP + tail > limit) wrap();
+          if (x > rowStart) x += SLOT_GAP;
+          row.items.push({ seg, x });
+          row.hasSlot = true;
+          row.slotH = Math.max(row.slotH, d.h);
+          x += d.w + SLOT_GAP;
+          i++;
+        }
+      }
+      lineInfo.push({ first, n: rows.length - first });
+    });
+
+    const avail = (CY + CH - 8) - CODE_Y0;
+    const heights = (t, sp, bl) => rows.map((r) => (r.items.length === 0 ? bl : r.hasSlot ? r.slotH + sp : t));
+    let hs = heights(ROW_TEXT_H, ROW_SLOT_PAD, ROW_BLANK_H);
+    if (hs.reduce((a, b) => a + b, 0) > avail) hs = heights(26, 6, 16);
+    if (hs.reduce((a, b) => a + b, 0) > avail) hs = heights(24, 4, 14);
+    const tops = []; let acc = CODE_Y0;
+    hs.forEach((h, r) => { tops[r] = acc; acc += h; });
+    this._rowTops = tops; this._rowHs = hs;
+    this._lineRows = lineInfo.map((l) => ({ row: l.first, n: l.n }));
+
+    this._codeLines.forEach((line, li) => line.num.setPosition(CX + 8, tops[lineInfo[li].first] + hs[lineInfo[li].first] / 2));
+    rows.forEach((r, ri) => {
+      const cy = tops[ri] + hs[ri] / 2;
+      r.items.forEach(({ seg, x }) => {
+        if (seg.k === "t") { seg.obj.setPosition(x, cy); return; }
+        const def = this.slotDefs[seg.id];
+        def.rect = { x, y: cy - seg.dims.h / 2, w: seg.dims.w, h: seg.dims.h, wrapW: seg.dims.wrap };
+        this._drawSlotPlaceholder(seg.id);
+        const placed = this.slotContents[seg.id] || [];
+        if (placed[0]) {
+          const c = placed[0].container;
+          this._fitBlockToSlot(c, def.rect);
+          const prevTw = c.getData("slotTw");
+          if (prevTw) prevTw.stop();
+          c.setData("slotTw", this.tweens.add({ targets: c, x: x + def.rect.w / 2, y: cy, duration: 150, ease: "Cubic.easeOut" }));
         }
       });
     });
@@ -576,34 +632,55 @@ export class Level45Scene extends Phaser.Scene {
     def.drawDash = draw;
     this.codeContainer.add(dg);
     if (!filled) {
-      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { font: "italic 11px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
+      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic", color: HEX_HINT }).setOrigin(0.5).setDepth(22);
       def.hintLabel = label;
       this.codeContainer.add(label);
     }
   }
 
   _relayoutSlot(slotId) {
-    const def = this.slotDefs[slotId];
-    const placed = this.slotContents[slotId] || [];
-    if (!def || !def.rect) return;
-    const { x, y, h } = def.rect;
-    if (placed[0]) {
-      const block = placed[0];
-      const bw = block.container.getData("w");
-      this.tweens.add({ targets: block.container, x: x + bw / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
+    this._layoutCode();
+  }
+
+  _fitBlockToSlot(c, rect) {
+    let v = c.getData("slotView");
+    if (!v) {
+      const bg0 = c.list[0], txt0 = c.list[1];
+      const txt = this.add.text(0, 0, txt0.text, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color: HEX_CYAN, align: "center" }).setOrigin(0.5);
+      const bg = this.add.graphics();
+      c.add([bg, txt]);
+      bg0.setVisible(false); txt0.setVisible(false);
+      v = { bg, txt, bg0, txt0, w: c.width, h: c.height };
+      c.setData("slotView", v);
     }
-    this._drawSlotPlaceholder(slotId);
+    v.txt.setWordWrapWidth(rect.wrapW || 0, true);
+    v.bg.clear();
+    v.bg.fillStyle(0x241a10, 1);
+    v.bg.fillRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    v.bg.lineStyle(2, C_BRASS, 1);
+    v.bg.strokeRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    c.setSize(rect.w, rect.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
+  }
+
+  _releaseBlockFromSlot(c) {
+    const v = c.getData("slotView");
+    if (!v) return;
+    v.bg.destroy(); v.txt.destroy();
+    v.bg0.setVisible(true); v.txt0.setVisible(true);
+    c.setSize(v.w, v.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(v.w, v.h);
+    c.setData("slotView", null);
   }
 
   highlightCodeLine(lineIndex) {
     if (lineIndex === null || lineIndex === undefined) { this.lineHighlight.setVisible(false); return; }
-    const y = CODE_Y0 + lineIndex * LINE_H - 2;
-    this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
+    const lr = (this._lineRows || [])[lineIndex];
+    if (!lr) { this.lineHighlight.setVisible(false); return; }
+    const top = this._rowTops[lr.row];
+    let h = 0; for (let r = lr.row; r < lr.row + lr.n; r++) h += this._rowHs[r];
+    this.lineHighlight.setSize(CW - 4, h).setPosition(CX + CW / 2, top + h / 2).setVisible(true);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BLOCK PALETTE (drag system, reused)
-  // ══════════════════════════════════════════════════════════════
 
   createBlockPalette() {
     const g = this.add.graphics().setDepth(10);
@@ -671,6 +748,7 @@ export class Level45Scene extends Phaser.Scene {
         this.slotContents[prevSlot] = (this.slotContents[prevSlot] || []).filter((b) => b.container !== obj);
         obj.setData("_cameFromSlot", prevSlot);
         obj.setData("placedIn", null);
+        this._releaseBlockFromSlot(obj);
         this._relayoutSlot(prevSlot);
         this.updateRunButtonState();
       } else {
@@ -762,10 +840,6 @@ export class Level45Scene extends Phaser.Scene {
     return out;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN BUTTON
-  // ══════════════════════════════════════════════════════════════
-
   createRunButton() {
     const bx = 585, by = 640;
     const glow = this.add.ellipse(bx, by, 150, 60, C_GREEN_BRIGHT, 0.06).setDepth(29);
@@ -804,10 +878,6 @@ export class Level45Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN").setColor("#546e7a");
     this.runButton.c.disableInteractive();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // RIG WINDOW — mini composing bed + type case rail + tape + log
-  // ══════════════════════════════════════════════════════════════
 
   createRigWindow() {
     const g = this.add.graphics().setDepth(10);
@@ -861,10 +931,6 @@ export class Level45Scene extends Phaser.Scene {
       default: return C_GRAY;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI SCANNER TAPE (cross-wing cameo, M5/M6)
-  // ══════════════════════════════════════════════════════════════
 
   createMiniTape() {
     this.tapeContainer = this.add.container(0, 0);
@@ -937,10 +1003,6 @@ export class Level45Scene extends Phaser.Scene {
     this.renderMiniTape();
     await this.delay(70);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MINI LOG + CURSOR
-  // ══════════════════════════════════════════════════════════════
 
   createMiniLog() {
     this.logContainer = this.add.container(0, 0);
@@ -1033,9 +1095,6 @@ export class Level45Scene extends Phaser.Scene {
     await this.delay(24);
   }
 
-  /** Scanner-echo resolution (L42 rule, reused verbatim): echoes onto the
-   * SAME row only when the cursor is mid-row from a preceding printf
-   * prompt — a genuine "interactive prompt" condition, never scripted. */
   async echoScannerInput(text) {
     if (this.cursorOnFreshLine) return;
     await this.typeAtCursor(text, "echo");
@@ -1051,10 +1110,6 @@ export class Level45Scene extends Phaser.Scene {
     this.renderLogFromScratch();
     this.updateCursorVisualPosition();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — printf (ported from L43/L44) + Scanner + case methods
-  // ══════════════════════════════════════════════════════════════
 
   parseFormatString(fmt) {
     const segments = [];
@@ -1140,11 +1195,6 @@ export class Level45Scene extends Phaser.Scene {
     return { ok: false };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSITION REVEAL — simplified mini bed/rail (honest evaluator,
-  // lighter-weight choreography appropriate for a compact rig window)
-  // ══════════════════════════════════════════════════════════════
-
   async animateComposingBed(fmtDisplaySource, argVals, evalResult) {
     this.clearBed();
     this.clearRail();
@@ -1219,9 +1269,6 @@ export class Level45Scene extends Phaser.Scene {
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 180, onComplete: () => stamp.destroy() });
   }
 
-  /** Runs one printf call: real parser/evaluator, then a lighter-weight
-   * (but still trace-driven, never scripted) visual reveal appropriate
-   * for the compact rig window. */
   async runComposition(fmtSource, argVals) {
     const evalResult = this.evaluatePrintf(fmtSource, argVals);
     if (evalResult.compileError) { await this.showCompileErrorOnBed(); return evalResult; }
@@ -1262,10 +1309,6 @@ export class Level45Scene extends Phaser.Scene {
   screenShake(intensity = 0.004, duration = 150) {
     this.cameras.main.shake(duration, intensity);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TEST REPORT & MISSION BRIEF
-  // ══════════════════════════════════════════════════════════════
 
   createTestReportPanel() {
     const g = this.add.graphics().setDepth(10);
@@ -1336,10 +1379,6 @@ export class Level45Scene extends Phaser.Scene {
   }
   updateManifestStrip(text) { this.manifestStripText.setText(text); }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0f0a06, 0.93);
@@ -1347,8 +1386,8 @@ export class Level45Scene extends Phaser.Scene {
     g.lineStyle(1, 0x3a2618, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE PRINT FLOOR", { font: "bold 15px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 32, "Restructuring Phase — printf()", { font: "12px Arial", color: "#546e7a" }).setDepth(51);
+    this.add.text(20, 14, "THE PRINT FLOOR", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
+    this.add.text(20, 38, "Restructuring Phase — printf()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
 
     this.missionHexes = [];
     for (let i = 0; i < 6; i++) {
@@ -1358,8 +1397,8 @@ export class Level45Scene extends Phaser.Scene {
     }
     this._drawHexes();
 
-    this.add.text(1060, 10, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1060, 22, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(51);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(51);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(51);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -1383,10 +1422,6 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   _drawHexes() {
-    // Kill any leftover pulse tween on EVERY hex first — otherwise a
-    // previous mission's infinite alpha-yoyo tween keeps running silently
-    // on its (now completed) graphics object forever once the current
-    // mission advances past it.
     this.missionHexes.forEach(({ g }) => { this.tweens.killTweensOf(g); g.setAlpha(1); });
     this.missionHexes.forEach(({ g, x, y }, i) => {
       g.clear();
@@ -1399,10 +1434,6 @@ export class Level45Scene extends Phaser.Scene {
       m.pulse = this.tweens.add({ targets: m.g, alpha: 0.5, duration: 600, yoyo: true, repeat: -1 });
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — Print Floor Manager variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -1440,8 +1471,8 @@ export class Level45Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x + 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -1490,7 +1521,7 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "bold 10px Arial", color: colorHex }).setOrigin(0.5).setDepth(21).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5).setDepth(21).setAlpha(0);
     this.rigLayer.add(t);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(1300, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 200, onComplete: () => t.destroy() }); });
@@ -1502,10 +1533,6 @@ export class Level45Scene extends Phaser.Scene {
     this.tweens.add({ targets: t, alpha: 1, duration: 300 });
     return t;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
 
   checkTutorial() {
     let done = false;
@@ -1542,10 +1569,6 @@ export class Level45Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.showProjectBriefing(0);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // MISSION LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
 
   showProjectBriefing(index) {
     this.currentMission = index;
@@ -1616,10 +1639,6 @@ export class Level45Scene extends Phaser.Scene {
     this.missionElements = [];
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // SUBSTITUTION HELPERS
-  // ══════════════════════════════════════════════════════════════
-
   _substitute(mission, test) {
     const decls = {};
     mission.skeleton.forEach((line) => {
@@ -1641,10 +1660,6 @@ export class Level45Scene extends Phaser.Scene {
     if (/\.toUpperCase$/.test((code || "").trim()) || /\.toLowerCase$/.test((code || "").trim())) return { ok: false, tag: "property_vs_method_syntax" };
     return { ok: true };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // GENUINE INTERPRETER — per-mission, honest sequential execution
-  // ══════════════════════════════════════════════════════════════
 
   async runProgram(mission, assembled, test) {
     const decls = this._substitute(mission, test);
@@ -1735,10 +1750,6 @@ export class Level45Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // RUN
-  // ══════════════════════════════════════════════════════════════
-
   _collectWrongBlocksUsed() {
     const used = [];
     for (const id in this.slotContents) {
@@ -1822,23 +1833,6 @@ export class Level45Scene extends Phaser.Scene {
     return { match };
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 missions'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   *
-   * This level uses the MISSIONS/currentMission architecture, not
-   * ROUNDS/currentRound — attemptLog entries here carry `mission` (not
-   * `round`) and have no `misconceptionTag` field on the main run-outcome
-   * entries. misconception_repeat_count is the structural equivalent: a
-   * failed run (`result !== "pass"`) whose wrongBlocks carried a tagged
-   * distractor, mirroring "a wrong attempt attributable to a specific
-   * misconception" from the ROUNDS-based levels.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.mission <= 3);
     const attempts_count = relevant.length;
@@ -1861,8 +1855,6 @@ export class Level45Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, false);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered,
-      // before onMissionComplete()'s wait-loop starts polling for it.
       await this.delay(100);
     } catch (e) {
       console.warn("Level45Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1884,8 +1876,6 @@ export class Level45Scene extends Phaser.Scene {
     this.runButton.t.setText("▶ RUN");
     this.setProduction(false);
 
-    // Every failed run costs exactly one life, matching the strictness of
-    // the ROUNDS-based levels (loseLife() there fires on every wrong answer).
     const livesLostThisRun = true;
     const feedbackTag = wrongBlocksUsed[0] && wrongBlocksUsed[0].tag;
 
@@ -1941,16 +1931,12 @@ export class Level45Scene extends Phaser.Scene {
     if (this.currentMission === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next mission.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1990,7 +1976,8 @@ export class Level45Scene extends Phaser.Scene {
     await this.delay(400);
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 16px Arial") {
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial") {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
     const t = this.add.text(x, y, text, { font, color: colorHex }).setOrigin(0.5).setDepth(75);
     this.tweens.add({ targets: t, y: y - 25, alpha: 0, duration: 800, ease: "Cubic.easeOut", onComplete: () => t.destroy() });
     return t;
@@ -2038,11 +2025,8 @@ export class Level45Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -2064,13 +2048,14 @@ export class Level45Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
     this.clearMission();
     this.hideBubble();
 
-    try { GameManager.completeLevel(45, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(44, Math.round((this.flawlessCount / MISSIONS.length) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("printf_mastery"); } catch (_) {}
     try {
       localStorage.setItem("level45_results", JSON.stringify({
@@ -2086,10 +2071,6 @@ export class Level45Scene extends Phaser.Scene {
 
     this.triggerWingFinaleCeremony();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // WING FINALE CEREMONY (5 phases)
-  // ══════════════════════════════════════════════════════════════
 
   async triggerWingFinaleCeremony() {
     await this.ceremonyPhase1_MissionFanfare();

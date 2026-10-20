@@ -1,27 +1,9 @@
-/**
- * Level 44 — "The Presses" (Output Methods: Tuning Phase — printf())
- * ===========================================================================
- * Tunes the Level 43 printf() schema under time pressure. The impression
- * arm's height IS the timer — it descends linearly over the round's time
- * limit; answer before it strikes or the tray SMEARS. The reveal always
- * plays the true composition on the press bed + type case rail (ported
- * from Level 43's parser/evaluator and slug/slot machinery) before
- * transferring honestly to the reference log — never scripted.
- *
- * evaluatePrintf() is the Level 43 evaluator unmodified: real half-up
- * rounding via toFixed(), real padding, real type checks producing
- * IllegalFormatConversionException / MissingFormatArgumentException.
- * Wave 3's bug-hunt rounds don't special-case their crashes — they run
- * the learner's actual buggy call through the same evaluator, so the
- * "missing argument" and "wrong specifier" exceptions are genuinely
- * derived, matching the level's own design rationale (§0).
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -32,6 +14,8 @@ const HEX_GREEN_BRIGHT = "#00e676", HEX_RED = "#f44336", HEX_GRAY = "#78909c";
 const HEX_MAGENTA = "#ff4081", HEX_BRASS = "#c8a05a";
 
 const BED_CX = 500;
+const OPT_FONT = 20, OPT_PAD = 16, OPT_GAP = 16, OPT_MIN_H = 48;
+const OPT_X0 = 24, OPT_X1 = W - 24, OPT_Y0 = 604, OPT_Y1 = H - 8;
 const ARM_X0 = 230, ARM_X1 = 770, ARM_Y_HIGH = 140, ARM_Y_LOW = 290;
 const BED_X0 = 220, BED_X1 = 780, BED_Y0 = 300, BED_Y1 = 440, BED_CY = 356;
 const RAIL_X0 = 220, RAIL_X1 = 780, RAIL_Y = 505;
@@ -42,11 +26,7 @@ const LOG_TEXT_X = LOG_X + 34;
 const TUTORIAL_KEY = "level44_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
-  // ══ WAVE 1 — Rapid Substitution Fluency (12s) ══
   { round: 1, wave: 1, type: "predict", source: ['System.out.printf("Score: %d", 100);'],
     question: "What appears on the log?", correct: "Score: 100",
     options: [
@@ -94,7 +74,6 @@ const ROUNDS = [
       { value: "7 = count", tag: "argument_order_reversed_belief" },
     ], concept: "fluent_variable_label_pattern" },
 
-  // ══ WAVE 2 — Precision & Newlines (10s) ══
   { round: 6, wave: 2, type: "predict", source: ['System.out.printf("%.1f", 5.678);'],
     question: "What appears on the log?", correct: "5.7",
     options: [
@@ -150,7 +129,6 @@ const ROUNDS = [
     revealNote: "Three printfs, three transmissions. A on row 01. B extends row 01 → 'AB', then %n jumps to row 02. C on row 02. Cursor rests at end of C.",
     concept: "printf_chain_with_n_fluent" },
 
-  // ══ WAVE 3 — Complex Traces & Bug Hunt ══
   { round: 11, wave: 3, type: "trace", source: ['System.out.printf("%s: %.2f%n%s: %.2f", "Coffee", 3.5, "Tea", 2.0);'],
     question: "What appears on the log AND where is the cursor?", correct: "coffee350_tea200_cursor_end",
     options: [
@@ -254,9 +232,6 @@ export class Level44Scene extends Phaser.Scene {
     this._firstNewlineAnnotationShown = false;
     this._firstPrecisionAnnotationShown = false;
     this._bulbs = [];
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level43Scene";
   }
 
@@ -291,14 +266,12 @@ export class Level44Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this._armTween && this._armTween.isPlaying()) {
         this._armTween.pause();
       }
-      return; // Return early to stop particles and bulb flicker from animating
+      return;
     } else {
-      // Resume the round timer tween if the menu was just dismissed
       if (this._armTween && this._armTween.isPaused()) {
         this._armTween.resume();
       }
@@ -310,10 +283,6 @@ export class Level44Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / PRESSROOM
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l44_dot")) {
@@ -420,10 +389,6 @@ export class Level44Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PRESS FRAME
-  // ══════════════════════════════════════════════════════════════
-
   createPressFrame() {
     const g = this.add.graphics().setDepth(4);
     g.fillStyle(0x1a1108, 1);
@@ -453,10 +418,6 @@ export class Level44Scene extends Phaser.Scene {
 
     this.warningLed = this.add.circle(BED_CX, 96, 3, C_RED, 0.4).setDepth(6);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // IMPRESSION ARM (THE TIMER)
-  // ══════════════════════════════════════════════════════════════
 
   createImpressionArm() {
     this.armGlowGfx = this.add.graphics().setDepth(7);
@@ -559,10 +520,6 @@ export class Level44Scene extends Phaser.Scene {
     this.time.delayedCall(700, () => p.destroy());
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // PRESS BED (trial content area)
-  // ══════════════════════════════════════════════════════════════
-
   createPressBed() {
     const g = this.add.graphics().setDepth(5);
     g.fillStyle(0x0a0503, 1);
@@ -575,10 +532,6 @@ export class Level44Scene extends Phaser.Scene {
   }
 
   clearBed() { this.bedContainer.removeAll(true); this.bedQuestionText.setText(""); }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE CASE RAIL (slug staging area)
-  // ══════════════════════════════════════════════════════════════
 
   createTypeCaseRail() {
     const g = this.add.graphics().setDepth(4);
@@ -609,10 +562,6 @@ export class Level44Scene extends Phaser.Scene {
       default: return C_GRAY;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE LOG + CURSOR (ported from L40–L43)
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceLog() {
     const g = this.add.graphics().setDepth(10);
@@ -697,8 +646,6 @@ export class Level44Scene extends Phaser.Scene {
     this.time.delayedCall(280, () => p.destroy());
   }
 
-  /** Types text at the cursor — printf's ground truth. Real '\n' chars
-   * (from \n literal or %n) break rows. No auto-newline, ever. */
   async typeAtCursor(text, styleType) {
     for (const ch of text) {
       if (!this._alive) return;
@@ -743,10 +690,6 @@ export class Level44Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x0d0805, 0.93);
@@ -754,8 +697,8 @@ export class Level44Scene extends Phaser.Scene {
     g.lineStyle(1, 0x3a2618, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE PRESSES", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Tuning Phase — printf()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 14, "THE PRESSES", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(50);
+    this.add.text(20, 38, "Tuning Phase — printf()", { font: "18px Arial", color: "#546e7a" }).setDepth(50);
 
     this.waveText = this.add.text(BED_CX, 18, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
     this._waveSquares = [];
@@ -764,9 +707,9 @@ export class Level44Scene extends Phaser.Scene {
       this._waveSquares.push(sq);
     }
 
-    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(50);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(50);
+    this.comboText = this.add.text(960, 32, "×1", { font: "bold 18px Arial", color: HEX_GOLD }).setOrigin(1, 0.5).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -791,10 +734,6 @@ export class Level44Scene extends Phaser.Scene {
     if (this.currentWave === 2) return this.currentRound - 5;
     return this.currentRound - 10;
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // BIT — press operator variant
-  // ══════════════════════════════════════════════════════════════
 
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
@@ -825,8 +764,8 @@ export class Level44Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -875,14 +814,15 @@ export class Level44Scene extends Phaser.Scene {
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "italic 12px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "italic 18px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(1600, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 300 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1400) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
@@ -911,10 +851,6 @@ export class Level44Scene extends Phaser.Scene {
     await this.delay(hold);
     if (stamp.active) this.tweens.add({ targets: stamp, alpha: 0, duration: 200, onComplete: () => stamp.destroy() });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — printf format-string parser (ported from L43)
-  // ══════════════════════════════════════════════════════════════
 
   parseFormatString(fmt) {
     const segments = [];
@@ -1005,10 +941,6 @@ export class Level44Scene extends Phaser.Scene {
     parts.push(cur.trim());
     return { fmt: parts[0], args: parts.slice(1) };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // COMPOSITION ANIMATION — press bed + type case rail
-  // ══════════════════════════════════════════════════════════════
 
   async renderFormatOnBed(fmtDisplaySource) {
     this.clearBed();
@@ -1157,7 +1089,6 @@ export class Level44Scene extends Phaser.Scene {
     return { rejected: false };
   }
 
-  /** Full composition reveal for a single printf call — 1.4× L43 tempo. */
   async runComposition(fmtSource, argVals) {
     await this.renderFormatOnBed(fmtSource);
     if (!this._alive) return { ok: true, text: "" };
@@ -1183,9 +1114,6 @@ export class Level44Scene extends Phaser.Scene {
       return evalResult;
     }
     if (!evalResult.ok && evalResult.crash === "missing_argument") {
-      // Honest trace: any slots BEFORE the missing one genuinely succeeded
-      // (evalResult.steps proves it) — show those insertions first, then
-      // flare the slot that has no slug left to fill it.
       const argSlotsForMiss = this._bedSlots.filter((s) => s.specifier !== "n");
       let filledCount = 0;
       for (const step of evalResult.steps) {
@@ -1255,10 +1183,6 @@ export class Level44Scene extends Phaser.Scene {
     return { ok: true };
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1291,10 +1215,6 @@ export class Level44Scene extends Phaser.Scene {
     try { localStorage.setItem(TUTORIAL_KEY, "true"); } catch (_) {}
     this.startWave(1);
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TRIAL DISPLAY (syntax-highlighted, printf-aware)
-  // ══════════════════════════════════════════════════════════════
 
   _syntaxTokenize(line) {
     const tokens = [];
@@ -1344,10 +1264,6 @@ export class Level44Scene extends Phaser.Scene {
     this.bedLabel.setText(`IMPRESSION ${this.currentRound + 1}/15`);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WAVE / ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
     this.resetWaveIndicator();
@@ -1373,7 +1289,7 @@ export class Level44Scene extends Phaser.Scene {
     g.fillRoundedRect(-230, -24, 460, 48, 8);
     g.lineStyle(2, C_GOLD, 1);
     g.strokeRoundedRect(-230, -24, 460, 48, 8);
-    const t = this.add.text(0, 0, text, { font: "bold 17px Arial", color: HEX_GOLD }).setOrigin(0.5);
+    const t = this.add.text(0, 0, text, { font: "bold 20px Arial", color: HEX_GOLD }).setOrigin(0.5);
     c.add([g, t]);
     await new Promise((res) => {
       this.tweens.add({
@@ -1392,8 +1308,6 @@ export class Level44Scene extends Phaser.Scene {
     this.roundStartTime = this.time.now;
     this.clearRound();
 
-    // The arm may have been left mid-air (struck/frozen) by the previous
-    // round's timeout or wrong answer — every round starts fresh at top.
     this.armY = ARM_Y_HIGH;
     this._drawArm(C_GREEN_BRIGHT, 0.22);
 
@@ -1431,25 +1345,78 @@ export class Level44Scene extends Phaser.Scene {
     this.advanceRound();
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/B/C — PREDICT / TRACE
-  // ══════════════════════════════════════════════════════════════
-
   setupPredict(config) {
     this.showTrialOnBed(config.source, config.question);
     this.showOptionBubbles(config.options, config);
   }
 
+  _optStyle(wrapW) {
+    const st = { fontFamily: "Courier New", fontSize: OPT_FONT + "px", fontStyle: "bold", color: "#e8dfc8", align: "center" };
+    if (wrapW) st.wordWrap = { width: wrapW };
+    return st;
+  }
+
+  _measureOpt(label, wrapW) {
+    const t = this.add.text(0, 0, label, this._optStyle(wrapW));
+    const r = { w: Math.ceil(t.width), h: Math.ceil(t.height) };
+    t.destroy();
+    return r;
+  }
+
+  _layoutOptionRow(labels) {
+    const n = labels.length;
+    const natural = labels.map((l) => this._measureOpt(l, 0));
+    const lineH = this._measureOpt("Mg", 0).h;
+    const availW = OPT_X1 - OPT_X0, availH = OPT_Y1 - OPT_Y0;
+    const plans = [[1, 1], [1, 2], [2, 1], [1, 3], [2, 2]];   // [rows, max text lines]
+    const sizesFor = (lines) => labels.map((l, i) => {
+      if (lines === 1) return { wrap: 0, w: natural[i].w, h: natural[i].h };
+      for (let ww = Math.ceil(natural[i].w / lines); ww < natural[i].w; ww += 6) {
+        const m = this._measureOpt(l, ww);
+        if (m.h <= lineH * lines + 1) return { wrap: ww, w: m.w, h: m.h };
+      }
+      return { wrap: 0, w: natural[i].w, h: natural[i].h };
+    });
+    let plan = null;
+    for (const [rows, lines] of plans) {
+      const sizes = sizesFor(lines);
+      const bw = sizes.map((z) => z.w + OPT_PAD * 2);
+      const bh = Math.max(OPT_MIN_H, ...sizes.map((z) => z.h + OPT_PAD * 2));
+      const perRow = Math.ceil(n / rows);
+      const fitsW = Array.from({ length: rows }, (_, r) => bw.slice(r * perRow, (r + 1) * perRow))
+        .every((g) => g.reduce((x, y) => x + y, 0) + OPT_GAP * (g.length - 1) <= availW);
+      const fitsH = rows * bh + (rows - 1) * OPT_GAP <= availH;
+      if (fitsW && fitsH) { plan = { rows, perRow, sizes, bw, bh }; break; }
+    }
+    if (!plan) {
+      const sizes = sizesFor(3);
+      const raw = sizes.map((z) => z.w + OPT_PAD * 2);
+      const k = Math.min(1, (availW - OPT_GAP * (n - 1)) / raw.reduce((x, y) => x + y, 0));
+      plan = { rows: 1, perRow: n, sizes: sizes.map((z) => ({ ...z, wrap: Math.max(40, Math.floor(z.w * k)) })), bw: raw.map((w) => Math.floor(w * k)), bh: Math.max(OPT_MIN_H, ...sizes.map((z) => z.h + OPT_PAD * 2)) };
+    }
+    const totalH = plan.rows * plan.bh + (plan.rows - 1) * OPT_GAP;
+    const top = OPT_Y0 + (availH - totalH) / 2;
+    const boxes = [];
+    for (let r = 0; r < plan.rows; r++) {
+      const idx = []; for (let i = r * plan.perRow; i < Math.min(n, (r + 1) * plan.perRow); i++) idx.push(i);
+      const rowW = idx.reduce((x, i) => x + plan.bw[i], 0) + OPT_GAP * (idx.length - 1);
+      let x = W / 2 - rowW / 2;
+      idx.forEach((i) => {
+        boxes[i] = { x: x + plan.bw[i] / 2, y: top + r * (plan.bh + OPT_GAP) + plan.bh / 2, w: plan.bw[i], h: plan.bh, wrap: plan.sizes[i].wrap };
+        x += plan.bw[i] + OPT_GAP;
+      });
+    }
+    return boxes;
+  }
+
   showOptionBubbles(options, config) {
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    const n = shuffled.length;
-    const spacing = 260;
-    const startX = BED_CX - ((n - 1) * spacing) / 2;
+    const labels = shuffled.map((o) => String(o.label || o.value));
+    const boxes = this._layoutOptionRow(labels);
     shuffled.forEach((opt, i) => {
-      const x = startX + i * spacing, y = 600;
+      const { x, y, w, h, wrap } = boxes[i];
       const c = this.add.container(x, y).setDepth(41);
       const g = this.add.graphics();
-      const w = 240, h = 48;
       const draw = (stroke) => {
         g.clear();
         g.fillStyle(0x1a1108, 1);
@@ -1458,11 +1425,10 @@ export class Level44Scene extends Phaser.Scene {
         g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
       };
       draw(C_BRASS);
-      const label = opt.label || opt.value;
-      const txt = this.add.text(0, 0, label, { font: "bold 14px Courier New", color: "#e8dfc8" }).setOrigin(0.5);
-      if (txt.width > w - 16) txt.setFontSize(10);
+      const txt = this.add.text(0, 0, labels[i], this._optStyle(wrap)).setOrigin(0.5);
       c.add([g, txt]);
       c.setSize(w, h);
+      c.setData("size", { w, h });
       c.setInteractive({ useHandCursor: true });
       c.on("pointerover", () => { if (!this.inputLocked) draw(C_GOLD); });
       c.on("pointerout", () => { if (!this.inputLocked) draw(C_BRASS); });
@@ -1487,9 +1453,10 @@ export class Level44Scene extends Phaser.Scene {
     const g = bubbleContainer.list[0];
     g.clear();
     g.fillStyle(0x1a1108, 1);
-    g.fillRoundedRect(-120, -24, 240, 48, 10);
+    const sz = bubbleContainer.getData("size") || { w: 240, h: 48 };
+    g.fillRoundedRect(-sz.w / 2, -sz.h / 2, sz.w, sz.h, 10);
     g.lineStyle(2, correct ? C_GREEN_BRIGHT : C_RED, 1);
-    g.strokeRoundedRect(-120, -24, 240, 48, 10);
+    g.strokeRoundedRect(-sz.w / 2, -sz.h / 2, sz.w, sz.h, 10);
     if (!correct) this.tweens.add({ targets: bubbleContainer, x: bubbleContainer.x + 5, duration: 35, yoyo: true, repeat: 4 });
 
     if (correct) await this.retractArm();
@@ -1498,7 +1465,7 @@ export class Level44Scene extends Phaser.Scene {
     await this.clearLog();
     this.clearBed();
     await this.runSnippetReveal(config.source, {});
-    if (config.revealNote) this.createFloatingText(LOG_X + LOG_W / 2, LOG_Y + LOG_H + 30, config.revealNote, HEX_GRAY, "13px Arial", 2600);
+    if (config.revealNote) this.createFloatingText(BED_CX, 566, config.revealNote, HEX_GRAY, "13px Arial", 2600);
     await this.delay(350);
     if (!this._alive) return;
 
@@ -1520,10 +1487,6 @@ export class Level44Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT (token-level, line-aware)
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(config) {
     this.clearBed();
@@ -1616,9 +1579,6 @@ export class Level44Scene extends Phaser.Scene {
     }
   }
 
-  /** Bug-hunt reveals run the learner's ACTUAL (buggy) call through the
-   * real evaluator — the missing-argument / wrong-specifier exceptions
-   * are genuinely derived, never scripted. */
   async runBugHuntReveal(config) {
     if (config.round === 14) {
       const r = await this.runComposition('"%s is %d years old"', config.args);
@@ -1633,10 +1593,6 @@ export class Level44Scene extends Phaser.Scene {
       return;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -1694,15 +1650,6 @@ export class Level44Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1723,7 +1670,6 @@ export class Level44Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level44Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1734,16 +1680,12 @@ export class Level44Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1758,11 +1700,8 @@ export class Level44Scene extends Phaser.Scene {
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1786,6 +1725,7 @@ export class Level44Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1793,7 +1733,7 @@ export class Level44Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(44, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(43, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("printf_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level44_results", JSON.stringify({

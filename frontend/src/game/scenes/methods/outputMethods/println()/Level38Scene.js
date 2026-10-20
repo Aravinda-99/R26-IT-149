@@ -1,26 +1,9 @@
-/**
- * Level 38 — "The Signal Room" (Output Methods: Tuning Phase)
- * ===========================================================================
- * Tunes the Level 37 println() schema under time pressure. A CRT signal
- * monitor is the hero timer: static noise creeps across the screen over the
- * round's time limit; answer before it degrades to full snow or the trial
- * is lost. The reveal always fires the true transmission on a compact
- * reference tower + log (ported from Level 37), so the "+" operator's
- * left-to-right, String-sticky behavior is always genuinely demonstrated —
- * never scripted.
- *
- * evaluatePrintln() extends the Level 37 evaluator with parenthesized
- * sub-expressions: a `(...)` group tokenizes as one unit and is evaluated
- * recursively via the same left-fold rules BEFORE folding into the outer
- * expression. This is what makes "sum: " + (1 + 2) → "sum: 3" while
- * "sum: " + 1 + 2 → "sum: 12" — both computed, not looked up.
- */
-
 import Phaser from "phaser";
 import { GameManager } from "../../../../GameManager.js";
 import { WellbeingAPI } from "../../../../../api/api.js";
 import { BadgeSystem } from "../../../../BadgeSystem.js";
 import { BehavioralRules } from "../../../../ml/BehavioralRules.js";
+import { PanelFit } from "../../../../PanelFit.js";
 
 const W = 1280, H = 720;
 
@@ -43,9 +26,6 @@ const TUTORIAL_KEY = "level38_tutorial_done";
 const WAVE_TIME = { 1: 12000, 2: 10000, 3: 9000 };
 let firstNewlineAnnotationShown38 = false;
 
-// ══════════════════════════════════════════════════════════════
-// ROUND CONFIGURATION
-// ══════════════════════════════════════════════════════════════
 const ROUNDS = [
   { round: 1, wave: 1, type: "predict", source: ['System.out.println("Signal");'],
     question: "What appears on the log?", correct: "Signal",
@@ -259,9 +239,6 @@ export class Level38Scene extends Phaser.Scene {
     this._staticPixels = [];
     this._urgencyState = "safe";
     this._waveSquares = [];
-    // "Review the basics" in the Bit menu sends the player back to this
-    // wing's Accretion-phase intro (which has the real tutorial) instead of
-    // restarting this rapid-fire Tuning-phase level with nothing to review.
     this.baseTutorialScene = "Level37Scene";
     this._conceptNoted = {};
   }
@@ -295,14 +272,12 @@ export class Level38Scene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    // Pause dynamic game elements if an ML intervention menu is currently on screen
     if (GameManager.interventionInFlight) {
       if (this._creepTween && this._creepTween.isPlaying()) {
         this._creepTween.pause();
       }
-      return; // Return early to stop ambient effects and server LEDs from animating
+      return;
     } else {
-      // Resume the round timer tween if the menu was just dismissed
       if (this._creepTween && this._creepTween.isPaused()) {
         this._creepTween.resume();
       }
@@ -314,10 +289,6 @@ export class Level38Scene extends Phaser.Scene {
 
   delay(ms) { return new Promise((r) => this.time.delayedCall(ms, r)); }
   waitForClick() { return new Promise((r) => this.input.once("pointerdown", () => r())); }
-
-  // ══════════════════════════════════════════════════════════════
-  // BACKGROUND / ROOM
-  // ══════════════════════════════════════════════════════════════
 
   createParticleTexture() {
     if (!this.textures.exists("l38_dot")) {
@@ -401,10 +372,6 @@ export class Level38Scene extends Phaser.Scene {
     });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE TOWER (compact, ported from Level 37)
-  // ══════════════════════════════════════════════════════════════
-
   createReferenceTower() {
     const g = this.add.graphics().setDepth(3);
     g.lineStyle(1.5, 0x3d4450, 1);
@@ -447,10 +414,6 @@ export class Level38Scene extends Phaser.Scene {
       onComplete: () => { this.beacon.setFillStyle(C_RED, 0.4); this.tweens.add({ targets: this.beacon, alpha: 0.2, duration: 1500, yoyo: true, repeat: -1, ease: "Sine.easeInOut" }); },
     });
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // CRT MONITOR
-  // ══════════════════════════════════════════════════════════════
 
   createCRTMonitor() {
     const bez = this.add.graphics().setDepth(10);
@@ -517,10 +480,6 @@ export class Level38Scene extends Phaser.Scene {
     for (let i = 2; i < pts.length; i += 2) this.waveGfx.lineTo(pts[i], pts[i + 1]);
     this.waveGfx.strokePath();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // STATIC CREEP TIMER
-  // ══════════════════════════════════════════════════════════════
 
   startStaticCreep(timeLimitMs, onTimeout) {
     this._killCreepTween();
@@ -629,10 +588,6 @@ export class Level38Scene extends Phaser.Scene {
     this.cameras.main.shake(duration, intensity);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // CRT TRIAL CONTENT
-  // ══════════════════════════════════════════════════════════════
-
   _syntaxTokenize(line) {
     const tokens = [];
     const re = /(\bSystem\.out\b)|(\.)|(\bprintln\b|\bprint\b)|(\bint\b|\bdouble\b|\bboolean\b|\bchar\b|\bString\b)|("(?:[^"\\]|\\.)*")|('.')|(\btrue\b|\bfalse\b)|([(){};=])|(\+)/g;
@@ -692,10 +647,6 @@ export class Level38Scene extends Phaser.Scene {
   clearCRTTrial() {
     if (this.trialContainer) { this.trialContainer.destroy(); this.trialContainer = null; }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // REFERENCE LOG (compact, ported from Level 37)
-  // ══════════════════════════════════════════════════════════════
 
   createReferenceLog() {
     const g = this.add.graphics().setDepth(10);
@@ -795,10 +746,6 @@ export class Level38Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // HUD
-  // ══════════════════════════════════════════════════════════════
-
   createHUD() {
     const g = this.add.graphics().setDepth(49);
     g.fillStyle(0x050914, 0.93);
@@ -806,8 +753,8 @@ export class Level38Scene extends Phaser.Scene {
     g.lineStyle(1, 0x1a2135, 1);
     g.lineBetween(0, 64, W, 64);
 
-    this.add.text(20, 14, "THE SIGNAL ROOM", { font: "bold 17px Arial", color: "#b0bec5" }).setDepth(50);
-    this.add.text(20, 32, "Tuning Phase — Output Methods: println()", { font: "13px Arial", color: "#546e7a" }).setDepth(50);
+    this.add.text(20, 14, "THE SIGNAL ROOM", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(50);
+    this.add.text(20, 38, "Tuning Phase — Output Methods: println()", { font: "18px Arial", color: "#546e7a" }).setDepth(50);
 
     this.waveText = this.add.text(W / 2, 18, "WAVE 1 / 3", { font: "bold 16px Arial", color: HEX_GOLD }).setOrigin(0.5).setDepth(50);
     this._waveSquares = [];
@@ -816,9 +763,9 @@ export class Level38Scene extends Phaser.Scene {
       this._waveSquares.push(sq);
     }
 
-    this.add.text(1060, 8, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(50);
-    this.scoreText = this.add.text(1060, 20, "0", { font: "bold 19px Arial", color: "#ffffff" }).setDepth(50);
-    this.comboText = this.add.text(1060, 42, "×1", { font: "bold 14px Arial", color: HEX_GOLD }).setDepth(50);
+    this.add.text(1050, 32, "SCORE", { font: "18px Arial", color: "#546e7a" }).setOrigin(1, 0.5).setDepth(50);
+    this.scoreText = this.add.text(1060, 32, "0", { font: "bold 22px Arial", color: "#ffffff" }).setOrigin(0, 0.5).setDepth(50);
+    this.comboText = this.add.text(960, 32, "×1", { font: "bold 18px Arial", color: HEX_GOLD }).setOrigin(1, 0.5).setDepth(50);
 
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
@@ -849,10 +796,6 @@ export class Level38Scene extends Phaser.Scene {
     return this.currentRound - 10;
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // BIT — signal operator variant
-  // ══════════════════════════════════════════════════════════════
-
   createBit() {
     const c = this.add.container(90, 560).setDepth(60);
     const g = this.add.graphics();
@@ -882,8 +825,8 @@ export class Level38Scene extends Phaser.Scene {
 
   bitSay(text) {
     this.hideBubble();
-    const inner = this.add.text(0, 0, text, { font: "15px Arial", color: "#e0e0e0", wordWrap: { width: 340 } });
-    const bw = Math.min(inner.width, 340) + 30, bh = inner.height + 24;
+    const inner = this.add.text(0, 0, text, { font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 } });
+    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
     inner.setText("");
     const bx = Phaser.Math.Clamp(this.bit.x - bw - 30, 20, W - bw - 20);
     const by = Phaser.Math.Clamp(this.bit.y - bh - 20, 80, H - bh - 20);
@@ -931,15 +874,16 @@ export class Level38Scene extends Phaser.Scene {
     this.hideBubble();
   }
 
-  createFloatingText(x, y, text, colorHex, font = "bold 15px Arial", hold = 1400) {
-    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 300 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
+  createFloatingText(x, y, text, colorHex, font = "bold 18px Arial", hold = 1400) {
+    font = font.replace(/(\d+)px/, (_, n) => Math.max(18, +n) + "px"); // keep small call-site fonts legible
+    const t = this.add.text(x, y, text, { font, color: colorHex, wordWrap: { width: 460 }, align: "center" }).setOrigin(0.5).setDepth(31).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 180 });
     this.time.delayedCall(hold, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
   }
 
   createAnnotation(x, y, text, colorHex) {
-    const t = this.add.text(x, y, text, { font: "bold 12px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
+    const t = this.add.text(x, y, text, { font: "bold 18px Arial", color: colorHex }).setOrigin(0.5).setDepth(70).setAlpha(0);
     this.tweens.add({ targets: t, alpha: 1, duration: 200 });
     this.time.delayedCall(1800, () => { if (t.active) this.tweens.add({ targets: t, alpha: 0, duration: 250, onComplete: () => t.destroy() }); });
     return t;
@@ -953,10 +897,6 @@ export class Level38Scene extends Phaser.Scene {
     p.explode(count);
     this.time.delayedCall(800, () => p.destroy());
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // EVALUATOR — honest, left-to-right, sticky-String, parens-aware
-  // ══════════════════════════════════════════════════════════════
 
   _parseDecls(declSource) {
     if (!declSource) return {};
@@ -1024,8 +964,6 @@ export class Level38Scene extends Phaser.Scene {
     return String(val);
   }
 
-  /** Tokenize + left-fold with sticky-String semantics. Shared by the
-   * top-level evaluatePrintln() and recursive parenthesized sub-expressions. */
   _evalExprFold(expr, decls) {
     const tokens = this._tokenizeExpr(expr);
     const evaluated = tokens.map((t) => this._evalToken(t, decls));
@@ -1053,10 +991,6 @@ export class Level38Scene extends Phaser.Scene {
     if (!result.ok) return { ok: false };
     return { ok: true, isEmpty: false, text: this._displayValue(result.value, result.type), styleType: result.type, tokens: result.tokens, evaluated: result.evaluated };
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TRANSMISSION — reveal on the reference tower + log
-  // ══════════════════════════════════════════════════════════════
 
   clearMarquee() { this.marqueeContainer.removeAll(true); }
 
@@ -1201,10 +1135,6 @@ export class Level38Scene extends Phaser.Scene {
     }
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // TUTORIAL
-  // ══════════════════════════════════════════════════════════════
-
   checkTutorial() {
     let done = false;
     try { done = localStorage.getItem(TUTORIAL_KEY) === "true"; } catch (_) {}
@@ -1238,10 +1168,6 @@ export class Level38Scene extends Phaser.Scene {
     this.startWave(1);
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // WAVE / ROUND LIFECYCLE
-  // ══════════════════════════════════════════════════════════════
-
   async startWave(waveNumber) {
     this.currentWave = waveNumber;
     this.resetWaveIndicator();
@@ -1267,7 +1193,7 @@ export class Level38Scene extends Phaser.Scene {
     g.fillRoundedRect(-220, -24, 440, 48, 8);
     g.lineStyle(2, C_GOLD, 1);
     g.strokeRoundedRect(-220, -24, 440, 48, 8);
-    const t = this.add.text(0, 0, text, { font: "bold 17px Arial", color: HEX_GOLD }).setOrigin(0.5);
+    const t = this.add.text(0, 0, text, { font: "bold 20px Arial", color: HEX_GOLD }).setOrigin(0.5);
     c.add([g, t]);
     await new Promise((res) => {
       this.tweens.add({
@@ -1318,10 +1244,6 @@ export class Level38Scene extends Phaser.Scene {
     this.clearRound();
     this.advanceRound();
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE A/C — PREDICT / TRACE
-  // ══════════════════════════════════════════════════════════════
 
   setupPredict(config, decls) {
     this.showTrialOnCRT(config, config.source, config.question);
@@ -1406,10 +1328,6 @@ export class Level38Scene extends Phaser.Scene {
       this.advanceRound();
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // TYPE D — BUG HUNT
-  // ══════════════════════════════════════════════════════════════
 
   setupBugHunt(config) {
     this.trialContainer && this.trialContainer.destroy();
@@ -1502,17 +1420,11 @@ export class Level38Scene extends Phaser.Scene {
     }
   }
 
-  /** Bug-hunt reveals genuinely execute the snippet against the tower/log
-   * (not scripted): round 14's line 2 refuses at the launch bay (bare
-   * println isn't a valid call — no println() unqualified in Java), and
-   * round 15 plays both the buggy and fixed futures side by side. */
   async runBugHuntReveal(config) {
     if (config.round === 14) {
       await this.fireCall('"Hi"', {});
       await this.delay(150);
       if (!this._alive) return;
-      // line 2 "println("Bye");" has no System.out. prefix — not a valid
-      // standalone call, so it refuses at the launch bay.
       this.clearMarquee();
       const t = this.add.text(MARQUEE_X, MARQUEE_Y, "?", { font: "bold 18px Courier New", color: HEX_RED }).setOrigin(0.5);
       this.marqueeContainer.add(t);
@@ -1531,10 +1443,6 @@ export class Level38Scene extends Phaser.Scene {
       return;
     }
   }
-
-  // ══════════════════════════════════════════════════════════════
-  // SCORING / LIVES / COMBO
-  // ══════════════════════════════════════════════════════════════
 
   getComboMultiplier() {
     if (this.combo >= 5) return 3;
@@ -1592,15 +1500,6 @@ export class Level38Scene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Computes the 4 struggle-detection features from the first 3 rounds'
-   * attempt history and asks the backend's Isolation Forest model whether
-   * this looks like typical or struggling play. Wired into FusionEngine so
-   * the existing 'fusionAction' subscription can react to it, exactly like
-   * the emotion/fatigue signals. Never throws — a failed/unreachable
-   * backend just means no behavioral signal for this level; face and
-   * fatigue detection keep working on their own regardless.
-   */
   async runBehavioralCheck() {
     const relevant = this.attemptLog.filter((a) => a.round <= 3);
     const attempts_count = relevant.length;
@@ -1621,7 +1520,6 @@ export class Level38Scene extends Phaser.Scene {
       const effectivePrediction = BehavioralRules.getEffectivePrediction(features, prediction, true);
       GameManager.fusionEngine.checkBehavioral(effectivePrediction);
 
-      // Small delay to allow the DOM/UI to render the Bit Menu if triggered
       await this.delay(100);
     } catch (e) {
       console.warn("Level38Scene: /api/wellbeing/predict-struggle unreachable, skipping behavioral signal for this level:", e);
@@ -1632,16 +1530,12 @@ export class Level38Scene extends Phaser.Scene {
     if (this.currentRound === 2) {
       await this.runBehavioralCheck();
 
-      // CRITICAL FIX: the FusionEngine polling loop runs at 1Hz (every 1000ms).
-      // Wait up to 1.5s to give it a chance to notice the behavioral flag and
-      // open the menu before we mistakenly advance to the next round.
       let waitTime = 0;
       while (!GameManager.interventionInFlight && waitTime < 1500) {
         await this.delay(100);
         waitTime += 100;
       }
 
-      // If the menu DID open, wait indefinitely until the player closes it.
       while (GameManager.interventionInFlight) {
         await this.delay(200);
       }
@@ -1656,11 +1550,8 @@ export class Level38Scene extends Phaser.Scene {
     this.time.delayedCall(700, () => { if (this._alive && !this.gameEnded) this.startRound(next); });
   }
 
-  // ══════════════════════════════════════════════════════════════
-  // END STATES
-  // ══════════════════════════════════════════════════════════════
-
   gameOver() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1690,6 +1581,7 @@ export class Level38Scene extends Phaser.Scene {
   }
 
   levelComplete() {
+    PanelFit.arm(this);
     if (this.gameEnded) return;
     this.gameEnded = true;
     this.inputLocked = true;
@@ -1697,7 +1589,7 @@ export class Level38Scene extends Phaser.Scene {
     this.clearRound();
     this.hideBubble();
 
-    try { GameManager.completeLevel(38, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
+    try { GameManager.completeLevel(37, Math.round((this.correctFirstTry / 15) * 100)); } catch (_) {}
     try { BadgeSystem.unlock("println_schema_tuned"); } catch (_) {}
     try {
       localStorage.setItem("level38_results", JSON.stringify({

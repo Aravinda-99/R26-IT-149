@@ -1,10 +1,9 @@
 /**
- * FusionEngine — Combines Emotion, Fatigue, and Behavioral Signals
+ * FusionEngine — Combines Emotion and Behavioral Signals
  * ===================================================================
- * Tracks short-term streaks of negative emotion (EmotionDetector) and low
- * eye-aspect-ratio (FatigueDetector) frames, plus a behavioral "struggling"
- * flag (from the backend wellbeing model), and decides what — if anything —
- * the game should do about it.
+ * Tracks short-term streaks of negative emotion (EmotionDetector), plus a
+ * behavioral "struggling" flag (from the backend wellbeing model), and
+ * decides what — if anything — the game should do about it.
  */
 
 // Per-class precision on the retrained (class-weighted) model:
@@ -29,7 +28,6 @@ export class FusionEngine {
     // "3 consecutive negative frames" threshold as before.
     this.faceEmotionBuffer = [];
     this.detectedEmotion = null;
-    this.fatigueLowEarStreak = 0;
     this.behavioralFlag = false;
   }
 
@@ -69,12 +67,6 @@ export class FusionEngine {
       : this.faceEmotionBuffer[this.faceEmotionBuffer.length - 1];
   }
 
-  updateFatigueFrame(avgEar) {
-    if (avgEar === null) return false;
-    this.fatigueLowEarStreak = avgEar < 0.20 ? this.fatigueLowEarStreak + 1 : 0;
-    return this.fatigueLowEarStreak >= 3;
-  }
-
   checkBehavioral(prediction) {
     this.behavioralFlag = prediction === 'struggling';
     return this.behavioralFlag;
@@ -83,12 +75,10 @@ export class FusionEngine {
   resetForNewLevel() {
     this.faceEmotionBuffer = [];
     this.detectedEmotion = null;
-    this.fatigueLowEarStreak = 0;
     this.behavioralFlag = false;
   }
 
-  decideAction(faceTriggered, fatigueTriggered) {
-    if (fatigueTriggered) return { action: 'BREAK_SUGGESTION_FATIGUE', message: "Player appears fatigued — suggest a short break + bonus life" };
+  decideAction(faceTriggered) {
     if (faceTriggered && this.behavioralFlag) return { action: 'BIT_MENU_URGENT', message: "Frustrated AND struggling — show Bit's menu, emphasize 'Review Basics'" };
     if (faceTriggered) {
       return {
