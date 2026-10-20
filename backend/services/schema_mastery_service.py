@@ -128,11 +128,12 @@ def clean_input_data(data: dict) -> dict:
     if not isinstance(data, dict):
         data = {}
 
+    duration = data.get("time_taken_seconds", data.get("time_taken", 60.0))
     return {
         "concept_name": str(data.get("concept_name", "General Programming")),
         "pre_test_score": normalize_score(data.get("pre_test_score", 0.5)),
         "attempt_count": int(data.get("attempt_count", 1) or 1),
-        "time_taken_seconds": float(data.get("time_taken_seconds", data.get("time_taken", 60.0)) or 60.0),
+        "time_taken_seconds": float(duration if duration is not None else 60.0),
         "error_type": str(data.get("error_type", "UNKNOWN_ERROR")),
         "error_pattern_score": normalize_score(data.get("error_pattern_score", 0.5)),
         "post_test_correct_count": int(data.get("post_test_correct_count", 0) or 0),
@@ -179,7 +180,7 @@ def predict_schema_mastery(data: dict) -> dict:
         df_input = pd.DataFrame([cleaned])[FEATURE_COLUMNS]
 
         if hasattr(model, "predict_proba"):
-            # 645 - Pipeline preprocesses the 11 features and predicts class probabilities.
+            # The pipeline scales answer counts and excludes elapsed time.
             probs = model.predict_proba(df_input)[0]
             classes = list(model.classes_)
             pos_idx = classes.index(1) if 1 in classes else 1
@@ -197,6 +198,8 @@ def predict_schema_mastery(data: dict) -> dict:
             "mastery_level": level,
             "next_action": action,
             "model_used": "schema_mastery_pipeline",
+            "model_version": getattr(model, "schema_mastery_version", "legacy"),
+            "model_name": type(model.named_steps["model"]).__name__,
         }
 
     except Exception as e:

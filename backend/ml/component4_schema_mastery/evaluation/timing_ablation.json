@@ -1,0 +1,419 @@
+{
+  "purpose": "Diagnostic ablation, not production promotion or an independent final test",
+  "dataset_sha256": "9bf9917c69bc73f0ade26bf20fd822038235f48f862d14a7805fed6ea5173b01",
+  "rows": 24032,
+  "students": 506,
+  "labels_changed": false,
+  "validation": "Identical five student-disjoint StratifiedGroupKFold splits, seed 42",
+  "baseline": {
+    "accuracy": 0.765021637816245,
+    "balanced_accuracy": 0.535837932422889,
+    "macro_f1": 0.5036590363155022
+  },
+  "limitations": [
+    "Target is an engineered proxy containing time, retries and error recovery, not observed mastery.",
+    "Removing time cannot remove the speed assumptions already encoded in the target.",
+    "Training retries/error recovery differ from live pre-test attempts/detector confidence.",
+    "Training answer counts are synthetic; rescaling cannot validate their live semantics.",
+    "The reported case is a regression probe, not an independent evaluation dataset.",
+    "Classifier accuracy uses predict (usually threshold .5), whereas DONE requires probability >= .70."
+  ],
+  "results": {
+    "original_features/logistic_regression": {
+      "mean_cv": {
+        "accuracy": 0.9817736586038741,
+        "balanced_accuracy": 0.9828426282255822,
+        "macro_f1": 0.9759872793868294
+      },
+      "std_cv": {
+        "accuracy": 0.0013858982259654425,
+        "balanced_accuracy": 0.0018937682475482383,
+        "macro_f1": 0.0018094095990288644
+      },
+      "folds": [
+        {
+          "accuracy": 0.9800041657987919,
+          "balanced_accuracy": 0.9797130428779208,
+          "macro_f1": 0.9736400697294552
+        },
+        {
+          "accuracy": 0.9816457001443597,
+          "balanced_accuracy": 0.9824995768409017,
+          "macro_f1": 0.9757298640473997
+        },
+        {
+          "accuracy": 0.9835313737752762,
+          "balanced_accuracy": 0.9853970797646294,
+          "macro_f1": 0.9782959487981797
+        },
+        {
+          "accuracy": 0.9831390507910075,
+          "balanced_accuracy": 0.9840341986329338,
+          "macro_f1": 0.9777815272587744
+        },
+        {
+          "accuracy": 0.9805480025099351,
+          "balanced_accuracy": 0.9825692430115256,
+          "macro_f1": 0.9744889871003377
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9817743009320905,
+        "balanced_accuracy": 0.9828418752823759,
+        "macro_f1": 0.9759868716872782
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.9968339984660703,
+          "next_action": "DONE"
+        },
+        "120": {
+          "probability": 0.9749823346769586,
+          "next_action": "DONE"
+        },
+        "240": {
+          "probability": 0.37385402307249077,
+          "next_action": "LEARN_AGAIN"
+        },
+        "437": {
+          "probability": 0.0006260130952122059,
+          "next_action": "LEARN_AGAIN"
+        },
+        "900": {
+          "probability": 6.238026115540192e-11,
+          "next_action": "LEARN_AGAIN"
+        }
+      }
+    },
+    "original_features/random_forest": {
+      "mean_cv": {
+        "accuracy": 0.9871761444742274,
+        "balanced_accuracy": 0.9890041614290087,
+        "macro_f1": 0.9830783378066237
+      },
+      "std_cv": {
+        "accuracy": 0.002342455664789295,
+        "balanced_accuracy": 0.0020881803877211293,
+        "macro_f1": 0.0030401706375449795
+      },
+      "folds": [
+        {
+          "accuracy": 0.9877108935638409,
+          "balanced_accuracy": 0.9881907212362913,
+          "macro_f1": 0.9837424397572503
+        },
+        {
+          "accuracy": 0.9894823674984533,
+          "balanced_accuracy": 0.9913347053877393,
+          "macro_f1": 0.986047196549982
+        },
+        {
+          "accuracy": 0.9843652282676673,
+          "balanced_accuracy": 0.9862321599671965,
+          "macro_f1": 0.979383756101712
+        },
+        {
+          "accuracy": 0.9898001665278934,
+          "balanced_accuracy": 0.9915339759554599,
+          "macro_f1": 0.9865228121311638
+        },
+        {
+          "accuracy": 0.9845220665132818,
+          "balanced_accuracy": 0.9877292445983568,
+          "macro_f1": 0.9796954844930098
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9871837549933422,
+        "balanced_accuracy": 0.9890105341844555,
+        "macro_f1": 0.9830793884635778
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.8307947000083974,
+          "next_action": "DONE"
+        },
+        "120": {
+          "probability": 0.8307947000083975,
+          "next_action": "DONE"
+        },
+        "240": {
+          "probability": 0.780288893902309,
+          "next_action": "DONE"
+        },
+        "437": {
+          "probability": 0.2198335857960962,
+          "next_action": "LEARN_AGAIN"
+        },
+        "900": {
+          "probability": 0.21113145149703158,
+          "next_action": "LEARN_AGAIN"
+        }
+      }
+    },
+    "without_time/logistic_regression": {
+      "mean_cv": {
+        "accuracy": 0.9815659167051303,
+        "balanced_accuracy": 0.98276004363774,
+        "macro_f1": 0.9757246267598847
+      },
+      "std_cv": {
+        "accuracy": 0.0016149019166091787,
+        "balanced_accuracy": 0.0018868949219143034,
+        "macro_f1": 0.002087723696475918
+      },
+      "folds": [
+        {
+          "accuracy": 0.9806290356175796,
+          "balanced_accuracy": 0.9801293626114762,
+          "macro_f1": 0.9744431159235507
+        },
+        {
+          "accuracy": 0.9810270158795628,
+          "balanced_accuracy": 0.9820882798844992,
+          "macro_f1": 0.9749320068869718
+        },
+        {
+          "accuracy": 0.9841567646445695,
+          "balanced_accuracy": 0.9858133994981848,
+          "macro_f1": 0.9791032244722213
+        },
+        {
+          "accuracy": 0.9825145711906744,
+          "balanced_accuracy": 0.9836181098673304,
+          "macro_f1": 0.9769772154671925
+        },
+        {
+          "accuracy": 0.9795021961932651,
+          "balanced_accuracy": 0.9821510663272093,
+          "macro_f1": 0.9731675710494873
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9815662450066578,
+        "balanced_accuracy": 0.9827591153636617,
+        "macro_f1": 0.9757218947100061
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.9918013255499778,
+          "next_action": "DONE"
+        },
+        "120": {
+          "probability": 0.9918013255499778,
+          "next_action": "DONE"
+        },
+        "240": {
+          "probability": 0.9918013255499778,
+          "next_action": "DONE"
+        },
+        "437": {
+          "probability": 0.9918013255499778,
+          "next_action": "DONE"
+        },
+        "900": {
+          "probability": 0.9918013255499778,
+          "next_action": "DONE"
+        }
+      }
+    },
+    "without_time/random_forest": {
+      "mean_cv": {
+        "accuracy": 0.9722703376615683,
+        "balanced_accuracy": 0.9794668341442829,
+        "macro_f1": 0.9641272023452345
+      },
+      "std_cv": {
+        "accuracy": 0.004400322219878337,
+        "balanced_accuracy": 0.0038559091058303404,
+        "macro_f1": 0.005529039511816295
+      },
+      "folds": [
+        {
+          "accuracy": 0.9725057279733389,
+          "balanced_accuracy": 0.9797318085420377,
+          "macro_f1": 0.964435504291094
+        },
+        {
+          "accuracy": 0.9777273664673128,
+          "balanced_accuracy": 0.9846355607850366,
+          "macro_f1": 0.9709584683671499
+        },
+        {
+          "accuracy": 0.9676881384198457,
+          "balanced_accuracy": 0.9748503131812267,
+          "macro_f1": 0.9582584083172957
+        },
+        {
+          "accuracy": 0.9764779350541216,
+          "balanced_accuracy": 0.9826574156225889,
+          "macro_f1": 0.9694432844174383
+        },
+        {
+          "accuracy": 0.9669525203932232,
+          "balanced_accuracy": 0.9754590725905252,
+          "macro_f1": 0.957540346333194
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9722869507323568,
+        "balanced_accuracy": 0.9794808711489336,
+        "macro_f1": 0.9641227987496498
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.5923229012622709,
+          "next_action": "LEARN_AGAIN"
+        },
+        "120": {
+          "probability": 0.5923229012622709,
+          "next_action": "LEARN_AGAIN"
+        },
+        "240": {
+          "probability": 0.5923229012622709,
+          "next_action": "LEARN_AGAIN"
+        },
+        "437": {
+          "probability": 0.592322901262271,
+          "next_action": "LEARN_AGAIN"
+        },
+        "900": {
+          "probability": 0.592322901262271,
+          "next_action": "LEARN_AGAIN"
+        }
+      }
+    },
+    "without_time_scaled_counts/logistic_regression": {
+      "mean_cv": {
+        "accuracy": 0.9815659167051303,
+        "balanced_accuracy": 0.98276004363774,
+        "macro_f1": 0.9757246267598847
+      },
+      "std_cv": {
+        "accuracy": 0.0016149019166091787,
+        "balanced_accuracy": 0.0018868949219143034,
+        "macro_f1": 0.002087723696475918
+      },
+      "folds": [
+        {
+          "accuracy": 0.9806290356175796,
+          "balanced_accuracy": 0.9801293626114762,
+          "macro_f1": 0.9744431159235507
+        },
+        {
+          "accuracy": 0.9810270158795628,
+          "balanced_accuracy": 0.9820882798844992,
+          "macro_f1": 0.9749320068869718
+        },
+        {
+          "accuracy": 0.9841567646445695,
+          "balanced_accuracy": 0.9858133994981848,
+          "macro_f1": 0.9791032244722213
+        },
+        {
+          "accuracy": 0.9825145711906744,
+          "balanced_accuracy": 0.9836181098673304,
+          "macro_f1": 0.9769772154671925
+        },
+        {
+          "accuracy": 0.9795021961932651,
+          "balanced_accuracy": 0.9821510663272093,
+          "macro_f1": 0.9731675710494873
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9815662450066578,
+        "balanced_accuracy": 0.9827591153636617,
+        "macro_f1": 0.9757218947100061
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.989538938950474,
+          "next_action": "DONE"
+        },
+        "120": {
+          "probability": 0.989538938950474,
+          "next_action": "DONE"
+        },
+        "240": {
+          "probability": 0.989538938950474,
+          "next_action": "DONE"
+        },
+        "437": {
+          "probability": 0.989538938950474,
+          "next_action": "DONE"
+        },
+        "900": {
+          "probability": 0.989538938950474,
+          "next_action": "DONE"
+        }
+      }
+    },
+    "without_time_scaled_counts/random_forest": {
+      "mean_cv": {
+        "accuracy": 0.9722703376615683,
+        "balanced_accuracy": 0.9794668341442829,
+        "macro_f1": 0.9641272023452345
+      },
+      "std_cv": {
+        "accuracy": 0.004400322219878337,
+        "balanced_accuracy": 0.0038559091058303404,
+        "macro_f1": 0.005529039511816295
+      },
+      "folds": [
+        {
+          "accuracy": 0.9725057279733389,
+          "balanced_accuracy": 0.9797318085420377,
+          "macro_f1": 0.964435504291094
+        },
+        {
+          "accuracy": 0.9777273664673128,
+          "balanced_accuracy": 0.9846355607850366,
+          "macro_f1": 0.9709584683671499
+        },
+        {
+          "accuracy": 0.9676881384198457,
+          "balanced_accuracy": 0.9748503131812267,
+          "macro_f1": 0.9582584083172957
+        },
+        {
+          "accuracy": 0.9764779350541216,
+          "balanced_accuracy": 0.9826574156225889,
+          "macro_f1": 0.9694432844174383
+        },
+        {
+          "accuracy": 0.9669525203932232,
+          "balanced_accuracy": 0.9754590725905252,
+          "macro_f1": 0.957540346333194
+        }
+      ],
+      "pooled_oof": {
+        "accuracy": 0.9722869507323568,
+        "balanced_accuracy": 0.9794808711489336,
+        "macro_f1": 0.9641227987496498
+      },
+      "reported_case_by_seconds": {
+        "60": {
+          "probability": 0.5849058655632964,
+          "next_action": "LEARN_AGAIN"
+        },
+        "120": {
+          "probability": 0.5849058655632964,
+          "next_action": "LEARN_AGAIN"
+        },
+        "240": {
+          "probability": 0.5849058655632964,
+          "next_action": "LEARN_AGAIN"
+        },
+        "437": {
+          "probability": 0.5849058655632964,
+          "next_action": "LEARN_AGAIN"
+        },
+        "900": {
+          "probability": 0.5849058655632964,
+          "next_action": "LEARN_AGAIN"
+        }
+      }
+    }
+  }
+}

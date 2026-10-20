@@ -2,6 +2,29 @@
 
 This directory contains the machine learning pipelines, dataset artifacts, inspection utilities, evaluation assets, test suites, and trained models for **Component 4 (Schema Mastery Tracker)** of the CodeQuest / R26-IT-149 research project.
 
+## Active revision: time_excluded_v1
+
+The active pipeline now selects **Logistic Regression**, not Random Forest.
+Using the unchanged 24,032 original proxy labels and five student-grouped folds,
+time-excluded LR achieved 98.1566% mean accuracy and 0.975725 macro F1;
+time-excluded RF achieved 97.2270% and 0.964127 respectively.
+Historical RF metadata reported 98.5137%, which is not the current model metric.
+
+The API still accepts 11 inputs. Elapsed seconds are stored but excluded by the
+classifier because synthetic program-event duration is not MCQ reading time.
+The pipeline scales counts to ten-answer equivalents, preserving proportions
+for 10/15/30-question assessments. Saved scores/counts/duration are unchanged.
+The model probability determines level/action using the original thresholds;
+there is no score override. New results include model_name and model_version.
+Restart the backend to reload the cached model. Old results are not recomputed.
+
+Labels remain an engineered formula, NOT observed future understanding. Time
+is still encoded indirectly in those labels; attempts/error recovery also have
+different training/live meanings. This fixes direct elapsed-time sensitivity,
+not all dataset transfer limitations. CV accuracy measures proxy-label agreement,
+not real mastery or calibrated confidence. See evaluation/README.md and
+evaluation/timing_ablation.json for the measured comparison and limitations.
+
 ---
 
 ## 📁 Directory Architecture
@@ -30,7 +53,7 @@ backend/
         │   └── processed/                             # Processed & cleaned training datasets
         │       └── schema_mastery_dataset.csv         # Aggregated multi-factor sessions (24,032 records)
         ├── models/                                    # Serialized trained machine learning models
-        │   ├── schema_mastery_pipeline.pkl            # Active production Random Forest pipeline model
+        │   ├── schema_mastery_pipeline.pkl            # Active time-excluded Logistic Regression pipeline
         │   ├── schema_mastery_model_metadata.json     # 5-fold CV metrics and training metadata
         │   ├── schema_mastery_level_model.pkl         # Mastery level classifier artifact
         │   ├── schema_next_action_model.pkl           # Next action classifier artifact
@@ -82,7 +105,7 @@ python ml/component4_schema_mastery/scripts/preprocess_schema_dataset.py
 ```
 
 ### 3. Train the Schema Mastery Model
-Train the scikit-learn pipeline (Random Forest Classifier + ColumnTransformer) using 5-fold `StratifiedGroupKFold` grouped by student:
+Compare time-excluded Logistic Regression and Random Forest using 5-fold `StratifiedGroupKFold` grouped by student. Select by mean macro F1:
 ```bash
 python ml/component4_schema_mastery/scripts/train_schema_mastery_model.py
 ```

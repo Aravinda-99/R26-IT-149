@@ -1,5 +1,34 @@
 {
-  "best_model": "random_forest",
+  "model_version": "time_excluded_v1",
+  "sklearn_version": "1.8.0",
+  "dataset_sha256": "9bf9917c69bc73f0ade26bf20fd822038235f48f862d14a7805fed6ea5173b01",
+  "source_labels_recomputed": false,
+  "estimator_features": [
+    "concept_name",
+    "error_type",
+    "pre_test_score",
+    "attempt_count",
+    "error_pattern_score",
+    "post_test_correct_count",
+    "post_test_nearly_correct_count",
+    "post_test_wrong_count",
+    "post_test_clearly_wrong_count",
+    "post_test_score"
+  ],
+  "excluded_features": {
+    "time_taken_seconds": "Synthetic run/compile duration is incompatible with live MCQ elapsed time."
+  },
+  "answer_count_scaling": "Counts scaled to ten-answer equivalents inside the saved pipeline; scores and stored counts unchanged.",
+  "selection_rule": "Highest mean student-grouped CV macro F1 among time-excluded LR and RF, with original hyperparameters.",
+  "limitations": [
+    "future_success is an engineered evidence label, not an observed future outcome.",
+    "Original labels still encode speed/retry assumptions even though inference ignores elapsed time.",
+    "Compile-error recovery and program retries differ from live error confidence and pre-test attempts.",
+    "Concept labels and question-quality counts are proxies; CodeQuest transfer remains unvalidated.",
+    "Probabilities are not calibrated mastery confidence; CV accuracy is not educational effectiveness.",
+    "Selection CV is not an untouched final test. The historical failure case is a regression probe."
+  ],
+  "best_model": "logistic_regression",
   "dataset_path": "ml/component4_schema_mastery/datasets/processed/schema_mastery_dataset.csv",
   "dataset_rows": 24032,
   "unique_students": 506,
@@ -29,47 +58,133 @@
   "model_results": {
     "logistic_regression": {
       "accuracy": {
-        "mean": 0.9817736586038741,
-        "std": 0.0013858982259654425
+        "mean": 0.9815659167051303,
+        "std": 0.0016149019166091787
       },
       "balanced_accuracy": {
-        "mean": 0.9828426282255822,
-        "std": 0.0018937682475482383
+        "mean": 0.98276004363774,
+        "std": 0.0018868949219143034
       },
       "macro_f1": {
-        "mean": 0.9759872793868294,
-        "std": 0.0018094095990288644
+        "mean": 0.9757246267598847,
+        "std": 0.002087723696475918
       },
       "precision_macro": {
-        "mean": 0.9696172012628397,
-        "std": 0.0019480454423158782
+        "mean": 0.9692066716017648,
+        "std": 0.0026162133071310763
       },
       "recall_macro": {
-        "mean": 0.9828426282255822,
-        "std": 0.0018937682475482383
+        "mean": 0.98276004363774,
+        "std": 0.0018868949219143034
       }
     },
     "random_forest": {
       "accuracy": {
-        "mean": 0.9851369725331448,
-        "std": 0.002446879364020176
+        "mean": 0.9722703376615683,
+        "std": 0.004400322219878337
       },
       "balanced_accuracy": {
-        "mean": 0.9878690102838746,
-        "std": 0.002246044030318593
+        "mean": 0.9794668341442829,
+        "std": 0.0038559091058303404
       },
       "macro_f1": {
-        "mean": 0.9804475050764129,
-        "std": 0.0031491910194173783
+        "mean": 0.9641272023452345,
+        "std": 0.005529039511816295
       },
       "precision_macro": {
-        "mean": 0.9736020996185226,
-        "std": 0.0041443514692717735
+        "mean": 0.9511962099393649,
+        "std": 0.00668781244532556
       },
       "recall_macro": {
-        "mean": 0.9878690102838746,
-        "std": 0.002246044030318593
+        "mean": 0.9794668341442829,
+        "std": 0.0038559091058303404
       }
     }
+  },
+  "fold_scores": {
+    "logistic_regression": [
+      {
+        "fold": 1,
+        "accuracy": 0.9806290356175796,
+        "balanced_accuracy": 0.9801293626114762,
+        "macro_f1": 0.9744431159235507,
+        "precision_macro": 0.9690915037709712,
+        "recall_macro": 0.9801293626114762
+      },
+      {
+        "fold": 2,
+        "accuracy": 0.9810270158795628,
+        "balanced_accuracy": 0.9820882798844992,
+        "macro_f1": 0.9749320068869718,
+        "precision_macro": 0.9682954603874129,
+        "recall_macro": 0.9820882798844992
+      },
+      {
+        "fold": 3,
+        "accuracy": 0.9841567646445695,
+        "balanced_accuracy": 0.9858133994981848,
+        "macro_f1": 0.9791032244722213,
+        "precision_macro": 0.9728490166817045,
+        "recall_macro": 0.9858133994981848
+      },
+      {
+        "fold": 4,
+        "accuracy": 0.9825145711906744,
+        "balanced_accuracy": 0.9836181098673304,
+        "macro_f1": 0.9769772154671925,
+        "precision_macro": 0.9707875442407372,
+        "recall_macro": 0.9836181098673304
+      },
+      {
+        "fold": 5,
+        "accuracy": 0.9795021961932651,
+        "balanced_accuracy": 0.9821510663272093,
+        "macro_f1": 0.9731675710494873,
+        "precision_macro": 0.9650098329279979,
+        "recall_macro": 0.9821510663272093
+      }
+    ],
+    "random_forest": [
+      {
+        "fold": 1,
+        "accuracy": 0.9725057279733389,
+        "balanced_accuracy": 0.9797318085420377,
+        "macro_f1": 0.964435504291094,
+        "precision_macro": 0.9515032946235059,
+        "recall_macro": 0.9797318085420377
+      },
+      {
+        "fold": 2,
+        "accuracy": 0.9777273664673128,
+        "balanced_accuracy": 0.9846355607850366,
+        "macro_f1": 0.9709584683671499,
+        "precision_macro": 0.9591358237605027,
+        "recall_macro": 0.9846355607850366
+      },
+      {
+        "fold": 3,
+        "accuracy": 0.9676881384198457,
+        "balanced_accuracy": 0.9748503131812267,
+        "macro_f1": 0.9582584083172957,
+        "precision_macro": 0.9444630471647497,
+        "recall_macro": 0.9748503131812267
+      },
+      {
+        "fold": 4,
+        "accuracy": 0.9764779350541216,
+        "balanced_accuracy": 0.9826574156225889,
+        "macro_f1": 0.9694432844174383,
+        "precision_macro": 0.9579899894625923,
+        "recall_macro": 0.9826574156225889
+      },
+      {
+        "fold": 5,
+        "accuracy": 0.9669525203932232,
+        "balanced_accuracy": 0.9754590725905252,
+        "macro_f1": 0.957540346333194,
+        "precision_macro": 0.9428888946854737,
+        "recall_macro": 0.9754590725905252
+      }
+    ]
   }
 }

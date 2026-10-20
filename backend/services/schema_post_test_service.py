@@ -269,7 +269,8 @@ class SchemaPostTestService:
             pre_test_score = 0.50
 
         attempt_count = int(submission.get("attempt_count") or c1.get("attempt_count", 1) or 1)
-        time_taken_seconds = float(submission.get("time_taken_seconds") or c1.get("time_taken_seconds", 120.0) or 120.0)
+        submitted_time = submission.get("time_taken_seconds")
+        time_taken_seconds = float(submitted_time if submitted_time is not None else c1.get("time_taken_seconds", 120.0) or 120.0)
 
         # Pull and validate real Component 2 features from session
         raw_error_pattern_score = target.get("error_pattern_score")
@@ -422,6 +423,7 @@ class SchemaPostTestService:
         mastery_level = ml_prediction.get("mastery_level", "Needs More Practice")
         next_action = ml_prediction.get("next_action", "LEARN_AGAIN")
         model_used = ml_prediction.get("model_used", "schema_mastery_pipeline")
+        model_details = {key: ml_prediction.get(key) for key in ("model_version", "model_name")}
         learning_status = SchemaPostTestResultService.learning_status_for_level(mastery_level)
         student_next_action_label = SchemaPostTestResultService.student_next_action_label(next_action)
 
@@ -450,6 +452,7 @@ class SchemaPostTestService:
             "mastery_level": mastery_level,
             "next_action": next_action,
             "model_used": model_used,
+            **model_details,
         }
 
         SchemaQuestionBankService.save_mastery_session(session_record, sync_firestore=False)
@@ -496,6 +499,7 @@ class SchemaPostTestService:
             "next_action": next_action,
             "student_next_action_label": student_next_action_label,
             "model_used": model_used,
+            **model_details,
             "created_at": now_ts,
             "updated_at": now_ts,
             "source": "post_test_submit",
@@ -518,6 +522,8 @@ class SchemaPostTestService:
             "nextAction": next_action,
             "masteryProbability": mastery_probability,
             "modelUsed": model_used,
+            "modelVersion": model_details["model_version"],
+            "modelName": model_details["model_name"],
             "attemptNumber": attempt_count,
             "createdAt": saved_result.get("created_at"),
             "updatedAt": saved_result.get("updated_at"),
@@ -554,6 +560,7 @@ class SchemaPostTestService:
             "next_action": next_action,
             "student_next_action_label": student_next_action_label,
             "model_used": model_used,
+            **model_details,
             "persistence_status": persistence_status,
             "explanation_message": explanation_msg,
             "results": review_items,
