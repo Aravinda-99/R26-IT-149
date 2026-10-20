@@ -33,6 +33,10 @@ const HEX_GREEN_BRIGHT = "#00e676", HEX_RED = "#f44336", HEX_GRAY = "#78909c";
 const HEX_MAGENTA = "#ff4081", HEX_BRASS = "#c8a05a";
 
 const BED_CX = 500;
+// Answer buttons live in the free band under the type-case rail and the log panel (log bottom = 586): one row, or a
+// 2-row grid, laid out from MEASURED label widths. 20px labels, 16px padding, 16px gaps, never shrunk.
+const OPT_FONT = 20, OPT_PAD = 16, OPT_GAP = 16, OPT_MIN_H = 48;
+const OPT_X0 = 24, OPT_X1 = W - 24, OPT_Y0 = 604, OPT_Y1 = H - 8;
 const ARM_X0 = 230, ARM_X1 = 770, ARM_Y_HIGH = 140, ARM_Y_LOW = 290;
 const BED_X0 = 220, BED_X1 = 780, BED_Y0 = 300, BED_Y1 = 440, BED_CY = 356;
 const RAIL_X0 = 220, RAIL_X1 = 780, RAIL_Y = 505;
@@ -1442,16 +1446,78 @@ export class Level44Scene extends Phaser.Scene {
     this.showOptionBubbles(config.options, config);
   }
 
+  _optStyle(wrapW) {
+    const st = { fontFamily: "Courier New", fontSize: OPT_FONT + "px", fontStyle: "bold", color: "#e8dfc8", align: "center" };
+    if (wrapW) st.wordWrap = { width: wrapW };
+    return st;
+  }
+
+  _measureOpt(label, wrapW) {
+    const t = this.add.text(0, 0, label, this._optStyle(wrapW));
+    const r = { w: Math.ceil(t.width), h: Math.ceil(t.height) };
+    t.destroy();
+    return r;
+  }
+
+  /**
+   * Measured layout for the answer buttons. Tries, simplest first: one row of single-line buttons, one row of
+   * buttons whose text wraps to 2 (then 3) lines, a 2-row grid. The font is never shrunk; the first plan whose
+   * widest row fits between OPT_X0..OPT_X1 and whose height fits the band wins. Returns [{x, y, w, h, wrap}] (centres).
+   */
+  _layoutOptionRow(labels) {
+    const n = labels.length;
+    const natural = labels.map((l) => this._measureOpt(l, 0));
+    const lineH = this._measureOpt("Mg", 0).h;
+    const availW = OPT_X1 - OPT_X0, availH = OPT_Y1 - OPT_Y0;
+    const plans = [[1, 1], [1, 2], [2, 1], [1, 3], [2, 2]];   // [rows, max text lines]
+    const sizesFor = (lines) => labels.map((l, i) => {
+      if (lines === 1) return { wrap: 0, w: natural[i].w, h: natural[i].h };
+      for (let ww = Math.ceil(natural[i].w / lines); ww < natural[i].w; ww += 6) {
+        const m = this._measureOpt(l, ww);
+        if (m.h <= lineH * lines + 1) return { wrap: ww, w: m.w, h: m.h };
+      }
+      return { wrap: 0, w: natural[i].w, h: natural[i].h };
+    });
+    let plan = null;
+    for (const [rows, lines] of plans) {
+      const sizes = sizesFor(lines);
+      const bw = sizes.map((z) => z.w + OPT_PAD * 2);
+      const bh = Math.max(OPT_MIN_H, ...sizes.map((z) => z.h + OPT_PAD * 2));
+      const perRow = Math.ceil(n / rows);
+      const fitsW = Array.from({ length: rows }, (_, r) => bw.slice(r * perRow, (r + 1) * perRow))
+        .every((g) => g.reduce((x, y) => x + y, 0) + OPT_GAP * (g.length - 1) <= availW);
+      const fitsH = rows * bh + (rows - 1) * OPT_GAP <= availH;
+      if (fitsW && fitsH) { plan = { rows, perRow, sizes, bw, bh }; break; }
+    }
+    if (!plan) {   // not reachable with the shipped labels; still keep every button inside the band
+      const sizes = sizesFor(3);
+      const raw = sizes.map((z) => z.w + OPT_PAD * 2);
+      const k = Math.min(1, (availW - OPT_GAP * (n - 1)) / raw.reduce((x, y) => x + y, 0));
+      plan = { rows: 1, perRow: n, sizes: sizes.map((z) => ({ ...z, wrap: Math.max(40, Math.floor(z.w * k)) })), bw: raw.map((w) => Math.floor(w * k)), bh: Math.max(OPT_MIN_H, ...sizes.map((z) => z.h + OPT_PAD * 2)) };
+    }
+    const totalH = plan.rows * plan.bh + (plan.rows - 1) * OPT_GAP;
+    const top = OPT_Y0 + (availH - totalH) / 2;
+    const boxes = [];
+    for (let r = 0; r < plan.rows; r++) {
+      const idx = []; for (let i = r * plan.perRow; i < Math.min(n, (r + 1) * plan.perRow); i++) idx.push(i);
+      const rowW = idx.reduce((x, i) => x + plan.bw[i], 0) + OPT_GAP * (idx.length - 1);
+      let x = W / 2 - rowW / 2;
+      idx.forEach((i) => {
+        boxes[i] = { x: x + plan.bw[i] / 2, y: top + r * (plan.bh + OPT_GAP) + plan.bh / 2, w: plan.bw[i], h: plan.bh, wrap: plan.sizes[i].wrap };
+        x += plan.bw[i] + OPT_GAP;
+      });
+    }
+    return boxes;
+  }
+
   showOptionBubbles(options, config) {
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    const n = shuffled.length;
-    const spacing = 260;
-    const startX = BED_CX - ((n - 1) * spacing) / 2;
+    const labels = shuffled.map((o) => String(o.label || o.value));
+    const boxes = this._layoutOptionRow(labels);
     shuffled.forEach((opt, i) => {
-      const x = startX + i * spacing, y = 600;
+      const { x, y, w, h, wrap } = boxes[i];
       const c = this.add.container(x, y).setDepth(41);
       const g = this.add.graphics();
-      const w = 240, h = 48;
       const draw = (stroke) => {
         g.clear();
         g.fillStyle(0x1a1108, 1);
@@ -1460,11 +1526,10 @@ export class Level44Scene extends Phaser.Scene {
         g.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
       };
       draw(C_BRASS);
-      const label = opt.label || opt.value;
-      const txt = this.add.text(0, 0, label, { font: "bold 14px Courier New", color: "#e8dfc8" }).setOrigin(0.5);
-      if (txt.width > w - 16) txt.setFontSize(10);
+      const txt = this.add.text(0, 0, labels[i], this._optStyle(wrap)).setOrigin(0.5);
       c.add([g, txt]);
       c.setSize(w, h);
+      c.setData("size", { w, h });
       c.setInteractive({ useHandCursor: true });
       c.on("pointerover", () => { if (!this.inputLocked) draw(C_GOLD); });
       c.on("pointerout", () => { if (!this.inputLocked) draw(C_BRASS); });
@@ -1489,9 +1554,10 @@ export class Level44Scene extends Phaser.Scene {
     const g = bubbleContainer.list[0];
     g.clear();
     g.fillStyle(0x1a1108, 1);
-    g.fillRoundedRect(-120, -24, 240, 48, 10);
+    const sz = bubbleContainer.getData("size") || { w: 240, h: 48 };
+    g.fillRoundedRect(-sz.w / 2, -sz.h / 2, sz.w, sz.h, 10);
     g.lineStyle(2, correct ? C_GREEN_BRIGHT : C_RED, 1);
-    g.strokeRoundedRect(-120, -24, 240, 48, 10);
+    g.strokeRoundedRect(-sz.w / 2, -sz.h / 2, sz.w, sz.h, 10);
     if (!correct) this.tweens.add({ targets: bubbleContainer, x: bubbleContainer.x + 5, duration: 35, yoyo: true, repeat: 4 });
 
     if (correct) await this.retractArm();
@@ -1500,7 +1566,8 @@ export class Level44Scene extends Phaser.Scene {
     await this.clearLog();
     this.clearBed();
     await this.runSnippetReveal(config.source, {});
-    if (config.revealNote) this.createFloatingText(LOG_X + LOG_W / 2, LOG_Y + LOG_H + 30, config.revealNote, HEX_GRAY, "13px Arial", 2600);
+    // the answer buttons now occupy the band under the log panel, so the note sits in the free strip between the rail and the buttons
+    if (config.revealNote) this.createFloatingText(BED_CX, 566, config.revealNote, HEX_GRAY, "13px Arial", 2600);
     await this.delay(350);
     if (!this._alive) return;
 

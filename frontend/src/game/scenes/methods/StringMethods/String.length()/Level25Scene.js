@@ -43,8 +43,15 @@ const HEX_RED = "#f44336", HEX_GRAY = "#78909c", HEX_MAGENTA = "#ff4081";
 const HEX_ORANGE = "#ff9800";
 
 const CHAMBER_X = 640, CHAMBER_Y = 330, CHAMBER_W = 820, CHAMBER_H = 190;
-const TILE_H = 64;
-const COUNTER_X = 1075, COUNTER_Y = 330;
+const TILE_H = 72;
+// CHAR COUNT box sits fully OUTSIDE the scanner frame (frame right edge = 1050): 16px gap, then the box
+const COUNTER_W = 160, COUNTER_H = 120;
+const COUNTER_X = CHAMBER_X + CHAMBER_W / 2 + 16 + COUNTER_W / 2, COUNTER_Y = 330;
+// HUD: top-left text block, centre code pill, score/hearts on the right
+const HUD_H = 64;
+const PILL_X = 424, PILL_Y = 4, PILL_W = 432, PILL_H = 56;
+// Bit's speech bubble: below Bit, right-aligned, clear of the question card / options / chamber / counter box
+const BUBBLE_MAX_W = 300, BUBBLE_RIGHT = W - 20;
 
 const TUTORIAL_KEY = "level25_tutorial_done";
 
@@ -350,7 +357,7 @@ export class Level25Scene extends Phaser.Scene {
     this.chamberDropTarget = g;
 
     this.add.text(CHAMBER_X - CHAMBER_W / 2 + 14, CHAMBER_Y - CHAMBER_H / 2 + 10, "SPECIMEN SCANNER", {
-      font: "bold 12px Arial", color: "#3d4450",
+      font: "bold 18px Arial", color: "#6b7785",
     }).setDepth(11);
 
     const clampG = this.add.graphics().setDepth(11);
@@ -365,7 +372,7 @@ export class Level25Scene extends Phaser.Scene {
     const dash = this.add.graphics();
     dash.lineStyle(1, 0x3d4450, 0.3);
     this._dashedRectOutline(dash, -100, -40, 200, 80, 4, 4);
-    const emptyTxt = this.add.text(0, 0, "(empty)", { font: "italic 15px Arial", color: "#3d4450" }).setOrigin(0.5);
+    const emptyTxt = this.add.text(0, 0, "(empty)", { font: "italic 18px Arial", color: "#6b7785" }).setOrigin(0.5);
     this.emptyPlaceholder.add([dash, emptyTxt]);
 
     // scanner beam
@@ -400,9 +407,9 @@ export class Level25Scene extends Phaser.Scene {
 
   updateLiteralDisplay(varName, str) {
     if (this.literalGroup) { this.literalGroup.destroy(); this.literalGroup = null; }
-    const c = this.add.container(0, 215).setDepth(15);
+    const c = this.add.container(0, 206).setDepth(15);
     let x = 0;
-    const font = "18px Courier New";
+    const font = "22px Courier New";
     const put = (t, color) => {
       const txt = this.add.text(x, 0, t, { font, color }).setOrigin(0, 0.5);
       c.add(txt);
@@ -468,15 +475,15 @@ export class Level25Scene extends Phaser.Scene {
     const glow = this.add.rectangle(0, 0, tw + 6, TILE_H + 6, C_CYAN, 0);
     const body = this.add.graphics();
     this._drawTileBody(body, tw, 0x2a3a4a, 2);
-    const charText = this.add.text(0, meta.isSpace ? -6 : 0, meta.display, {
+    const charText = this.add.text(0, meta.isSpace ? -10 : 0, meta.display, {
       font: "bold 24px Courier New", color: meta.color,
     }).setOrigin(0.5);
     if (meta.isSpace) charText.setAlpha(0.85);
     const spaceLabel = meta.isSpace
-      ? this.add.text(0, 16, "space", { font: "10px Arial", color: HEX_MAGENTA }).setOrigin(0.5).setAlpha(0.6)
+      ? this.add.text(0, 22, "space", { font: "18px Arial", color: HEX_MAGENTA }).setOrigin(0.5).setAlpha(0.8)
       : null;
-    const countLabel = this.add.text(0, TILE_H / 2 + 14, String(index + 1), {
-      font: "12px Courier New", color: "#546e7a",
+    const countLabel = this.add.text(0, TILE_H / 2 + 16, String(index + 1), {
+      font: "18px Courier New", color: "#78909c",
     }).setOrigin(0.5).setAlpha(0).setScale(0);
     container.add([glow, body, charText]);
     if (spaceLabel) container.add(spaceLabel);
@@ -543,7 +550,7 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   counterFontSmall(small) {
-    this.counterText.setFontSize(small ? 15 : 34);
+    this.counterText.setFontSize(small ? 20 : 34);
   }
 
   async runScanAnimation({ flashColor = HEX_GREEN, emptyFlashColor = HEX_AMBER } = {}) {
@@ -610,22 +617,26 @@ export class Level25Scene extends Phaser.Scene {
   // ══════════════════════════════════════════════════════════════
 
   createCounterDisplay() {
+    // Box geometry is explicit so the frame/HUD/tiles can be checked against it: x/y/w/h of the visible box
+    const bx = COUNTER_X - COUNTER_W / 2, by = COUNTER_Y - COUNTER_H / 2;
+    this.counterBox = { x: bx, y: by, w: COUNTER_W, h: COUNTER_H };
     const g = this.add.graphics().setDepth(14);
     g.fillStyle(0x0a0e14, 1);
-    g.fillRoundedRect(COUNTER_X - 65, COUNTER_Y - 40, 130, 80, 8);
+    g.fillRoundedRect(bx, by, COUNTER_W, COUNTER_H, 8);
     g.lineStyle(1, C_CYAN, 1);
-    g.strokeRoundedRect(COUNTER_X - 65, COUNTER_Y - 40, 130, 80, 8);
-    this.counterPanelGlow = this.add.rectangle(COUNTER_X, COUNTER_Y, 130, 80, C_GREEN, 0).setDepth(14);
+    g.strokeRoundedRect(bx, by, COUNTER_W, COUNTER_H, 8);
+    this.counterPanelGlow = this.add.rectangle(COUNTER_X, COUNTER_Y, COUNTER_W, COUNTER_H, C_GREEN, 0).setDepth(14);
 
-    this.add.text(COUNTER_X, COUNTER_Y - 30, "CHAR COUNT", {
-      font: "bold 11px Arial", color: "#546e7a",
-    }).setOrigin(0.5).setDepth(15);
+    // label / number / method name stacked from their measured heights (10px padding, 6px gaps)
+    const label = this.add.text(COUNTER_X, by + 10, "CHAR COUNT", {
+      font: "bold 18px Arial", color: "#78909c",
+    }).setOrigin(0.5, 0).setDepth(15);
     this.counterText = this.add.text(COUNTER_X, COUNTER_Y - 2, "0", {
       font: "bold 34px Courier New", color: HEX_CYAN,
     }).setOrigin(0.5).setDepth(15);
-    this.counterMethodLabel = this.add.text(COUNTER_X, COUNTER_Y + 28, ".length()", {
-      font: "bold 14px Courier New", color: HEX_AMBER,
-    }).setOrigin(0.5).setDepth(15).setAlpha(0);
+    this.counterMethodLabel = this.add.text(COUNTER_X, by + COUNTER_H - 10, ".length()", {
+      font: "bold 18px Courier New", color: HEX_AMBER,
+    }).setOrigin(0.5, 1).setDepth(15).setAlpha(0);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -635,49 +646,40 @@ export class Level25Scene extends Phaser.Scene {
   createHUD() {
     const g = this.add.graphics().setDepth(50);
     g.fillStyle(0x0a0e14, 0.93);
-    g.fillRect(0, 0, W, 64);
+    g.fillRect(0, 0, W, HUD_H);
     g.lineStyle(1, 0x1a2535, 1);
-    g.lineBetween(0, 64, W, 64);
+    g.lineBetween(0, HUD_H, W, HUD_H);
 
-    this.add.text(20, 14, "THE SCAN CHAMBER", { font: "bold 18px Arial", color: "#b0bec5" }).setDepth(51);
-    this.add.text(20, 38, "Accretion Phase — String Methods: length()", { font: "18px Arial", color: "#546e7a" }).setDepth(51);
-    // Persistent round counter, additional to (not a replacement for) the
-    // small numbered badge on each round's question card. Stacked under
-    // the title/subtitle on the left so it can't collide with SCORE/combo/
-    // hearts/the replay button on the right, or the monitor panel (which
-    // starts at x:400). Kept updated from startRound(); left as-is (frozen,
-    // dimmed under the end-screen overlay like the rest of this HUD bar)
-    // on gameOver()/levelComplete() rather than hidden, so it still shows
-    // how far the player got, matching the "Rounds Completed: X/12" text
-    // those screens already display.
-    this.roundHudText = this.add.text(20, 49, `ROUND 1 / ${ROUNDS.length}`, {
-      font: "bold 12px Arial", color: "#4fc3f7",
+    // Top-left block laid out from measured sizes: title and the round counter share the first row
+    // (16px apart), the subtitle sits on its own row under them (4px gap). Nothing can reach the centre pill.
+    const title = this.add.text(20, 8, "THE SCAN CHAMBER", { font: "bold 20px Arial", color: "#b0bec5" }).setDepth(51);
+    // Persistent round counter, additional to (not a replacement for) the small numbered badge on each round's
+    // question card. Kept updated from startRound(); left as-is (frozen, dimmed under the end-screen overlay like
+    // the rest of this HUD bar) on gameOver()/levelComplete() so it still shows how far the player got.
+    this.roundHudText = this.add.text(title.x + title.width + 16, title.y + 2, `ROUND 1 / ${ROUNDS.length}`, {
+      font: "bold 18px Arial", color: "#4fc3f7",
     }).setDepth(51);
+    this.add.text(20, title.y + title.height + 4, "Accretion Phase — String Methods: length()", { font: "18px Arial", color: "#78909c" }).setDepth(51);
 
     const mg = this.add.graphics().setDepth(51);
     mg.fillStyle(0x1a1a2e, 1);
-    mg.fillRoundedRect(400, 10, 480, 44, 8);
+    mg.fillRoundedRect(PILL_X, PILL_Y, PILL_W, PILL_H, 8);
     mg.lineStyle(1, 0x2a2a4a, 1);
-    mg.strokeRoundedRect(400, 10, 480, 44, 8);
+    mg.strokeRoundedRect(PILL_X, PILL_Y, PILL_W, PILL_H, 8);
+    this.monitorBox = { x: PILL_X, y: PILL_Y, w: PILL_W, h: PILL_H };
     this.monitorGroup = null;
 
-    this.add.text(1050, 12, "SCORE", { font: "11px Arial", color: "#546e7a" }).setDepth(51);
-    this.scoreText = this.add.text(1050, 24, "0", { font: "bold 21px Arial", color: "#ffffff" }).setDepth(51);
-    // Shifted left from x:1140 (was fine for 3 hearts) to free up room for
-    // the 2 extra hearts below -- see the spacing note on the hearts loop.
-    this.comboText = this.add.text(1100, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
+    // Score / combo moved left into the free strip between the code pill (ends x:856) and the hearts (start x:1130)
+    this.add.text(930, 4, "SCORE", { font: "18px Arial", color: "#78909c" }).setDepth(51);
+    this.scoreText = this.add.text(930, 26, "0", { font: "bold 22px Arial", color: "#ffffff" }).setDepth(51);
+    this.comboText = this.add.text(1020, 30, "×1", { font: "bold 18px Arial", color: HEX_AMBER }).setDepth(51);
 
-    // 5 lives (was 3) so the round-3 behavioral checkpoint always survives
-    // even a worst-case 0-for-3 start. Fitting 5 hearts + the replay button
-    // (whose fixed ~38px reservation past the last heart lives in
-    // TutorialReplayButton.js, not touched here) into the combo-to-edge
-    // strip required tightening spacing from 28px to 20px and moving combo
-    // left (above) to free up the extra room -- last heart lands at
-    // x:1220, comfortably inside the button module's own overlap-avoidance
-    // clamp ceiling (~1236) and canvas edge (1280).
+    // 5 lives (was 3) so the round-3 behavioral checkpoint always survives even a worst-case 0-for-3 start.
+    // Hearts are spaced 27px apart (the 18px emoji glyph is ~25px wide, so 20px spacing made them overlap); last heart lands at x:1216, comfortably inside the replay-button module's own overlap-avoidance clamp
+    // ceiling (~1236) and canvas edge (1280); the TutorialReplayButton.js module is not touched here.
     this.lifeIcons = [];
     for (let i = 0; i < 5; i++) {
-      const heart = this.add.text(1140 + i * 20, 30, "❤️", { font: "18px Arial" }).setOrigin(0.5).setDepth(51);
+      const heart = this.add.text(1108 + i * 27, 30, "❤️", { font: "18px Arial" }).setOrigin(0.5).setDepth(51);
       this.lifeIcons.push(heart);
     }
   }
@@ -693,7 +695,7 @@ export class Level25Scene extends Phaser.Scene {
     if (mode === "predict") {
       let x = 0;
       const put = (t, color, font) => {
-        const txt = this.add.text(x, 0, t, { font: font || "bold 17px Courier New", color }).setOrigin(0, 0.5);
+        const txt = this.add.text(x, 0, t, { font: font || "bold 20px Courier New", color }).setOrigin(0, 0.5);
         c.add(txt);
         x += txt.width;
       };
@@ -705,8 +707,8 @@ export class Level25Scene extends Phaser.Scene {
     } else if (mode === "judge") {
       const lines = data.snippet.split("\n");
       lines.forEach((line, i) => {
-        const t = this.add.text(0, (i - (lines.length - 1) / 2) * 16, line, {
-          font: "14px Courier New", color: "#e0e0e0",
+        const t = this.add.text(0, (i - (lines.length - 1) / 2) * 23, line, {
+          font: "18px Courier New", color: "#e0e0e0",
         }).setOrigin(0.5);
         c.add(t);
       });
@@ -714,7 +716,7 @@ export class Level25Scene extends Phaser.Scene {
     } else if (mode === "feed") {
       let x = 0;
       const put = (t, color) => {
-        const txt = this.add.text(x, 0, t, { font: "bold 17px Courier New", color }).setOrigin(0, 0.5);
+        const txt = this.add.text(x, 0, t, { font: "bold 20px Courier New", color }).setOrigin(0, 0.5);
         c.add(txt);
         x += txt.width;
       };
@@ -728,7 +730,7 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   showCompileErrorStamp() {
-    const stamp = this.add.text(640, 32, "COMPILE ERROR", {
+    const stamp = this.add.text(340, 112, "COMPILE ERROR", {   // left of centre so the "✓ CORRECT" banner (x:640) never lands on it
       font: "bold 26px Arial", color: HEX_RED,
     }).setOrigin(0.5).setDepth(60).setScale(2).setAngle(-8).setAlpha(0);
     this.tweens.add({ targets: stamp, scale: 1, alpha: 1, duration: 250, ease: "Cubic.easeOut" });
@@ -738,14 +740,14 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   showComparisonCard() {
-    const c = this.add.container(640, 460).setDepth(20);
+    const c = this.add.container(640, 150).setDepth(20);
     const g = this.add.graphics();
     g.fillStyle(0x0d1117, 1);
     g.fillRoundedRect(-130, -35, 260, 70, 8);
     g.lineStyle(1, 0x2a3a4a, 1);
     g.strokeRoundedRect(-130, -35, 260, 70, 8);
-    const l1 = this.add.text(0, -15, "String → .length()", { font: "bold 15px Courier New", color: HEX_CYAN }).setOrigin(0.5);
-    const l2 = this.add.text(0, 15, "array  → .length", { font: "bold 15px Courier New", color: HEX_AMBER }).setOrigin(0.5);
+    const l1 = this.add.text(0, -15, "String → .length()", { font: "bold 18px Courier New", color: HEX_CYAN }).setOrigin(0.5);
+    const l2 = this.add.text(0, 15, "array  → .length", { font: "bold 18px Courier New", color: HEX_AMBER }).setOrigin(0.5);
     c.add([g, l1, l2]);
     c.setAlpha(0);
     this.tweens.add({ targets: c, alpha: 1, duration: 300 });
@@ -782,12 +784,14 @@ export class Level25Scene extends Phaser.Scene {
   bitSay(text) {
     this.hideBubble();
     const inner = this.add.text(0, 0, text, {
-      font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 400 },
+      font: "18px Arial", color: "#e0e0e0", wordWrap: { width: BUBBLE_MAX_W },
     });
-    const bw = Math.min(inner.width, 400) + 30, bh = inner.height + 24;
+    const bw = Math.min(inner.width, BUBBLE_MAX_W) + 30, bh = inner.height + 24;
     inner.setText("");
-    const bx = Phaser.Math.Clamp(this.bit.x - 24 - bw, 20, W - bw - 20);
-    const by = Phaser.Math.Clamp(this.bit.y - bh / 2, 80, H - bh - 20);
+    // Below Bit, right-aligned: that strip (x>=930, y>=540) is free of the question card, options, chamber and counter box
+    const bx = BUBBLE_RIGHT - bw;
+    const by = Phaser.Math.Clamp(this.bit.y + 42, 80, H - bh - 20);
+    this._bubbleRect = { x: bx, y: by, w: bw, h: bh };
     const c = this.add.container(bx, by).setDepth(61).setAlpha(0).setScale(0.7);
     const g = this.add.graphics();
     g.fillStyle(0x1a1a2e, 0.97);
@@ -854,8 +858,8 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   _clickHint() {
-    const t = this.add.text(1200, 660, "▸ click to continue", {
-      font: "13px Arial", color: "#546e7a",
+    const t = this.add.text(1200, 700, "▸ click to continue", {
+      font: "18px Arial", color: "#78909c",
     }).setOrigin(1, 0.5).setDepth(61);
     this.tweens.add({ targets: t, alpha: 0.35, duration: 600, yoyo: true, repeat: -1 });
     return t;
@@ -943,8 +947,8 @@ export class Level25Scene extends Phaser.Scene {
 
   async tutorialQuoteWarning() {
     if (!this.literalQuotes) return;
-    const anno = this.add.text(this.literalGroup.x + (this.literalQuotes[0].x + this.literalQuotes[1].x) / 2, 190, "quotes not counted!", {
-      font: "bold 13px Arial", color: HEX_RED,
+    const anno = this.add.text(this.literalGroup.x + (this.literalQuotes[0].x + this.literalQuotes[1].x) / 2, 168, "quotes not counted!", {
+      font: "bold 18px Arial", color: HEX_RED,
     }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this.tweens.add({ targets: anno, alpha: 1, duration: 250 });
     this.literalQuotes.forEach((q) => {
@@ -976,8 +980,8 @@ export class Level25Scene extends Phaser.Scene {
     if (spaceIdx < 0) return;
     const tile = this.tiles[spaceIdx];
     this.tweens.add({ targets: tile.charText, scale: 1.2, duration: 250, yoyo: true, repeat: 1 });
-    const anno = this.add.text(tile.x, tile.y - 60, "space counts!", {
-      font: "bold 13px Arial", color: HEX_MAGENTA,
+    const anno = this.add.text(tile.x, tile.y - 64, "space counts!", {
+      font: "bold 18px Arial", color: HEX_MAGENTA,
     }).setOrigin(0.5).setDepth(20).setAlpha(0);
     this.tweens.add({ targets: anno, alpha: 1, duration: 250 });
     await this.delay(1200);
@@ -1035,6 +1039,8 @@ export class Level25Scene extends Phaser.Scene {
     this.roundElements.forEach((e) => { if (e && e.destroy) e.destroy(); });
     this.roundElements = [];
     if (this.questionCard) { this.questionCard.destroy(); this.questionCard = null; }
+    // the "String x = ..." line belongs to the previous predict round; judge/feed rounds have no such line
+    if (this.literalGroup) { this.literalGroup.destroy(); this.literalGroup = null; }
   }
 
   _defaultQuestionText(cfg) {
@@ -1045,15 +1051,15 @@ export class Level25Scene extends Phaser.Scene {
   }
 
   showQuestionCard(cfg) {
-    const card = this.add.container(640, 540).setDepth(20).setAlpha(0);
+    const card = this.add.container(640, 500).setDepth(20).setAlpha(0);   // slides up from 500 (was 540: it passed through the answer buttons)
     const g = this.add.graphics();
     g.fillStyle(0x1a1a2e, 1);
     g.fillRoundedRect(-260, -40, 520, 80, 10);
     g.lineStyle(1, 0x2a2a4a, 1);
     g.strokeRoundedRect(-260, -40, 520, 80, 10);
-    const badge = this.add.circle(-228, 0, 13, C_AMBER);
+    const badge = this.add.circle(-228, 0, 14, C_AMBER);
     const badgeNum = this.add.text(-228, 0, String(cfg.round), {
-      font: "bold 16px Arial", color: "#0a0e14",
+      font: "bold 18px Arial", color: "#0a0e14",
     }).setOrigin(0.5);
     const text = this.add.text(-200, 0, this._defaultQuestionText(cfg), {
       font: "18px Arial", color: "#e0e0e0", wordWrap: { width: 440 },
@@ -1069,7 +1075,7 @@ export class Level25Scene extends Phaser.Scene {
 
   showOptionBubbles(options, onSelect) {
     const shuffled = Phaser.Utils.Array.Shuffle(options.slice());
-    const style = { font: "bold 18px Courier New", color: HEX_CYAN };
+    const style = { font: "bold 20px Courier New", color: HEX_CYAN };
     const widths = shuffled.map((o) => {
       const t = this.add.text(0, 0, String(o.value), style);
       const w = Math.max(t.width + 30, 56);
@@ -1080,7 +1086,7 @@ export class Level25Scene extends Phaser.Scene {
     let bx = 640 - totalW / 2;
 
     shuffled.forEach((opt, i) => {
-      const w = widths[i], h = 38;
+      const w = widths[i], h = 44;
       const c = this.add.container(bx + w / 2, 580).setDepth(20);
       bx += w + 14;
       const g = this.add.graphics();
@@ -1158,7 +1164,7 @@ export class Level25Scene extends Phaser.Scene {
         g.strokeRoundedRect(-85, -26, 170, 52, 12);
       };
       draw(0);
-      const t = this.add.text(0, 0, label, { font: "bold 17px Arial", color: "#" + color.toString(16).padStart(6, "0") }).setOrigin(0.5);
+      const t = this.add.text(0, 0, label, { font: "bold 20px Arial", color: "#" + color.toString(16).padStart(6, "0") }).setOrigin(0.5);
       c.add([g, t]);
       c.setSize(170, 52);
       c.setInteractive({ useHandCursor: true });
@@ -1191,7 +1197,7 @@ export class Level25Scene extends Phaser.Scene {
       if (cfg.round === 9) {
         // array .length property contrast — no character tiles to scan
         this.resetCounter();
-        this.counterText.setText("data.length").setColor(HEX_AMBER).setFontSize(13);
+        this.counterText.setText("data.length").setColor(HEX_AMBER).setFontSize(18);
         await this.delay(200);
         this.counterText.setFontSize(34).setText(String(cfg.resultValue)).setColor(HEX_CYAN);
         this.flashCounter(HEX_GREEN);
@@ -1206,14 +1212,14 @@ export class Level25Scene extends Phaser.Scene {
         this.showCompileErrorStamp();
         await this.delay(300);
         if (!this._alive) return;
-        const anno = this.add.text(640, 62, cfg.explanation, {
-          font: "bold 14px Arial", color: HEX_RED, wordWrap: { width: 560 },
+        const anno = this.add.text(640, 166, cfg.explanation, {
+          font: "bold 18px Arial", color: HEX_RED, wordWrap: { width: 800 },
         }).setOrigin(0.5).setDepth(60).setAlpha(0);
         this.roundElements.push(anno);
         this.tweens.add({ targets: anno, alpha: 1, duration: 250 });
         if (cfg.fix) {
-          const fixT = this.add.text(640, 470, `Fix: ${cfg.fix}`, {
-            font: "bold 16px Courier New", color: HEX_MAGENTA,
+          const fixT = this.add.text(640, 204, `Fix: ${cfg.fix}`, {
+            font: "bold 20px Courier New", color: HEX_MAGENTA,
           }).setOrigin(0.5).setDepth(20).setAlpha(0);
           this.roundElements.push(fixT);
           this.tweens.add({ targets: fixT, alpha: 1, duration: 250, delay: 200 });
@@ -1236,7 +1242,7 @@ export class Level25Scene extends Phaser.Scene {
   // ══════════════════════════════════════════════════════════════
 
   createSpecimenPool(pool) {
-    const style = { font: "bold 17px Courier New", color: HEX_CYAN };
+    const style = { font: "bold 20px Courier New", color: HEX_CYAN };
     const widths = pool.map((item) => {
       const label = item.label || `"${item.str}"`;
       const t = this.add.text(0, 0, label, style);
@@ -1248,7 +1254,7 @@ export class Level25Scene extends Phaser.Scene {
     let bx = 640 - totalW / 2;
 
     pool.forEach((item, i) => {
-      const w = widths[i], h = 40;
+      const w = widths[i], h = 44;
       const home = { x: bx + w / 2, y: 610 };
       bx += w + 14;
       const label = item.label || `"${item.str}"`;
@@ -1440,10 +1446,10 @@ export class Level25Scene extends Phaser.Scene {
     const timeMs = this.time.now - this.roundStartTime;
     this.totalTime += timeMs;
     let points = 100 * multiplier;
-    if (timeMs <= 6000) { points += 25; this.createFloatingText(COUNTER_X, COUNTER_Y - 60, "+25 QUICK!", HEX_AMBER, "bold 15px Arial"); }
+    if (timeMs <= 6000) { points += 25; this.createFloatingText(COUNTER_X, COUNTER_Y - COUNTER_H / 2 - 30, "+25 QUICK!", HEX_AMBER, "bold 18px Arial"); }
     this.updateScore(points);
 
-    const t = this.add.text(640, 200, "✓ CORRECT", {
+    const t = this.add.text(640, 96, "✓ CORRECT", {
       font: "bold 28px Arial", color: HEX_GREEN,
     }).setOrigin(0.5).setScale(0).setDepth(70);
     this.tweens.add({
@@ -1713,7 +1719,7 @@ export class Level25Scene extends Phaser.Scene {
       `AVG TIME: ${avgTime}s`,
     ];
     lines.forEach((s, i) => {
-      const t = this.add.text(500, 260 + i * 30, s, { font: "16px Arial", color: HEX_GRAY }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
+      const t = this.add.text(500, 260 + i * 30, s, { font: "18px Arial", color: HEX_GRAY }).setOrigin(0, 0.5).setDepth(91).setAlpha(0);
       this.tweens.add({ targets: t, alpha: 1, duration: 250, delay: 300 + i * 150 });
     });
     const totalText = this.add.text(500, 260 + 3 * 30, "TOTAL: 0", {
@@ -1753,12 +1759,12 @@ export class Level25Scene extends Phaser.Scene {
     // routinely navigated away before it ever appeared).
     this.tweens.add({ targets: badge, alpha: 1, duration: 300, delay: 0 });
     const badgeLbl = this.add.text(640, 508, "length() SCHEMA ACQUIRED", {
-      font: "bold 15px Arial", color: HEX_AMBER,
+      font: "bold 18px Arial", color: HEX_AMBER,
     }).setOrigin(0.5).setDepth(91).setAlpha(0);
     this.tweens.add({ targets: badgeLbl, alpha: 1, duration: 300, delay: 0 });
 
-    this._makeButton(500, 540, "RETRY", 150, 44, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
-    this._makeButton(760, 540, "NEXT: charAt() →", 220, 44, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {
+    this._makeButton(500, 540, "RETRY", 150, 48, { stroke: 0x546e7a, textColor: "#b0bec5" }, () => this.scene.restart());
+    this._makeButton(760, 540, "NEXT: charAt() →", 250, 48, { fill: 0x00733a, stroke: C_GREEN, textColor: "#ffffff" }, () => {
       if (this.scene.get("Level26Scene")) this.scene.start("Level26Scene");
       else this.scene.start("MenuScene");
     });
@@ -1777,7 +1783,7 @@ export class Level25Scene extends Phaser.Scene {
       g.strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
     };
     draw(false);
-    const t = this.add.text(0, 0, label, { font: "bold 17px Arial", color: style.textColor }).setOrigin(0.5);
+    const t = this.add.text(0, 0, label, { font: "bold 20px Arial", color: style.textColor }).setOrigin(0.5);
     c.add([g, t]);
     c.setSize(w, h);
     c.setInteractive({ useHandCursor: true });

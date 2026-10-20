@@ -36,7 +36,13 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-const LINE_H = 20;
+// Code-editor rows (same approach as Level 36): one 18px line of code per row, rows up to 42px apart so a 34px
+// drop slot never touches the row above/below. The pitch shrinks automatically when a mission needs more rows.
+const LINE_H = 42;
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;   // 18 logical px = ~16px on screen (canvas is shown at ~0.9)
+const SLOT_PAD = 5, SLOT_HINT_PAD = 8;               // inner padding for a dropped part / for the placeholder text
+const HEX_HINT = "#7d8c9a";                          // placeholder text: was #3d4450 (≈1.8:1 on the slot fill), now ≈5:1
+const WRAP_INDENT = 22;                              // continuation row of a soft-wrapped line is indented 2 characters
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const STRIP_Y = OY + OH + 15;
@@ -485,18 +491,34 @@ export class Level39Scene extends Phaser.Scene {
     return tokens.length ? tokens : [{ t: line, c: "#e0e0e0" }];
   }
 
+  _measureText(str, style) {
+    const t = this.add.text(0, 0, str, style);
+    const w = t.width;
+    t.destroy();
+    return w;
+  }
+
+  /** Width of a slot, from measured text: wide enough for its placeholder AND for the longest part that can be dropped into it. */
+  _slotWidth(mission, def) {
+    const hintW = this._measureText(def.id, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2;
+    const partStyle = { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold" };
+    const partW = mission.palette
+      .filter((p) => p.slot === def.id)
+      .reduce((m, p) => Math.max(m, this._measureText(p.label || p.code, partStyle) + SLOT_PAD * 2), 0);
+    return Math.ceil(Math.max(hintW, partW));
+  }
+
   renderSkeleton(mission, test) {
     this.codeContainer.removeAll(true);
     this.slotDefs = {};
     mission.slots.forEach((s) => { this.slotDefs[s.id] = { ...s, rect: null }; });
 
-    mission.skeleton.forEach((rawLine, i) => {
-      const y = CODE_Y0 + i * LINE_H;
-      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "13px Courier New", color: "#3d4450" });
-      this.codeContainer.add(numT);
+    const codeStyle = (color) => ({ fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color });
 
+    // 1) every skeleton line becomes a list of segments (text pieces / slots) with MEASURED widths
+    const lines = mission.skeleton.map((rawLine) => {
+      const segs = [];
       const parts = rawLine.split(/[§]?<slot:(\w+)>|§(\w+)/);
-      let x = CODE_X;
       for (let pi = 0; pi < parts.length; pi++) {
         const part = parts[pi];
         if (part === undefined) continue;
@@ -504,25 +526,61 @@ export class Level39Scene extends Phaser.Scene {
         const isSubToken = pi % 3 === 2;
         if (!isSlotToken && !isSubToken) {
           if (!part) continue;
-          this._syntaxTokens(part).forEach((tok) => {
-            const t = this.add.text(x, y, tok.t, { font: "bold 14px Courier New", color: tok.c });
-            this.codeContainer.add(t);
-            x += t.width;
-          });
+          this._syntaxTokens(part).forEach((tok) => segs.push({ k: "t", t: tok.t, c: tok.c, w: this._measureText(tok.t, codeStyle(tok.c)) }));
         } else if (isSubToken) {
-          const key = part;
-          const val = test && test.substitutions ? test.substitutions[key] : `§${key}`;
-          const t = this.add.text(x, y, String(val), { font: "bold 14px Courier New", color: "#546e7a" }).setAlpha(0.7);
-          this.codeContainer.add(t);
-          x += t.width;
-        } else if (isSlotToken) {
-          const slotId = part;
-          const def = this.slotDefs[slotId];
-          const w = 130;
-          def.rect = { x, y: y - 2, w, h: 17 };
-          this._drawSlotPlaceholder(slotId);
-          x += w + 6;
+          const val = String(test && test.substitutions ? test.substitutions[part] : `§${part}`);
+          segs.push({ k: "t", t: val, c: "#546e7a", dim: true, w: this._measureText(val, codeStyle("#546e7a")) });
+        } else {
+          segs.push({ k: "s", id: part, w: this._slotWidth(mission, this.slotDefs[part]) });
         }
+      }
+      return segs;
+    });
+
+    // 2) lay out left to right: a slot sits SLOT_GAP after the text before it, the text after it starts SLOT_GAP after the slot.
+    //    A line too wide for the editor wraps BEFORE its slot (like `println("..." +` / `    (a + b));`) instead of running off the panel.
+    const limit = CX + CW - 14;
+    const placed = [], lineRows = [];
+    let rows = 0;
+    lines.forEach((segs) => {
+      let row = rows, x = CODE_X, rowStartX = CODE_X;
+      segs.forEach((seg, si) => {
+        if (seg.k === "s") {
+          let tail = 0;   // text that must stay on the slot's row (up to the next slot)
+          for (let j = si + 1; j < segs.length && segs[j].k !== "s"; j++) tail += segs[j].w;
+          if (x > rowStartX && x + SLOT_GAP + seg.w + SLOT_GAP + tail > limit) { row++; x = CODE_X + WRAP_INDENT; rowStartX = x; }
+          if (x > rowStartX) x += SLOT_GAP;
+          placed.push({ seg, row, x });
+          x += seg.w + SLOT_GAP;
+        } else {
+          placed.push({ seg, row, x });
+          x += seg.w;
+        }
+      });
+      lineRows.push({ row: rows, n: row - rows + 1 });
+      rows = row + 1;
+    });
+
+    // 3) rows share the editor height; every object of a row is vertically centred on the row, so slots and text share one baseline
+    const rowH = Math.min(LINE_H, Math.floor((CY + CH - 8 - CODE_Y0) / Math.max(rows, 1)));
+    this._rowH = rowH;
+    this._lineRows = lineRows;
+    const rowCy = (r) => CODE_Y0 + r * rowH + rowH / 2;
+
+    lineRows.forEach((lr, li) => {
+      const numT = this.add.text(CX + 8, rowCy(lr.row), String(li + 1), { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5);
+      this.codeContainer.add(numT);
+    });
+    placed.forEach(({ seg, row, x }) => {
+      const cy = rowCy(row);
+      if (seg.k === "t") {
+        const t = this.add.text(x, cy, seg.t, codeStyle(seg.c)).setOrigin(0, 0.5);
+        if (seg.dim) t.setAlpha(0.7);
+        this.codeContainer.add(t);
+      } else {
+        const def = this.slotDefs[seg.id];
+        def.rect = { x, y: cy - SLOT_H / 2, w: seg.w, h: SLOT_H };
+        this._drawSlotPlaceholder(seg.id);
       }
     });
   }
@@ -552,7 +610,7 @@ export class Level39Scene extends Phaser.Scene {
     def.drawDash = draw;
     this.codeContainer.add(dg);
     if (!filled) {
-      const label = this.add.text(x + w / 2, y + h / 2, def.id, { font: "italic 11px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
+      const label = this.add.text(x + w / 2, y + h / 2, def.id, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic", color: HEX_HINT }).setOrigin(0.5).setDepth(22);
       def.hintLabel = label;
       this.codeContainer.add(label);
     }
@@ -562,19 +620,52 @@ export class Level39Scene extends Phaser.Scene {
     const def = this.slotDefs[slotId];
     const placed = this.slotContents[slotId] || [];
     if (!def || !def.rect) return;
-    const { x, y, h } = def.rect;
+    const { x, y, w, h } = def.rect;
     if (placed[0]) {
       const block = placed[0];
-      const bw = block.container.getData("w");
-      this.tweens.add({ targets: block.container, x: x + bw / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
+      this._fitBlockToSlot(block.container, def.rect);
+      this.tweens.add({ targets: block.container, x: x + w / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
     }
     this._drawSlotPlaceholder(slotId);
   }
 
+  /** A part sitting in a slot is drawn slot-sized with 18px text (the parts-bin chip stays as it was, just hidden meanwhile). */
+  _fitBlockToSlot(c, rect) {
+    let v = c.getData("slotView");
+    if (!v) {
+      const bg0 = c.list[0], txt0 = c.list[1];
+      const txt = this.add.text(0, 0, txt0.text, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color: HEX_CYAN }).setOrigin(0.5);
+      const bg = this.add.graphics();
+      c.add([bg, txt]);
+      bg0.setVisible(false); txt0.setVisible(false);
+      v = { bg, txt, bg0, txt0, w: c.width, h: c.height };
+      c.setData("slotView", v);
+    }
+    v.bg.clear();
+    v.bg.fillStyle(0x1e1e3a, 1);
+    v.bg.fillRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    v.bg.lineStyle(2, C_CYAN, 1);
+    v.bg.strokeRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    c.setSize(rect.w, rect.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
+  }
+
+  /** Back to the parts-bin chip when a part is picked up out of a slot. */
+  _releaseBlockFromSlot(c) {
+    const v = c.getData("slotView");
+    if (!v) return;
+    v.bg.destroy(); v.txt.destroy();
+    v.bg0.setVisible(true); v.txt0.setVisible(true);
+    c.setSize(v.w, v.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(v.w, v.h);
+    c.setData("slotView", null);
+  }
+
   highlightCodeLine(lineIndex) {
     if (lineIndex === null || lineIndex === undefined) { this.lineHighlight.setVisible(false); return; }
-    const y = CODE_Y0 + lineIndex * LINE_H - 2;
-    this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
+    const lr = (this._lineRows || [])[lineIndex] || { row: lineIndex, n: 1 };
+    const rowH = this._rowH || LINE_H;
+    this.lineHighlight.setSize(CW - 4, lr.n * rowH).setPosition(CX + CW / 2, CODE_Y0 + (lr.row + lr.n / 2) * rowH).setVisible(true);
   }
 
   // ══════════════════════════════════════════════════════════════
@@ -647,6 +738,7 @@ export class Level39Scene extends Phaser.Scene {
         this.slotContents[prevSlot] = (this.slotContents[prevSlot] || []).filter((b) => b.container !== obj);
         obj.setData("_cameFromSlot", prevSlot);
         obj.setData("placedIn", null);
+        this._releaseBlockFromSlot(obj);
         this._relayoutSlot(prevSlot);
         this.updateRunButtonState();
       } else {

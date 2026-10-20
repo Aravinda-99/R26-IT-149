@@ -41,7 +41,11 @@ const CX = 40, CY = 90, CW = 680, CH = 380;
 const TAB_H = 34, GUTTER_W = 34, CODE_PAD = 10;
 const CODE_X = CX + GUTTER_W + CODE_PAD;
 const CODE_Y0 = CY + TAB_H + 14;
-const LINE_H = 22;
+// Code-editor rows: one 18px line of code per 42px row, so a 34px drop slot never touches the row above/below
+const LINE_H = 42;
+const CODE_FONT = 18, SLOT_H = 34, SLOT_GAP = 4;   // 18 logical px = ~16px on screen (canvas is shown at ~0.9)
+const SLOT_PAD = 5, SLOT_HINT_PAD = 8;               // inner padding for a dropped part / for the placeholder hint
+const HEX_HINT = "#7d8c9a";                          // placeholder text: was #3d4450 (≈1.8:1 on the slot fill), now ≈5:1
 const PX = 40, PY = 490, PW = 680, PH = 130;
 const OX = 760, OY = 80, OW = 460, OH = 228;
 const MX = OX + OW / 2, MY = OY + OH / 2 + 6;
@@ -455,6 +459,23 @@ export class Level36Scene extends Phaser.Scene {
     return tokens.length ? tokens : [{ t: line, c: "#e0e0e0" }];
   }
 
+  _measureText(str, style) {
+    const t = this.add.text(0, 0, str, style);
+    const w = t.width;
+    t.destroy();
+    return w;
+  }
+
+  /** Width of a slot, from measured text: wide enough for its placeholder hint AND for the longest part that can be dropped into it. */
+  _slotWidth(mission, def) {
+    const hintW = this._measureText(def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic" }) + SLOT_HINT_PAD * 2;
+    const partStyle = { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold" };
+    const partW = mission.palette
+      .filter((p) => p.slot === def.id)
+      .reduce((m, p) => Math.max(m, this._measureText(p.label || p.code, partStyle) + SLOT_PAD * 2), 0);
+    return Math.ceil(Math.max(hintW, partW));
+  }
+
   renderSkeleton(mission) {
     this.codeContainer.removeAll(true);
     this.slotDefs = {};
@@ -462,12 +483,13 @@ export class Level36Scene extends Phaser.Scene {
 
     const allLines = ["Scanner sc = new Scanner(System.in);", ...mission.skeleton];
     allLines.forEach((rawLine, i) => {
-      const y = CODE_Y0 + i * LINE_H;
-      const numT = this.add.text(CX + 8, y, String(i + 1), { font: "14px Courier New", color: "#3d4450" });
+      // every object of a row is vertically centred on the row, so slots and text share one baseline
+      const cy = CODE_Y0 + i * LINE_H + LINE_H / 2;
+      const numT = this.add.text(CX + 8, cy, String(i + 1), { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5);
       this.codeContainer.add(numT);
 
       if (i === 0) {
-        const t = this.add.text(CODE_X, y, rawLine, { font: "15px Courier New", color: "#3d4450" }).setAlpha(0.6);
+        const t = this.add.text(CODE_X, cy, rawLine, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", color: "#3d4450" }).setOrigin(0, 0.5).setAlpha(0.6);
         this.codeContainer.add(t);
         return;
       }
@@ -478,17 +500,19 @@ export class Level36Scene extends Phaser.Scene {
         if (pi % 2 === 0) {
           if (!part) return;
           this._syntaxTokens(part).forEach((tok) => {
-            const t = this.add.text(x, y, tok.t, { font: "bold 15px Courier New", color: tok.c });
+            const t = this.add.text(x, cy, tok.t, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color: tok.c }).setOrigin(0, 0.5);
             this.codeContainer.add(t);
             x += t.width;
           });
         } else {
           const slotId = part;
           const def = this.slotDefs[slotId];
-          const w = 130;
-          def.rect = { x, y: y - 2, w, h: 18 };
+          const w = this._slotWidth(mission, def);
+          // the slot sits in a gap measured from the text before it; the text after it starts a gap after the slot
+          if (x > CODE_X) x += SLOT_GAP;
+          def.rect = { x, y: cy - SLOT_H / 2, w, h: SLOT_H };
           this._drawSlotPlaceholder(slotId);
-          x += w + 6;
+          x += w + SLOT_GAP;
         }
       });
     });
@@ -519,7 +543,7 @@ export class Level36Scene extends Phaser.Scene {
     def.drawDash = draw;
     this.codeContainer.add(dg);
     if (!filled) {
-      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { font: "italic 12px Courier New", color: "#3d4450" }).setOrigin(0.5).setDepth(22);
+      const label = this.add.text(x + w / 2, y + h / 2, def.hint, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "italic", color: HEX_HINT }).setOrigin(0.5).setDepth(22);
       def.hintLabel = label;
       this.codeContainer.add(label);
     }
@@ -529,18 +553,50 @@ export class Level36Scene extends Phaser.Scene {
     const def = this.slotDefs[slotId];
     const placed = this.slotContents[slotId] || [];
     if (!def || !def.rect) return;
-    const { x, y, h } = def.rect;
+    const { x, y, w, h } = def.rect;
     if (placed[0]) {
       const block = placed[0];
-      const bw = block.container.getData("w");
-      this.tweens.add({ targets: block.container, x: x + bw / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
+      this._fitBlockToSlot(block.container, def.rect);
+      this.tweens.add({ targets: block.container, x: x + w / 2, y: y + h / 2, duration: 150, ease: "Cubic.easeOut" });
     }
     this._drawSlotPlaceholder(slotId);
   }
 
+  /** A part sitting in a slot is drawn slot-sized with 18px text (the parts-bin chip stays as it was, just hidden meanwhile). */
+  _fitBlockToSlot(c, rect) {
+    let v = c.getData("slotView");
+    if (!v) {
+      const bg0 = c.list[0], txt0 = c.list[1];
+      const txt = this.add.text(0, 0, txt0.text, { fontFamily: "Courier New", fontSize: CODE_FONT + "px", fontStyle: "bold", color: HEX_CYAN }).setOrigin(0.5);
+      const bg = this.add.graphics();
+      c.add([bg, txt]);
+      bg0.setVisible(false); txt0.setVisible(false);
+      v = { bg, txt, bg0, txt0, w: c.width, h: c.height };
+      c.setData("slotView", v);
+    }
+    v.bg.clear();
+    v.bg.fillStyle(0x1e1e3a, 1);
+    v.bg.fillRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    v.bg.lineStyle(2, C_CYAN, 1);
+    v.bg.strokeRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, 7);
+    c.setSize(rect.w, rect.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(rect.w, rect.h);
+  }
+
+  /** Back to the parts-bin chip when a part is picked up out of a slot. */
+  _releaseBlockFromSlot(c) {
+    const v = c.getData("slotView");
+    if (!v) return;
+    v.bg.destroy(); v.txt.destroy();
+    v.bg0.setVisible(true); v.txt0.setVisible(true);
+    c.setSize(v.w, v.h);
+    if (c.input && c.input.hitArea) c.input.hitArea.setSize(v.w, v.h);
+    c.setData("slotView", null);
+  }
+
   highlightCodeLine(lineIndex) {
     if (lineIndex === null || lineIndex === undefined) { this.lineHighlight.setVisible(false); return; }
-    const y = CODE_Y0 + (lineIndex + 1) * LINE_H - 2;
+    const y = CODE_Y0 + (lineIndex + 1) * LINE_H;
     this.lineHighlight.setPosition(CX + CW / 2, y + LINE_H / 2).setVisible(true);
   }
 
@@ -614,6 +670,7 @@ export class Level36Scene extends Phaser.Scene {
         this.slotContents[prevSlot] = (this.slotContents[prevSlot] || []).filter((b) => b.container !== obj);
         obj.setData("_cameFromSlot", prevSlot);
         obj.setData("placedIn", null);
+        this._releaseBlockFromSlot(obj);
         this._relayoutSlot(prevSlot);
         this.updateRunButtonState();
       } else {
