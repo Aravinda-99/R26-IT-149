@@ -1,38 +1,5 @@
-"""
-Component 1 — Model B (progression): final method comparison
-=============================================================
-Follows ml/train_progression_model.py, where unweighted Gradient Boosting
-scored below the persistence baseline on macro-F1. Two further methods are
-evaluated, then tuning stops:
+//Component 1 — Model B (progression): final method comparison
 
-    A  threshold-tuned GB — unweighted GB classifier; predicted class is
-       argmax(w_c * p_c) with per-class multipliers w (w_maintain = 1)
-       chosen to maximise macro-F1 on INNER out-of-fold probabilities
-       from the outer training fold only (nested), then applied to the
-       outer test fold.
-    C  GB regressor — GradientBoostingRegressor predicts next_accuracy
-       (clipped to 0-1); the label thresholds are applied to the
-       prediction. MAE is compared with persistence (next = current).
-
-All methods use the SAME 5 StratifiedGroupKFold folds (by user_id,
-random_state=42) as train_progression_model.py:
-    GB, GB balanced, A, C, persistence, majority
-Metrics: macro-F1, accuracy, per-class recall, quadratic weighted kappa
-(labels are ordinal: demote < maintain < promote).
-
-DECISION RULE (fixed before results were seen):
-    An ML method replaces persistence only if
-        mean_F1(method) - mean_F1(persistence) > max(std_method, std_persistence)
-    Otherwise persistence is the live decision rule and ML is reported as
-    a comparison. If several methods pass, the highest mean macro-F1 wins.
-
-Results are added to ml/progression_results.json under "method_comparison"
-(earlier results are kept). If A or C wins, it is saved as
-ml_models/model_b.pkl.
-
-Usage (from backend/):
-    python ml/compare_progression_methods.py
-"""
 
 import json
 import os

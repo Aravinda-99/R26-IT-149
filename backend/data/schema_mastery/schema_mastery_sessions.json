@@ -519,5 +519,45 @@
     "error_type": "LOOP_CONDITION_ISSUE",
     "error_pattern_score": 0.44,
     "error_pattern_score_source": "component2_confidence"
+  },
+  "nOu4rObBoYYm3rHwcBnHFWNFly02": {
+    "session_id": "SESS_708A25D3",
+    "student_id": "nOu4rObBoYYm3rHwcBnHFWNFly02",
+    "student_name": "Learner",
+    "student_email": "",
+    "component_1": {
+      "completed": false,
+      "concept_name": null,
+      "weak_concept": null,
+      "pre_test_score": null,
+      "attempt_count": 0,
+      "time_taken_seconds": 0,
+      "completed_at": null
+    },
+    "component_2": {
+      "completed": false,
+      "error_type": null,
+      "error_pattern_score": null,
+      "error_reason": null,
+      "completed_at": null
+    },
+    "component_3": {
+      "completed": false,
+      "recommended_game_id": null,
+      "recommended_game_name": null,
+      "completed_at": null
+    },
+    "component_4": {
+      "unlocked": false,
+      "post_test_started": false,
+      "post_test_completed": false,
+      "post_test_score": null,
+      "mastery_level": null,
+      "next_action": null,
+      "completed_at": null
+    },
+    "current_stage": "PRE_TEST_PENDING",
+    "created_at": "2026-10-20T16:23:21.975683+00:00",
+    "updated_at": "2026-10-20T16:23:21.975683+00:00"
   }
 }
