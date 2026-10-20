@@ -1,43 +1,5 @@
-"""
-Component 1: Adaptive Learning Path — Service
-===============================================
-Progression decision for a Level Check (Model B) + a rule-based
-Safety Validation Layer. The student's CURRENT level comes from the
-placement quiz (Model A, services/placement_service.py); this service
-only decides promote / maintain / demote and moves the level by one.
+#Component 1: Adaptive Learning Path — Service
 
-──────────────────────────────────────────────────────────────────
-MODEL B — ml_models/model_b.pkl
-──────────────────────────────────────────────────────────────────
-Gradient Boosting classifier + tuned class multipliers (Method A),
-trained on REAL future outcomes from ASSISTments 2009-2010: features
-from a student's current 20-problem window, label from the NEXT
-window's accuracy (>= 80% promote, 40-80% maintain, < 40% demote).
-See ml/progression_results.json.
-
-  Features: accuracy, avg_time_sec (mean time to FIRST answer)
-  avg_attempts is not a feature: the quiz measures answer changes,
-  ASSISTments measures tries until correct.
-
-  avg_time_sec is raised to a floor stored in the model (5th percentile
-  of training times); below it the model has almost no training data.
-  The response reports whether the floor was applied.
-
-  In 5-fold grouped CV it is NON-INFERIOR to the persistence baseline
-  (label thresholds applied to current accuracy), not better. The
-  persistence action is returned as `baseline_action` for transparency.
-
-  If model_b.pkl is missing or fails to load, the persistence rule is
-  the decision and `model_source` says so.
-
-──────────────────────────────────────────────────────────────────
-SAFETY VALIDATION LAYER (guardrail only, applied to Model B's action)
-──────────────────────────────────────────────────────────────────
-  - accuracy < 40%  → action cannot be 'promote' (forced to 'demote')
-  - accuracy >= 80% → action cannot be 'demote' (forced to 'promote')
-  - narrow combined-evidence guard against an indefensible 'demote'
-──────────────────────────────────────────────────────────────────
-"""
 
 import os
 import joblib
@@ -62,31 +24,7 @@ DEMOTE_MAX  = 0.40
 RAPID_GUESSING_SEC = 5.0    # mean first-answer time below this → flag (action unchanged)
 LOW_CONFIDENCE     = 0.40   # probability of the chosen action below this → flag
 
-# ── Safety Validation Layer thresholds ───────────────────────────────
-# Model B remains the PRIMARY decision-maker for promote/maintain/demote.
-# This layer only intervenes on predictions that are clearly contradictory
-# or extreme — it never re-derives the full Bloom's rule as a blanket
-# replacement for the model's judgment (that was tested and rejected: it
-# made the ML model's decision irrelevant, which defeats the purpose of
-# training it in the first place).
-#
-# Two EXTREME guards (unchanged from the original design):
-#   - accuracy < 40%  AND action == 'promote' → force 'demote'
-#     (never promote a student who failed outright)
-#   - accuracy >= 80% AND action == 'demote'  → force 'promote'
-#     (never demote a student who has clearly mastered the material)
-#
-# One NARROW, evidence-combined guard (added after testing found a real
-# gap): a Demote prediction is blocked ONLY when accuracy, attempts, AND
-# engagement all independently indicate solid performance at once — e.g.
-# accuracy=72%, attempts=1, engagement=87% all being favorable together
-# is too much combined evidence for 'demote' to be defensible, even
-# though accuracy alone (72%) sits below the 80% extreme-guard threshold.
-# A single borderline number does NOT trigger this — all three signals
-# must agree, keeping the correction rare and targeted rather than a
-# blanket rule. When triggered, the result is 'maintain' (not forced up
-# to 'promote') since the student hasn't necessarily met the full
-# promote bar — only disproven the case for demotion.
+
 PROMOTE_ACCURACY_MIN   = 0.80   # extreme guard: at/above this, cannot demote
 DEMOTE_ACCURACY_MAX    = 0.40   # extreme guard: below this, cannot promote
 

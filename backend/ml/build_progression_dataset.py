@@ -1,52 +1,5 @@
-"""
-Component 1 — Model B (progression) dataset builder
-====================================================
-Builds a supervised dataset of REAL future outcomes from the raw
-ASSISTments 2009-2010 skill-builder data (original release).
+#Component 1 — Model B (progression) dataset builder
 
-For each student, problems are sorted by order_id and cut into
-non-overlapping windows of WINDOW problems. Every window t that has a
-following window t+1 yields one row:
-
-    features  ← window t   (what the quiz can observe now)
-    label     ← window t+1 (what actually happened next)
-
-so the label is never computed from the features' own data (no leakage),
-and accuracy can be kept as a feature.
-
-FEATURES (only what the Java quiz can compute identically):
-    accuracy       fraction correct (first attempt) in window t
-    avg_attempts   mean attempt_count in window t, each capped at 10
-    avg_time_sec   mean ms_first_response / 1000, each capped at 600 s
-
-ABLATION-ONLY COLUMN (not a Model B feature):
-    difficulty     0 beginner / 1 intermediate / 2 advanced — window t's
-                   placement level, computed with the SAME Rasch EAP and
-                   RP50 cut-offs as Model A (services/placement_service.py).
-                   ASSISTments items carry no beginner/intermediate/advanced
-                   tag, so every item is treated as b = 0 ('intermediate').
-                   This makes it binned accuracy, with different item
-                   difficulties than the live quiz — hence excluded.
-
-LABEL from window t+1 accuracy:
-    >= 0.80        promote
-    0.40 – 0.80    maintain
-    <  0.40        demote
-
-user_id is kept for GroupKFold (no student in both train and test).
-
-CLEANING (in this order):
-    1. drop duplicate order_id (multi-skill problems are repeated per skill)
-    2. keep original == 1 (drop scaffolding sub-problems)
-    3. drop ms_first_response <= 0 and attempt_count == 0
-    4. ms_first_response → seconds, capped at 600
-    5. attempt_count capped at 10 (the quiz's engagement formula treats
-       10 attempts as the worst case; raw data reaches 3,824)
-
-Usage (from backend/):
-    python ml/build_progression_dataset.py "<path to skill_builder_data.csv>"
-The raw CSV is read in place and is never copied into the repository.
-"""
 
 import argparse
 import os

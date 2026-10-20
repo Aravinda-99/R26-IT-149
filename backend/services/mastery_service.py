@@ -12,42 +12,23 @@ Handles:
 
 import time
 from firebase.firebase_service import db
-try:
-    from ml.component4_schema_mastery.legacy_rule_based.mastery_calculator import (
-        VALID_CONCEPTS,
-        calculate_mastery_score,
-        classify_schema_state,
-        needs_posttest,
-        determine_final_state,
-        get_state_color,
-        process_student,
-        calculate_interaction_score,
-        calculate_posttest_validation_score,
-        calculate_final_mastery_score,
-        apply_heuristic_overrides,
-        calculate_learning_gain,
-        determine_progression,
-        map_confidence,
-        process_diagnostic,
-    )
-except ImportError:
-    from mastery_calculator import (
-        VALID_CONCEPTS,
-        calculate_mastery_score,
-        classify_schema_state,
-        needs_posttest,
-        determine_final_state,
-        get_state_color,
-        process_student,
-        calculate_interaction_score,
-        calculate_posttest_validation_score,
-        calculate_final_mastery_score,
-        apply_heuristic_overrides,
-        calculate_learning_gain,
-        determine_progression,
-        map_confidence,
-        process_diagnostic,
-    )
+from ml.component4_schema_mastery.legacy_rule_based.mastery_calculator import (
+    VALID_CONCEPTS,
+    calculate_mastery_score,
+    classify_schema_state,
+    needs_posttest,
+    determine_final_state,
+    get_state_color,
+    process_student,
+    calculate_interaction_score,
+    calculate_posttest_validation_score,
+    calculate_final_mastery_score,
+    apply_heuristic_overrides,
+    calculate_learning_gain,
+    determine_progression,
+    map_confidence,
+    process_diagnostic,
+)
 from utils.helpers import timestamp_now
 from services.schema_post_test_result_service import SchemaPostTestResultService
 
