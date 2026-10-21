@@ -30,9 +30,7 @@ export const mistakeConcept = (label, topic) => conceptOfReason(label) || topic 
 
 // Component 3 games per concept (module keys of MODULE_TITLES in student/GamePlayer.js and
 // MenuScene.js). `level` is the GamePlayer level line, `difficulty` the Home module card level.
-// Methods has no fitting game: the only methods games (String / Scanner / Math … Methods Wings)
-// practise calling built-in methods, while the pre-test's method mistakes are about return
-// types, void, parameters and recursion.
+// Methods routes to built-in string-method practice; it does not cover all method misconceptions.
 const GAME_BY_CONCEPT = {
     Variables: { module: "integer", title: "Variable Tracker Arena", level: "Integer Mastery", difficulty: "Beginner" },
     Operators: { module: "operators", title: "Operator Mastery Academy", level: "3 Interactive Levels", difficulty: "Beginner" },
