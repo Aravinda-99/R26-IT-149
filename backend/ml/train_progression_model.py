@@ -1,4 +1,4 @@
-// Component 1 — Model B (progression) training & evaluation
+#Component 1 — Model B (progression) training & evaluation
 
 
 import argparse
