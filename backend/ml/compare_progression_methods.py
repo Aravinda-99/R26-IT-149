@@ -1,4 +1,7 @@
 
+
+#Component 1 — Model B (progression): final method comparison
+
 #Component 1 — Model B (progression): final method comparison
 
 

@@ -1354,7 +1354,7 @@ export function setupQuizUI(root = document, options = {}) {
                     font-size:0.85rem;
                     text-align:center;
                 ">
-                    ⚠️ Result not applied — rapid response pattern detected. Your level remains unchanged.
+                    ⚠️ Your level remains unchanged.
                 </div>
             `) + buildLevelCheckCard(mlResult, sessionMetrics);
         }).catch(err => {
