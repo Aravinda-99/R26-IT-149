@@ -38,6 +38,7 @@ const GAME_BY_CONCEPT = {
     Operators: { module: "operators", title: "Operator Mastery Academy", level: "3 Interactive Levels", difficulty: "Beginner" },
     Loops: { module: "loops", title: "Loop Train Express", level: "For Loop Mastery", difficulty: "Intermediate" },
     Arrays: { module: "arrays", title: "Array Index Rescue Game", level: "Array Boundary Mastery", difficulty: "Intermediate" },
+    Methods: { module: "stringmethods", title: "Method Mastery Wing", level: "Built-in Methods", difficulty: "Intermediate" },
 };
 
 /** The game for a concept, or null when no game fits it yet. */

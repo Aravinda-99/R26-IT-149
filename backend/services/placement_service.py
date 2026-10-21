@@ -1,36 +1,15 @@
 """
 Component 1: Adaptive Learning Path — Placement Service (Model A)
-==================================================================
-Estimates the student's CURRENT level from a placement quiz using a
-Rasch (1-parameter logistic IRT) model.
 
-──────────────────────────────────────────────────────────────────
-WHY RASCH / IRT (and not an ML classifier)
-──────────────────────────────────────────────────────────────────
-We have no labelled data of "true" student levels, so a supervised
-classifier cannot be trained honestly. IRT is the standard psychometric
-method for placement tests: it models the probability of a correct
-answer as a function of student ability (theta) and item difficulty (b):
 
     P(correct | theta, b) = 1 / (1 + exp(-(theta - b)))
 
-Item difficulty is EXPERT-ASSIGNED from each question's `level` tag:
-    beginner = -1.0, intermediate = 0.0, advanced = +1.0
-Empirical calibration of b from real response data is future work.
 
-ESTIMATION: Expected A Posteriori (EAP) on a fixed theta grid with a
-standard normal N(0, 1) prior. EAP is preferred over maximum likelihood
-because it is always finite (MLE diverges for all-correct / all-wrong
-response patterns) and gives a standard error (posterior SD) directly.
-
-CUT-OFFS — RP50 rule (on the theta scale):
-A student is placed at a level once they have at least a 50% chance of
-answering that level's items correctly, i.e. theta >= b for that level.
 The cut-offs are therefore read directly from ITEM_DIFFICULTY:
     theta <  0.0        → Beginner    → beginner difficulty
     0.0 <= theta < 1.0  → Developing  → intermediate difficulty
     theta >= 1.0        → Proficient  → advanced difficulty
-──────────────────────────────────────────────────────────────────
+
 """
 
 import numpy as np
